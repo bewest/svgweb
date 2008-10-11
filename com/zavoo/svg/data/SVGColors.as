@@ -224,11 +224,35 @@ package com.zavoo.svg.data
                     return parseInt(color);
                 }
                 else if(color.indexOf("rgb") != -1){
-                    var str:Array = color.replace(/\srgb\(|\)/g, "").split(",");
-                       var r:int = str[0];
-                       var g:int = str[1];
-                       var b:int = str[2];
-                       return rgbToNumber(r, g, b);
+                    var str:Array = color.replace(/\s|rgb\(|\)/g, "").split(",");
+                       var r:int = 0;
+                       var g:int = 0;
+                       var b:int = 0;
+                    if (str[0].match(/%/)) {
+                        str[0]=str[0].replace(/%/g, "");
+                        r = str[0];
+                        r = r * 256 / 100;
+                    }
+                    else {
+                           r = str[0];
+                    }
+                    if (str[1].match(/%/)) {
+                        str[1]=str[1].replace(/%/g, "");
+                        g = str[1];
+                        g = g * 256 / 100;
+                    }
+                    else {
+                           g = str[1];
+                    }
+                    if (str[2].match(/%/)) {
+                        str[2]=str[2].replace(/%/g, "");
+                        b = str[2];
+                        b = b * 256 / 100;
+                    }
+                    else {
+                        b = str[2];
+                    }
+                    return rgbToNumber(r, g, b);
                    
                 }
                 else if (colors.hasOwnProperty(color)) {
