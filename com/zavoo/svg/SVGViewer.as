@@ -1,6 +1,5 @@
 /*
 Copyright (c) 2008 James Hight
-Copyright (c) 2008 Richard R. Masters, for his changes.
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -31,8 +30,12 @@ package com.zavoo.svg
     
     import flash.events.Event;
     import flash.geom.Transform;
+    import flash.display.LoaderInfo;
+    import flash.external.ExternalInterface;
     
     import mx.containers.Canvas;
+    import flash.net.URLLoader;
+    import flash.net.URLRequest;
 
     /**
      * Flex container for the SVG Renderer
@@ -41,16 +44,60 @@ package com.zavoo.svg
     {
         private var _xml:XML;
         private var _svgRoot:SVGRoot;
+        private var myLoader:URLLoader= new URLLoader ();
+        public  var paramsObj:Object;
         
+        /**
+         * @public
+         **/
+        public function xmlLoaded(event : Event):void {
+           //var loader:URLLoader = URLLoader(event.target);
+           var dataXML:XML = XML(event.target.data);
+           this.xml = dataXML;
+        }
+
+        public function loadSVGFile(svgFilename:String):void {
+            var myXMLURL : URLRequest = new URLRequest (svgFilename);
+            this.myLoader.addEventListener (Event.COMPLETE, xmlLoaded);
+            try
+            {
+                this.myLoader.load(myXMLURL);
+            }
+            catch (error:ArgumentError)
+            {
+                trace("An ArgumentError has occurred.");
+            }
+            catch (error:SecurityError)
+            {
+                trace("A SecurityError has occurred.");
+            }
+        }
+
         public function SVGViewer() {
             super();
             this._svgRoot = new SVGRoot(null);
             this.rawChildren.addChild(this._svgRoot);
+            var outerthis:SVGViewer = this;
             
             this._svgRoot.addEventListener(Event.RESIZE, sizeCanvas);
-            
+
+            function js_createFromSVG(svg:String):void {
+               var dataXML:XML = XML(svg);
+               outerthis.xml = dataXML;
+            }
+            function js_loadSVGFile(svg:String):void {
+                loadSVGFile(svg);
+            }
+
+            try {
+                ExternalInterface.addCallback("createFromSVG", js_createFromSVG);
+                ExternalInterface.addCallback("loadSVGFile", js_loadSVGFile);
+            }
+            catch(error:SecurityError) {
+            }
+            var jsArgument:String = "loaded";
+            var result:Object = ExternalInterface.call("receiveFromFlash", jsArgument);
         }
-        
         /**
          * @private
          **/
@@ -63,7 +110,7 @@ package com.zavoo.svg
          }
         
         /**
-         * @private
+         * @public
          **/
         public function set xml(value:XML):void {            
             this._svgRoot.xml = value;

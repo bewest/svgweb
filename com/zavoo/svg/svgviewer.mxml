@@ -1,0 +1,26 @@
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
+  xmlns="com.zavoo.svg.*"
+  width="100%"
+  height="100%"
+  paddingTop="0" paddingBottom="0" 
+  paddingLeft="0" paddingRight="0"
+  initialize="myInit()"
+  horizontalAlign="left" 
+  >
+  <mx:Script>
+    <![CDATA[
+    private function myInit():void {               
+        // The FlashVars
+        var obj:Object = Application.application.parameters;
+        var item:String;
+
+        for (item in obj) {
+            if (item == "loadsvg") {
+                 mySVGViewer.loadSVGFile(obj[item]);
+            }
+        }
+    }
+    ]]>
+  </mx:Script>
+  <SVGViewer id="mySVGViewer"/>
+</mx:Application>

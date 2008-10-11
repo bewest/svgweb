@@ -1,7 +1,9 @@
+# To use the examples, copy the html, swf, and svg files to your web server directory.
 
-svgviewtest.swf: SVGViewer.as svgviewtest.mxml
-	mxmlc -compiler.source-path ../../../ -- svgviewtest.mxml
+
+svgviewer.swf: SVGViewer.as svgviewer.mxml *.as data/*.as nodes/*.as utils/*.as events/*.as
+	mxmlc -compiler.source-path ../../../ -- svgviewer.mxml
 
 clean:
-	rm svgviewtest.swf
+	rm svgviewer.swf
 
