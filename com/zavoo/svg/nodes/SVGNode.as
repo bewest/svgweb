@@ -127,7 +127,12 @@ package com.zavoo.svg.nodes
                 for each(var style:String in styles) {
                     var styleSet:Array = style.split(':');
                     if (styleSet.length == 2) {
-                        this._style[styleSet[0]] = styleSet[1];
+                        var attrName:String = styleSet[0];
+                        var attrValue:String = styleSet[1];
+                        // Trim leading whitespace.
+                        attrName = attrName.replace(/^\s+/, '');
+                        attrValue = attrValue.replace(/^\s+/, '');
+                        this._style[attrName] = attrValue;
                     }
                 }
             }
