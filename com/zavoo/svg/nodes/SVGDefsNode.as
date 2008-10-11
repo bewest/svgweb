@@ -49,11 +49,16 @@ package com.zavoo.svg.nodes
         }
         
         override protected function registerId(event:Event):void {
+            this.removeEventListener(Event.ADDED, registerId);
+
             for each (var defNode:XML in this._xml.children()) {
                 var id:String = defNode.@id;
                 if (defNode.localName().toString().toLocaleLowerCase() != 'filter') {
                     if (id != "") {
-                        this.svgRoot.registerElement(id, this);
+                        /* XXX need to support different types of def nodes. */
+                        var clipPath:SVGClipPathNode = new SVGClipPathNode(defNode);
+                        this.addChild(clipPath);
+                        this.svgRoot.registerElement(id, clipPath);
                     }
                 }
             }
