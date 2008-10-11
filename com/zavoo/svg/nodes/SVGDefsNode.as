@@ -1,5 +1,6 @@
 /*
 Copyright (c) 2008 James Hight
+Copyright (c) 2008 Richard R. Masters, for his changes.
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
