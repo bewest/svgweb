@@ -1,0 +1,20 @@
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
+  xmlns="com.zavoo.svg.*"
+  width="100%"
+  height="100%"
+  initialize="myInit()"
+  >
+  <mx:Script>
+    <![CDATA[
+
+    private function myInit():void {
+    }
+
+    ]]>
+  </mx:Script>
+
+  <mx:Panel id="panel" width="100%" height="100%" horizontalAlign="center">
+    <SVGViewer id="svgview" borderStyle="solid"/>
+  </mx:Panel>
+
+</mx:Application>
