@@ -34,6 +34,7 @@ package com.zavoo.svg
     import flash.external.ExternalInterface;
     
     import mx.containers.Canvas;
+    import mx.controls.TextArea;
     import flash.net.URLLoader;
     import flash.net.URLRequest;
 
@@ -44,59 +45,163 @@ package com.zavoo.svg
     {
         private var _xml:XML;
         private var _svgRoot:SVGRoot;
-        private var myLoader:URLLoader= new URLLoader ();
+        private var html:String;
+        private var inlineSVGURL:String = "";
+        private var inlineSVGId:String = "";
+        private var myXMLLoader:URLLoader= new URLLoader ();
+        private var myHTMLLoader:URLLoader= new URLLoader ();
         public  var paramsObj:Object;
+        private var debugText:TextArea = null;
         
+        public function setDebugTextArea(debugText:TextArea):void {
+            this.debugText = debugText;
+        }
+        public function debug(debugMessage:String):void {
+            if (this.debugText != null) {
+                this.debugText.text += (debugMessage + "\n");
+            }
+        }
         /**
          * @public
          **/
         public function xmlLoaded(event : Event):void {
-           //var loader:URLLoader = URLLoader(event.target);
+           this.debug("Got xmlLoaded event.");
            var dataXML:XML = XML(event.target.data);
            this.xml = dataXML;
         }
 
-        public function loadSVGFile(svgFilename:String):void {
-            var myXMLURL : URLRequest = new URLRequest (svgFilename);
-            this.myLoader.addEventListener (Event.COMPLETE, xmlLoaded);
+        public function htmlLoaded(event : Event):void {
+           this.debug("Got htmlLoaded event.");
+           this.html = event.target.data;
+           var htmlStrings:Object = this.html.split('\n');
+           var svgString:String="";
+           var svgCopying:Boolean=false;
+           var svgStartString:String= "<!--svgid:"+this.inlineSVGId;
+           var svgEndString:String="<!--/svgid:"+this.inlineSVGId;
+           for (var i:String in htmlStrings) {
+               if (htmlStrings[i].substring(0, svgEndString.length) == svgEndString) {
+                   this.debug("Found end of SVG.");
+                   svgCopying=false;
+               }
+               if (svgCopying) {
+                   svgString += (htmlStrings[i] + "\n");
+               }
+               if (htmlStrings[i].substring(0, svgStartString.length) == svgStartString) {
+                   this.debug("Found start of SVG.");
+                   svgCopying=true;
+               }
+           }
+           /* this.debug(svgString); */
+           var dataXML:XML = XML(svgString);
+           this.xml = dataXML;
+        }
+
+        public function loadSVGURL(mySVGURL:String):void {
+            this.debug("Doing loadSVGURL for this URL: " + mySVGURL);
+            var myXMLURL : URLRequest = new URLRequest (mySVGURL);
+            this.myXMLLoader.addEventListener (Event.COMPLETE, xmlLoaded);
             try
             {
-                this.myLoader.load(myXMLURL);
+                this.myXMLLoader.load(myXMLURL);
             }
             catch (error:ArgumentError)
             {
-                trace("An ArgumentError has occurred.");
+                this.debug("An ArgumentError has occurred.");
             }
             catch (error:SecurityError)
             {
-                trace("A SecurityError has occurred.");
+                this.debug("A SecurityError has occurred.");
+            }
+        }
+
+        public function loadSVGId(inlineSVGURL:String, inlineSVGId:String):void {
+            this.inlineSVGURL = inlineSVGURL;
+            this.inlineSVGId = inlineSVGId;
+        }
+
+        private function addedToStage(event:Event = null):void {
+            var outerthis:SVGViewer = this;
+            this.debug("Got addedToStage event.");
+            var myURL:String = this.root.loaderInfo.loaderURL;
+            if (ExternalInterface.available) {
+                this.debug("External interface may be available.");
+                function js_createFromSVG(svg:String):void {
+                    outerthis.debug("Received createFromSVG() call from javascript.");
+                    var dataXML:XML = XML(svg);
+                    outerthis.xml = dataXML;
+                }
+                function js_loadSVGURL(svg:String):void {
+                    outerthis.debug("Received loadSVGURL() call from javascript.");
+                    loadSVGURL(svg);
+                }
+                try {
+                    ExternalInterface.addCallback("createFromSVG", js_createFromSVG);
+                    ExternalInterface.addCallback("loadSVGURL", js_loadSVGURL);
+                }
+                catch(error:SecurityError) {
+                    this.debug("Security Error on ExternalInterface.addCallback(...).");
+                    if (myURL.substring(0,4) == "file") {
+                        this.debug("This is expected when loaded from a local file.");
+                    }
+                }
+                try {
+                    var result:Object = ExternalInterface.call("receiveFromFlash", myURL);
+                }
+                catch(error:SecurityError) {
+                    this.debug("Security Error on ExternalInterface.call(...).");
+                    if (myURL.substring(0,4) == "file") {
+                        this.debug("This is expected when loaded from a local file.");
+                    }
+                }
+                if (this.inlineSVGURL != "") {
+                    this.debug("Inline URL parameter specified: " + this.inlineSVGURL);
+                    this.debug("The SWF file URL is: " + myURL);
+                    /* If the swf url starts with "file" then we need to use the url retrieval
+                       routines to get the entire html file and then get the svg element.
+                       If the url is http, then javascript would be active and would pass in
+                       svg text directly so there is no need to do this url retrieval here
+                       in that case.
+                    */
+                    if (myURL.substring(0,4) == "file") {
+                        this.debug("Local file, so javascript is not available or in charge.");
+                        this.debug("Need to use URLRequest to load the file.");
+                        var myHTMLURL : URLRequest = new URLRequest (this.inlineSVGURL);
+                        this.myHTMLLoader.addEventListener (Event.COMPLETE, htmlLoaded);
+                        try
+                        {
+                            this.myHTMLLoader.load(myHTMLURL);
+                        }
+                        catch (error:ArgumentError)
+                        {
+                            this.debug("An ArgumentError has occurred.");
+                        }
+                        catch (error:SecurityError)
+                        {
+                            this.debug("A SecurityError has occurred.");
+                        }
+                    }
+                    else {
+                        this.debug("Not a 'file://' type URL, so network and scripting should be");
+                        this.debug("active, so assume javascript is in charge and do nothing.");
+                    }
+                }
+            }
+            else {
+                this.debug("External interface not available.");
+                this.debug("Assuming flashplayer debug mode. Loading default file.");
+                loadSVGURL("pencil.svg");
             }
         }
 
         public function SVGViewer() {
             super();
+            this.addEventListener(Event.ADDED_TO_STAGE, addedToStage);
+
             this._svgRoot = new SVGRoot(null);
             this.rawChildren.addChild(this._svgRoot);
-            var outerthis:SVGViewer = this;
             
             this._svgRoot.addEventListener(Event.RESIZE, sizeCanvas);
 
-            function js_createFromSVG(svg:String):void {
-               var dataXML:XML = XML(svg);
-               outerthis.xml = dataXML;
-            }
-            function js_loadSVGFile(svg:String):void {
-                loadSVGFile(svg);
-            }
-
-            try {
-                ExternalInterface.addCallback("createFromSVG", js_createFromSVG);
-                ExternalInterface.addCallback("loadSVGFile", js_loadSVGFile);
-            }
-            catch(error:SecurityError) {
-            }
-            var jsArgument:String = "loaded";
-            var result:Object = ExternalInterface.call("receiveFromFlash", jsArgument);
         }
         /**
          * @private
