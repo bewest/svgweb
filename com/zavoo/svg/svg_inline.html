@@ -250,8 +250,6 @@
     </embed>
 </object>
 <script>
-// The flash control actionscript calls this on startup.
-// We use this to know the flash control is ready for activity.
 function getFlashMovieObject(movieName)
 {
   if (window.document[movieName]) 
@@ -271,6 +269,8 @@ function getFlashMovieObject(movieName)
     return document.getElementById(movieName);
   }
 }
+// The flash control actionscript calls this on startup.
+// We use this to know the flash control is ready for activity.
 function receiveFromFlash(controlURL) {
     var svgText= document.getElementById('svgsource').innerHTML;
     getFlashMovieObject("mySVGViewerObj").createFromSVG(svgText);
