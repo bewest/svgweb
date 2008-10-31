@@ -30,10 +30,6 @@ package com.zavoo.svg.nodes
     
     public class SVGClipPathNode extends SVGNode
     {    
-        /**
-         * Track changes to xml
-         **/
-        private var _revision:uint = 0;
         
         public function SVGClipPathNode(xml:XML):void {    
             super(xml);
@@ -62,20 +58,5 @@ package com.zavoo.svg.nodes
         }
         
         
-        /**
-         * Increment _revision every time xml is updated
-         **/
-        override public function set xml(xml:XML):void {
-            this._revision++;
-            super.xml = xml;
-        }
-                
-        /**
-         * Current node revision, used for tracking changes
-         **/
-        public function get revision():uint {
-            return this._revision;            
-        }
-                
     }
 }

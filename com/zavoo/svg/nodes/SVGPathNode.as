@@ -108,14 +108,16 @@ package com.zavoo.svg.nodes
                         isAbs = true;
                     case "a":
                         do {
-                            this.ellipticalArc(szSegs[pos++],szSegs[pos++],szSegs[pos++],szSegs[pos++],szSegs[pos++],szSegs[pos++],szSegs[pos++],isAbs);
+                            this.ellipticalArc(szSegs[pos++],szSegs[pos++],szSegs[pos++],
+                                               szSegs[pos++],szSegs[pos++],szSegs[pos++],szSegs[pos++],isAbs);
                         } while (pos < szSegs.length && !isNaN(Number(szSegs[pos])));
                         break;                        
                     case "C":
                         isAbs = true;
                     case "c":
                         do {
-                            this.cubicBezier(szSegs[pos++],szSegs[pos++],szSegs[pos++],szSegs[pos++],szSegs[pos++],szSegs[pos++],isAbs);
+                            this.cubicBezier(szSegs[pos++],szSegs[pos++],szSegs[pos++],
+                                             szSegs[pos++],szSegs[pos++],szSegs[pos++],isAbs);
                         } while (pos < szSegs.length && !isNaN(Number(szSegs[pos])));
                         break;
                     case "S":
@@ -220,7 +222,8 @@ package com.zavoo.svg.nodes
                 y += this.currentY;
             }
                         
-            EllipticalArc.drawArc(rx, ry, xAxisRotation, Boolean(largeArcFlag), Boolean(sweepFlag), x, y, this.currentX, this.currentY, this._graphicsCommands);
+            EllipticalArc.drawArc(rx, ry, xAxisRotation, Boolean(largeArcFlag), Boolean(sweepFlag),
+                                  x, y, this.currentX, this.currentY, this._graphicsCommands);
             
             this.currentX = x;
             this.currentY = y;
@@ -262,7 +265,8 @@ package com.zavoo.svg.nodes
             this.lastCurveControlY = y1;
         }
         
-        private function cubicBezierSmooth(x2:Number, y2:Number, x:Number, y:Number, isAbs:Boolean):void {
+        private function cubicBezierSmooth(x2:Number, y2:Number,
+                                           x:Number, y:Number, isAbs:Boolean):void {
             var x1:Number = this.currentX + (this.currentX - this.lastCurveControlX);
             var y1:Number = this.currentY + (this.currentY - this.lastCurveControlY);
             if (!isAbs)
@@ -277,7 +281,8 @@ package com.zavoo.svg.nodes
             
             this.cubicBezier(x1, y1, x2, y2, x, y, isAbs);
         }
-        private function cubicBezier(x1:Number, y1:Number, x2:Number, y2:Number, x:Number, y:Number, isAbs:Boolean):void {
+        private function cubicBezier(x1:Number, y1:Number, x2:Number, y2:Number,
+                                     x:Number, y:Number, isAbs:Boolean):void {
 
             if (!isAbs) {
                 x1 += this.currentX;

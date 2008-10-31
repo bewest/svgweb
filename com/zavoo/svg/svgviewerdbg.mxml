@@ -6,8 +6,7 @@
   paddingLeft="0" paddingRight="0"
   initialize="myInit()"
   horizontalAlign="left"
-  backgroundColor="#e0ffff"
-  >
+  backgroundColor="#ffffff">
   <mx:Script>
     <![CDATA[
     private function myInit():void {               
@@ -19,8 +18,8 @@
 
         /* Uncomment the next line and debugTextArea at the end to enable
            the debugging screen.
-        mySVGViewer.setDebugTextArea(debugTextArea);
         */
+        mySVGViewer.setDebugTextArea(debugTextArea);
 
         /* Get the SVG source from the parameters */
         for (item in obj) {
@@ -44,7 +43,7 @@
     }
     ]]>
   </mx:Script>
-  <!-- mx:TextArea id="debugTextArea"
-       width="100%" height="20%" backgroundColor="#e0e0ff"/ -->
-  <SVGViewer id="mySVGViewer" width="100%" height="100%" backgroundColor="#e0ffff"/>
+  <SVGViewer id="mySVGViewer" width="100%" height="100%" backgroundColor="#00ff00"/>
+  <mx:TextArea id="debugTextArea"
+       width="1024" height="20%" backgroundColor="#e0ffe0"/>
 </mx:Application>

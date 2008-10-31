@@ -11,6 +11,7 @@ Alternatively, you can use javascript to directly pass it the SVG xml content as
 a string. So, the SVG content can come from anywhere. The svg_inline.html file in
 this directory shows how to put SVG inline with the html.
 
+Alternatives:
 There are also browser plug ins and direct browser support for SVG. However, IE does
 not support SVG and so this control may be used for simple SVG files as a quick and
 dirty alternative, benefiting from the higher installation base that flash enjoys

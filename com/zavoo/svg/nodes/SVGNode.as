@@ -42,7 +42,7 @@ package com.zavoo.svg.nodes
     {    
         public static const attributeList:Array = ['stroke', 'stroke-width', 'stroke-dasharray', 
                                          'stroke-opacity', 'stroke-linecap', 'stroke-linejoin',
-                                         'fill', 'fill-opacity', 'opacity', 
+                                         'fill', 'fill-opacity', 'opacity', 'stop-color', 'stop-opacity',
                                          'font-family', 'font-size', 'letter-spacing', 'filter'];
         
         
@@ -57,7 +57,9 @@ package com.zavoo.svg.nodes
         /**
          * SVG XML for this node
          **/    
+        protected var _originalXML:XML; // used in case xlink:href is applied
         protected var _xml:XML;
+        protected var _revision:int = 0;
     
         /**
          * List of graphics commands to draw node.
@@ -71,15 +73,13 @@ package com.zavoo.svg.nodes
          * Used by getStyle()
          **/
         protected var _style:Object;
-        
+
         /**
          * If true, redraw sprite graphics
          * Set to true on any change to xml
          **/
         protected var _invalidDisplay:Boolean = false;
         
-        protected var _firstRendering:Boolean = true;
-                
         /**
          * Constructor
          *
@@ -142,19 +142,17 @@ package com.zavoo.svg.nodes
             if (xmlList.length() > 0) {
                 var clipPath:String = xmlList[0].toString();
                 clipPath = clipPath.replace(/url\(#(.*?)\)/si,"$1");
+                this.svgRoot.debug("Looking up clip path " + clipPath);
                 var clipPathNode:SVGClipPathNode = this.svgRoot.getElement(clipPath);
                 if (clipPathNode != null) {                    
+                    this.svgRoot.debug("Adding clip path mask" + clipPath);
                     this.addMask(clipPathNode);
                 }                
             }
             
-            //If there is not a transform attribute see if we can load the placement values,
-            //Don't load both transform and placement values
-            //if (this.getAttribute('transform') == null) {                
-                this.loadAttribute('x');    
-                this.loadAttribute('y');
-                this.loadAttribute('rotate', 'rotation');
-            //}    
+            this.loadAttribute('x');    
+            this.loadAttribute('y');
+            this.loadAttribute('rotate', 'rotation');
             
             this.loadStyle('opacity', 'alpha');            
                                 
@@ -177,6 +175,56 @@ package com.zavoo.svg.nodes
             this.mask = svgMask;
         }
         
+
+
+        protected function parseMatrix(trans:String):Matrix {
+            if (trans != null) {
+                var transArray:Array = trans.match(/\S+\(.*?\)/sg);
+                for each(var tran:String in transArray) {
+                    var tranArray:Array = tran.split('(',2);
+                    if (tranArray.length == 2)
+                    {                        
+                        var command:String = String(tranArray[0]);
+                        var args:String = String(tranArray[1]);
+                        args = args.replace(')','');
+                        var argsArray:Array = args.split(/[, ]/);
+                        
+                        var nodeMatrix:Matrix;
+                        switch (command) {
+                            case "matrix":
+                                if (argsArray.length == 6) {
+                                    nodeMatrix = new Matrix();
+                                    nodeMatrix.a = argsArray[0];
+                                    nodeMatrix.b = argsArray[1];
+                                    nodeMatrix.c = argsArray[2];
+                                    nodeMatrix.d = argsArray[3];
+                                    nodeMatrix.tx = argsArray[4];
+                                    nodeMatrix.ty = argsArray[5];
+                                    return nodeMatrix;
+                                }
+                                break;
+                            case "translate":
+                                if (argsArray.length == 1) {
+                                    nodeMatrix = new Matrix();
+                                    nodeMatrix.tx = SVGColors.cleanNumber(argsArray[0])
+                                    return nodeMatrix;
+                                }
+                                else if (argsArray.length == 2) {
+                                    nodeMatrix = new Matrix();
+                                    nodeMatrix.tx = SVGColors.cleanNumber(argsArray[0])
+                                    nodeMatrix.ty = SVGColors.cleanNumber(argsArray[1])
+                                    return nodeMatrix;
+                                }
+                                break;
+                                
+                            default:
+                                this.svgRoot.debug('Unknown Transformation: ' + command);
+                        }
+                    }
+                }                
+            }
+            return null;
+        }
             
         /** 
          * Perform transformations defined by the transform attribute 
@@ -306,21 +354,29 @@ package com.zavoo.svg.nodes
          **/
         protected function nodeBeginFill():void {
             //Fill
-            var fill_alpha:Number;
-            var fill_color:Number
+            var fill_alpha:Number = 0;
+            var fill_color:Number = 0;
             
             var fill:String = this.getStyle('fill');
-            if ((fill == 'none') || (fill == '')) {
-                fill_alpha = 0;
-                fill_color = 0;
-            }            
-            else {            
-                fill_alpha = SVGColors.cleanNumber(this.getStyle('fill-opacity'));
-                fill_color = SVGColors.getColor((fill));
-                this.graphics.beginFill(fill_color, fill_alpha);
+            if ((fill != 'none') && (fill != '')) {
+                var matches:Array = fill.match(/url\(#([^\)]+)\)/si);
+                if (matches != null && matches.length > 0) {
+                    var fillName:String = matches[1];
+                    var fillNode:SVGNode = this.svgRoot.getElement(fillName);
+                    if (fillNode is SVGLinearGradient) {
+                         SVGLinearGradient(fillNode).beginGradientFill(this, this.graphics);
+                    }
+                    if (fillNode is SVGRadialGradient) {
+                         //this.svgRoot.debug("doing radial gradiant");
+                         SVGRadialGradient(fillNode).beginGradientFill(this, this.graphics);
+                    }
+                }            
+                else {            
+                    fill_alpha = SVGColors.cleanNumber(this.getStyle('fill-opacity'));
+                    fill_color = SVGColors.getColor((fill));
+                    this.graphics.beginFill(fill_color, fill_alpha);
+                }
             }
-            
-            
             
             //Stroke
             var line_color:Number;
@@ -457,6 +513,8 @@ package com.zavoo.svg.nodes
          * This handles creation of child nodes.
          **/
         protected function parse():void {
+
+            this.refreshHref();
             
             for each (var childXML:XML in this._xml.children()) {    
                     
@@ -465,51 +523,53 @@ package com.zavoo.svg.nodes
                 if (childXML.nodeKind() == 'element') {
                     
                     nodeName = nodeName.toLowerCase();
-                    
-                    var validNode:Boolean = true;
+                    var childNode:SVGNode = null;
                     
                     switch(nodeName) {
                         case "animate":
-                            this.addChild(new SVGAnimateNode(childXML));
+                            childNode = new SVGAnimateNode(childXML);
                             break;    
                         case "animatemotion":
-                            this.addChild(new SVGAnimateMotionNode(childXML));
+                            childNode = new SVGAnimateMotionNode(childXML);
                             break;    
                         case "animatecolor":
-                            this.addChild(new SVGAnimateColorNode(childXML));
+                            childNode = new SVGAnimateColorNode(childXML);
                             break;    
                         case "animatetransform":
-                            this.addChild(new SVGAnimateTransformNode(childXML));
+                            childNode = new SVGAnimateTransformNode(childXML);
                             break;    
                         case "circle":
-                            this.addChild(new SVGCircleNode(childXML));
+                            childNode = new SVGCircleNode(childXML);
                             break;        
                         case "clippath":
-                            this.addChild(new SVGClipPathNode(childXML));
+                            childNode = new SVGClipPathNode(childXML);
                             break;
                         case "desc":
                             //Do Nothing
                             break;
                         case "defs":
-                            this.addChild(new SVGDefsNode(childXML));
+                            childNode = new SVGDefsNode(childXML);
                             break;
                         case "ellipse":
-                            this.addChild(new SVGEllipseNode(childXML));
+                            childNode = new SVGEllipseNode(childXML);
                             break;
                         case "filter":
-                            this.addChild(new SVGFilterNode(childXML));
+                            childNode = new SVGFilterNode(childXML);
                             break;
                         case "g":                        
-                            this.addChild(new SVGGroupNode(childXML));
+                            childNode = new SVGGroupNode(childXML);
                             break;
                         case "image":                        
-                            this.addChild(new SVGImageNode(childXML));
+                            childNode = new SVGImageNode(childXML);
                             break;
                         case "line": 
-                            this.addChild(new SVGLineNode(childXML));
+                            childNode = new SVGLineNode(childXML);
+                            break;    
+                        case "lineargradient": 
+                            childNode = new SVGLinearGradient(childXML);
                             break;    
                         case "mask":
-                            this.addChild(new SVGMaskNode(childXML));
+                            childNode = new SVGMaskNode(childXML);
                             break;                        
                         case "metadata":
                             //Do Nothing
@@ -518,46 +578,54 @@ package com.zavoo.svg.nodes
                             //Add Handling 
                             break;                            
                         case "polygon":
-                            this.addChild(new SVGPolygonNode(childXML));
+                            childNode = new SVGPolygonNode(childXML);
                             break;
                         case "polyline":
-                            this.addChild(new SVGPolylineNode(childXML));
+                            childNode = new SVGPolylineNode(childXML);
                             break;
                         case "path":                        
-                            this.addChild(new SVGPathNode(childXML));
+                            //this.svgRoot.debug("Creating path: " + childXML.@id + " for " + this.xml.@id);
+                            childNode = new SVGPathNode(childXML);
                             break;
+                        case "radialgradient": 
+                            childNode = new SVGRadialGradient(childXML);
+                            break;    
                         case "rect":
-                            this.addChild(new SVGRectNode(childXML));
+                            childNode = new SVGRectNode(childXML);
                             break;
                         case "set":
-                            this.addChild(new SVGSetNode(childXML));
+                            childNode = new SVGSetNode(childXML);
+                            break;
+                        case "stop":
+                            childNode = new SVGGradientStop(childXML);            
                             break;
                         case "symbol":
-                            this.addChild(new SVGSymbolNode(childXML));
+                            childNode = new SVGSymbolNode(childXML);
                             break;                        
                         case "text":    
-                            this.addChild(new SVGTextNode(childXML));
+                            childNode = new SVGTextNode(childXML);
                             break; 
                         case "title":    
-                            this.addChild(new SVGTitleNode(childXML));
+                            childNode = new SVGTitleNode(childXML);
                             break; 
                         case "tspan":                        
-                            this.addChild(new SVGTspanNode(childXML));
+                            childNode = new SVGTspanNode(childXML);
                             break; 
                         case "use":
-                            this.addChild(new SVGUseNode(childXML));
+                            childNode = new SVGUseNode(childXML);
                             break;
-                            
                         case "null":
                             break;
                             
                         default:
                             trace("Unknown Element: " + nodeName);
                             break;    
-                    }    
-                    
-                }                
-            }            
+                    }
+                    if (childNode != null) {
+                        this.addChild(childNode);
+                    }
+                }
+            }
         }
         
         /**
@@ -624,44 +692,47 @@ package com.zavoo.svg.nodes
             }            
         }
         
+        public function doRedrawNow():void {
+            this.redrawNode(null);
+        }
+
         /**
          * Triggers on ENTER_FRAME event
          * Redraws node graphics if _invalidDisplay == true
          **/
         protected function redrawNode(event:Event):void {
+            //this.svgRoot.debug("redrawNode" + this.toString());
             if (this.parent == null) {
                 return;
-            }        
+            }
             
             if (this._invalidDisplay) {                
                 if (this._xml != null) {    
                 
-                    //this.clearChildren();
                     this.graphics.clear();        
                     
                     if (this.numChildren == 0) {
                         this.parse();                        
+                    }
+                    else {
+                        this.svgRoot.debug("CHILDREN STILL HERE?");
                     }
                     
                     this.x = 0;
                     this.y = 0;
                     
                     this.setAttributes();                        
-                    this.generateGraphicsCommands();    
-                    this.transformNode();        
-                    this.draw();    
-                    
-                    this.setupFilters();                                
+                    if (!this.isChildOfDef()) {
+                        this.generateGraphicsCommands();    
+                        this.transformNode();        
+                        this.draw();    
+                        this.setupFilters();                                
+                    }
                 }
                 
                 this._invalidDisplay = false;
                 this.removeEventListener(Event.ENTER_FRAME, redrawNode);        
                 
-                
-                if (!(this is SVGRoot)) {
-                    this.svgRoot.invalidNodeCount--;
-                }
-                                    
             }
         }
         
@@ -669,11 +740,6 @@ package com.zavoo.svg.nodes
          * Track nodes as they are added so we know when to send the RENDER_DONE event
          **/
         override public function addChild(child:DisplayObject):DisplayObject {
-            
-            if (child is SVGNode) {                
-                this.svgRoot.invalidNodeCount++;
-            }
-            
             super.addChild(child);    
             return child;
         }
@@ -700,41 +766,69 @@ package com.zavoo.svg.nodes
         //Getters / Setters
         
         /**
-         * Recursively searches for the root node
-         * 
          * @return Root SVG node
          **/ 
         public function get svgRoot():SVGRoot {
             if (this._svgRoot == null) {
-                if (this is SVGRoot) {
-                    this._svgRoot = SVGRoot(this);
-                }            
-                if (this.parent is SVGRoot) {
-                    this._svgRoot = SVGRoot(this.parent);
+                var node:SVGNode = this;
+                while (!(node is SVGRoot)) {
+                    node=SVGNode(node.parent);
                 }
-                else if (this.parent != null) {
-                    if (this.parent is SVGNode) {
-                        this._svgRoot = SVGNode(this.parent).svgRoot;
-                    }
-                }
+                this._svgRoot=SVGRoot(node);
             }
             return this._svgRoot;
         }
+
+        /**
+         * @return is child of definition? they are not drawn.
+         **/ 
+        public function isChildOfDef():Boolean {
+            var node:SVGNode = this;
+            while (!(node is SVGRoot)) {
+                node=SVGNode(node.parent);
+                if (node is SVGDefsNode)
+                    return true;
+            }
+            return false;
+        }
+
+        public function get invalidDisplay():Boolean {
+            return this._invalidDisplay;
+        }
             
         /** 
-         * @private 
+         *
         **/        
         public function set xml(xml:XML):void {        
+            this._originalXML = xml.copy();
             this._xml = xml;
+            this._revision++;
             this.invalidateDisplay();
         }
         
         /**
-         * SVG XML
+         *
          **/
         public function get xml():XML {
             return this._xml;
         }
+
+        /**
+         *
+         **/
+        public function get id():String {
+            var id:String = this._xml.@id;
+            return id;
+        }
+
+        /** 
+         *
+        **/        
+        public function get revision():int {        
+            return this._revision;
+        }
+        
+
 
         /** 
          * @private
@@ -759,7 +853,6 @@ package com.zavoo.svg.nodes
         
         /**
          * Set node style to new value
-         * Updates SVG XML and then calls refreshGraphis()
          * 
          * @param name Name of style
          * @param value New value for style
@@ -807,5 +900,57 @@ package com.zavoo.svg.nodes
             
         }
         
+        /**
+         * xlink:href base handling
+         **/
+        protected var _href:SVGNode; 
+        protected var _hrefRevision:int = -1;
+
+        /**
+         * Load _href content and then append/replace back original content
+         **/
+        public function refreshHref():void {
+            /**
+             * If _href revision has changed, copy xml over
+             **/
+            if (this._href == null) {
+                var href:String = this._xml.@xlink::href;
+                if (href != null) {
+                    href = href.replace(/^#/,'');
+                    this._href = this.svgRoot.getElement(href);
+                }
+
+            }
+            if (this._href != null
+                && (this._href.revision != this._hrefRevision)) {
+                //this.svgRoot.debug("Doing href refresh of " + this._xml.@xlink::href + " for " + this._xml.@id); 
+                /**
+                 * The call makes this refresh recursive
+                 **/
+                this._href.refreshHref();
+
+                /**
+                 * Copy the href
+                 **/
+                for each(var node:XML in this._href.xml.children()) {
+                    this.xml.appendChild(node.copy());
+                }
+                for each( var attr:XML in this._href.xml.attributes() ) {
+                    this.xml.@[attr.name()] = attr.toString();
+                }
+                /**
+                 * And replace the previous attributes since they have
+                 * precedence over referenced xml.
+                 **/
+                for each( var myattr:XML in this._originalXML.attributes() ) {
+                    this.xml.@[myattr.name()] = myattr.toString();
+                }
+
+
+
+                this._hrefRevision = this._href._revision;
+                this._revision++;
+            }
+        }
     }
 }

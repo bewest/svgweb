@@ -26,28 +26,35 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 package com.zavoo.svg.nodes
 {
-    import flash.events.Event;
     
-    /** 
-     * Contains drawing instructions used by SVGUseNode
-     * It is not rendered directly
-     **/
-    public class SVGDefsNode extends SVGNode
-    {
-        
-        public function SVGDefsNode(xml:XML):void {
+    public class SVGGradientStop extends SVGNode
+    {                
+        public function SVGGradientStop(xml:XML):void {
             super(xml);
-        }        
-                
+        }    
+        
+        /**
+         * Override parent function to do nothing
+         **/
+        protected override function parse():void {
+            //Do Nothing
+        }
+        
+        /**
+         * Override parent function to do nothing
+         **/
         override protected function draw():void {
             //Do Nothing
         }
         
+        /**
+         * Override parent function to do nothing except create a blank _graphicsCommands array
+         **/
         override protected function generateGraphicsCommands():void {
-            this._graphicsCommands = new Array();
             //Do Nothing
+            this._graphicsCommands = new  Array();
         }
         
-
+        
     }
 }

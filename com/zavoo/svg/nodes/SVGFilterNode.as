@@ -57,7 +57,7 @@ package com.zavoo.svg.nodes
                     stdDeviation = '4';
                 }
                 var blurAmount:Number = SVGColors.cleanNumber(stdDeviation);
-                nodeFilters.push(new BlurFilter(blurAmount, blurAmount));
+                nodeFilters.push(new BlurFilter(blurAmount, blurAmount, 10));
             }    
             
             return nodeFilters;

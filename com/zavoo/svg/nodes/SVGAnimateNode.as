@@ -66,6 +66,8 @@ package com.zavoo.svg.nodes
         }    
         
         override protected function draw():void {        
+            if (isChildOfDef())
+                return;
                         
             this._field = this.getAttribute('attributeName');
                         

@@ -27,7 +27,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 package com.zavoo.svg.nodes
 {
     import com.zavoo.svg.data.SVGColors;
-    import com.zavoo.svg.events.SVGEvent;
     
     import flash.display.Shape;
     import flash.events.Event;
@@ -56,10 +55,7 @@ package com.zavoo.svg.nodes
         private var _width:Number;
         private var _height:Number;
         
-        /**
-         * Used to track number of nodes that need to be rendered
-         **/
-        private var _invalidNodeCount:uint = 0;
+        public var debug:Object;
                 
         public function SVGRoot(xml:XML = null):void {
             super(XML(xml));
@@ -108,6 +104,7 @@ package com.zavoo.svg.nodes
          * @param node node to be registered
          **/
         public function registerElement(id:String, node:*):void {    
+            //this.svgRoot.debug("Registering: " + id);
             if (this._elementById[id] == undefined) {                        
                 this._elementById[id] = node;
             }            
@@ -263,20 +260,6 @@ package com.zavoo.svg.nodes
             //Do nothing
         }
         
-        
-        public function set invalidNodeCount(value:int):void {
-            if (value < 0) {
-                trace('Something is wrong with the invalid node counter! It has a value of ' + value.toString() + '!');
-            }
-            this._invalidNodeCount = value;
-            if (value == 0) {
-                this.dispatchEvent(new SVGEvent(SVGEvent.RENDER_FINISHED, true));
-            }
-        }
-        
-        public function get invalidNodeCount():int {
-            return this._invalidNodeCount;
-        }    
         
     }
 }

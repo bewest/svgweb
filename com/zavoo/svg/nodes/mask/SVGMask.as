@@ -11,7 +11,6 @@ package com.zavoo.svg.nodes.mask
      **/
     public class SVGMask extends SVGNode
     {
-        private var _revision:uint = 0;
         private var _clipPath:SVGClipPathNode;
         
         

@@ -199,6 +199,7 @@ package com.zavoo.svg
             this.addEventListener(Event.ADDED_TO_STAGE, addedToStage);
 
             this._svgRoot = new SVGRoot(null);
+            this._svgRoot.debug = this.debug;
             this.rawChildren.addChild(this._svgRoot);
             
             this._svgRoot.addEventListener(Event.RESIZE, sizeCanvas);
