@@ -154,6 +154,48 @@ package com.zavoo.svg.nodes
         }
  
 
+        public function overwriteStyles(baseStylesStr:String, newStylesStr:String):String {
+
+            var mergedStyles:Object = new Object();
+            var mergedStylesStr:String = "";
+            var styleSet:Array;
+            var attrName:String;
+            var attrValue:String;
+            var style:String;
+
+            var baseStyles:Array = baseStylesStr.split(';');
+            for each(style in baseStyles) {
+                styleSet = style.split(':');
+                if (styleSet.length == 2) {
+                    attrName = styleSet[0];
+                    attrValue = styleSet[1];
+                    // Trim leading whitespace.
+                    attrName = attrName.replace(/^\s+/, '');
+                    attrValue = attrValue.replace(/^\s+/, '');
+                    mergedStyles[attrName] = attrValue;
+                }
+            }
+
+            var newStyles:Array = newStylesStr.split(';');
+            for each(style in newStyles) {
+                styleSet = style.split(':');
+                if (styleSet.length == 2) {
+                    attrName = styleSet[0];
+                    attrValue = styleSet[1];
+                    // Trim leading whitespace.
+                    attrName = attrName.replace(/^\s+/, '');
+                    attrValue = attrValue.replace(/^\s+/, '');
+                    mergedStyles[attrName] = attrValue;
+                }
+            }
+
+            for (attrName in mergedStyles) {
+                mergedStylesStr = mergedStylesStr + attrName + ":" + mergedStyles[attrName] + ";";
+            }
+            return mergedStylesStr;
+        }
+            
+
         protected function parseMatrix(trans:String):Matrix {
             if (trans != null) {
                 var transArray:Array = trans.match(/\S+\(.*?\)/sg);

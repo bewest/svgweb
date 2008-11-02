@@ -63,14 +63,24 @@ package com.zavoo.svg.nodes
                     // For each of the <use> attributes, overwrite the child attribute
                     // because <use> attributes have precedence over the referenced object.
                     for each( var attr:XML in this.xml.attributes() ) {
-                        if (attr.name() != "id") {
+                        if (attr.name() != "id" && attr.name() != "style") {
                             child.@[attr.name()] = attr.toString();
+                        }
+                        if (attr.name() == "style") {
+                            if (child.@style) {
+                                //  mergedStyles = overwriteStyles(baseStyles, newStyles)
+                                child.@style = this.overwriteStyles(child.@style, this._xml.@style);
+                            }
+                            else {
+                                child.@style = this._xml.@style;
+                            }
                         }
                     }
 
                     // Create a unique id for the child since we copied another object.
                     // xxx should walk the entire child subtree here, creating unique ids.
                     child.@id = this._xml.@id + "." + child.@id;
+
 
                     this.xml.setChildren(child);
 
