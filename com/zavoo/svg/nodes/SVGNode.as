@@ -262,6 +262,7 @@ package com.zavoo.svg.nodes
                         var command:String = String(tranArray[0]);
                         var args:String = String(tranArray[1]);
                         args = args.replace(')','');
+                        args = args.replace(/ /g, '');
                         var argsArray:Array = args.split(/[, ]/);
                         
                         switch (command) {
@@ -361,10 +362,10 @@ package com.zavoo.svg.nodes
          * Clear current graphics and call runGraphicsCommands to render SVG element 
          **/
         protected function draw():void {
-            this.svgRoot.debug("drawing " + this._xml.@id);
+            //this.svgRoot.debug("drawing " + this._xml.@id);
             this.graphics.clear();            
             this.runGraphicsCommands();
-            this.svgRoot.debug("done drawing " + this._xml.@id);
+            //this.svgRoot.debug("done drawing " + this._xml.@id);
             
         }
                 
@@ -453,11 +454,9 @@ package com.zavoo.svg.nodes
                     var strokeName:String = strokeMatches[1];
                     var strokeNode:SVGNode = this.svgRoot.getElement(strokeName);
                     if (strokeNode is SVGLinearGradient) {
-                         this.svgRoot.debug("doing linear gradiant STROKE");
                          SVGLinearGradient(strokeNode).lineGradientStyle(this, this.graphics, line_alpha);
                     }
                     if (strokeNode is SVGRadialGradient) {
-                         this.svgRoot.debug("doing radial gradiant STROKE");
                          SVGRadialGradient(strokeNode).lineGradientStyle(this, this.graphics, line_alpha);
                     }
                 }            
@@ -542,7 +541,7 @@ package com.zavoo.svg.nodes
             
             var id:String = this._xml.@id;
             if (id != "") {
-                this.svgRoot.debug("registering " + id);
+                //this.svgRoot.debug("registering " + id);
                 this.svgRoot.registerElement(id, this);
             }
                         
@@ -576,10 +575,8 @@ package com.zavoo.svg.nodes
                         if (xmlList.length() > 0) {
                             var clipPath:String = xmlList[0].toString();
                             clipPath = clipPath.replace(/url\(#(.*?)\)/si,"$1");
-                            this.svgRoot.debug("Looking up clip path " + clipPath);
                             var clipPathNode:SVGClipPathNode = this.svgRoot.getElement(clipPath);
                             if (clipPathNode) {
-                                this.svgRoot.debug("Creating SVGMaskedNode for " + childNode.xml.@id);
                                 childNode = new SVGMaskedNode(childXML, clipPath);
                             }
                         }
@@ -655,7 +652,6 @@ package com.zavoo.svg.nodes
                     childNode = new SVGPolylineNode(childXML);
                     break;
                 case "path":                        
-                    //this.svgRoot.debug("Creating path: " + childXML.@id + " for " + this.xml.@id);
                     childNode = new SVGPathNode(childXML);
                     break;
                 case "radialgradient": 
@@ -705,7 +701,6 @@ package com.zavoo.svg.nodes
          * @return Value of style or null if it is not found
          **/
         public function getStyle(name:String):String {
-            this.svgRoot.debug("get style " + name + " for " + this._xml.@id);
 
             if (this.getSVGMaskAncestor() != null  || (this is SVGMaskedNode)) {
                 if ((name == 'opacity') 
@@ -724,7 +719,7 @@ package com.zavoo.svg.nodes
                 }
 
                 if (name == 'filter') {
-                    this.svgRoot.debug("Returning null filter for SVGMask child.");
+                    //this.svgRoot.debug("Returning null filter for SVGMask child.");
                     return null;
                 }
             }
@@ -799,7 +794,7 @@ package com.zavoo.svg.nodes
             }
             
             if (this._invalidDisplay) {                
-                this.svgRoot.debug("redrawNode " + this.xml.@id);
+                //this.svgRoot.debug("redrawNode " + this.xml.@id);
                 if (this._xml != null) {    
                 
                     this.graphics.clear();        
@@ -1047,7 +1042,18 @@ package com.zavoo.svg.nodes
                  * precedence over referenced xml.
                  **/
                 for each( var myattr:XML in this._originalXML.attributes() ) {
-                    this.xml.@[myattr.name()] = myattr.toString();
+                    if (myattr.name()  != "style") {
+                        this.xml.@[myattr.name()] = myattr.toString();
+                    }
+                    else {
+                        if (this.xml.@style) {
+                            //  mergedStyles = overwriteStyles(baseStyles, newStyles)
+                            this.xml.@style = this.overwriteStyles(this.xml.@style, myattr.toString);
+                        }
+                        else {
+                            this.xml.@style = myattr.toString;
+                        }
+                    }
                 }
 
 

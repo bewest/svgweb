@@ -53,6 +53,9 @@ package com.zavoo.svg.nodes.mask
             if (clipPathNode) {
                 this._svgMask = new SVGMask(clipPathNode);
                 if (this._svgMask) {
+                    if (this._childToMaskXML.@transform) {
+                        this._svgMask.xml.@transform = this._childToMaskXML.@transform;
+                    }
                     this.addChild(this._svgMask);
                 }
             }
@@ -65,6 +68,10 @@ package com.zavoo.svg.nodes.mask
 
         override protected function setupFilters():void {
         }
+
+        override protected function transformNode():void {
+        }
+
 
         override protected function generateGraphicsCommands():void {
             //Do Nothing

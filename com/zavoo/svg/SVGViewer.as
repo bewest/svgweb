@@ -74,13 +74,13 @@ package com.zavoo.svg
          * @public
          **/
         public function xmlLoaded(event : Event):void {
-           this.debug("Got xmlLoaded event.");
+           //this.debug("Got xmlLoaded event.");
            var dataXML:XML = XML(event.target.data);
            this.xml = dataXML;
         }
 
         public function htmlLoaded(event : Event):void {
-           this.debug("Got htmlLoaded event.");
+           //this.debug("Got htmlLoaded event.");
            this.html = event.target.data;
            var htmlStrings:Object = this.html.split('\n');
            var svgString:String="";
@@ -130,7 +130,7 @@ package com.zavoo.svg
 
         private function addedToStage(event:Event = null):void {
             var outerthis:SVGViewer = this;
-            this.debug("Got addedToStage event.");
+            //this.debug("Got addedToStage event.");
             var myURL:String = this.root.loaderInfo.loaderURL;
             if (ExternalInterface.available) {
                 this.debug("External interface may be available.");
@@ -143,24 +143,27 @@ package com.zavoo.svg
                     outerthis.debug("Received loadSVGURL() call from javascript.");
                     loadSVGURL(svg);
                 }
+                var debugstr:String;
                 try {
                     ExternalInterface.addCallback("createFromSVG", js_createFromSVG);
                     ExternalInterface.addCallback("loadSVGURL", js_loadSVGURL);
                 }
                 catch(error:SecurityError) {
-                    this.debug("Security Error on ExternalInterface.addCallback(...).");
+                    debugstr = "Security Error on ExternalInterface.addCallback(...). ";
                     if (myURL.substring(0,4) == "file") {
-                        this.debug("This is expected when loaded from a local file.");
+                        debugstr += "This is expected when loaded from a local file.";
                     }
+                    this.debug(debugstr);
                 }
                 try {
                     var result:Object = ExternalInterface.call("receiveFromFlash", myURL);
                 }
                 catch(error:SecurityError) {
-                    this.debug("Security Error on ExternalInterface.call(...).");
+                    debugstr = "Security Error on ExternalInterface.call(...). ";
                     if (myURL.substring(0,4) == "file") {
-                        this.debug("This is expected when loaded from a local file.");
+                        debugstr += "This is expected when loaded from a local file.";
                     }
+                    this.debug(debugstr);
                 }
                 if (this.inlineSVGURL != "") {
                     this.debug("Inline URL parameter specified: " + this.inlineSVGURL);
