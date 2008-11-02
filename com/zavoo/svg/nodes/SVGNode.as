@@ -400,8 +400,26 @@ package com.zavoo.svg.nodes
             if (miterLimit == null) {
                 miterLimit = '4';
             }
+
             
-            this.graphics.lineStyle(line_width, line_color, line_alpha, false, LineScaleMode.NORMAL, capsStyle, jointStyle, SVGColors.cleanNumber(miterLimit));
+            this.graphics.lineStyle(line_width, line_color, line_alpha, false, LineScaleMode.NORMAL,
+                                    capsStyle, jointStyle, SVGColors.cleanNumber(miterLimit));
+
+            if ((stroke != 'none') && (stroke != '')) {
+                var strokeMatches:Array = stroke.match(/url\(#([^\)]+)\)/si);
+                if (strokeMatches != null && strokeMatches.length > 0) {
+                    var strokeName:String = strokeMatches[1];
+                    var strokeNode:SVGNode = this.svgRoot.getElement(strokeName);
+                    if (strokeNode is SVGLinearGradient) {
+                         this.svgRoot.debug("doing linear gradiant STROKE");
+                         SVGLinearGradient(strokeNode).lineGradientStyle(this, this.graphics, line_alpha);
+                    }
+                    if (strokeNode is SVGRadialGradient) {
+                         this.svgRoot.debug("doing radial gradiant STROKE");
+                         SVGRadialGradient(strokeNode).lineGradientStyle(this, this.graphics, line_alpha);
+                    }
+                }            
+            }
                     
         }
         
