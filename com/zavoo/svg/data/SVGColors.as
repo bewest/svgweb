@@ -218,16 +218,27 @@ package com.zavoo.svg.data
          * @return Numeric value of color
          **/
         static public function getColor(color:String):Number {
+            var r:int = 0;
+            var g:int = 0;
+            var b:int = 0;
+
             if (color != null) {            
                 if(color.match(/^#/)) {
+                    // #456 is short for #445566
+                    if (color.length == 4) {
+                        var rval:String, gval:String, bval:String;
+                        rval = color.substring(1,1) + color.substring(1,1);
+                        gval = color.substring(2,1) + color.substring(2,1);
+                        bval = color.substring(3,1) + color.substring(3,1);
+                        color = "#" + rval + gval + bval;
+                    /*
+                    */
+                    }
                     color = color.replace('#', '0x');
                     return parseInt(color);
                 }
                 else if(color.indexOf("rgb") != -1){
                     var str:Array = color.replace(/\s|rgb\(|\)/g, "").split(",");
-                       var r:int = 0;
-                       var g:int = 0;
-                       var b:int = 0;
                     if (str[0].match(/%/)) {
                         str[0]=str[0].replace(/%/g, "");
                         r = str[0];

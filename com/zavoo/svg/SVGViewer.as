@@ -59,6 +59,14 @@ package com.zavoo.svg
         }
         public function debug(debugMessage:String):void {
             if (this.debugText != null) {
+            /*
+                if (  (debugMessage.indexOf("linear") != -1)
+                   || (debugMessage.indexOf("radial") != -1) 
+                   || (debugMessage.indexOf("filter") != -1) 
+                   || (debugMessage.indexOf("style") != -1) 
+                   || (debugMessage.indexOf("stop") != -1)  )
+                   return;
+            */
                 this.debugText.text += (debugMessage + "\n");
             }
         }

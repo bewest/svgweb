@@ -38,16 +38,10 @@ package com.zavoo.svg.nodes
         /**
          * Override parent function to do nothing
          **/
-        protected override function parse():void {
-            //Do Nothing
-        }
-        
-        /**
-         * Override parent function to do nothing
-         **/
         override protected function draw():void {
             //Do Nothing
         }
+
         
         /**
          * Override parent function to do nothing except create a blank _graphicsCommands array

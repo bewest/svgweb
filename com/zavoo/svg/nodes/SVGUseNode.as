@@ -33,6 +33,7 @@ package com.zavoo.svg.nodes
             super(xml);
         }    
 
+        // XXX remove these?
         override protected function transformNode():void {
         }    
         override protected function setupFilters():void {
@@ -55,17 +56,22 @@ package com.zavoo.svg.nodes
                 this._href.refreshHref();
 
                 if (this._href.revision != this._hrefRevision) {
+
+                    // Create a child to hold a copy of the referenced object.
                     var child:XML = this._href.xml.copy();
-                    // Replace the <use> attributes since they have
-                    // precedence over referenced xml.
+
+                    // For each of the <use> attributes, overwrite the child attribute
+                    // because <use> attributes have precedence over the referenced object.
                     for each( var attr:XML in this.xml.attributes() ) {
-                        if (attr.name() == "id") {
-                            child.@id = this._xml.@id + "." + child.@id;
-                        }
-                        else {
+                        if (attr.name() != "id") {
                             child.@[attr.name()] = attr.toString();
                         }
                     }
+
+                    // Create a unique id for the child since we copied another object.
+                    // xxx should walk the entire child subtree here, creating unique ids.
+                    child.@id = this._xml.@id + "." + child.@id;
+
                     this.xml.setChildren(child);
 
                     this._hrefRevision = this._href.revision;

@@ -91,6 +91,8 @@ package com.zavoo.svg.nodes
                 r = Number(this.xml.@r);
             }
 
+/*
+
             var x2:Number = cx - r;
             var x1:Number = cx + r;
             var y2:Number = cy - r;
@@ -131,9 +133,17 @@ package com.zavoo.svg.nodes
             matr.scale(sx, sy);
             matr.rotate(angle);
             matr.translate(tx, ty);
+*/
 
-            if (matrGrTr != null)
+            // XXX Assume no rotation and focal center == gradient box center
+            var matr:Matrix= new Matrix();
+            matr.createGradientBox(r*2, r*2, 0, 0, 0);
+            matr.tx = cx;
+            matr.ty = cy;
+
+            if (matrGrTr != null) {
                 matr.concat(matrGrTr);
+            }
 
 
             var spreadMethod:String = SpreadMethod.PAD;
