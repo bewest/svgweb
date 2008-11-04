@@ -58,7 +58,10 @@ package com.zavoo.svg.nodes
                     var color:Number = SVGColors.getColor(stop.getStyle('stop-color'));
                     colors.push(color);
 
-                    var alpha:Number = SVGColors.cleanNumber(stop.getStyle('stop-opacity'));
+                    var stopOpacity:String = stop.getStyle('stop-opacity');
+                    if (stopOpacity == null)
+                        stopOpacity="1";
+                    var alpha:Number = SVGColors.cleanNumber(stopOpacity);
                     alphas.push(alpha);
 
                     var ratio:Number = SVGColors.cleanNumber(stop.xml.@offset);
@@ -154,7 +157,10 @@ package com.zavoo.svg.nodes
                     var color:Number = SVGColors.getColor(stop.getStyle('stop-color'));
                     colors.push(color);
 
-                    var alpha:Number = SVGColors.cleanNumber(stop.getStyle('stop-opacity'));
+                    var stopOpacity:String = stop.getStyle('stop-opacity');
+                    if (stopOpacity == null)
+                        stopOpacity="1";
+                    var alpha:Number = SVGColors.cleanNumber(stopOpacity);
                     alpha = alpha * line_alpha;
                     alphas.push(alpha);
 

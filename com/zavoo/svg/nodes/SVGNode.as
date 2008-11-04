@@ -206,7 +206,8 @@ package com.zavoo.svg.nodes
                         var command:String = String(tranArray[0]);
                         var args:String = String(tranArray[1]);
                         args = args.replace(')','');
-                        var argsArray:Array = args.split(/[, ]/);
+                        args = args.replace(/ /g, '');
+                        var argsArray:Array = args.split(/[,]/);
                         
                         var nodeMatrix:Matrix;
                         switch (command) {
@@ -307,10 +308,12 @@ package com.zavoo.svg.nodes
                                 
                             case "skewX":
                                 // To Do
+                                trace('Unimplemented Transformation: ' + command);
                                 break;
                                 
                             case "skewY":
                                 // To Do
+                                trace('Unimplemented Transformation: ' + command);
                                 break;
                                 
                             case "rotate":
@@ -395,7 +398,7 @@ package com.zavoo.svg.nodes
                 }            
                 else {            
                     fill_alpha = SVGColors.cleanNumber(this.getStyle('fill-opacity'));
-                    fill_color = SVGColors.getColor((fill));
+                    fill_color = SVGColors.getColor(fill);
                     this.graphics.beginFill(fill_color, fill_alpha);
                 }
             }
@@ -1010,6 +1013,9 @@ package com.zavoo.svg.nodes
              **/
             if (this._href == null) {
                 var href:String = this._xml.@xlink::href;
+                if (!href) {
+                    href = this._xml.@href;
+                }
                 if (href != null) {
                     href = href.replace(/^#/,'');
                     this._href = this.svgRoot.getElement(href);

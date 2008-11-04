@@ -223,6 +223,7 @@ package com.zavoo.svg.data
             var b:int = 0;
 
             if (color != null) {            
+                color=color.replace(/ /g, "");
                 if(color.match(/^#/)) {
                     // #456 is short for #445566
                     if (color.length == 4) {
@@ -231,8 +232,6 @@ package com.zavoo.svg.data
                         gval = color.substring(2,1) + color.substring(2,1);
                         bval = color.substring(3,1) + color.substring(3,1);
                         color = "#" + rval + gval + bval;
-                    /*
-                    */
                     }
                     color = color.replace('#', '0x');
                     return parseInt(color);

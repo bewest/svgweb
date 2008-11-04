@@ -161,15 +161,28 @@ package com.zavoo.svg.nodes
          **/
         override protected function setAttributes():void {
             super.setAttributes();
-            
+
             //Create root node mask defined by the SVG viewBox
             var viewBox:String = this.getAttribute('viewBox');
             if (viewBox != null) {
                 var points:Array = viewBox.split(/\s+/);
+                /* viewbox Clipping is disabled for now as there are
+                   problems that have not been worked out
                 this.addRootMask(points[0], points[1], points[2], points[3]);        
-                
+                */       
                 this._width = points[2];
                 this._height = points[3]; 
+
+                var preserveAspectRatio:String = this.getAttribute('preserveAspectRatio');
+                if (preserveAspectRatio == null || preserveAspectRatio == "xMidYMid") {
+                    var width:String = this.getAttribute('width');
+                    
+                    if (width != null) {
+                        // implement xMidYMid; well at least the x part
+                        this.x = -1*points[0] + (Number(width) - points[2]) / 2;
+                    }
+                }
+                
             }
             else {
                 var w:String = this.getAttribute('width');
@@ -181,13 +194,16 @@ package com.zavoo.svg.nodes
                     }
                     this._width = SVGColors.cleanNumber(w);
                     this._height = SVGColors.cleanNumber(h);
+                    /* viewbox Clipping is disabled for now as there are
+                       problems that have not been worked out
                     this.addRootMask(0, 0, this._width, this._height);
+                    */       
                 }
             }
-        }        
-        
+        }
+
         /**
-         * Draw rectangluar mask 
+         * Draw rectangular mask 
          **/
         protected function addRootMask(xVal:Number, yVal:Number, widthVal:Number, heightVal:Number):void {
             if (this.mask == null) {
@@ -205,6 +221,7 @@ package com.zavoo.svg.nodes
                 Shape(this.mask).graphics.endFill();
             }
         }
+
         
         public function get title():String {
             return this._title;
