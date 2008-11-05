@@ -53,11 +53,17 @@ package com.zavoo.svg.nodes.mask
             if (clipPathNode) {
                 this._svgMask = new SVGMask(clipPathNode);
                 if (this._svgMask) {
+
                     if (this._childToMaskXML.@transform) {
                         this._svgMask.xml.@transform = this._childToMaskXML.@transform;
                     }
+
                     this.addChild(this._svgMask);
                 }
+            }
+            else {
+                this.svgRoot.debug("Clippath " + this._clipPathHref
+                                 + " not available for mask node " + this.xml.@id);
             }
             this.mask = this._svgMask;
             var childNode:SVGNode = this.parseNode(this._childToMaskXML);

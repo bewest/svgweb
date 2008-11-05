@@ -56,6 +56,7 @@ package com.zavoo.svg
         
         public function setDebugTextArea(debugText:TextArea):void {
             this.debugText = debugText;
+            // shift image down so we can see it
         }
         public function debug(debugMessage:String):void {
             if (this.debugText != null) {
@@ -74,13 +75,14 @@ package com.zavoo.svg
          * @public
          **/
         public function xmlLoaded(event : Event):void {
-           //this.debug("Got xmlLoaded event.");
-           var dataXML:XML = XML(event.target.data);
+           var dataXML:XML = new XML(event.target.data);
            this.xml = dataXML;
+           if (this.debugText) {
+                this._svgRoot.xml.@y='200';
+           }
         }
 
         public function htmlLoaded(event : Event):void {
-           //this.debug("Got htmlLoaded event.");
            this.html = event.target.data;
            var htmlStrings:Object = this.html.split('\n');
            var svgString:String="";
@@ -100,7 +102,6 @@ package com.zavoo.svg
                    svgCopying=true;
                }
            }
-           /* this.debug(svgString); */
            var dataXML:XML = XML(svgString);
            this.xml = dataXML;
         }

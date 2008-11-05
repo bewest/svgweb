@@ -42,16 +42,20 @@ package com.zavoo.svg.nodes
 
         override public function refreshHref():void {
 
-            if (this._href == null) {
-                var href:String = this._xml.@xlink::href;
-                if (href != null) {
-                    href = href.replace(/^#/,'');
-                    this._href = this.svgRoot.getElement(href);
+            var href:String = this._xml.@xlink::href;
+            if (!href) {
+                href = this._xml.@href;
+            }
+            if (href) {
+                href = href.replace(/^#/,'');
+                this._href = this.svgRoot.getElement(href);
+                if (!this._href) {
+                    this.svgRoot.debug("href " + href + " not available for " + this.xml.@id);
                 }
             }
 
             // If _href revision has changed, copy its xml 
-            if (this._href != null) {
+            if (this._href) {
 
                 this._href.refreshHref();
 

@@ -388,6 +388,9 @@ package com.zavoo.svg.nodes
                 if (matches != null && matches.length > 0) {
                     var fillName:String = matches[1];
                     var fillNode:SVGNode = this.svgRoot.getElement(fillName);
+                    if (!fillNode) {
+                         this.svgRoot.debug("Gradient " + fillName + " not available for " + this.xml.@id);
+                    }
                     if (fillNode is SVGLinearGradient) {
                          SVGLinearGradient(fillNode).beginGradientFill(this, this.graphics);
                     }
@@ -456,6 +459,9 @@ package com.zavoo.svg.nodes
                 if (strokeMatches != null && strokeMatches.length > 0) {
                     var strokeName:String = strokeMatches[1];
                     var strokeNode:SVGNode = this.svgRoot.getElement(strokeName);
+                    if (!strokeNode) {
+                         this.svgRoot.debug("stroke gradient " + strokeName + " not available for " + this.xml.@id);
+                    }
                     if (strokeNode is SVGLinearGradient) {
                          SVGLinearGradient(strokeNode).lineGradientStyle(this, this.graphics, line_alpha);
                     }
@@ -578,10 +584,7 @@ package com.zavoo.svg.nodes
                         if (xmlList.length() > 0) {
                             var clipPath:String = xmlList[0].toString();
                             clipPath = clipPath.replace(/url\(#(.*?)\)/si,"$1");
-                            var clipPathNode:SVGClipPathNode = this.svgRoot.getElement(clipPath);
-                            if (clipPathNode) {
-                                childNode = new SVGMaskedNode(childXML, clipPath);
-                            }
+                            childNode = new SVGMaskedNode(childXML, clipPath);
                         }
                         this.addChild(childNode);
                     }
@@ -843,7 +846,10 @@ package com.zavoo.svg.nodes
                 if (matches.length > 0) {
                     filterName = matches[1];
                     var filterNode:SVGFilterNode = this.svgRoot.getElement(filterName);
-                    if (filterNode != null) {
+                    if (!filterNode) {
+                         this.svgRoot.debug("filter " + filterName + " not available for " + this.xml.@id);
+                    }
+                    if (filterNode) {
                         this.filters = filterNode.getFilters();
                     }
                 }
@@ -905,9 +911,6 @@ package com.zavoo.svg.nodes
             this._xml = xml;
             this._revision++;
             this.invalidateDisplay();
-            // xxx should invalidate all objects with references to this
-            // object. This would require keeping track of references or
-            // just do a full tree walk...
         }
         
         /**
@@ -1011,18 +1014,19 @@ package com.zavoo.svg.nodes
             /**
              * If _href revision has changed, copy xml over
              **/
-            if (this._href == null) {
-                var href:String = this._xml.@xlink::href;
-                if (!href) {
-                    href = this._xml.@href;
-                }
-                if (href != null) {
-                    href = href.replace(/^#/,'');
-                    this._href = this.svgRoot.getElement(href);
-                }
-
+            var href:String = this._xml.@xlink::href;
+            if (!href) {
+                href = this._xml.@href;
             }
-            if (this._href != null
+            if (href) {
+                href = href.replace(/^#/,'');
+                this._href = this.svgRoot.getElement(href);
+                if (!this._href) {
+                     this.svgRoot.debug("href " + href + " not available for " + this.xml.@id);
+                }
+            }
+
+            if (this._href
                 && (this._href.revision != this._hrefRevision)) {
                 //this.svgRoot.debug("Doing href refresh of " + this._xml.@xlink::href + " for " + this._xml.@id); 
                 /**

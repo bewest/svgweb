@@ -42,6 +42,8 @@ package com.zavoo.svg.nodes
          **/
         public var _elementById:Object;
         
+        public var _referersById:Object;
+
         /**
          * Title of SVG
          **/
@@ -87,6 +89,7 @@ package com.zavoo.svg.nodes
             this._height = 0;
             default xml namespace = svg;
             this._elementById = new Object();    
+            this._referersById = new Object();    
             this.clearChildren();        
             super.xml = value;    
             
@@ -109,6 +112,24 @@ package com.zavoo.svg.nodes
                 this._elementById[id] = node;
             }            
         }
+
+
+        public function invalidateReferers(id:String):void {
+            if (this._referersById[id]) {
+                var referers:Array = this._referersById[id];
+                for (var referer:String in referers) {
+                    this.getElement(referer).invalidateDisplay();
+                }
+            }
+        }
+
+        public function addReferer(refererId:String, referencedId:String):void {
+            if (!this._referersById[referencedId]) {
+                 this._referersById[referencedId]= new Array();
+            }
+            this._referersById[referencedId].push(refererId);
+        }
+
         
         /**
          * Retrieve registered node by name
