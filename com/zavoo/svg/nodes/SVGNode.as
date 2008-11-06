@@ -110,7 +110,6 @@ package com.zavoo.svg.nodes
         /**
          * Load attributes/styling from the XML. 
          * Attributes are applied in functions called later.
-         * Creates a sprite mask if a clip-path is given.
          **/
         protected function setAttributes():void {            
             
@@ -570,24 +569,49 @@ package com.zavoo.svg.nodes
             for each (var childXML:XML in this._xml.children()) {    
                     
                 if (childXML.nodeKind() == 'element') {
-                    var childNode:SVGNode = this.parseNode(childXML);
+                    var newChildNode:SVGNode = null;
                     
-                    if (childNode != null) {
-                        // If the child has a clip-path, then a stub SVGMaskedNode
-                        // is created as parent of the masking object and the masked object.
-                        // The mask is applied to the parent stub object. This is done
-                        // because the clipped object may have a guassian blur, which will
-                        // blur the mask, even if the mask is not drawn with a blur.
-                        // SVG does not blur its mask in this scenario so we apply the 
-                        // mask to a stub parent object. 
-                        var xmlList:XMLList = childXML.attribute('clip-path');
-                        if (xmlList.length() > 0) {
-                            var clipPath:String = xmlList[0].toString();
-                            clipPath = clipPath.replace(/url\(#(.*?)\)/si,"$1");
-                            childNode = new SVGMaskedNode(childXML, clipPath);
-                        }
-                        this.addChild(childNode);
+                    newChildNode = this.parseNode(childXML);
+                    if (!newChildNode) {
+                        continue;
                     }
+/* disabled until debugged
+                    newChildNode.refreshHref();
+                    newChildNode.setAttributes();
+                    var filterStr:String = newChildNode.getStyle('filter');
+*/
+                    var filterStr:String = null;
+
+                    // Objects with a gaussian filter need to be 
+                    // masked by their own shape to mask any gaussian blurs
+                    // that might extend too far beyond the object boundaries.
+                    // SVG clips this blur and so we have to create a mask here
+                    // to mimic that behavior.
+
+                    // A stub SVGMaskedNode is created as parent of the masking
+                    // object and the masked object. The mask is applied to the parent
+                    // stub object. This is done because if we apply a mask directly to
+                    // an object with a gaussian filter, flash will blur the mask, even
+                    // if the mask is not drawn with a blur.
+                    // SVG does not blur its mask in this scenario so we apply the 
+                    // mask to a stub parent object. 
+
+                    // Note that if the object has a clip-path specified, then 
+                    // SVGMaskedNode will append the clip-path's xml to the object
+                    // xml to produce a composite mask.
+
+                    if (filterStr) {
+
+                        var clipPath:String = null;
+
+                        var clipList:XMLList = childXML.attribute('clip-path');
+                        if (clipList.length() > 0) {
+                            clipPath = clipList[0].toString();
+                            clipPath = clipPath.replace(/url\(#(.*?)\)/si,"$1");
+                        }
+                        newChildNode = new SVGMaskedNode(childXML, clipPath);
+                    }
+                    this.addChild(newChildNode);
                 }
             }
         }
@@ -806,10 +830,8 @@ package com.zavoo.svg.nodes
                     this.graphics.clear();        
                     
                     this.parse();                        
-                    
                     this.x = 0;
                     this.y = 0;
-                    
                     this.setAttributes();                        
 
                     if (!this.isChildOfDef()) {
@@ -822,7 +844,9 @@ package com.zavoo.svg.nodes
                 
                 this._invalidDisplay = false;
                 this.removeEventListener(Event.ENTER_FRAME, redrawNode);        
-                
+                if (this.xml.@id)  {
+                    this.svgRoot.invalidateReferers(this.xml.@id) 
+                }
             }
         }
         
@@ -1039,7 +1063,7 @@ package com.zavoo.svg.nodes
                  **/
 
                 /**
-                 * XXX this may cause name collisions
+                 * XXX this may cause name collisions. should call makeUniqueIds()
                  **/
                 for each(var node:XML in this._href.xml.children()) {
                     this.xml.appendChild(node.copy());

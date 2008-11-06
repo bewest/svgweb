@@ -113,17 +113,15 @@ package com.zavoo.svg.nodes
             }            
         }
 
+        /**
+         * 
+         * If this object depends on another object, then we can
+         * register our interest in being invalidated when the
+         * dependency object is redrawn.
+         * 
+         **/
+        public function addReference(refererId:String, referencedId:String):void {
 
-        public function invalidateReferers(id:String):void {
-            if (this._referersById[id]) {
-                var referers:Array = this._referersById[id];
-                for (var referer:String in referers) {
-                    this.getElement(referer).invalidateDisplay();
-                }
-            }
-        }
-
-        public function addReferer(refererId:String, referencedId:String):void {
             if (!this._referersById[referencedId]) {
                  this._referersById[referencedId]= new Array();
             }
@@ -131,6 +129,18 @@ package com.zavoo.svg.nodes
         }
 
         
+        public function invalidateReferers(id:String):void {
+            if (this._referersById[id]) {
+                var referers:Array = this._referersById[id];
+                for (var referer:String in referers) {
+                    if (this.getElement(referers[referer]).invalidateDisplay()) {
+                        this.svgRoot.debug("Invalidating referer "  + referers[referer] + " by " + id);
+                        //this.getElement(referers[referer]).invalidateDisplay();
+                    }
+                }
+            }
+        }
+
         /**
          * Retrieve registered node by name
          * 

@@ -69,10 +69,10 @@
     <filter
        inkscape:collect="always"
        id="filter7"
-       x="-0.284216"
-       width="1.568432"
-       y="-0.23374538"
-       height="1.4674908">
+       x="-0.4"
+       width="1.8"
+       y="-0.4"
+       height="1.8">
       <feGaussianBlur
          inkscape:collect="always"
          stdDeviation="2"
@@ -81,10 +81,10 @@
     <filter
        inkscape:collect="always"
        id="filter8"
-       x="-0.284216"
-       width="1.568432"
-       y="-0.23374538"
-       height="1.4674908">
+       x="-0.4"
+       width="1.8"
+       y="-0.4"
+       height="1.8">
       <feGaussianBlur
          inkscape:collect="always"
          stdDeviation="4"
@@ -93,10 +93,10 @@
     <filter
        inkscape:collect="always"
        id="filter9"
-       x="-0.284216"
-       width="1.568432"
-       y="-0.23374538"
-       height="1.4674908">
+       x="-0.4"
+       width="1.8"
+       y="-0.4"
+       height="1.8">
       <feGaussianBlur
          inkscape:collect="always"
          stdDeviation="8"
@@ -105,10 +105,10 @@
     <filter
        inkscape:collect="always"
        id="filter10"
-       x="-0.284216"
-       width="1.568432"
-       y="-0.23374538"
-       height="1.4674908">
+       x="-0.4"
+       width="1.8"
+       y="-0.4"
+       height="1.8">
       <feGaussianBlur
          inkscape:collect="always"
          stdDeviation="16"
@@ -117,10 +117,10 @@
     <filter
        inkscape:collect="always"
        id="filter11"
-       x="-0.284216"
-       width="1.568432"
-       y="-0.23374538"
-       height="1.4674908">
+       x="-0.4"
+       width="1.8"
+       y="-0.4"
+       height="1.8">
       <feGaussianBlur
          inkscape:collect="always"
          stdDeviation="32"
@@ -129,15 +129,34 @@
     <filter
        inkscape:collect="always"
        id="filter12"
-       x="-0.284216"
-       width="1.568432"
-       y="-0.23374538"
-       height="1.4674908">
+       x="-0.4"
+       width="1.8"
+       y="-0.4"
+       height="1.8">
       <feGaussianBlur
          inkscape:collect="always"
          stdDeviation="64"
          id="feGaussianBlur12" />
     </filter>
+    <clipPath
+         id="clipPath1" >
+    <rect
+       id="clipPath1rect1"
+       style="fill:white;"
+       x="100"
+       y="100"
+       width="25"
+       height="25" />
+    </clipPath>
+    <clipPath
+         id="clipPath5" >
+    <rect
+       id="clipPath5rect1"
+       x="500"
+       y="100"
+       width="25"
+       height="25" />
+    </clipPath>
 
   </defs>
 
@@ -146,7 +165,8 @@
      inkscape:groupmode="layer"
      id="layer1">
     <rect
-       style="fill:red;filter:url(#filter1)"
+       style="fill:red;filter:url(#filter1);"
+       clip-path="url(#clipPath1)"
        id="rect1"
        width="50"
        height="50"
@@ -181,14 +201,22 @@
        x="300"
        y="100" />
     <rect
-       style="fill:red;filter:url(#filter4)"
        id="rect4"
+       style="fill:red;filter:url(#filter4)"
        width="50"
        height="50"
        x="400"
        y="100" />
     <rect
+       id="rect5"
        style="fill:red;filter:url(#filter5)"
+       clip-path="url(#clipPath5)"
+       width="50"
+       height="50"
+       x="500"
+       y="100" />
+    <rect
+       style="fill:none;stroke:black"
        id="rect5"
        width="50"
        height="50"
@@ -399,6 +427,59 @@
        x="4800"
        y="4000" />
 
+   <g
+       transform="matrix(.5,0,0,.5,0,0)"
+   >
+    <rect
+       style="fill:red;filter:url(#filter7)"
+       transform="matrix(.25,0,0,.25,0,0)"
+       id="rect7"
+       width="400"
+       height="400"
+       x="800"
+       y="4800" />
+    <rect
+       style="fill:red;filter:url(#filter8)"
+       transform="matrix(.25,0,0,.25,0,0)"
+       id="rect8"
+       width="400"
+       height="400"
+       x="1600"
+       y="4800" />
+    <rect
+       style="fill:red;filter:url(#filter9)"
+       transform="matrix(.25,0,0,.25,0,0)"
+       id="rect9"
+       width="400"
+       height="400"
+       x="2400"
+       y="4800" />
+    <rect
+       style="fill:red;filter:url(#filter10)"
+       transform="matrix(.25,0,0,.25,0,0)"
+       id="rect10"
+       width="400"
+       height="400"
+       x="3200"
+       y="4800" />
+    <rect
+       style="fill:red;filter:url(#filter11)"
+       transform="matrix(.25,0,0,.25,0,0)"
+       id="rect11"
+       width="400"
+       height="400"
+       x="4000"
+       y="4800" />
+    <rect
+       style="fill:red;filter:url(#filter12)"
+       transform="matrix(.25,0,0,.25,0,0)"
+       id="rect12"
+       width="400"
+       height="400"
+       x="4800"
+       y="4800" />
+
+    </g>
 
   </g>
 </svg>

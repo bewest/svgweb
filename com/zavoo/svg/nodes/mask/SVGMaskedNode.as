@@ -43,29 +43,34 @@ package com.zavoo.svg.nodes.mask
         public function SVGMaskedNode(childToMaskXML:XML, clipPathHref:String):void {
             this._childToMaskXML = childToMaskXML.copy();
             this._clipPathHref = clipPathHref;
+            this.svgRoot.debug("clippath is " + _clipPathHref);
             super(this._childToMaskXML); // xxx should create stub xml, instead of borrowing child
         }    
 
 
         override protected function parse():void {
             this._svgMask = null;
+
+            // Create and add the mask node
             var clipPathNode:SVGClipPathNode = this.svgRoot.getElement(this._clipPathHref);
             if (clipPathNode) {
                 this._svgMask = new SVGMask(clipPathNode);
                 if (this._svgMask) {
-
                     if (this._childToMaskXML.@transform) {
                         this._svgMask.xml.@transform = this._childToMaskXML.@transform;
                     }
-
                     this.addChild(this._svgMask);
                 }
             }
             else {
+                this.svgRoot.addReference(this.xml.@id, this._clipPathHref);
                 this.svgRoot.debug("Clippath " + this._clipPathHref
                                  + " not available for mask node " + this.xml.@id);
             }
             this.mask = this._svgMask;
+
+            // Add the child to be clipped
+            delete this._childToMaskXML.@['clip-path'];
             var childNode:SVGNode = this.parseNode(this._childToMaskXML);
             if (childNode) {
                 this.addChild(childNode);
