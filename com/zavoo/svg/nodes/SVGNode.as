@@ -265,10 +265,11 @@ package com.zavoo.svg.nodes
                         args = args.replace(/ /g, '');
                         var argsArray:Array = args.split(/[, ]/);
                         
+                        var nodeMatrix:Matrix = new Matrix();
+                        var newMatrix:Matrix = this.transform.matrix.clone();
                         switch (command) {
                             case "matrix":
                                 if (argsArray.length == 6) {
-                                    var nodeMatrix:Matrix = new Matrix();
                                     nodeMatrix.a = argsArray[0];
                                     nodeMatrix.b = argsArray[1];
                                     nodeMatrix.c = argsArray[2];
@@ -276,9 +277,8 @@ package com.zavoo.svg.nodes
                                     nodeMatrix.tx = argsArray[4];
                                     nodeMatrix.ty = argsArray[5];
                                     
-                                    var matrix:Matrix = this.transform.matrix.clone();
-                                    matrix.concat(nodeMatrix);
-                                    this.transform.matrix = matrix;
+                                    newMatrix.concat(nodeMatrix);
+                                    this.transform.matrix = newMatrix;
                                     
                                 }
                                 break;
@@ -295,12 +295,18 @@ package com.zavoo.svg.nodes
                                 
                             case "scale":
                                 if (argsArray.length == 1) {
-                                    this.scaleX = argsArray[0];
-                                    this.scaleY = argsArray[0];
+                                    nodeMatrix.a = argsArray[0];
+                                    nodeMatrix.d = argsArray[0];
+                                    
+                                    newMatrix.concat(nodeMatrix);
+                                    this.transform.matrix = newMatrix;
                                 }
                                 else if (argsArray.length == 2) {
-                                    this.scaleX = argsArray[0];
-                                    this.scaleY = argsArray[1];
+                                    nodeMatrix.a = argsArray[0];
+                                    nodeMatrix.d = argsArray[1];
+                                    
+                                    newMatrix.concat(nodeMatrix);
+                                    this.transform.matrix = newMatrix;
                                 }
                                 break;
                                 
@@ -464,6 +470,7 @@ package com.zavoo.svg.nodes
                 var strokeMatches:Array = stroke.match(/url\(#([^\)]+)\)/si);
                 if (strokeMatches != null && strokeMatches.length > 0) {
                     var strokeName:String = strokeMatches[1];
+                    this.svgRoot.addReference(this.xml.@id, strokeName);
                     var strokeNode:SVGNode = this.svgRoot.getElement(strokeName);
                     if (!strokeNode) {
                          //this.svgRoot.debug("stroke gradient " + strokeName + " not (yet?) available for " + this.xml.@id);
@@ -577,6 +584,19 @@ package com.zavoo.svg.nodes
             for each (var childXML:XML in this._xml.children()) {    
                     
                 if (childXML.nodeKind() == 'element') {
+
+                    // This handle strange gradient bugs with negative transforms
+                    // by separating the transform from every object
+                    if (childXML.@['transform'] != undefined) {
+                        var newChildXML:XML = childXML.copy();
+                        var stubGroupXML:XML = <g></g>;
+                        stubGroupXML.@['transform'] = newChildXML.@['transform'];
+                        delete newChildXML.@['transform'];
+                        stubGroupXML.appendChild(newChildXML.toXMLString());
+                        newChildNode = new SVGGroupNode(this.svgRoot, stubGroupXML);
+                        this.addChild(newChildNode);
+                        continue;
+                    }
                     var newChildNode:SVGNode = this.parseNode(childXML);
 
                     if (!newChildNode) {
@@ -585,6 +605,9 @@ package com.zavoo.svg.nodes
                     }
                     newChildNode.refreshHref();
                     newChildNode.setAttributes();
+
+
+
                     var filterStr:String = newChildNode.getStyle('filter');
 
                     // Objects with a gaussian filter need to be 
@@ -739,19 +762,9 @@ package com.zavoo.svg.nodes
                  || (this is SVGClipMaskParent)
                  || (this is SVGBlurMaskParent)) {
 
-                if (name == 'stroke-width') {
-                    // must be a blur mask - add extra width
-
-                    if ( (this.getSVGClipMaskAncestor() == null)
-                         && !(this is SVGClipMaskParent)
-                         && !(this is SVGBlurMaskParent)) {
-                        return '30';
-                    }
-
-                    return '1';
-                }
                 if (  (name == 'opacity')
                     || (name == 'fill-opacity')
+                    || (name == 'stroke-width')
                     || (name == 'stroke-opacity') ) {
                     return '1';
                 }
@@ -761,17 +774,12 @@ package com.zavoo.svg.nodes
                 }
 
                 if (name == 'stroke') {
-                    //return 'none';
-                    return 'black';
+                    return 'none';
+                    //return 'black';
                 }
 
                 if (name == 'filter') {
                     return null;
-/*
-                    if (this.getSVGClipMaskAncestor() != null) {
-                        this.svgRoot.debug(this.xml.@id + ": Returning null filter for SVGMask child.");
-                    }
-*/
                 }
             }
 

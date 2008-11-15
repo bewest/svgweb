@@ -100,16 +100,21 @@ package com.zavoo.svg.nodes
                 objectY = Math.round(Number(svgNode.xml.@y));
             }
 
-            var gradientWidth:Number = Math.abs(x2 - x1);
-            var gradientHeight:Number = Math.abs(y2 - y1);
-
             var dx:Number = x2 - x1;
             var dy:Number = y2 - y1;
             var angle:Number = Math.atan2(dy, dx);
 
-            var tx:Number = (x1 + x2) / 2 - objectX;
-            var ty:Number = (y1 + y2) / 2 - objectY;
+            // Disabled because i am currently doing the object adjustment at the
+            // end, which seems to be necessary for radial gradients, but it is not
+            // clear what the difference is. I will do it the same as radials to
+            // be consistent, and on the hunch that it is correct.
+            //var tx:Number = (x1 + x2) / 2 - objectX;
+            //var ty:Number = (y1 + y2) / 2 - objectY;
+            var tx:Number = (x1 + x2) / 2;
+            var ty:Number = (y1 + y2) / 2;
 
+            var gradientWidth:Number = Math.abs(x2 - x1);
+            var gradientHeight:Number = Math.abs(y2 - y1);
             var sx:Number = Math.sqrt(gradientWidth*gradientWidth+gradientHeight*gradientHeight) / 1638.4;
             var sy:Number = 1;
 
@@ -121,6 +126,8 @@ package com.zavoo.svg.nodes
             if (matrGrTr != null)
                 matr.concat(matrGrTr);
 
+            matr.translate(-objectX, -objectY);
+
             var spreadMethod:String = SpreadMethod.PAD;
             if (this.xml.@['spreadMethod'] == 'reflect') {
                 spreadMethod = SpreadMethod.REFLECT;
@@ -131,6 +138,11 @@ package com.zavoo.svg.nodes
 
             var interpMethod:String = InterpolationMethod.RGB;
 
+            //this.svgRoot.debug("id: " + svgNode.xml.@id);
+            //this.svgRoot.debug("colors: " + colors);
+            //this.svgRoot.debug("ratios: " + ratios);
+            //this.svgRoot.debug("alphas: " + alphas);
+            //this.svgRoot.debug("matr: " + matr);
             graphics.beginGradientFill(GradientType.LINEAR, colors, alphas, ratios, matr, spreadMethod, interpMethod);
 
         }
@@ -226,6 +238,11 @@ package com.zavoo.svg.nodes
                 spreadMethod = SpreadMethod.REPEAT;
             }
             var interpMethod:String = InterpolationMethod.RGB;
+            //this.svgRoot.debug("id: " + svgNode.xml.@id);
+            //this.svgRoot.debug("colors: " + colors);
+            //this.svgRoot.debug("ratios: " + ratios);
+            //this.svgRoot.debug("alphas: " + alphas);
+            //this.svgRoot.debug("matr: " + matr);
             graphics.lineGradientStyle(GradientType.LINEAR, colors, alphas, ratios, matr, spreadMethod, interpMethod);
 
         }
