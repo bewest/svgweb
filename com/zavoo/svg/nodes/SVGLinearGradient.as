@@ -122,6 +122,13 @@ package com.zavoo.svg.nodes
                 matr.concat(matrGrTr);
 
             var spreadMethod:String = SpreadMethod.PAD;
+            if (this.xml.@['spreadMethod'] == 'reflect') {
+                spreadMethod = SpreadMethod.REFLECT;
+            }
+            if (this.xml.@['spreadMethod'] == 'repeat') {
+                spreadMethod = SpreadMethod.REPEAT;
+            }
+
             var interpMethod:String = InterpolationMethod.RGB;
 
             graphics.beginGradientFill(GradientType.LINEAR, colors, alphas, ratios, matr, spreadMethod, interpMethod);
@@ -212,6 +219,12 @@ package com.zavoo.svg.nodes
                 matr.concat(matrGrTr);
 
             var spreadMethod:String = SpreadMethod.PAD;
+            if (this.xml.@['spreadMethod'] == 'reflect') {
+                spreadMethod = SpreadMethod.REFLECT;
+            }
+            if (this.xml.@['spreadMethod'] == 'repeat') {
+                spreadMethod = SpreadMethod.REPEAT;
+            }
             var interpMethod:String = InterpolationMethod.RGB;
             graphics.lineGradientStyle(GradientType.LINEAR, colors, alphas, ratios, matr, spreadMethod, interpMethod);
 

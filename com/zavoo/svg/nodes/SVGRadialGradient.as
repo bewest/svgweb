@@ -72,7 +72,6 @@ package com.zavoo.svg.nodes
 
             var matrGrTr:Matrix = this.parseTransform(this.xml.@gradientTransform);
 
-
             var cx:Number = 0;
             if (this.xml.@cx != null) {
                 cx = Number(this.xml.@cx);
@@ -94,13 +93,6 @@ package com.zavoo.svg.nodes
                 r = Number(this.xml.@r);
             }
 
-/*
-
-            var x2:Number = cx - r;
-            var x1:Number = cx + r;
-            var y2:Number = cy - r;
-            var y1:Number = cy + r;
-
             var objectX:Number = 0;
             if (svgNode.xml.@x != null) {
                 objectX = Math.round(Number(svgNode.xml.@x));
@@ -110,46 +102,28 @@ package com.zavoo.svg.nodes
                 objectY = Math.round(Number(svgNode.xml.@y));
             }
 
-            var objectWidth:Number = 0;
-            if (svgNode.xml.@width != null) {
-                objectWidth = Math.round(Number(svgNode.xml.@width));
-            }
-            var objectHeight:Number = 0;
-            if (svgNode.xml.@height != null) {
-                objectHeight = Math.round(Number(svgNode.xml.@height));
-            }
+            var tx:Number = cx;
+            var ty:Number = cy;
 
-            var gradientWidth:Number = Math.abs(x2 - x1);
-            var gradientHeight:Number = Math.abs(y2 - y1);
-
-            var dx:Number = x2 - x1;
-            var dy:Number = y2 - y1;
-            var angle:Number = Math.atan2(dy, dx);
-
-            var tx:Number = (x1 + x2) / 2 - objectX;
-            var ty:Number = (y1 + y2) / 2 - objectY;
-
-            var sx:Number = Math.sqrt(gradientWidth*gradientWidth+gradientHeight*gradientHeight) / 1638.4;
-            var sy:Number = 1;
+            var sx:Number = r*2 / 1638.4;
+            var sy:Number = r*2 / 1638.4;
 
             var matr:Matrix= new Matrix();
             matr.scale(sx, sy);
-            matr.rotate(angle);
             matr.translate(tx, ty);
-*/
-
-            // XXX Assume no rotation and focal center == gradient box center
-            var matr:Matrix= new Matrix();
-            matr.createGradientBox(r*2, r*2, 0, 0, 0);
-            matr.tx = cx;
-            matr.ty = cy;
-
             if (matrGrTr != null) {
                 matr.concat(matrGrTr);
             }
+            matr.translate(-objectX, -objectY);
 
 
             var spreadMethod:String = SpreadMethod.PAD;
+            if (this.xml.@['spreadMethod'] == 'reflect') {
+                spreadMethod = SpreadMethod.REFLECT;
+            }
+            if (this.xml.@['spreadMethod'] == 'repeat') {
+                spreadMethod = SpreadMethod.REPEAT;
+            }
 
             graphics.beginGradientFill(GradientType.RADIAL, colors, alphas, ratios, matr, spreadMethod, "RGB", 0);
         }
@@ -212,13 +186,6 @@ package com.zavoo.svg.nodes
                 r = Number(this.xml.@r);
             }
 
-/*
-
-            var x2:Number = cx - r;
-            var x1:Number = cx + r;
-            var y2:Number = cy - r;
-            var y1:Number = cy + r;
-
             var objectX:Number = 0;
             if (svgNode.xml.@x != null) {
                 objectX = Math.round(Number(svgNode.xml.@x));
@@ -228,46 +195,28 @@ package com.zavoo.svg.nodes
                 objectY = Math.round(Number(svgNode.xml.@y));
             }
 
-            var objectWidth:Number = 0;
-            if (svgNode.xml.@width != null) {
-                objectWidth = Math.round(Number(svgNode.xml.@width));
-            }
-            var objectHeight:Number = 0;
-            if (svgNode.xml.@height != null) {
-                objectHeight = Math.round(Number(svgNode.xml.@height));
-            }
+            var tx:Number = cx;
+            var ty:Number = cy;
 
-            var gradientWidth:Number = Math.abs(x2 - x1);
-            var gradientHeight:Number = Math.abs(y2 - y1);
-
-            var dx:Number = x2 - x1;
-            var dy:Number = y2 - y1;
-            var angle:Number = Math.atan2(dy, dx);
-
-            var tx:Number = (x1 + x2) / 2 - objectX;
-            var ty:Number = (y1 + y2) / 2 - objectY;
-
-            var sx:Number = Math.sqrt(gradientWidth*gradientWidth+gradientHeight*gradientHeight) / 1638.4;
-            var sy:Number = 1;
+            var sx:Number = r*2 / 1638.4;
+            var sy:Number = r*2 / 1638.4;
 
             var matr:Matrix= new Matrix();
             matr.scale(sx, sy);
-            matr.rotate(angle);
             matr.translate(tx, ty);
-*/
-
-            // XXX Assume no rotation and focal center == gradient box center
-            var matr:Matrix= new Matrix();
-            matr.createGradientBox(r*2, r*2, 0, 0, 0);
-            matr.tx = cx;
-            matr.ty = cy;
-
             if (matrGrTr != null) {
                 matr.concat(matrGrTr);
             }
+            matr.translate(-objectX, -objectY);
 
 
             var spreadMethod:String = SpreadMethod.PAD;
+            if (this.xml.@['spreadMethod'] == 'reflect') {
+                spreadMethod = SpreadMethod.REFLECT;
+            }
+            if (this.xml.@['spreadMethod'] == 'repeat') {
+                spreadMethod = SpreadMethod.REPEAT;
+            }
 
             graphics.lineGradientStyle(GradientType.RADIAL, colors, alphas, ratios, matr, spreadMethod, "RGB", 0);
         } 
