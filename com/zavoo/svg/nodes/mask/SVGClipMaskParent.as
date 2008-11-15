@@ -60,16 +60,20 @@ package com.zavoo.svg.nodes.mask
             clipPath = clipPath.replace(/url\(#(.*?)\)/si,"$1");
 
             // Create and add the mask node
+            // xxx would need to create random id if necessary.
+            this.svgRoot.addReference(this.xml.@id, clipPath);
             var clipPathNode:SVGClipPathNode = this.svgRoot.getElement(clipPath);
             if (clipPathNode) {
                 clipPathXML = clipPathNode.xml.copy();
 
-                if (this._childToMaskXML.@['transform'] is String) {
-                    //this.svgRoot.debug("Using transform on clip: " +  this._childToMaskXML.@['transform']);
+                if (this._childToMaskXML.@['transform'] != undefined) {
                     clipPathXML.@['transform'] = this._childToMaskXML.@['transform'];
                 }
-                //this.svgRoot.debug("Using clippath mask: " + clipPathXML.toString());
-                svgMask = new SVGMask(this.svgRoot, clipPathXML);
+                // xxx svgmask should handle this
+                var stubClipPathXML:XML = <clipPath></clipPath>;
+                stubClipPathXML.appendChild(clipPathXML.toXMLString());
+
+                svgMask = new SVGMask(this.svgRoot, stubClipPathXML);
                 this.addChild(svgMask);
                 this.mask = svgMask;
 
@@ -83,11 +87,6 @@ package com.zavoo.svg.nodes.mask
                 }
             }
             else {
-                // disabled because clippaths always seem to be previously declared
-                // in <defs> sections
-                // xxx would need to create random id if necessary.
-                //this.svgRoot.addReference(this.xml.@id, clipPath);
-
                 //this.svgRoot.debug("Clippath " + clipPath
                 //             + " not (yet?) available for mask node " + this.xml.@id);
             }

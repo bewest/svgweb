@@ -394,19 +394,16 @@ package com.zavoo.svg.nodes
                 var matches:Array = fill.match(/url\(#([^\)]+)\)/si);
                 if (matches != null && matches.length > 0) {
                     var fillName:String = matches[1];
-                    this.svgRoot.debug("looking up url " + fillName);
+                    this.svgRoot.addReference(this.xml.@id, fillName);
                     var fillNode:SVGNode = this.svgRoot.getElement(fillName);
                     if (!fillNode) {
-                         this.svgRoot.debug("Gradient " + fillName + " not (yet?) available for " + this.xml.@id);
+                         //this.svgRoot.debug("Gradient " + fillName + " not (yet?) available for " + this.xml.@id);
                     }
                     if (fillNode is SVGLinearGradient) {
                          SVGLinearGradient(fillNode).beginGradientFill(this, this.graphics);
-                         this.svgRoot.addReference(this.xml.@id, fillNode.xml.@id);
                     }
                     if (fillNode is SVGRadialGradient) {
-                         //this.svgRoot.debug("doing radial gradiant");
                          SVGRadialGradient(fillNode).beginGradientFill(this, this.graphics);
-                         this.svgRoot.addReference(this.xml.@id, fillNode.xml.@id);
                     }
                 }            
                 else {            
