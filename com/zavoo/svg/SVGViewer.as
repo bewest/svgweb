@@ -78,7 +78,7 @@ package com.zavoo.svg
            var dataXML:XML = new XML(event.target.data);
            this.xml = dataXML;
            if (this.debugText) {
-                this._svgRoot.xml.@y='200';
+                this._svgRoot.xml.@y='250';
            }
         }
 
@@ -212,6 +212,7 @@ package com.zavoo.svg
 
             this._svgRoot = new SVGRoot(null);
             this._svgRoot.debug = this.debug;
+            this._svgRoot.svgRoot = this._svgRoot;
             this.rawChildren.addChild(this._svgRoot);
             
             this._svgRoot.addEventListener(Event.RESIZE, sizeCanvas);

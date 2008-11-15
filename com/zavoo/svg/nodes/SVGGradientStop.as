@@ -26,27 +26,33 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 package com.zavoo.svg.nodes
 {
-    
+    import flash.events.Event;
+
     public class SVGGradientStop extends SVGNode
     {                
-        public function SVGGradientStop(xml:XML):void {
-            super(xml);
+        public function SVGGradientStop(svgRoot:SVGRoot, xml:XML):void {
+            super(svgRoot, xml);
         }    
         
+        override protected function redrawNode(event:Event):void {
+            super.redrawNode(event);
+            //this.svgRoot.debug("stop " + this.xml.@id + " drawn. invalidating referers to " + SVGNode(this.parent).xml.@id);
+            // XXX assumes parent has id
+            this.svgRoot.invalidateReferers(SVGNode(this.parent).xml.@id);
+        }
+
         /**
          * Override parent function to do nothing
-         **/
-        protected override function parse():void {
+        override protected function parse():void {
             //Do Nothing
         }
-        
-        /**
-         * Override parent function to do nothing
          **/
+
         override protected function draw():void {
             //Do Nothing
         }
         
+
         /**
          * Override parent function to do nothing except create a blank _graphicsCommands array
          **/

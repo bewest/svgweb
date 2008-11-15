@@ -60,7 +60,7 @@ package com.zavoo.svg.nodes
         public var debug:Object;
                 
         public function SVGRoot(xml:XML = null):void {
-            super(XML(xml));
+            super(null, XML(xml));
         }    
         
         /**
@@ -125,17 +125,18 @@ package com.zavoo.svg.nodes
             if (!this._referersById[referencedId]) {
                  this._referersById[referencedId]= new Array();
             }
-            this._referersById[referencedId].push(refererId);
+            this._referersById[referencedId][refererId] = '';
         }
 
         
         public function invalidateReferers(id:String):void {
+            //this.svgRoot.debug("Invalidating referers to "  + id);
             if (this._referersById[id]) {
                 var referers:Array = this._referersById[id];
                 for (var referer:String in referers) {
-                    if (this.getElement(referers[referer]).invalidateDisplay()) {
-                        this.svgRoot.debug("Invalidating referer "  + referers[referer] + " by " + id);
-                        //this.getElement(referers[referer]).invalidateDisplay();
+                    if (this.getElement(referer)) {
+                        //this.svgRoot.debug("INVALIDATING REFERER "  + referer + " by " + id);
+                        this.getElement(referer).invalidateDisplay();
                     }
                 }
             }

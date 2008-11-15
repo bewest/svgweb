@@ -28,8 +28,8 @@ package com.zavoo.svg.nodes
 {
     public class SVGSetNode extends SVGAnimateNode
     {
-        public function SVGSetNode(xml:XML):void {
-            super(xml);
+        public function SVGSetNode(svgRoot:SVGRoot, xml:XML):void {
+            super(svgRoot, xml);
         }    
         
     }

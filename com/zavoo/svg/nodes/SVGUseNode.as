@@ -26,15 +26,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 package com.zavoo.svg.nodes
 {
+    import flash.geom.Matrix;
     
     public class SVGUseNode extends SVGNode
     {        
-        public function SVGUseNode(xml:XML):void {
-            super(xml);
+        public function SVGUseNode(svgRoot:SVGRoot, xml:XML):void {
+            super(svgRoot, xml);
         }    
 
-        // XXX remove these?
+
         override protected function transformNode():void {
+            this.transform.matrix = new Matrix();
         }    
         override protected function setupFilters():void {
         }    
@@ -43,36 +45,41 @@ package com.zavoo.svg.nodes
         override public function refreshHref():void {
 
             var href:String = this._xml.@xlink::href;
-            if (!href) {
+            if (!href || href == '') {
                 href = this._xml.@href;
             }
-            if (href) {
+            if (href && href != '') {
                 href = href.replace(/^#/,'');
                 this._href = this.svgRoot.getElement(href);
                 if (!this._href) {
-                    this.svgRoot.debug("href " + href + " not available for " + this.xml.@id);
+                    //this.svgRoot.debug("<use>: href " + href + " not available for " + this.xml.@id);
                 }
             }
 
             // If _href revision has changed, copy its xml 
             if (this._href) {
+                //this.svgRoot.debug("Doing <use> href refresh of " + this._xml.@xlink::href + " for " + this._xml.@id);
 
                 this._href.refreshHref();
 
                 if (this._href.revision != this._hrefRevision) {
 
+                    this._xml = this._originalXML.copy();
+
                     // Create a child to hold a copy of the referenced object.
-                    var child:XML = this._href.xml.copy();
+                    var child:XML = new XML(this.copyXMLUnique(this._href._xml).toXMLString());
 
                     // For each of the <use> attributes, overwrite the child attribute
                     // because <use> attributes have precedence over the referenced object.
-                    for each( var attr:XML in this.xml.attributes() ) {
-                        if (attr.name() != "id" && attr.name() != "style") {
+                    for each( var attr:XML in this._xml.attributes() ) {
+                        if (   attr.name() != "id"
+                            && attr.name() != "http://www.w3.org/1999/xlink::href"
+                            && attr.name() != "style") {
                             child.@[attr.name()] = attr.toString();
                         }
                         if (attr.name() == "style") {
                             if (child.@style) {
-                                //  mergedStyles = overwriteStyles(baseStyles, newStyles)
+                                // psuedo: mergedStyles = overwriteStyles(baseStyles, newStyles)
                                 child.@style = this.overwriteStyles(child.@style, this._xml.@style);
                             }
                             else {
@@ -81,16 +88,10 @@ package com.zavoo.svg.nodes
                         }
                     }
 
-                    // Create a unique id for the child since we copied another object.
-                    // xxx should walk the entire child subtree here, creating unique ids.
-                    child.@id = this._xml.@id + "." + child.@id;
-
-
-                    this.xml.setChildren(child);
+                    this._xml.setChildren(child);
 
                     this._hrefRevision = this._href.revision;
                     this._revision++;
-                    this.invalidateDisplay();
 
                 }
             }

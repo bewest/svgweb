@@ -27,17 +27,21 @@ OTHER DEALINGS IN THE SOFTWARE.
 package com.zavoo.svg.nodes
 {
     import com.zavoo.svg.data.SVGColors;
+    import com.zavoo.svg.nodes.mask.SVGMask;
+    import com.zavoo.svg.nodes.mask.SVGClipMaskParent;
+    import com.zavoo.svg.nodes.mask.SVGBlurMaskParent;
     
     import flash.filters.BlurFilter;
+    import flash.geom.Matrix;
     
     public class SVGFilterNode extends SVGNode
     {
         
         private var _filters:Array;
         
-        public function SVGFilterNode(xml:XML)
+        public function SVGFilterNode(svgRoot:SVGRoot, xml:XML)
         {
-            super(xml);
+            super(svgRoot, xml);
         }
         
         override protected function parse():void {
@@ -47,17 +51,37 @@ package com.zavoo.svg.nodes
         /**
          * 
          **/
-        public function getFilters():Array {
+        public function getFilters(objectToFilter:SVGNode):Array {
             var nodeFilters:Array = new Array();
             var list:XMLList =     this._xml.svg::feGaussianBlur;
-            
+
+
+            var svgNode:SVGNode = objectToFilter;
+            var concatMatrix:Matrix = new Matrix();
+            var oldMatrix:Matrix;
+
+            while (svgNode && !(svgNode is SVGRoot) ) {
+                if (  !(svgNode is SVGClipMaskParent)
+                   && !(svgNode is SVGBlurMaskParent)
+                   && (svgNode.xml.@transform != undefined) ) {
+                     oldMatrix = this.parseTransform(svgNode.xml.@transform);
+                     oldMatrix.concat(concatMatrix);
+                     concatMatrix = oldMatrix;
+                }
+                svgNode = SVGNode(svgNode.parent);
+            }
+
             if (list.length()) {
                 var stdDeviation:String = this._xml.svg::feGaussianBlur.@stdDeviation.toString();
                 if (stdDeviation == null) {
                     stdDeviation = '4';
                 }
                 var blurAmount:Number = SVGColors.cleanNumber(stdDeviation);
-                nodeFilters.push(new BlurFilter(blurAmount, blurAmount, 10));
+                blurAmount = blurAmount * concatMatrix.a;
+                if (objectToFilter.getSVGMaskAncestor() != null) {
+                    blurAmount = blurAmount * .25;
+                }
+                nodeFilters.push(new BlurFilter(blurAmount*1.4, blurAmount*1.4, 3));
             }    
             
             return nodeFilters;

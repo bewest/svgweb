@@ -28,8 +28,8 @@ package com.zavoo.svg.nodes
 {
     public class SVGAnimateColorNode extends SVGAnimateNode
     {
-        public function SVGAnimateColorNode(xml:XML):void {
-            super(xml);
+        public function SVGAnimateColorNode(svgRoot:SVGRoot, xml:XML):void {
+            super(svgRoot, xml);
         }    
         
     }

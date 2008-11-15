@@ -31,8 +31,8 @@ package com.zavoo.svg.nodes
     public class SVGClipPathNode extends SVGNode
     {    
         
-        public function SVGClipPathNode(xml:XML):void {    
-            super(xml);
+        public function SVGClipPathNode(svgRoot:SVGRoot, xml:XML):void {    
+            super(svgRoot, xml);
         }                
         
         /**

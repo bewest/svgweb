@@ -1,9 +1,3 @@
-<html>
-
-<head>
-
-<script id="svgsource" type="image/svg+xml"><?xml version="1.0" encoding="iso-8859-1"?>
-<!--svgid:svgsource-->
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 <svg
@@ -1389,50 +1383,3 @@
     </g>
   </g>
 </svg>
-
-<!--/svgid:svgsource-->
-</script>
-</head>
-<body>
-<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
-        codebase="" id="mySVGViewerObj" width=100% height=100% style='float: left'>
-    <param name=AllowScriptAccess value='always'/>
-    <param name=movie value="svgviewer.swf">
-    <param name=FlashVars value="inlineSVGURL=svg_inline.html&inlineSVGId=svgsource">
-    <embed  name="mySVGViewerObj" play=false
-            swliveconnect="true" AllowScriptAccess="always"
-            src="svgviewer.swf" quality=high bgcolor=#FFFFFF 
-            width=100% height=100% type="application/x-shockwave-flash"
-            FlashVars="inlineSVGURL=svg_inline.html&inlineSVGId=svgsource">
-    </embed>
-</object>
-<script>
-function getFlashMovieObject(movieName)
-{
-  if (window.document[movieName]) 
-  {
-    if(document[movieName].length != undefined){
-        return document[movieName][1];
-    }
-    return document[movieName];
-  }
-  if (navigator.appName.indexOf("Microsoft Internet")==-1)
-  {
-    if (document.embeds && document.embeds[movieName])
-      return document.embeds[movieName]; 
-  }
-  else // if (navigator.appName.indexOf("Microsoft Internet")!=-1)
-  {
-    return document.getElementById(movieName);
-  }
-}
-// The flash control actionscript calls this on startup.
-// We use this to know the flash control is ready for activity.
-function receiveFromFlash(controlURL) {
-    var svgText= document.getElementById('svgsource').innerHTML;
-    getFlashMovieObject("mySVGViewerObj").createFromSVG(svgText);
-}
-</script>
-
-</body>
-</html>

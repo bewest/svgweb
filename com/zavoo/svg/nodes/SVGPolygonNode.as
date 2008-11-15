@@ -30,8 +30,8 @@ package com.zavoo.svg.nodes
     
     public class SVGPolygonNode extends SVGNode
     {        
-        public function SVGPolygonNode(xml:XML):void {
-            super(xml);
+        public function SVGPolygonNode(svgRoot:SVGRoot, xml:XML):void {
+            super(svgRoot, xml);
         }    
         
         /**

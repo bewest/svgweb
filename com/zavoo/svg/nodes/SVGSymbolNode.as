@@ -32,8 +32,8 @@ package com.zavoo.svg.nodes
      **/
     public class SVGSymbolNode extends SVGNode
     {        
-        public function SVGSymbolNode(xml:XML):void {
-            super(xml);
+        public function SVGSymbolNode(svgRoot:SVGRoot, xml:XML):void {
+            super(svgRoot, xml);
         }    
         
         override protected function draw():void {

@@ -35,8 +35,8 @@ package com.zavoo.svg.nodes
     
     public class SVGRadialGradient extends SVGNode
     {                
-        public function SVGRadialGradient(xml:XML):void {
-            super(xml);
+        public function SVGRadialGradient(svgRoot:SVGRoot, xml:XML):void {
+            super(svgRoot, xml);
         }    
 
         /**
@@ -70,7 +70,7 @@ package com.zavoo.svg.nodes
             }
 
 
-            var matrGrTr:Matrix = this.parseMatrix(this.xml.@gradientTransform);
+            var matrGrTr:Matrix = this.parseTransform(this.xml.@gradientTransform);
 
 
             var cx:Number = 0;
@@ -188,7 +188,7 @@ package com.zavoo.svg.nodes
             }
 
 
-            var matrGrTr:Matrix = this.parseMatrix(this.xml.@gradientTransform);
+            var matrGrTr:Matrix = this.parseTransform(this.xml.@gradientTransform);
 
 
             var cx:Number = 0;

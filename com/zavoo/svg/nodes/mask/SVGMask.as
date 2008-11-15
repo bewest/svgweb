@@ -26,49 +26,31 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 package com.zavoo.svg.nodes.mask
 {
-    import com.zavoo.svg.nodes.SVGClipPathNode;
     import com.zavoo.svg.nodes.SVGNode;
+    import com.zavoo.svg.nodes.SVGRoot;
     
     import flash.events.Event;
+    import flash.geom.Matrix;
     
 
     public class SVGMask extends SVGNode
     {
 
-        protected var _clipPath:SVGClipPathNode;
-        protected var _clipPathRevision:Number = -1;
+        protected var _clipPathXML:XML;
 
-        public function SVGMask(clipPath:SVGClipPathNode):void {
-            this._clipPath = clipPath;
-            this._clipPathRevision = this._clipPath.revision;
-            super(this.copyClipPathXML(clipPath.xml));
+        public function SVGMask(svgRoot:SVGRoot, clipPathXML:XML):void {
+            this._clipPathXML = new XML(this.copyXMLUnique(clipPathXML).toXMLString());
+            //svgRoot.debug("_clipPathXML: " + this._clipPathXML.toXMLString());
+            super(svgRoot, this._clipPathXML);
         }    
 
 
-        public function copyClipPathXML(clipPathXML:XML):XML {
-            var myXML:XML = clipPathXML.copy();
-            this.makeUniqueIDs(myXML);
-            return myXML;
+        public function getClipId():String {
+            return this._clipPathXML.child(0).@id;
         }
 
-        public function makeUniqueIDs(xmlNode:XML):void {
-            xmlNode.@id = xmlNode.@id + ".copy" + Math.random().toString();
-            for each (var childXML:XML in xmlNode.children()) {
-                this.makeUniqueIDs(childXML);
-            }
-        }
-
-        public function getClipPath():SVGClipPathNode {
-            return _clipPath;
-        }
-
-        public function refreshClipPath():void {
-
-            if (this._clipPath.revision != this._clipPathRevision) {
-                this.xml = this.copyClipPathXML(this._clipPath.xml);
-                this._revision++;
-                this.invalidateDisplay();
-            }
+        override protected function transformNode():void {
+            this.transform.matrix = new Matrix();
         }
 
 

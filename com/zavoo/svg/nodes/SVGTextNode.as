@@ -59,8 +59,8 @@ package com.zavoo.svg.nodes
          **/
         private var _textBitmap:Bitmap;
         
-        public function SVGTextNode(xml:XML):void {            
-            super(xml);            
+        public function SVGTextNode(svgRoot:SVGRoot, xml:XML):void {            
+            super(svgRoot, xml);            
         }
         
         /**

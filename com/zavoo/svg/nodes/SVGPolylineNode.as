@@ -30,8 +30,8 @@ package com.zavoo.svg.nodes
     
     public class SVGPolylineNode extends SVGNode
     {        
-        public function SVGPolylineNode(xml:XML):void {
-            super(xml);
+        public function SVGPolylineNode(svgRoot:SVGRoot, xml:XML):void {
+            super(svgRoot, xml);
         }    
         
         /**

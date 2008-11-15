@@ -34,9 +34,9 @@ package com.zavoo.svg.nodes
         
         private var _title:String = "";
         
-        public function SVGTitleNode(xml:XML)
+        public function SVGTitleNode(svgRoot:SVGRoot, xml:XML)
         {
-            super(xml);
+            super(svgRoot, xml);
         }
         
         override protected function parse():void {

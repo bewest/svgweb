@@ -42,8 +42,8 @@ package com.zavoo.svg.nodes
         private var bitmap:Bitmap;
         private var orignalBitmap:Bitmap;
                    
-        public function SVGImageNode(xml:XML):void {
-            super(xml);
+        public function SVGImageNode(svgRoot:SVGRoot, xml:XML):void {
+            super(svgRoot, xml);
         }    
         
         /**

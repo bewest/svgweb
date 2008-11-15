@@ -38,8 +38,8 @@ package com.zavoo.svg.nodes
         private var lastCurveControlX:Number;
         private var lastCurveControlY:Number;
         
-        public function SVGPathNode(xml:XML):void {
-            super(xml);
+        public function SVGPathNode(svgRoot:SVGRoot, xml:XML):void {
+            super(svgRoot, xml);
         }    
         
         protected override function draw():void {

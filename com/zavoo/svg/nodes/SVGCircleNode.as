@@ -29,8 +29,8 @@ package com.zavoo.svg.nodes
     public class SVGCircleNode extends SVGNode
     {
         
-        public function SVGCircleNode(xml:XML):void {
-            super(xml);
+        public function SVGCircleNode(svgRoot:SVGRoot, xml:XML):void {
+            super(svgRoot, xml);
         }    
         
         /**

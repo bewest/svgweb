@@ -28,8 +28,8 @@ package com.zavoo.svg.nodes
 {
     public class SVGLineNode extends SVGNode
     {        
-        public function SVGLineNode(xml:XML):void {
-            super(xml);
+        public function SVGLineNode(svgRoot:SVGRoot, xml:XML):void {
+            super(svgRoot, xml);
         }    
         
         /**

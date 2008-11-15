@@ -36,8 +36,8 @@ package com.zavoo.svg.nodes
     
     public class SVGLinearGradient extends SVGNode
     {                
-        public function SVGLinearGradient(xml:XML):void {
-            super(xml);
+        public function SVGLinearGradient(svgRoot:SVGRoot, xml:XML):void {
+            super(svgRoot, xml);
         }    
 
         /**
@@ -70,7 +70,8 @@ package com.zavoo.svg.nodes
                 }
             }
 
-            var matrGrTr:Matrix = this.parseMatrix(this.xml.@gradientTransform);
+
+            var matrGrTr:Matrix = this.parseTransform(this.xml.@gradientTransform);
 
 
             var x1:Number = 0;
@@ -98,16 +99,6 @@ package com.zavoo.svg.nodes
             if (svgNode.xml.@y != null) {
                 objectY = Math.round(Number(svgNode.xml.@y));
             }
-
-            var objectWidth:Number = 0;
-            if (svgNode.xml.@width != null) {
-                objectWidth = Math.round(Number(svgNode.xml.@width));
-            }
-            var objectHeight:Number = 0;
-            if (svgNode.xml.@height != null) {
-                objectHeight = Math.round(Number(svgNode.xml.@height));
-            }
-
 
             var gradientWidth:Number = Math.abs(x2 - x1);
             var gradientHeight:Number = Math.abs(y2 - y1);
@@ -170,7 +161,7 @@ package com.zavoo.svg.nodes
                 }
             }
 
-            var matrGrTr:Matrix = this.parseMatrix(this.xml.@gradientTransform);
+            var matrGrTr:Matrix = this.parseTransform(this.xml.@gradientTransform);
 
 
             var x1:Number = 0;
@@ -199,16 +190,6 @@ package com.zavoo.svg.nodes
                 objectY = Math.round(Number(svgNode.xml.@y));
             }
 
-            var objectWidth:Number = 0;
-            if (svgNode.xml.@width != null) {
-                objectWidth = Math.round(Number(svgNode.xml.@width));
-            }
-            var objectHeight:Number = 0;
-            if (svgNode.xml.@height != null) {
-                objectHeight = Math.round(Number(svgNode.xml.@height));
-            }
-
-
             var gradientWidth:Number = Math.abs(x2 - x1);
             var gradientHeight:Number = Math.abs(y2 - y1);
 
@@ -232,7 +213,6 @@ package com.zavoo.svg.nodes
 
             var spreadMethod:String = SpreadMethod.PAD;
             var interpMethod:String = InterpolationMethod.RGB;
-
             graphics.lineGradientStyle(GradientType.LINEAR, colors, alphas, ratios, matr, spreadMethod, interpMethod);
 
         }
