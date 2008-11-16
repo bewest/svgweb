@@ -69,11 +69,22 @@ package com.zavoo.svg.nodes
                     // Create a child to hold a copy of the referenced object.
                     var child:XML = new XML(this.copyXMLUnique(this._href._xml).toXMLString());
 
+                    /* XXX 
+                       I think if we remove our transformNode override, then this precedence code
+                       becomes unnecessary since the <use> and the new child can just be independent
+                       and exercise their own attributes. Note the child will inherit from the
+                       <use> node so the following code is probably removable.
+                    */
+
                     // For each of the <use> attributes, overwrite the child attribute
                     // because <use> attributes have precedence over the referenced object.
                     for each( var attr:XML in this._xml.attributes() ) {
                         if (   attr.name() != "id"
                             && attr.name() != "http://www.w3.org/1999/xlink::href"
+                            && attr.name() != "x"
+                            && attr.name() != "y"
+                            && attr.name() != "width"
+                            && attr.name() != "height"
                             && attr.name() != "style") {
                             child.@[attr.name()] = attr.toString();
                         }

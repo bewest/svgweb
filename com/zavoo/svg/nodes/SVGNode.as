@@ -117,7 +117,8 @@ package com.zavoo.svg.nodes
             
             var xmlList:XMLList;
             this._style = new Object();
-            //Get styling from XML attribute list
+
+            // Get styling from XML attribute list
             for each (var attribute:String in SVGNode.attributeList) {
                 xmlList = this._xml.attribute(attribute);
                 if (xmlList.length() > 0) {
@@ -125,7 +126,7 @@ package com.zavoo.svg.nodes
                 }
             }
             
-            //Get styling from XML attribute 'style'
+            // Get styling from XML attribute 'style'
             xmlList = this._xml.attribute('style');
             if (xmlList.length() > 0) {
                 var styleString:String = xmlList[0].toString();
@@ -146,9 +147,21 @@ package com.zavoo.svg.nodes
             
             this.loadAttribute('x');    
             this.loadAttribute('y');
+
+            // XXX hack because tspan x,y apparently replaces
+            // the parent text x,y instead of offsetting the
+            // parent like every other node. the 'correct'
+            // calculation is commented out because it does
+            // not work currently
+            if (this is SVGTspanNode) {
+                this.x = 0;
+                this.y = 0;
+                //this.x = this.x - this.parent.x;
+                //this.y = this.y - this.parent.y;
+            }
             this.loadAttribute('rotate', 'rotation');
             
-            this.loadStyle('opacity', 'alpha');            
+            this.loadStyle('opacity', 'alpha');
                                 
         }
  
@@ -162,6 +175,7 @@ package com.zavoo.svg.nodes
             var attrValue:String;
             var style:String;
 
+            // Create an object with the base styles
             var baseStyles:Array = baseStylesStr.split(';');
             for each(style in baseStyles) {
                 styleSet = style.split(':');
@@ -175,6 +189,7 @@ package com.zavoo.svg.nodes
                 }
             }
 
+            // Set the new styles over the base styles
             var newStyles:Array = newStylesStr.split(';');
             for each(style in newStyles) {
                 styleSet = style.split(':');
@@ -184,7 +199,20 @@ package com.zavoo.svg.nodes
                     // Trim leading whitespace.
                     attrName = attrName.replace(/^\s+/, '');
                     attrValue = attrValue.replace(/^\s+/, '');
-                    mergedStyles[attrName] = attrValue;
+                    // overwriting fills have special rules.
+                    // url gradients take precedence over new rgb
+                    if (attrName == 'fill' && mergedStyles[attrName] != undefined) {
+                        if (   (mergedStyles[attrName].indexOf('url') == -1)
+                            || (attrValue.indexOf('url') != -1) ) {
+                            mergedStyles[attrName] = attrValue;
+                        }
+                        //else {
+                        //    this.svgRoot.debug("not overwriting " + mergedStyles[attrName] + " with " + attrValue);
+                        //}
+                    }
+                    else {
+                        mergedStyles[attrName] = attrValue;
+                    }
                 }
             }
 
@@ -864,7 +892,7 @@ package com.zavoo.svg.nodes
                     this.y = 0;
                     this.setAttributes();                        
 
-                    if (!this.isChildOfDef()) {
+                    if (!this.isChildOfDef() && this.getStyle('display') != 'none') {
                         this.generateGraphicsCommands();    
                         this.transformNode();        
                         this.draw();    
