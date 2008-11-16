@@ -91,13 +91,15 @@ package com.zavoo.svg.nodes.mask
 
 
         override protected function parse():void {
-
             var childClipXML:XML = this._childToMaskXML.copy();
 
             //  Clip objects are stripped of these attributes
             //  and they draw with black fills.
             if (childClipXML.@['clip-path']) {
                 delete childClipXML.@['clip-path'];
+            }
+            if (childClipXML.@['mask']) {
+                delete childClipXML.@['mask'];
             }
             if (childClipXML.@['style']) {
                 delete childClipXML.@['style'];
@@ -117,8 +119,9 @@ package com.zavoo.svg.nodes.mask
             //  Add the Child to be Masked:
             //      If clip-path exists, create a SVGClipMaskParent to hold
             //      the clip-path and child.
-            var clipList:XMLList = this._childToMaskXML.attribute('clip-path');
-            if (clipList.length() > 0) {
+            var clipList:XMLList;
+            if (   (this._childToMaskXML.attribute('clip-path').length() > 0)
+                || (this._childToMaskXML.attribute('mask').length() > 0) ) {
                 this.addChild(new SVGClipMaskParent(this.svgRoot, this._childToMaskXML));
             }
             else {

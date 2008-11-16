@@ -602,7 +602,7 @@ package com.zavoo.svg.nodes
          * This handles creation of child nodes.
          **/
         protected function parse():void {
-            //this.svgRoot.debug("parse: " + this.xml.@id);
+            //this.svgRoot.debug("parse: " + this.xml.@id + " type " + describeType(this).@name);
             // xxx we may miss referenced href changes because we only check hrefs
             // when this referencing object is redrawn. The fix
             // is to invalidate all referencing objects when any referenced
@@ -634,8 +634,6 @@ package com.zavoo.svg.nodes
                     newChildNode.refreshHref();
                     newChildNode.setAttributes();
 
-
-
                     var filterStr:String = newChildNode.getStyle('filter');
 
                     // Objects with a gaussian filter need to be 
@@ -661,7 +659,8 @@ package com.zavoo.svg.nodes
                         newChildNode = new SVGBlurMaskParent(this.svgRoot, childXML, filterStr);
                     }
                     else {
-                        if (childXML.@['clip-path'] != undefined) {
+                        if (    (childXML.@['clip-path'] != undefined)
+                             || (childXML.@['mask'] != undefined) ) {
                             newChildNode = new SVGClipMaskParent(this.svgRoot, childXML);
                         }
                     }
@@ -892,7 +891,7 @@ package com.zavoo.svg.nodes
                     this.y = 0;
                     this.setAttributes();                        
 
-                    if (!this.isChildOfDef() && this.getStyle('display') != 'none') {
+                    if (!this.isChildOfDef() && !this.isDisplayNone()) {
                         this.generateGraphicsCommands();    
                         this.transformNode();        
                         this.draw();    
@@ -977,6 +976,22 @@ package com.zavoo.svg.nodes
                 node=SVGNode(node.parent);
                 if (node is SVGDefsNode)
                     return true;
+            }
+            return false;
+        }
+        /**
+         * Has style 'display: none' or child of parent with same? they are not drawn.
+         **/ 
+        public function isDisplayNone():Boolean {
+            var node:DisplayObject = this;
+            if (this.getStyle('display') == 'none') {
+                return true;
+            }
+            while (node && !(node is SVGRoot)) {
+                node=node.parent;
+                if (node && node is SVGNode && SVGNode(node).getStyle('display') == 'none') {
+                    return true;
+                }
             }
             return false;
         }

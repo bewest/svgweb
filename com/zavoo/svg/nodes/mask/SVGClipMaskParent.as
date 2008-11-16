@@ -55,14 +55,19 @@ package com.zavoo.svg.nodes.mask
             var childNode:SVGNode;
             var clipPathXML:XML;
 
-            clipList = this._childToMaskXML.attribute('clip-path');
-            var clipPath:String = clipList[0].toString();
+            if (this._childToMaskXML.attribute('clip-path').length() > 0) {
+                clipList = this._childToMaskXML.attribute('clip-path');
+            }
+            else {
+                clipList = this._childToMaskXML.attribute('mask');
+            }
+            var clipPath:String= clipList[0].toString();
             clipPath = clipPath.replace(/url\(#(.*?)\)/si,"$1");
+            var clipPathNode:SVGNode = this.svgRoot.getElement(clipPath);
 
             // Create and add the mask node
-            // xxx would need to create random id if necessary.
+            // xxx would need to create random this.xml.@id if necessary.
             this.svgRoot.addReference(this.xml.@id, clipPath);
-            var clipPathNode:SVGClipPathNode = this.svgRoot.getElement(clipPath);
             if (clipPathNode) {
                 clipPathXML = clipPathNode.xml.copy();
 
@@ -77,9 +82,9 @@ package com.zavoo.svg.nodes.mask
                 this.addChild(svgMask);
                 this.mask = svgMask;
 
-                 
                 var childNodeXML:XML = this._childToMaskXML.copy();
                 delete childNodeXML.@['clip-path'];
+                delete childNodeXML.@['mask'];
 
                 childNode = this.parseNode(childNodeXML);
                 if (childNode) {
