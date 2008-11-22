@@ -26,7 +26,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 package com.zavoo.svg.nodes
 {
-    import mx.collections.ArrayCollection;
     
     public class SVGTspanNode extends SVGTextNode
     {        

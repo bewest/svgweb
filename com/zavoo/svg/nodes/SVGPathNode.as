@@ -43,9 +43,7 @@ package com.zavoo.svg.nodes
         }    
         
         protected override function draw():void {
-            //this.svgRoot.debug("drawing pathnode " + this.xml.@id);
             this.runGraphicsCommands();            
-            //this.svgRoot.debug("done drawing pathnode " + this.xml.@id);
         }
         
         /**

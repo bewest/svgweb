@@ -34,15 +34,15 @@ package com.zavoo.svg
     import flash.display.LoaderInfo;
     import flash.external.ExternalInterface;
     
+    import mx.controls.TextArea;
     import flash.net.URLLoader;
     import flash.net.URLRequest;
-    import flash.display.Sprite;
+    import mx.containers.Canvas;
 
-    [SWF(backgroundColor="#ffffff", frameRate="24", width="2048", height="1024")]
     /**
      * Flex container for the SVG Renderer
      **/
-    public class SVGViewer extends Sprite
+    public class SVGViewerDebug extends Canvas
     {
         private var _xml:XML;
         private var _svgRoot:SVGRoot;
@@ -52,17 +52,26 @@ package com.zavoo.svg
         private var myXMLLoader:URLLoader= new URLLoader ();
         private var myHTMLLoader:URLLoader= new URLLoader ();
         public  var paramsObj:Object;
-
-        public function debug(debugMessage:String):void {
-            //trace(debugMessage);
+        private var debugText:TextArea = null;
+        
+        public function setDebugTextArea(debugText:TextArea):void {
+            this.debugText = debugText;
         }
-
+        public function debug(debugMessage:String):void {
+            if (this.debugText != null) {
+                this.debugText.text += (debugMessage + "\n");
+            }
+        }
         /**
          * @public
          **/
         public function xmlLoaded(event : Event):void {
            var dataXML:XML = new XML(event.target.data);
            this.xml = dataXML;
+           // shift image down so we can see it
+           if (this.debugText) {
+                this._svgRoot.xml.@y='250';
+           }
         }
 
         public function htmlLoaded(event : Event):void {
@@ -113,8 +122,7 @@ package com.zavoo.svg
         }
 
         private function addedToStage(event:Event = null):void {
-
-            var outerthis:SVGViewer = this;
+            var outerthis:SVGViewerDebug = this;
             //this.debug("Got addedToStage event.");
             var myURL:String = this.root.loaderInfo.loaderURL;
             if (ExternalInterface.available) {
@@ -150,23 +158,6 @@ package com.zavoo.svg
                     }
                     this.debug(debugstr);
                 }
-                var paramsObj:Object = LoaderInfo(this.root.loaderInfo).parameters;
-                var item:String;
-                for (item in paramsObj) {
-                    if (item == "loadSVGURL") {
-                        this.debug("Found parameter loadSVGURL=" + paramsObj[item]);
-                        this.loadSVGURL(paramsObj[item]);
-                    }
-                    if (item == "inlineSVGURL") {
-                        this.debug("Found parameter inlineSVGURL=" + paramsObj[item]);
-                        this.inlineSVGURL = paramsObj[item];
-                    }
-                    if (item == "inlineSVGId") {
-                        this.debug("Found parameter inlineSVGId=" + paramsObj[item]);
-                        this.inlineSVGId = paramsObj[item];
-                    }
-                }
-
                 if (this.inlineSVGURL != "") {
                     this.debug("Inline URL parameter specified: " + this.inlineSVGURL);
                     this.debug("The SWF file URL is: " + myURL);
@@ -207,15 +198,15 @@ package com.zavoo.svg
             }
         }
 
-        public function SVGViewer():void {
+        public function SVGViewerDebug() {
             super();
+            this.addEventListener(Event.ADDED_TO_STAGE, addedToStage);
 
             this._svgRoot = new SVGRoot(null);
             this._svgRoot.debug = this.debug;
             this._svgRoot.svgRoot = this._svgRoot;
-            this.addChild(this._svgRoot);
-
-            this.addEventListener(Event.ADDED_TO_STAGE, addedToStage);
+            this.rawChildren.addChild(this._svgRoot);
+            
             this._svgRoot.addEventListener(Event.RESIZE, sizeCanvas);
 
         }
@@ -224,12 +215,10 @@ package com.zavoo.svg
          **/
          private function sizeCanvas(event:Event = null):void {
              //Scale canvas to match size of  SVG
-             /*
              if (this._svgRoot != null) {
                 this.width = this._svgRoot.width;
                 this.height = this._svgRoot.height;
              }
-             */
          }
         
         /**

@@ -16,9 +16,6 @@
         var inlineSVGURL:String="";
         var inlineSVGId:String="";
 
-        /* Uncomment the next line and debugTextArea at the end to enable
-           the debugging screen.
-        */
         mySVGViewer.setDebugTextArea(debugTextArea);
 
         /* Get the SVG source from the parameters */
@@ -43,7 +40,7 @@
     }
     ]]>
   </mx:Script>
-  <SVGViewer id="mySVGViewer" width="100%" height="100%" backgroundColor="#00ff00"/>
+  <SVGViewerDebug id="mySVGViewer" width="100%" height="100%" backgroundColor="#00ff00"/>
   <mx:TextArea id="debugTextArea"
        width="1024" height="20%" backgroundColor="#e0ffe0"/>
 </mx:Application>
