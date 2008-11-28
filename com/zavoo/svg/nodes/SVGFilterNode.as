@@ -60,13 +60,21 @@ package com.zavoo.svg.nodes
             var concatMatrix:Matrix = new Matrix();
             var oldMatrix:Matrix;
 
-            while (svgNode && !(svgNode is SVGRoot) ) {
+            while (svgNode) {
+                // The root does not get its matrix from xml; it gets it from direct
+                // assignment (for scaling purposes) when the flash control is created.
+                if (svgNode is SVGRoot) {
+                    oldMatrix = svgNode.transform.matrix;
+                    oldMatrix.concat(concatMatrix);
+                    concatMatrix = oldMatrix;
+                    break;
+                }
                 if (  !(svgNode is SVGClipMaskParent)
                    && !(svgNode is SVGBlurMaskParent)
                    && (svgNode.xml.@transform != undefined) ) {
-                     oldMatrix = this.parseTransform(svgNode.xml.@transform);
-                     oldMatrix.concat(concatMatrix);
-                     concatMatrix = oldMatrix;
+                    oldMatrix = this.parseTransform(svgNode.xml.@transform);
+                    oldMatrix.concat(concatMatrix);
+                    concatMatrix = oldMatrix;
                 }
                 svgNode = SVGNode(svgNode.parent);
             }

@@ -1,0 +1,166 @@
+
+Frequently Asked Questions
+------------------------------------------------------------
+
+Basic
+    Basic.1: What is svgviewer?
+    Basic.2: What is SVG? Where can I get SVG files?
+    Basic.3: Why does svgviewer exist?
+    Basic.4: Who wrote svgviewer?
+    Basic.5: What is sgweb?
+
+Deployment
+    Dep.1: What is the simplest way to include an SVG image on my web page?
+    Dep.2: How can I use an SVG image from SVG content that is stored inline in my web page?
+    Dep.3: How can I change the default background color?
+
+Sizing
+    Size.1: What is the relationship between SVG drawing coordinates
+            and screen pixel coordinates?
+    Size.2: How do I make the size of an SVG object resize along with the
+            browser window, ignoring the object's original aspect ratio?
+    Size.3: How do I make the size of an SVG object resize along with the
+            browser window, but maintain the object's original aspect ratio?
+    Size.4: How do I make the size of an SVG object fit a given % of the
+            screen size and resize along with the browser?
+
+Limitations
+    Limit.1: What parts of SVG are not implemented?
+
+Scripting
+    Script.1: What javascript helper functions are available for loading SVG content?
+    Script.2: What javascript functions are available as part of the standard W3C SVG interface?
+
+Future
+    Future.1: What are the plans for SVGViewer?
+
+
+
+
+
+Answers
+------------------------------------------------------------
+
+Basic
+    Basic.1: What is SVGViewer?
+        SVGViewer is a flash "movie" which renders Scalable Vector Graphics (SVG) files.
+
+    Basic.2: What is an SVG file? Where can I get SVG files?
+        Scalable Vector Graphics (SVG) files are graphical images that are stored in XML format.
+        Vector graphics can scale to any size without degradation unlike bitmap images which become pixelated.
+        You can find many freely available SVG files at http://www.openclipart.org.
+        You can use the freely available Inkscape application to create and edit SVG files.
+
+    Basic.3: Why does SVGViewer exist?
+        Internet Explorer does not support SVG files. An option to support SVG on Internet Explorer
+        was desired that did not require the user to install anything.  Adobe has provided a plug-in but it
+        requires installation and is scheduled for end of support. So, this flash shim was created to allow
+        any browser with flash support to support SVG files without installing anything else.
+
+    Basic.4: Who wrote SVGViewer?
+        The original core was written by James Hight and released under MIT license in September of 2008.
+        Rick Masters took that code and created a new project, http://code.google.com/p/sgweb,
+        on October 11th, 2008. Rick then added support for linear and radial gradients, xlink cross
+        references, gaussian blurs, and javascript scripting and fixed numerous minor issues.
+        Rick can be contacted here: grick23 at gmail.com.
+
+    Basic.6: What is sgweb?
+        sgweb is the project that Richard Masters started as an umbrella project for scalable graphics
+        utilities for web browsers. Simply put: sgweb is the parent project for svgviewer.
+        The sgweb project seeks to promote vector markup languages in web browsers and is agnostic
+        on technology. The first utility of this project is svgviewer. There may be other utilities
+        added to the sgweb project for Xaml, javafx, and other markup languages in the future.
+
+Deployment
+    Dep.1: What is the simplest way to include an SVG image on my web page?
+        See examples/svg_loadfile_js.html
+        Place svgviewer.swf in the same directory as your html file.
+
+    Dep.2: How can I use an SVG image from SVG content that is stored inline in my web page?
+        See examples/svg_inline.html
+        Place svgviewer.swf in the same directory as your html file.
+
+    Dep.3: How can I include an SVG image on my web page without using javascript?
+        See examples/svg_loadfile_obj.html
+        Place svgviewer.swf in the same directory as your html file.
+
+    Dep.4: How can I include multiple inline SVG images?
+        See examples/svg_inline_multi.html
+        Place svgviewer.swf in the same directory as your html file.
+
+Sizing
+    Size.1: What is the relationship between SVG drawing coordinates and
+            browser pixel coordinates?
+            The SVG drawing coordinates are draw initially to the flash
+            coordinate system which are then mapped to browser coordinates.
+            SVGViewer tells flash at compile time what the size of the "movie"
+            is. The width and height of the flash area is defined at the top
+            of SVGViewer.as in the [SWF] directive. Currently, this is 2048
+            by 1024.
+            When you use svgviewer in your web page you specify a height and
+            width (either in the <object> tag or by passing in parameters to
+            javascript functions) and then the flash coordinates are mapped
+            into that height and width.
+            If you specify a width and height of an SVG object as 512 by 256,
+            then the image will appear four times smaller than would be
+            rendered by SVG if loaded natively by the browser. 
+       
+
+
+Limitations
+
+    Limit.1: What parts of SVG are not implemented?
+        * Compressed SVG files are not supported.
+        * Scripting is not yet supported.
+        * Animation is not yet supported.
+        * Only the gaussian blur filter is implemented. No plan to support other filters (which are rarely used).
+        * Off center radial gradients (which are rarely used) are not yet supported.
+        * SVG Masks (which are rarely used) are not supported. As a best effort, clipping paths
+               are used in their place. No plans to support further.
+        * Patterns (which are rarerly used) are not supported. No plan to support at this time.
+
+
+Scripting
+
+    Script.1: What javascript helper functions are available for loading SVG content?
+        sgweb.createSVGFlashObject(parentDivId, uniqueId, objectWidth, objectHeight, svgId, bgcolor, scaleX, scaleY, translateX, translateY)
+        sgweb.loadSVGURL()
+
+    Script.2: What javascript methods are available as part of the standard W3C SVG interface?
+        (note these are not yet implemented)
+        createAttributeNS
+        createElementNS
+        getAttributeNodeNS
+        getAttributeNS
+        getElementsByTagNameNS
+        getNamedItemNS
+        hasAttributeNS
+        removeAttributeNS
+        removeNamedItemNS
+        setAttributeNS
+        setAttributeNodeNS
+        setNamedItemNS
+
+        Example:
+            var svgNS = 'http://www.w3.org/2000/svg';
+            var foo_g = createElementNS(svgNS, 'g')
+            foo_g.getAttributeNS(null, 'x');
+            foo_g.setAttributeNS(svgNS, 'x', '100');
+
+
+    Script.3: How are mouse and keyboard events handled?
+        There are methods for event registration.
+        Mouse Events
+        Key Events
+
+
+Future
+    Future.1: What are the plans for SVGViewer?
+        The current author tends to work on specific SVG files until they render as well as possible, fixing
+        or implementing new functionality along the way. Currently all files render well. If you have an SVG file
+        that you would like me to work on, send it to grick23@gmail.com.
+        The current task list, as of Nov 28 2008, is:
+          1. Implement javascript scripting in order to support svgtetris.svg
+          2. Implement animation
+
+

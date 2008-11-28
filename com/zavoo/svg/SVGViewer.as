@@ -31,6 +31,7 @@ package com.zavoo.svg
     
     import flash.events.Event;
     import flash.geom.Transform;
+    import flash.geom.Matrix;
     import flash.display.LoaderInfo;
     import flash.external.ExternalInterface;
     
@@ -38,7 +39,7 @@ package com.zavoo.svg
     import flash.net.URLRequest;
     import flash.display.Sprite;
 
-    [SWF(backgroundColor="#ffffff", frameRate="24", width="2048", height="1024")]
+    [SWF(frameRate="24", width="2048", height="1024")]
     /**
      * Flex container for the SVG Renderer
      **/
@@ -47,14 +48,24 @@ package com.zavoo.svg
         private var _xml:XML;
         private var _svgRoot:SVGRoot;
         private var html:String;
+        private var js_uniqueId:String = "";
         private var inlineSVGURL:String = "";
         private var inlineSVGId:String = "";
         private var myXMLLoader:URLLoader= new URLLoader ();
         private var myHTMLLoader:URLLoader= new URLLoader ();
         public  var paramsObj:Object;
+        protected var scaleXParam:Number = 1.0;
+        protected var scaleYParam:Number = 1.0;
+        protected var debugEnabled:Boolean = false;
 
         public function debug(debugMessage:String):void {
-            //trace(debugMessage);
+            if (this.debugEnabled) {
+                try {
+                    ExternalInterface.call("receiveLogFromFlash", debugMessage);
+                }
+                catch(error:SecurityError) {
+                }
+            }
         }
 
         /**
@@ -70,8 +81,8 @@ package com.zavoo.svg
            var htmlStrings:Object = this.html.split('\n');
            var svgString:String="";
            var svgCopying:Boolean=false;
-           var svgStartString:String= "<!--svgid:"+this.inlineSVGId;
-           var svgEndString:String="<!--/svgid:"+this.inlineSVGId;
+           var svgStartString:String= "<!--svgid:"+this.inlineSVGId+"-->";
+           var svgEndString:String="<!--/svgid:"+this.inlineSVGId+"-->";
            for (var i:String in htmlStrings) {
                if (htmlStrings[i].substring(0, svgEndString.length) == svgEndString) {
                    this.debug("Found end of SVG.");
@@ -119,6 +130,25 @@ package com.zavoo.svg
             var myURL:String = this.root.loaderInfo.loaderURL;
             if (ExternalInterface.available) {
                 this.debug("External interface may be available.");
+
+                // process the parameters to get the unique id
+                var paramsObj:Object = LoaderInfo(this.root.loaderInfo).parameters;
+                var item:String;
+                for (item in paramsObj) {
+                    if (item == "uniqueId") {
+                        this.js_uniqueId = paramsObj[item];
+                    }
+                    if (item == "debug") {
+                        if (paramsObj[item] == 'true') {
+                            this.debugEnabled = true;
+                        }
+                        else {
+                            this.debugEnabled = false;
+                        }
+                    }
+                }
+
+                // register interface functions for browser javascript engine
                 function js_createFromSVG(svg:String):void {
                     outerthis.debug("Received createFromSVG() call from javascript.");
                     var dataXML:XML = XML(svg);
@@ -128,10 +158,14 @@ package com.zavoo.svg
                     outerthis.debug("Received loadSVGURL() call from javascript.");
                     loadSVGURL(svg);
                 }
+                function js_getVersion():String {
+                    return "0.1";
+                }
                 var debugstr:String;
                 try {
                     ExternalInterface.addCallback("createFromSVG", js_createFromSVG);
                     ExternalInterface.addCallback("loadSVGURL", js_loadSVGURL);
+                    ExternalInterface.addCallback("getVersion", js_getVersion);
                 }
                 catch(error:SecurityError) {
                     debugstr = "Security Error on ExternalInterface.addCallback(...). ";
@@ -140,8 +174,9 @@ package com.zavoo.svg
                     }
                     this.debug(debugstr);
                 }
+                // notify browser javascript that we are loaded and ready
                 try {
-                    var result:Object = ExternalInterface.call("receiveFromFlash", myURL);
+                    var result:Object = ExternalInterface.call("receiveFromFlash", this.js_uniqueId);
                 }
                 catch(error:SecurityError) {
                     debugstr = "Security Error on ExternalInterface.call(...). ";
@@ -150,20 +185,36 @@ package com.zavoo.svg
                     }
                     this.debug(debugstr);
                 }
-                var paramsObj:Object = LoaderInfo(this.root.loaderInfo).parameters;
-                var item:String;
+
+                // process <object> parameters
+                var matr:Matrix;
                 for (item in paramsObj) {
                     if (item == "loadSVGURL") {
-                        this.debug("Found parameter loadSVGURL=" + paramsObj[item]);
                         this.loadSVGURL(paramsObj[item]);
                     }
                     if (item == "inlineSVGURL") {
-                        this.debug("Found parameter inlineSVGURL=" + paramsObj[item]);
                         this.inlineSVGURL = paramsObj[item];
                     }
                     if (item == "inlineSVGId") {
-                        this.debug("Found parameter inlineSVGId=" + paramsObj[item]);
                         this.inlineSVGId = paramsObj[item];
+                    }
+                    if (item == "scaleX") {
+                        this.scaleXParam = Number(paramsObj[item]);
+                        matr = new Matrix();
+                        matr.scale(this.scaleXParam, this.scaleYParam);
+                        this.transform.matrix = matr;
+                    }
+                    if (item == "scaleY") {
+                        this.scaleYParam = Number(paramsObj[item]);
+                        matr = new Matrix();
+                        matr.scale(this.scaleXParam, this.scaleYParam);
+                        this.transform.matrix = matr;
+                    }
+                    if (item == "translateX") {
+                        this.x = Number(paramsObj[item]);
+                    }
+                    if (item == "translateY") {
+                        this.y = Number(paramsObj[item]);
                     }
                 }
 
@@ -171,7 +222,14 @@ package com.zavoo.svg
                     this.debug("Inline URL parameter specified: " + this.inlineSVGURL);
                     this.debug("The SWF file URL is: " + myURL);
                     /* If the swf url starts with "file" then we need to use the url retrieval
-                       routines to get the entire html file and then get the svg element.
+                       routines to get the entire html file and then get the svg element 
+                       because flash does not allow javascript to pass it in. This is
+                       because when loaded from file, network access is also not allowed, to
+                       prevent transfer of local data to network, and flash includes javascript
+                       access as part of its network access profile and disables it for local files.
+                       Therefore, we cannot rely on the more efficient mechanism where javascript
+                       retrieves the SVG directly from the DOM and must do it here ourselves.
+
                        If the url is http, then javascript would be active and would pass in
                        svg text directly so there is no need to do this url retrieval here
                        in that case.
@@ -216,28 +274,14 @@ package com.zavoo.svg
             this.addChild(this._svgRoot);
 
             this.addEventListener(Event.ADDED_TO_STAGE, addedToStage);
-            this._svgRoot.addEventListener(Event.RESIZE, sizeCanvas);
 
         }
-        /**
-         * @private
-         **/
-         private function sizeCanvas(event:Event = null):void {
-             //Scale canvas to match size of  SVG
-             /*
-             if (this._svgRoot != null) {
-                this.width = this._svgRoot.width;
-                this.height = this._svgRoot.height;
-             }
-             */
-         }
         
         /**
          * @public
          **/
         public function set xml(value:XML):void {            
             this._svgRoot.xml = value;
-            this.sizeCanvas();            
         }
         
         /**
@@ -252,7 +296,6 @@ package com.zavoo.svg
          **/
         public function set scale(scale:Number):void {
             this._svgRoot.scale = scale;
-            this.sizeCanvas();             
         }
         
         /**
@@ -292,7 +335,6 @@ package com.zavoo.svg
          **/
         override public function set rotation(value:Number):void {
             this._svgRoot.rotation = value;
-            this.sizeCanvas();
         }
         
         override public function get rotation():Number {
@@ -305,7 +347,6 @@ package com.zavoo.svg
          **/
         override public function set transform(value:Transform):void {
             this._svgRoot.transform = value;
-            this.sizeCanvas();
         }
         
         override public function get transform():Transform {
@@ -318,7 +359,6 @@ package com.zavoo.svg
          **/
         override public function set filters(value:Array):void {
             this._svgRoot.filters = value;
-            this.sizeCanvas();
         }
         
         override public function get filters():Array {
