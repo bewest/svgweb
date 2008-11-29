@@ -211,7 +211,7 @@ package com.sgweb.svg.nodes
                     
                     if (width != null) {
                         // implement xMidYMid; well at least the x part
-                        this.x = -1*points[0] + (Number(width) - points[2]) / 2;
+                        this.x = -1*points[0] + (SVGColors.cleanNumber(width) - points[2]) / 2;
                     }
                 }
                 
