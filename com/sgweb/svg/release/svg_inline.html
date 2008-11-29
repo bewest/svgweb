@@ -1415,7 +1415,7 @@ function getFlashMovieObject(movieName)
 }
 // The flash control actionscript calls this on startup.
 // We use this to know the flash control is ready for activity.
-function receiveFromFlash(uniqueId) {
+function receiveFromFlash(flashMsg) {
     var svgText= document.getElementById('svgsource').innerHTML;
     getFlashMovieObject("mySVGViewerObj").createFromSVG(svgText);
 }

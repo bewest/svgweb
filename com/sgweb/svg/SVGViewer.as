@@ -24,6 +24,18 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
+/*
+
+SVGViewer is a flash sprite which is the parent for a tree of SVGNodes
+which are sprites initialized from XML. The top most SVGNode is an SVGRoot.
+
+The xml is parsed and xml children are walked when the object is rendered.
+Child SVGNodes are added and when they are rendered, their xml is walked
+and so on.
+
+*/
+
+
 package com.sgweb.svg
 {
     
@@ -49,19 +61,35 @@ package com.sgweb.svg
         private var _svgRoot:SVGRoot;
         private var html:String;
         private var js_uniqueId:String = "";
-        private var inlineSVGURL:String = "";
-        private var inlineSVGId:String = "";
         private var myXMLLoader:URLLoader= new URLLoader ();
         private var myHTMLLoader:URLLoader= new URLLoader ();
+
         public  var paramsObj:Object;
+        protected var sourceTypeParam:String = "";
+        protected var svgURLParam:String = "";
+        protected var svgIdParam:String = "";
         protected var scaleXParam:Number = 1.0;
         protected var scaleYParam:Number = 1.0;
         protected var debugEnabled:Boolean = false;
 
+
+        public function SVGViewer():void {
+            super();
+
+            this._svgRoot = new SVGRoot(null);
+            this._svgRoot.debug = this.debug;
+            this._svgRoot.svgRoot = this._svgRoot;
+            this.addChild(this._svgRoot);
+
+            this.addEventListener(Event.ADDED_TO_STAGE, addedToStage);
+
+        }
+        
+
         public function debug(debugMessage:String):void {
             if (this.debugEnabled) {
                 try {
-                    ExternalInterface.call("receiveLogFromFlash", debugMessage);
+                    ExternalInterface.call("receiveFromFlash", { type: 'log', logString: debugMessage } );
                 }
                 catch(error:SecurityError) {
                 }
@@ -81,8 +109,8 @@ package com.sgweb.svg
            var htmlStrings:Object = this.html.split('\n');
            var svgString:String="";
            var svgCopying:Boolean=false;
-           var svgStartString:String= "<!--svgid:"+this.inlineSVGId+"-->";
-           var svgEndString:String="<!--/svgid:"+this.inlineSVGId+"-->";
+           var svgStartString:String= "<!--svgid:"+this.svgIdParam+"-->";
+           var svgEndString:String="<!--/svgid:"+this.svgIdParam+"-->";
            for (var i:String in htmlStrings) {
                if (htmlStrings[i].substring(0, svgEndString.length) == svgEndString) {
                    this.debug("Found end of SVG.");
@@ -100,9 +128,9 @@ package com.sgweb.svg
            this.xml = dataXML;
         }
 
-        public function loadSVGURL(mySVGURL:String):void {
-            this.debug("Doing loadSVGURL for this URL: " + mySVGURL);
-            var myXMLURL : URLRequest = new URLRequest (mySVGURL);
+        public function loadSVGURL():void {
+            this.debug("Doing loadSVGURL for this URL: " + this.svgURLParam);
+            var myXMLURL : URLRequest = new URLRequest (this.svgURLParam);
             this.myXMLLoader.addEventListener (Event.COMPLETE, xmlLoaded);
             try
             {
@@ -118,9 +146,21 @@ package com.sgweb.svg
             }
         }
 
-        public function loadSVGId(inlineSVGURL:String, inlineSVGId:String):void {
-            this.inlineSVGURL = inlineSVGURL;
-            this.inlineSVGId = inlineSVGId;
+        public function loadHTMLURL():void {
+            var myHTMLURL : URLRequest = new URLRequest (this.svgURLParam);
+            this.myHTMLLoader.addEventListener (Event.COMPLETE, htmlLoaded);
+            try
+            {
+                this.myHTMLLoader.load(myHTMLURL);
+            }
+            catch (error:ArgumentError)
+            {
+                this.debug("An ArgumentError has occurred.");
+            }
+            catch (error:SecurityError)
+            {
+                this.debug("A SecurityError has occurred.");
+            }
         }
 
         private function addedToStage(event:Event = null):void {
@@ -149,23 +189,18 @@ package com.sgweb.svg
                 }
 
                 // register interface functions for browser javascript engine
-                function js_createFromSVG(svg:String):void {
-                    outerthis.debug("Received createFromSVG() call from javascript.");
-                    var dataXML:XML = XML(svg);
-                    outerthis.xml = dataXML;
-                }
-                function js_loadSVGURL(svg:String):void {
-                    outerthis.debug("Received loadSVGURL() call from javascript.");
-                    loadSVGURL(svg);
-                }
-                function js_getVersion():String {
-                    return "0.1";
+                function js_receiveFromBrowser(jsMsg:Object):Object {
+                    if (jsMsg.type == 'load') {
+                        return outerthis.js_handleLoad(jsMsg);
+                    }
+                    if (jsMsg.type == 'getVersion') {
+                        return { type: 'version', version: '0.4' };
+                    }
+                    return null;
                 }
                 var debugstr:String;
                 try {
-                    ExternalInterface.addCallback("createFromSVG", js_createFromSVG);
-                    ExternalInterface.addCallback("loadSVGURL", js_loadSVGURL);
-                    ExternalInterface.addCallback("getVersion", js_getVersion);
+                    ExternalInterface.addCallback("sendToFlash", js_receiveFromBrowser);
                 }
                 catch(error:SecurityError) {
                     debugstr = "Security Error on ExternalInterface.addCallback(...). ";
@@ -176,7 +211,8 @@ package com.sgweb.svg
                 }
                 // notify browser javascript that we are loaded and ready
                 try {
-                    var result:Object = ExternalInterface.call("receiveFromFlash", this.js_uniqueId);
+                    var result:Object = ExternalInterface.call("receiveFromFlash",
+                        { type: 'event', eventType: 'onLoad', uniqueId: this.js_uniqueId } );
                 }
                 catch(error:SecurityError) {
                     debugstr = "Security Error on ExternalInterface.call(...). ";
@@ -189,14 +225,14 @@ package com.sgweb.svg
                 // process <object> parameters
                 var matr:Matrix;
                 for (item in paramsObj) {
-                    if (item == "loadSVGURL") {
-                        this.loadSVGURL(paramsObj[item]);
+                    if (item == "sourceType") {
+                        this.sourceTypeParam = paramsObj[item];
                     }
-                    if (item == "inlineSVGURL") {
-                        this.inlineSVGURL = paramsObj[item];
+                    if (item == "svgURL") {
+                        this.svgURLParam = paramsObj[item];
                     }
-                    if (item == "inlineSVGId") {
-                        this.inlineSVGId = paramsObj[item];
+                    if (item == "svgId") {
+                        this.svgIdParam = paramsObj[item];
                     }
                     if (item == "scaleX") {
                         this.scaleXParam = Number(paramsObj[item]);
@@ -218,8 +254,15 @@ package com.sgweb.svg
                     }
                 }
 
-                if (this.inlineSVGURL != "") {
-                    this.debug("Inline URL parameter specified: " + this.inlineSVGURL);
+                if (this.sourceTypeParam == 'url_svg') {
+                    this.loadSVGURL();
+                }
+                if (this.sourceTypeParam == 'url_script') {
+                    this.loadHTMLURL();
+                }
+
+                if (this.sourceTypeParam == "inline_script") {
+                    this.debug("Inline URL parameter specified: " + this.svgURLParam);
                     this.debug("The SWF file URL is: " + myURL);
                     /* If the swf url starts with "file" then we need to use the url retrieval
                        routines to get the entire html file and then get the svg element 
@@ -237,20 +280,7 @@ package com.sgweb.svg
                     if (myURL.substring(0,4) == "file") {
                         this.debug("Local file, so javascript is not available or in charge.");
                         this.debug("Need to use URLRequest to load the file.");
-                        var myHTMLURL : URLRequest = new URLRequest (this.inlineSVGURL);
-                        this.myHTMLLoader.addEventListener (Event.COMPLETE, htmlLoaded);
-                        try
-                        {
-                            this.myHTMLLoader.load(myHTMLURL);
-                        }
-                        catch (error:ArgumentError)
-                        {
-                            this.debug("An ArgumentError has occurred.");
-                        }
-                        catch (error:SecurityError)
-                        {
-                            this.debug("A SecurityError has occurred.");
-                        }
+                        this.loadHTMLURL();
                     }
                     else {
                         this.debug("Not a 'file://' type URL, so network and scripting should be");
@@ -261,26 +291,30 @@ package com.sgweb.svg
             else {
                 this.debug("External interface not available.");
                 this.debug("Assuming flashplayer debug mode. Loading default file.");
-                loadSVGURL("scimitar.svg");
+                this.sourceTypeParam = 'url_svg';
+                this.svgURLParam = 'scimitar.svg';
+                this.loadSVGURL();
             }
         }
 
-        public function SVGViewer():void {
-            super();
-
-            this._svgRoot = new SVGRoot(null);
-            this._svgRoot.debug = this.debug;
-            this._svgRoot.svgRoot = this._svgRoot;
-            this.addChild(this._svgRoot);
-
-            this.addEventListener(Event.ADDED_TO_STAGE, addedToStage);
-
+        public function js_handleLoad(jsMsg:Object):Object {
+            if (jsMsg.sourceType == 'string') {
+                this.sourceTypeParam = 'string';
+                var dataXML:XML = XML(jsMsg.svgString);
+                this.xml = dataXML;
+            }
+            if (jsMsg.sourceType == 'url_svg') {
+                this.sourceTypeParam = 'url_svg';
+                this.svgURLParam = jsMsg.svgURL;
+                this.loadSVGURL();
+            }
+            return null;
         }
-        
+
         /**
          * @public
          **/
-        public function set xml(value:XML):void {            
+        public function set xml(value:XML):void {
             this._svgRoot.xml = value;
         }
         
@@ -288,7 +322,7 @@ package com.sgweb.svg
          * SVG XML value
          **/
         public function get xml():XML {
-            return this._svgRoot.xml
+            return this._svgRoot.xml;
         }
         
         /**
@@ -302,7 +336,7 @@ package com.sgweb.svg
          * Set scaleX and scaleY at the same time
          **/
         public function get scale():Number {
-            return this._svgRoot.scale;                
+            return this._svgRoot.scale;
         }
         
         

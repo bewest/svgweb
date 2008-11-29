@@ -1465,6 +1465,17 @@ div.BottomRightQuad {
 <script>
 
 
+SVGLog = {};
+
+SVGLog.suppressLog= ((typeof(console)=="undefined") || (typeof(console.info) == "undefined"));
+
+SVGLog.info = function(logString) {
+    if (SVGLog.suppressLog) {
+        return;
+    }
+    console.info(logString);
+}
+
 
 function getFlashMovieObject(movieName)
 {
@@ -1490,11 +1501,12 @@ var SVGFlashDict = {}
 
 
 function createSVGFlashObject( params ) {
+    var bgcolor = '';
     
-    if (typeof(params.parentDivId) == "undefined") {
+    if (typeof(params.uniqueId) == "undefined") {
         return;
     }
-    if (typeof(params.uniqueId) == "undefined") {
+    if (typeof(params.parentDivId) == "undefined") {
         return;
     }
     if (typeof(params.scaleX) == "undefined") {
@@ -1509,11 +1521,8 @@ function createSVGFlashObject( params ) {
     if (typeof(params.translateY) == "undefined") {
         params.translateY=0;
     }
-    if (typeof(params.bgcolor) == "undefined") {
-        params.bgcolor = '';
-    }
-    else {
-        params.bgcolor = 'bgcolor=' + params.bgcolor;
+    if (typeof(params.bgcolor) != "undefined") {
+        bgcolor = 'bgcolor=' + params.bgcolor;
     }
     if (typeof(params.debug) == "undefined") {
         params.debug = false;
@@ -1553,10 +1562,14 @@ function createSVGFlashObject( params ) {
             '&translateY=' + translateY + 
             '&scaleX=' + ((2048.0 / cropWidth)*params.scaleX) +
             '&scaleY=' + ((1024.0 / cropHeight)*params.scaleY) +
-            '&inlineSVGURL=svg_inline2.html' +
-            '&inlineSVGId=' + params.svgId +
-            '&debug=' + params.debug + 
-            '"';
+            '&sourceType=' + params.sourceType +
+            '&svgURL=' + params.svgURL +
+            '&debug=' + params.debug;
+        if (typeof(params.svgId) != "undefined") {
+            flashVars = flashVars  + '&svgId=' + params.svgId;
+        }
+        flashVars = flashVars  + '"';
+        //SVGLog.info(flashVars);
         node.innerHTML = 
             '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" ' +
             '        codebase="" id="' + params.objectId + '" ' + 
@@ -1567,7 +1580,7 @@ function createSVGFlashObject( params ) {
             '    <param name="wmode" value="transparent"> ' +
             '    <embed  name="' + params.objectId + '" play=false ' +
             '            swliveconnect="true" AllowScriptAccess="always" ' +
-            '            src="svgviewer.swf" quality=high ' + params.bgcolor + 
+            '            src="svgviewer.swf" quality=high ' + bgcolor + 
             '            width=' + params.objectWidth + ' height=' + params.objectHeight +
             '            type="application/x-shockwave-flash" ' +
             '            FlashVars=' + flashVars + '> ' +
@@ -1577,29 +1590,38 @@ function createSVGFlashObject( params ) {
     }
 }
 
-SVGLog = {};
+function receiveFromFlash(flashMsg) {
+    if (flashMsg.type == 'event') {
+        // The flash control actionscript calls this on startup.
+        // We use this to know the flash control is ready for activity.
+        if (flashMsg.eventType == 'onLoad') {
+            var svgString;
+            var params = SVGFlashDict[flashMsg.uniqueId];
+            /**
+             If the type is inline_script, that means that the SVG is available
+             in the local DOM within a script tag. Also, since this message is being received,
+             the javascript interface is available, therefore, an optimzation can be performed.
+             In this case, the flash control leaves control to the browser (this code)
+             and we pull the SVG directly from the DOM and pass it to flash through the available
+             javascript interface. This avoids having the flash control pulling the data using
+             a URL load routine which is, theoretically, much more expensive.
 
-SVGLog.suppressLog= ((typeof(console)=="undefined") || (typeof(console.info) == "undefined"));
-
-SVGLog.info = function(logString) {
-    if (SVGLog.suppressLog) {
+             Note that this provides a simple example of how to load SVG on the fly from a string.
+            **/
+            if (params.sourceType == 'inline_script') {
+                var flashSVG = getFlashMovieObject(params.objectId);
+                svgString = document.getElementById(params.svgId).innerHTML;
+                flashSVG.sendToFlash({type: 'load', sourceType: 'string', svgString: svgString});
+            }
+        }
         return;
     }
-    console.info(logString);
+    if (flashMsg.type == 'log') {
+        SVGLog.info(flashMsg.logString);
+        return;
+    }
 }
 
-function receiveLogFromFlash(logString) {
-    SVGLog.info(logString);
-}
-
-// The flash control actionscript calls this on startup.
-// We use this to know the flash control is ready for activity.
-function receiveFromFlash(uniqueId) {
-    var svgText;
-    var params = SVGFlashDict[uniqueId];
-    svgText = document.getElementById(params.svgId).innerHTML;
-    getFlashMovieObject(params.objectId).createFromSVG(svgText);
-}
 </script>
 
 </head>
@@ -1622,33 +1644,40 @@ function receiveFromFlash(uniqueId) {
 </div>
 
 <script>
-    createSVGFlashObject({ parentDivId: 'SVGViewerControlTopLeftElement',
-                           uniqueId: 'scimitar1',
+    createSVGFlashObject({ uniqueId: 'scimitar1',
+                           parentDivId: 'SVGViewerControlTopLeftElement',
+                           sourceType: "inline_script",
+                           svgURL: "svg_inline2.html",
                            svgId: "svgsource",
                            bgcolor: '#ffd090',
                            objectWidth: 466,
                            objectHeight: 265,
                            scaleX: 1.0,
-                           scaleY: 1.0,
-                           debug: true
+                           scaleY: 1.0
                          });
-    createSVGFlashObject({ parentDivId: 'SVGViewerControlTopRightElement',
-                           uniqueId: 'scimitar2',
-                           svgId: "svgsource",
+    createSVGFlashObject({ uniqueId: 'scimitar2',
+                           parentDivId: 'SVGViewerControlTopRightElement',
+                           sourceType: "url_svg",
+                           svgURL: "scimitar.svg",
                            bgcolor: '#80F0B0',
                            objectWidth: 233,
                            objectHeight: 132,
                            scaleX: 0.5,
                            scaleY: 0.5
                          });
-    createSVGFlashObject({ parentDivId: 'SVGViewerControlBottomLeftElement',
-                           uniqueId: 'bar',
+    createSVGFlashObject({ uniqueId: 'bar',
+                           parentDivId: 'SVGViewerControlBottomLeftElement',
+                           sourceType: "url_script",
+                           svgURL: "svg_inline2.html",
                            svgId: "svgsource2",
+                           debug: true,
                            objectWidth: 550,
                            objectHeight: 250
                          });
-    createSVGFlashObject({ parentDivId: 'SVGViewerControlBottomRightElement',
-                           uniqueId: 'rect',
+    createSVGFlashObject({ uniqueId: 'rect',
+                           parentDivId: 'SVGViewerControlBottomRightElement',
+                           sourceType: "inline_script",
+                           svgURL: "svg_inline2.html",
                            svgId: "svgsource3",
                            objectWidth: 600,
                            objectHeight: 300

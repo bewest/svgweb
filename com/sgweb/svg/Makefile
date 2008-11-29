@@ -4,7 +4,7 @@ build/svgviewer.swf: SVGViewer.as *.as data/*.as nodes/*.as utils/*.as nodes/mas
 	mxmlc -output build/svgviewer.swf -use-network=false -compiler.source-path ../../../ -- SVGViewer.as
 	cp release/*.html release/*.svg build/
 
-release:
+make_release:
 	cp build/svgviewer.swf release/
 
 clean:
