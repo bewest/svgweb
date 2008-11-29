@@ -47,7 +47,7 @@ Basic
 
     Basic.2: What is an SVG file? Where can I get SVG files?
         Scalable Vector Graphics (SVG) files are graphical images that are stored in XML format.
-        Vector graphics can scale to any size without degradation unlike bitmap images which become pixelated.
+        Vector graphics can scale to any size without degradation unlike bitmap images which become pixelated (grainy).
         You can find many freely available SVG files at http://www.openclipart.org.
         You can use the freely available Inkscape application to create and edit SVG files.
 
@@ -55,7 +55,8 @@ Basic
         Internet Explorer does not support SVG files. An option to support SVG on Internet Explorer
         was desired that did not require the user to install anything.  Adobe has provided a plug-in but it
         requires installation and is scheduled for end of support. So, this flash shim was created to allow
-        any browser with flash support to support SVG files without installing anything else.
+        SVG files to be supported without requiring anything other than flash, which over 90% of users already
+        have installed.
 
     Basic.4: Who wrote SVGViewer?
         The original core was written by James Hight and released under MIT license in September of 2008.
@@ -65,28 +66,26 @@ Basic
         Rick can be contacted here: grick23 at gmail.com.
 
     Basic.6: What is sgweb?
-        sgweb is the project that Richard Masters started as an umbrella project for scalable graphics
+        sgweb is the project that Rick Masters started as an umbrella project for scalable graphics
         utilities for web browsers. Simply put: sgweb is the parent project for svgviewer.
         The sgweb project seeks to promote vector markup languages in web browsers and is agnostic
         on technology. The first utility of this project is svgviewer. There may be other utilities
         added to the sgweb project for Xaml, javafx, and other markup languages in the future.
 
 Deployment
+    For simple deployments, place svgviewer.swf in the same directory as your html and svg file.
+
     Dep.1: What is the simplest way to include an SVG image on my web page?
-        See examples/svg_loadfile_js.html
-        Place svgviewer.swf in the same directory as your html file.
+        See com/sgweb/svg/release/svg_loadfile_js.html
 
     Dep.2: How can I use an SVG image from SVG content that is stored inline in my web page?
-        See examples/svg_inline.html
-        Place svgviewer.swf in the same directory as your html file.
+        See com/sgweb/svg/release/svg_inline.html
 
     Dep.3: How can I include an SVG image on my web page without using javascript?
-        See examples/svg_loadfile_obj.html
-        Place svgviewer.swf in the same directory as your html file.
+        See com/sgweb/svg/release/svg_loadfile.html
 
     Dep.4: How can I include multiple inline SVG images?
-        See examples/svg_inline_multi.html
-        Place svgviewer.swf in the same directory as your html file.
+        See com/sgweb/svg/release/svg_inline_many.html
 
 Sizing
     Size.1: What is the relationship between SVG drawing coordinates and

@@ -38,11 +38,11 @@ svgviewer.svgParamsDict = {}
 svgviewer.createSVGFlashObject = function ( params ) {
     var bgcolor = '';
     
-    if (typeof(params.uniqueId) == "undefined") {
+    if (typeof(params.parentId) == "undefined") {
         return;
     }
-    if (typeof(params.parentDivId) == "undefined") {
-        return;
+    if (typeof(params.uniqueId) == "undefined") {
+        params.uniqueId = 'rand' + Math.random();
     }
     if (typeof(params.scaleX) == "undefined") {
         params.scaleX=1.0;
@@ -62,12 +62,14 @@ svgviewer.createSVGFlashObject = function ( params ) {
     if (typeof(params.debug) == "undefined") {
         params.debug = false;
     }
-    params.objectId = params.parentDivId + 'Obj';
+    params.objectId = params.parentId + 'Obj';
 
     // Record the object parameters
     svgviewer.svgParamsDict[params.uniqueId] = params;
 
-
+    // This section reverses the flash 'zoom out' so that the
+    // object height and width represents a cropping of the original
+    // object, not a 'scale to fit' sizing.
     var oldAspectRes = 2048.0 / 1024.0;
     var newAspectRes = params.objectWidth / params.objectHeight;
     var cropWidth;
@@ -80,6 +82,8 @@ svgviewer.createSVGFlashObject = function ( params ) {
        cropWidth = params.objectWidth;
        cropHeight = params.objectWidth / oldAspectRes;
     }
+    var scaleX=(2048.0 / cropWidth) * params.scaleX;
+    var scaleY=(1024.0 / cropHeight) * params.scaleY;
 
     var borderX = params.objectWidth - cropWidth;
     var borderY = params.objectHeight - cropHeight;
@@ -87,41 +91,43 @@ svgviewer.createSVGFlashObject = function ( params ) {
     var translateY =  (-(borderY / 2.0) + params.translateY);
     translateX = translateX * 2048 / cropWidth;
     translateY = translateY * 2048 / cropWidth;
+    // End of flash 'zoom out' reversal calculations
 
-    var node = document.getElementById(params.parentDivId);
+    var flashVars = 
+        '"' +
+        'uniqueId=' + params.uniqueId +
+        '&translateX=' + translateX + 
+        '&translateY=' + translateY + 
+        '&scaleX=' + scaleX +
+        '&scaleY=' + scaleY +
+        '&sourceType=' + params.sourceType +
+        '&svgURL=' + params.svgURL +
+        '&debug=' + params.debug;
+    if (typeof(params.svgId) != "undefined") {
+        flashVars = flashVars  + '&svgId=' + params.svgId;
+    }
+    flashVars = flashVars  + '"';
+    //SVGLog.info(flashVars);
+    var objectHTML = 
+        '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" ' +
+        '        codebase="" id="' + params.objectId + '" ' + 
+        '        width=' + params.objectWidth + ' height=' + params.objectHeight + ' style="float: left"> ' +
+        '    <param name=AllowScriptAccess value="always"/> ' +
+        '    <param name=movie value="svgviewer.swf"> ' +
+        '    <param name=FlashVars value=' + flashVars + '> ' +
+        '    <param name="wmode" value="transparent"> ' +
+        '    <embed  name="' + params.objectId + '" play=false ' +
+        '            swliveconnect="true" AllowScriptAccess="always" ' +
+        '            src="svgviewer.swf" quality=high wmode=transparent ' + bgcolor + 
+        '            width=' + params.objectWidth + ' height=' + params.objectHeight +
+        '            type="application/x-shockwave-flash" ' +
+        '            FlashVars=' + flashVars + '> ' +
+        '    </embed> ' +
+        '</object> ';
+
+    var node = document.getElementById(params.parentId);
     if (node) {
-        var flashVars = 
-            '"' +
-            'uniqueId=' + params.uniqueId +
-            '&translateX=' + translateX + 
-            '&translateY=' + translateY + 
-            '&scaleX=' + ((2048.0 / cropWidth)*params.scaleX) +
-            '&scaleY=' + ((1024.0 / cropHeight)*params.scaleY) +
-            '&sourceType=' + params.sourceType +
-            '&svgURL=' + params.svgURL +
-            '&debug=' + params.debug;
-        if (typeof(params.svgId) != "undefined") {
-            flashVars = flashVars  + '&svgId=' + params.svgId;
-        }
-        flashVars = flashVars  + '"';
-        //SVGLog.info(flashVars);
-        node.innerHTML = 
-            '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" ' +
-            '        codebase="" id="' + params.objectId + '" ' + 
-            '        width=' + params.objectWidth + ' height=' + params.objectHeight + ' style="float: left"> ' +
-            '    <param name=AllowScriptAccess value="always"/> ' +
-            '    <param name=movie value="svgviewer.swf"> ' +
-            '    <param name=FlashVars value=' + flashVars + '> ' +
-            '    <param name="wmode" value="transparent"> ' +
-            '    <embed  name="' + params.objectId + '" play=false ' +
-            '            swliveconnect="true" AllowScriptAccess="always" ' +
-            '            src="svgviewer.swf" quality=high ' + bgcolor + 
-            '            width=' + params.objectWidth + ' height=' + params.objectHeight +
-            '            type="application/x-shockwave-flash" ' +
-            '            FlashVars=' + flashVars + '> ' +
-            '    </embed> ' +
-            '</object> ';
-
+        node.innerHTML = objectHTML;
     }
 }
 
@@ -135,11 +141,11 @@ function receiveFromFlash(flashMsg) {
             /**
              If the type is inline_script, that means that the SVG is available
              in the local DOM within a script tag. Also, since this message is being received,
-             the javascript interface is available, therefore, an optimzation can be performed.
+             the javascript interface is available. Therefore, an optimzation can be performed.
              In this case, the flash control leaves control to the browser (this code)
              and we pull the SVG directly from the DOM and pass it to flash through the available
              javascript interface. This avoids having the flash control pulling the data using
-             a URL load routine which is, theoretically, much more expensive.
+             a URLRequest which is, theoretically, much more expensive.
 
              Note that this provides a simple example of how to load SVG on the fly from a string.
             **/

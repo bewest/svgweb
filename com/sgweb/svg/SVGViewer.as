@@ -109,18 +109,20 @@ package com.sgweb.svg
            var htmlStrings:Object = this.html.split('\n');
            var svgString:String="";
            var svgCopying:Boolean=false;
-           var svgStartString:String= "<!--svgid:"+this.svgIdParam+"-->";
-           var svgEndString:String="<!--/svgid:"+this.svgIdParam+"-->";
+           var svgStartString1:String= 'id="'+this.svgIdParam+'"';
+           var svgStartString2:String= "id='"+this.svgIdParam+"'";
+           var svgEndString:String="</svg>";
            for (var i:String in htmlStrings) {
-               if (htmlStrings[i].substring(0, svgEndString.length) == svgEndString) {
-                   this.debug("Found end of SVG.");
-                   svgCopying=false;
-               }
                if (svgCopying) {
                    svgString += (htmlStrings[i] + "\n");
+                   if (htmlStrings[i].indexOf(svgEndString) != -1) {
+                       svgCopying=false;
+                   }
                }
-               if (htmlStrings[i].substring(0, svgStartString.length) == svgStartString) {
-                   this.debug("Found start of SVG.");
+               if (htmlStrings[i].indexOf(svgStartString1) != -1) {
+                   svgCopying=true;
+               }
+               if (htmlStrings[i].indexOf(svgStartString2) != -1) {
                    svgCopying=true;
                }
            }
@@ -194,7 +196,7 @@ package com.sgweb.svg
                         return outerthis.js_handleLoad(jsMsg);
                     }
                     if (jsMsg.type == 'getVersion') {
-                        return { type: 'version', version: '0.4' };
+                        return { type: 'version', version: '0.6' };
                     }
                     return null;
                 }
