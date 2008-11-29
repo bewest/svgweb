@@ -1,5 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 
 <head>
 
@@ -1394,89 +1393,7 @@
 </script>
 
 
-<script id="svgsource2" type="image/svg+xml"><?xml version="1.0" encoding="iso-8859-1"?>
-<!--svgid:svgsource2-->
-<svg>
-    <g id="g1">
-      <rect
-         width="400"
-         height="50"
-         ry="0"
-         x="50"
-         y="50"
-         style="opacity:1;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:15;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-         id="rect2" />
-    </g>
-</svg>
-<!--/svgid:svgsource2-->
-</script>
-
-
-<script id="svgsource3" type="image/svg+xml"><?xml version="1.0" encoding="iso-8859-1"?>
-<!--svgid:svgsource3-->
-<svg>
-    <g id="g1">
-      <rect
-         width="500"
-         height="200"
-         ry="0"
-         x="50"
-         y="50"
-         style="opacity:1;fill:#00ff00;fill-opacity:1;stroke:none;stroke-width:15;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-         id="rect2" />
-    </g>
-</svg>
-<!--/svgid:svgsource3-->
-</script>
-
-
-
-</head>
-<style type="text/css">
-div.TopLeftQuad {
-    margin: 1% 1% 1% 1%;
-}
-div.TopRightQuad {
-    display: block;
-    position: absolute;
-    overflow: hidden;
-    top: 0%; left: 50%; width: 48%; height: 47%;
-    margin: 1% 1% 1% 1%;
-}
-div.BottomLeftQuad {
-    display: block;
-    position: absolute;
-    overflow: hidden;
-    top: 50%; left: 0%; width: 48%; height: 47%;
-    margin: 1% 1% 1% 1%;
-}
-div.BottomRightQuad {
-    display: block;
-    position: absolute;
-    overflow: hidden;
-    top: 50%; left: 50%; width: 48%; height: 47%;
-    margin: 1% 1% 1% 1%;
-}
-</style>
-
-
-<body>
-
 <script>
-
-
-SVGLog = {};
-
-SVGLog.suppressLog= ((typeof(console)=="undefined") || (typeof(console.info) == "undefined"));
-
-SVGLog.info = function(logString) {
-    if (SVGLog.suppressLog) {
-        return;
-    }
-    console.info(logString);
-}
-
-
 function getFlashMovieObject(movieName)
 {
   if (window.document[movieName]) 
@@ -1496,193 +1413,29 @@ function getFlashMovieObject(movieName)
     return document.getElementById(movieName);
   }
 }
-
-var SVGFlashDict = {}
-
-
-function createSVGFlashObject( params ) {
-    var bgcolor = '';
-    
-    if (typeof(params.uniqueId) == "undefined") {
-        return;
-    }
-    if (typeof(params.parentDivId) == "undefined") {
-        return;
-    }
-    if (typeof(params.scaleX) == "undefined") {
-        params.scaleX=1.0;
-    }
-    if (typeof(params.scaleY) == "undefined") {
-        params.scaleY=1.0;
-    }
-    if (typeof(params.translateX) == "undefined") {
-        params.translateX=0;
-    }
-    if (typeof(params.translateY) == "undefined") {
-        params.translateY=0;
-    }
-    if (typeof(params.bgcolor) != "undefined") {
-        bgcolor = 'bgcolor=' + params.bgcolor;
-    }
-    if (typeof(params.debug) == "undefined") {
-        params.debug = false;
-    }
-    params.objectId = params.parentDivId + 'Obj';
-
-    // Record the object parameters
-    SVGFlashDict[params.uniqueId] = params;
-
-
-    var oldAspectRes = 2048.0 / 1024.0;
-    var newAspectRes = params.objectWidth / params.objectHeight;
-    var cropWidth;
-    var cropHeight;
-    if (newAspectRes > oldAspectRes) {
-       cropWidth = params.objectHeight * oldAspectRes;
-       cropHeight = params.objectHeight;
-    }
-    else {
-       cropWidth = params.objectWidth;
-       cropHeight = params.objectWidth / oldAspectRes;
-    }
-
-    var borderX = params.objectWidth - cropWidth;
-    var borderY = params.objectHeight - cropHeight;
-    var translateX =  (-(borderX / 2.0) + params.translateX);
-    var translateY =  (-(borderY / 2.0) + params.translateY);
-    translateX = translateX * 2048 / cropWidth;
-    translateY = translateY * 2048 / cropWidth;
-
-    var node = document.getElementById(params.parentDivId);
-    if (node) {
-        var flashVars = 
-            '"' +
-            'uniqueId=' + params.uniqueId +
-            '&translateX=' + translateX + 
-            '&translateY=' + translateY + 
-            '&scaleX=' + ((2048.0 / cropWidth)*params.scaleX) +
-            '&scaleY=' + ((1024.0 / cropHeight)*params.scaleY) +
-            '&sourceType=' + params.sourceType +
-            '&svgURL=' + params.svgURL +
-            '&debug=' + params.debug;
-        if (typeof(params.svgId) != "undefined") {
-            flashVars = flashVars  + '&svgId=' + params.svgId;
-        }
-        flashVars = flashVars  + '"';
-        //SVGLog.info(flashVars);
-        node.innerHTML = 
-            '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" ' +
-            '        codebase="" id="' + params.objectId + '" ' + 
-            '        width=' + params.objectWidth + ' height=' + params.objectHeight + ' style="float: left"> ' +
-            '    <param name=AllowScriptAccess value="always"/> ' +
-            '    <param name=movie value="svgviewer.swf"> ' +
-            '    <param name=FlashVars value=' + flashVars + '> ' +
-            '    <param name="wmode" value="transparent"> ' +
-            '    <embed  name="' + params.objectId + '" play=false ' +
-            '            swliveconnect="true" AllowScriptAccess="always" ' +
-            '            src="svgviewer.swf" quality=high ' + bgcolor + 
-            '            width=' + params.objectWidth + ' height=' + params.objectHeight +
-            '            type="application/x-shockwave-flash" ' +
-            '            FlashVars=' + flashVars + '> ' +
-            '    </embed> ' +
-            '</object> ';
-
-    }
-}
-
+// The flash control actionscript calls this on startup.
+// We use this to know the flash control is ready for activity.
 function receiveFromFlash(flashMsg) {
-    if (flashMsg.type == 'event') {
-        // The flash control actionscript calls this on startup.
-        // We use this to know the flash control is ready for activity.
-        if (flashMsg.eventType == 'onLoad') {
-            var svgString;
-            var params = SVGFlashDict[flashMsg.uniqueId];
-            /**
-             If the type is inline_script, that means that the SVG is available
-             in the local DOM within a script tag. Also, since this message is being received,
-             the javascript interface is available, therefore, an optimzation can be performed.
-             In this case, the flash control leaves control to the browser (this code)
-             and we pull the SVG directly from the DOM and pass it to flash through the available
-             javascript interface. This avoids having the flash control pulling the data using
-             a URL load routine which is, theoretically, much more expensive.
-
-             Note that this provides a simple example of how to load SVG on the fly from a string.
-            **/
-            if (params.sourceType == 'inline_script') {
-                var flashSVG = getFlashMovieObject(params.objectId);
-                svgString = document.getElementById(params.svgId).innerHTML;
-                flashSVG.sendToFlash({type: 'load', sourceType: 'string', svgString: svgString});
-            }
-        }
-        return;
-    }
-    if (flashMsg.type == 'log') {
-        SVGLog.info(flashMsg.logString);
-        return;
-    }
+    var svgText= document.getElementById('svgsource').innerHTML;
+    getFlashMovieObject("mySVGViewerObj").sendToFlash({type:'load',sourceType:'string',svgString:svgText});
 }
-
 </script>
 
 </head>
-<!-- End of Header -->
 
-
-<!-- Start of Body -->
-<body style='margin: 0px; overflow: hidden; background-color: #80d090'>
-
-<div id="SVGViewerControlTopLeftElement" class="TopLeftQuad">
-</div>
-
-<div id="SVGViewerControlTopRightElement" class="TopRightQuad">
-</div>
-
-<div id="SVGViewerControlBottomLeftElement" class="BottomLeftQuad">
-</div>
-
-<div id="SVGViewerControlBottomRightElement" class="BottomRightQuad">
-</div>
-
-<script>
-    createSVGFlashObject({ uniqueId: 'scimitar1',
-                           parentDivId: 'SVGViewerControlTopLeftElement',
-                           sourceType: "inline_script",
-                           svgURL: "svg_inline2.html",
-                           svgId: "svgsource",
-                           bgcolor: '#ffd090',
-                           objectWidth: 466,
-                           objectHeight: 265,
-                           scaleX: 1.0,
-                           scaleY: 1.0
-                         });
-    createSVGFlashObject({ uniqueId: 'scimitar2',
-                           parentDivId: 'SVGViewerControlTopRightElement',
-                           sourceType: "url_svg",
-                           svgURL: "scimitar.svg",
-                           bgcolor: '#80F0B0',
-                           objectWidth: 233,
-                           objectHeight: 132,
-                           scaleX: 0.5,
-                           scaleY: 0.5
-                         });
-    createSVGFlashObject({ uniqueId: 'bar',
-                           parentDivId: 'SVGViewerControlBottomLeftElement',
-                           sourceType: "url_script",
-                           svgURL: "svg_inline2.html",
-                           svgId: "svgsource2",
-                           debug: true,
-                           objectWidth: 550,
-                           objectHeight: 250
-                         });
-    createSVGFlashObject({ uniqueId: 'rect',
-                           parentDivId: 'SVGViewerControlBottomRightElement',
-                           sourceType: "inline_script",
-                           svgURL: "svg_inline2.html",
-                           svgId: "svgsource3",
-                           objectWidth: 600,
-                           objectHeight: 300
-                         });
-</script>
+<body>
+<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
+        codebase="" id="mySVGViewerObj" width=2048 height=1024 style='float: left'>
+    <param name=AllowScriptAccess value='always'/>
+    <param name=movie value="svgviewer.swf">
+    <param name=FlashVars value="sourceType=inline_script&svgURL=svg_inline.html&svgId=svgsource">
+    <embed  name="mySVGViewerObj" play=false
+            swliveconnect="true" AllowScriptAccess="always"
+            src="svgviewer.swf" quality=high bgcolor=#FFFFFF 
+            width=2048 height=1024 type="application/x-shockwave-flash"
+            FlashVars="sourceType=inline_script&svgURL=svg_inline.html&svgId=svgsource">
+    </embed>
+</object>
 
 </body>
 </html>

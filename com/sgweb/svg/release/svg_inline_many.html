@@ -1,7 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 
-
 <head>
 
 <script id="svgsource" type="image/svg+xml"><?xml version="1.0" encoding="iso-8859-1"?>
@@ -1395,55 +1394,135 @@
 </script>
 
 
-<script>
 
-svgviewer = {}
-
-svgviewer.getFlashMovieObject = function (movieName)
-{
-  if (window.document[movieName]) 
-  {
-    if(document[movieName].length != undefined){
-        return document[movieName][1];
-    }
-    return document[movieName];
-  }
-  if (navigator.appName.indexOf("Microsoft Internet")==-1)
-  {
-    if (document.embeds && document.embeds[movieName])
-      return document.embeds[movieName]; 
-  }
-  else // if (navigator.appName.indexOf("Microsoft Internet")!=-1)
-  {
-    return document.getElementById(movieName);
-  }
-}
-// The flash control actionscript calls this on startup.
-// We use this to know the flash control is ready for activity.
-function receiveFromFlash(flashMsg) {
-    if (flashMsg.type == 'event' && flashMsg.eventType == 'onLoad') {
-        var svgText= document.getElementById('svgsource').innerHTML;
-        svgviewer.getFlashMovieObject("mySVGViewerObj").sendToFlash(
-            {type:'load', sourceType:'string', svgString:svgText});
-    }
-}
+<script id="svgsource2" type="image/svg+xml"><?xml version="1.0" encoding="iso-8859-1"?>
+<!--svgid:svgsource2-->
+<svg>
+    <g id="g1">
+      <rect
+         width="400"
+         height="50"
+         ry="0"
+         x="50"
+         y="50"
+         style="opacity:1;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:15;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2" />
+    </g>
+</svg>
+<!--/svgid:svgsource2-->
 </script>
 
-</head>
+
+<script id="svgsource3" type="image/svg+xml"><?xml version="1.0" encoding="iso-8859-1"?>
+<!--svgid:svgsource3-->
+<svg>
+    <g id="g1">
+      <rect
+         width="500"
+         height="200"
+         ry="0"
+         x="50"
+         y="50"
+         style="opacity:1;fill:#00ff00;fill-opacity:1;stroke:none;stroke-width:15;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         id="rect2" />
+    </g>
+</svg>
+<!--/svgid:svgsource3-->
+</script>
+
+
+
+<style type="text/css">
+div.TopLeftQuad {
+    margin: 1% 1% 1% 1%;
+}
+div.TopRightQuad {
+    display: block;
+    position: absolute;
+    overflow: hidden;
+    top: 0%; left: 50%; width: 48%; height: 47%;
+    margin: 1% 1% 1% 1%;
+}
+div.BottomLeftQuad {
+    display: block;
+    position: absolute;
+    overflow: hidden;
+    top: 50%; left: 0%; width: 48%; height: 47%;
+    margin: 1% 1% 1% 1%;
+}
+div.BottomRightQuad {
+    display: block;
+    position: absolute;
+    overflow: hidden;
+    top: 50%; left: 50%; width: 48%; height: 47%;
+    margin: 1% 1% 1% 1%;
+}
+</style>
+
 
 <body>
-<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
-        codebase="" id="mySVGViewerObj" width=2048 height=1024 style='float: left'>
-    <param name=AllowScriptAccess value='always'/>
-    <param name=movie value="svgviewer.swf">
-    <param name=FlashVars value="sourceType=inline_script&svgURL=svg_inline.html&svgId=svgsource">
-    <embed  name="mySVGViewerObj" play=false
-            swliveconnect="true" AllowScriptAccess="always"
-            src="svgviewer.swf" quality=high bgcolor=#FFFFFF 
-            width=2048 height=1024 type="application/x-shockwave-flash"
-            FlashVars="sourceType=inline_script&svgURL=svg_inline.html&svgId=svgsource">
-    </embed>
-</object>
+
+<script src="svgviewer.js" type="text/javascript"></script>
+
+</head>
+<!-- End of Header -->
+
+
+<!-- Start of Body -->
+<body style='margin: 0px; overflow: hidden; background-color: #80d090'>
+
+<div id="SVGViewerControlTopLeftElement" class="TopLeftQuad">
+</div>
+
+<div id="SVGViewerControlTopRightElement" class="TopRightQuad">
+</div>
+
+<div id="SVGViewerControlBottomLeftElement" class="BottomLeftQuad">
+</div>
+
+<div id="SVGViewerControlBottomRightElement" class="BottomRightQuad">
+</div>
+
+<script>
+    svgviewer.createSVGFlashObject({ uniqueId: 'scimitar1',
+                           parentDivId: 'SVGViewerControlTopLeftElement',
+                           sourceType: "inline_script",
+                           svgURL: "svg_inline_many.html",
+                           svgId: "svgsource",
+                           bgcolor: '#ffd090',
+                           objectWidth: 466,
+                           objectHeight: 265,
+                           scaleX: 1.0,
+                           scaleY: 1.0
+                         });
+    svgviewer.createSVGFlashObject({ uniqueId: 'scimitar2',
+                           parentDivId: 'SVGViewerControlTopRightElement',
+                           sourceType: "url_svg",
+                           svgURL: "scimitar.svg",
+                           bgcolor: '#80F0B0',
+                           objectWidth: 233,
+                           objectHeight: 132,
+                           scaleX: 0.5,
+                           scaleY: 0.5
+                         });
+    svgviewer.createSVGFlashObject({ uniqueId: 'bar',
+                           parentDivId: 'SVGViewerControlBottomLeftElement',
+                           sourceType: "url_script",
+                           svgURL: "svg_inline_many.html",
+                           svgId: "svgsource2",
+                           debug: true,
+                           objectWidth: 550,
+                           objectHeight: 250
+                         });
+    svgviewer.createSVGFlashObject({ uniqueId: 'rect',
+                           parentDivId: 'SVGViewerControlBottomRightElement',
+                           sourceType: "inline_script",
+                           svgURL: "svg_inline_many.html",
+                           svgId: "svgsource3",
+                           objectWidth: 600,
+                           objectHeight: 300
+                         });
+</script>
 
 </body>
 </html>
