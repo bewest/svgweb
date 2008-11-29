@@ -1417,7 +1417,7 @@ function getFlashMovieObject(movieName)
 // We use this to know the flash control is ready for activity.
 function receiveFromFlash(flashMsg) {
     var svgText= document.getElementById('svgsource').innerHTML;
-    getFlashMovieObject("mySVGViewerObj").createFromSVG(svgText);
+    getFlashMovieObject("mySVGViewerObj").sendToFlash({type:'load',sourceType:'string',svgString:svgText});
 }
 </script>
 
@@ -1428,12 +1428,12 @@ function receiveFromFlash(flashMsg) {
         codebase="" id="mySVGViewerObj" width=2048 height=1024 style='float: left'>
     <param name=AllowScriptAccess value='always'/>
     <param name=movie value="svgviewer.swf">
-    <param name=FlashVars value="inlineSVGURL=svg_inline.html&inlineSVGId=svgsource">
+    <param name=FlashVars value="sourceType=inline_script&svgURL=svg_inline.html&svgId=svgsource">
     <embed  name="mySVGViewerObj" play=false
             swliveconnect="true" AllowScriptAccess="always"
             src="svgviewer.swf" quality=high bgcolor=#FFFFFF 
             width=2048 height=1024 type="application/x-shockwave-flash"
-            FlashVars="inlineSVGURL=svg_inline.html&inlineSVGId=svgsource">
+            FlashVars="sourceType=inline_script&svgURL=svg_inline.html&svgId=svgsource">
     </embed>
 </object>
 
