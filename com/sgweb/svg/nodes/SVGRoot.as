@@ -31,12 +31,13 @@ package com.sgweb.svg.nodes
     import flash.display.Shape;
     import flash.events.Event;
     import flash.utils.getTimer;
+    import flash.geom.Matrix;
     
     /**
      * Root container of the SVG
      **/
     public class SVGRoot extends SVGNode
-    {            
+    {
         /**
          * Object to hold node id registration
          **/
@@ -45,40 +46,26 @@ package com.sgweb.svg.nodes
         public var _referersById:Object;
 
         /**
-         * Title of SVG
-         **/
-        private var _title:String;
-        
-        /**
          * Used to synchronize tweens
          **/
         private var _loadTime:int;
         
         private var _width:Number;
         private var _height:Number;
-        
+
+        public var scaleXParam:Number = 1.0;
+        public var scaleYParam:Number = 1.0;
+        public var translateXParam:Number = 0.0;
+        public var translateYParam:Number = 0.0;
+
         public var debug:Object;
+        public var handleScript:Object;
+        public var title:String;
                 
         public function SVGRoot(xml:XML = null):void {
             super(null, XML(xml));
         }    
         
-        /**
-         * @private
-         **/
-        public function set scale(value:Number):void {
-            this.scaleX = value;
-            this.scaleY = value;
-            
-            this.dispatchEvent(new Event(Event.RESIZE));
-        }
-        
-        /**
-         * Set scaleX and scaleY at the same time 
-         **/
-        public function get scale():Number {
-            return this.scaleX;
-        }
         
         /**
          * Set super._xml
@@ -95,6 +82,9 @@ package com.sgweb.svg.nodes
             
             this._loadTime = getTimer();
             
+            if (this.xml.@id) {
+                this._elementById[this.xml.@id] = this;
+            }
             this.dispatchEvent(new Event(Event.RESIZE));
                     
         }
@@ -108,9 +98,7 @@ package com.sgweb.svg.nodes
          **/
         public function registerElement(id:String, node:*):void {    
             //this.svgRoot.debug("Registering: " + id);
-            if (this._elementById[id] == undefined) {                        
-                this._elementById[id] = node;
-            }            
+            this._elementById[id] = node;
         }
 
         /**
@@ -135,7 +123,6 @@ package com.sgweb.svg.nodes
                 var referers:Array = this._referersById[id];
                 for (var referer:String in referers) {
                     if (this.getElement(referer)) {
-                        //this.svgRoot.debug("INVALIDATING REFERER "  + referer + " by " + id);
                         this.getElement(referer).invalidateDisplay();
                     }
                 }
@@ -155,6 +142,7 @@ package com.sgweb.svg.nodes
             }
             return null;
         }
+
         
         /**
          * Support default SVG style values
@@ -188,81 +176,23 @@ package com.sgweb.svg.nodes
                     
         }
         
-        /**
-         * Add support for viewBox elements
-         **/
-        override protected function setAttributes():void {
-            super.setAttributes();
+        override public function transformNode():void {
+            super.transformNode();
+            var newMatrix:Matrix = this.transform.matrix.clone();
 
-            //Create root node mask defined by the SVG viewBox
-            var viewBox:String = this.getAttribute('viewBox');
-            if (viewBox != null) {
-                var points:Array = viewBox.split(/\s+/);
-                /* viewbox Clipping is disabled for now as there are
-                   problems that have not been worked out
-                this.addRootMask(points[0], points[1], points[2], points[3]);        
-                */       
-                this._width = points[2];
-                this._height = points[3]; 
+            newMatrix.translate(this.translateXParam, this.translateYParam);
+            newMatrix.scale(this.scaleXParam, this.scaleYParam);
+            // showAll_svg uses flash noScale mode which centers the
+            // object within the 2048x1024 scale. This reverses that
+            // here so we start with the proper zero coordinate properly.
+            if (this.scaleModeParam == "showAll_svg" || this.scaleModeParam == "noScale") {
+                newMatrix.translate( (2048.0 - this.stage.stageWidth) / 2, (1024.0 - this.stage.stageHeight) / 2);
+            }
 
-                var preserveAspectRatio:String = this.getAttribute('preserveAspectRatio');
-                if (preserveAspectRatio == null || preserveAspectRatio == "xMidYMid") {
-                    var width:String = this.getAttribute('width');
-                    
-                    if (width != null) {
-                        // implement xMidYMid; well at least the x part
-                        this.x = -1*points[0] + (SVGColors.cleanNumber(width) - points[2]) / 2;
-                    }
-                }
-                
-            }
-            else {
-                var w:String = this.getAttribute('width');
-                var h:String = this.getAttribute('height');
-                
-                if ((w != null) && (h != null)) {
-                    if (w.match('%') || h.match('%')) {
-                        return;
-                    }
-                    this._width = SVGColors.cleanNumber(w);
-                    this._height = SVGColors.cleanNumber(h);
-                    /* viewbox Clipping is disabled for now as there are
-                       problems that have not been worked out
-                    this.addRootMask(0, 0, this._width, this._height);
-                    */       
-                }
-            }
+            this.transform.matrix = newMatrix;
         }
 
-        /**
-         * Draw rectangular mask 
-         **/
-        protected function addRootMask(xVal:Number, yVal:Number, widthVal:Number, heightVal:Number):void {
-            if (this.mask == null) {
-                    this.mask = new Shape();
-                    this.addChild(this.mask);
-            }            
-            if (this.mask is Shape) {
-                if (!this.contains(this.mask)) {
-                    this.addChild(this.mask);
-                }                    
-                Shape(this.mask).graphics.clear();
-                
-                Shape(this.mask).graphics.beginFill(0x000000);
-                Shape(this.mask).graphics.drawRect(xVal, yVal, widthVal, heightVal);
-                Shape(this.mask).graphics.endFill();
-            }
-        }
 
-        
-        public function get title():String {
-            return this._title;
-        }
-        
-        public function set title(value:String):void {
-            this._title = value;
-        } 
-        
         /**
          * Used to synchronize tweens
          **/
@@ -270,44 +200,6 @@ package com.sgweb.svg.nodes
             return this._loadTime;
         }
         
-        
-        /**
-         * return width of SVG
-         **/
-        override public function get width():Number {
-            if (this._width > 0) {
-                return this._width * this.scaleX;
-            }
-            else {
-                return super.width;
-            }
-        }
-        
-        /**
-         * @private
-         **/
-        override public function set width(value:Number):void {
-            //Do nothing
-        }
-        
-        /**
-         * return height of SVG
-         **/
-        override public function get height():Number {
-            if (this._height > 0) {
-                return this._height * this.scaleY;
-            }
-            else {
-                return super.height;
-            }
-        }
-        
-        /**
-         * @private
-         **/
-        override public function set height(value:Number):void {
-            //Do nothing
-        }
         
         
     }

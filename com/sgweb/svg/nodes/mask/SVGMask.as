@@ -49,7 +49,7 @@ package com.sgweb.svg.nodes.mask
             return this._clipPathXML.child(0).@id;
         }
 
-        override protected function transformNode():void {
+        override public function transformNode():void {
             this.transform.matrix = new Matrix();
         }
 

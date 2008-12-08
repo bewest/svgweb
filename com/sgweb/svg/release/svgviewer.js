@@ -1,165 +1,464 @@
+/*
+Copyright (c) 2008 Richard R. Masters.
 
-var svgviewer = {}
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following
+conditions:
 
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+/*------------------------------------------------------------*\
+  svgviewer is the global namespace that represents the
+  entry point for creating svg objects and looking them up.
+
+  An SVGFlashHandler is the class which is used to create
+  the flash object html and handles communication with
+  the flash object.
+
+  An SVGNode represents an instance of a sprite.
+
+\*------------------------------------------------------------*/
+
+var svgviewer = {};
+svgviewer.svgHandlers = {};
 
 svgviewer.suppressLog= ((typeof(console)=="undefined") || (typeof(console.info) == "undefined"));
-
 svgviewer.info = function(logString) {
     if (svgviewer.suppressLog) {
         return;
     }
     console.info(logString);
 }
+svgviewer.error = svgviewer.info;
 
 
-svgviewer.getFlashMovieObject = function(movieName)
-{
-  if (window.document[movieName]) 
-  {
-    if(document[movieName].length != undefined){
-        return document[movieName][1];
-    }
-    return document[movieName];
-  }
-  if (navigator.appName.indexOf("Microsoft Internet")==-1)
-  {
-    if (document.embeds && document.embeds[movieName])
-      return document.embeds[movieName]; 
-  }
-  else // if (navigator.appName.indexOf("Microsoft Internet")!=-1)
-  {
-    return document.getElementById(movieName);
-  }
-}
-
-svgviewer.svgParamsDict = {}
-
-
-svgviewer.createSVGFlashObject = function ( params ) {
-    var bgcolor = '';
-    
-    if (typeof(params.parentId) == "undefined") {
+svgviewer.createSVG = function ( params ) {
+    if (typeof(params.sourceType) == "undefined") {
+        svgviewer.error('create svg: no sourceType');
         return;
     }
-    if (typeof(params.uniqueId) == "undefined") {
-        params.uniqueId = 'rand' + Math.random();
+    if (typeof(params.svgURL) == "undefined") {
+        svgviewer.error('create svg: no svgURL');
+        return;
     }
-    if (typeof(params.scaleX) == "undefined") {
-        params.scaleX=1.0;
+    if (params.sourceType == "inline_script" && 
+        typeof(params.svgId) == "undefined") {
+        svgviewer.error('create svg: no svgId');
+        return;
     }
-    if (typeof(params.scaleY) == "undefined") {
-        params.scaleY=1.0;
+    if (params.sourceType == "url_script" && 
+        typeof(params.svgId) == "undefined") {
+        svgviewer.error('create svg: no svgId');
+        return;
     }
-    if (typeof(params.translateX) == "undefined") {
-        params.translateX=0;
-    }
-    if (typeof(params.translateY) == "undefined") {
-        params.translateY=0;
-    }
-    if (typeof(params.bgcolor) != "undefined") {
-        bgcolor = 'bgcolor=' + params.bgcolor;
-    }
-    if (typeof(params.debug) == "undefined") {
-        params.debug = false;
-    }
-    params.objectId = params.parentId + 'Obj';
 
-    // Record the object parameters
-    svgviewer.svgParamsDict[params.uniqueId] = params;
+    var svgHandler = new SVGFlashHandler(params);
+    svgviewer.svgHandlers[svgHandler.uniqueId] = svgHandler;
 
-    // This section reverses the flash 'zoom out' so that the
-    // object height and width represents a cropping of the original
-    // object, not a 'scale to fit' sizing.
-    var oldAspectRes = 2048.0 / 1024.0;
-    var newAspectRes = params.objectWidth / params.objectHeight;
-    var cropWidth;
-    var cropHeight;
-    if (newAspectRes > oldAspectRes) {
-       cropWidth = params.objectHeight * oldAspectRes;
-       cropHeight = params.objectHeight;
+    var node = document.getElementById(params.parentId);
+    if (node) {
+        node.innerHTML = svgHandler.createFlashHTML();
+    }
+    return svgHandler;
+}
+svgviewer.c = function ( uniqueId ) {
+    return svgviewer.svgHandlers[uniqueId];
+}
+
+function receiveFromFlash(flashMsg) {
+    //svgviewer.info("js:in receive from flash");
+    var svgHandler = svgviewer.svgHandlers[flashMsg.uniqueId];
+    if (svgHandler) {
+        svgHandler.onMessage(flashMsg);
+    }
+    //svgviewer.info("js:out receive from flash");
+}
+
+/* end svgviewer global functions */
+
+
+
+/*
+ *  Class SVGFlashHandler
+ */
+
+function SVGFlashHandler(params) {
+    this.sourceType = params.sourceType;
+    this.svgURL = params.svgURL;
+    this.objectWidth= params.objectWidth;
+    this.objectHeight= params.objectHeight;
+
+
+    if (typeof(params.scaleMode) != "undefined") {
+        this.scaleMode = params.scaleMode;
     }
     else {
-       cropWidth = params.objectWidth;
-       cropHeight = params.objectWidth / oldAspectRes;
+        this.scaleMode = "showAll_svg";
     }
-    var scaleX=(2048.0 / cropWidth) * params.scaleX;
-    var scaleY=(1024.0 / cropHeight) * params.scaleY;
+    // uniqueId
+    if (typeof(params.uniqueId) != "undefined") {
+        this.uniqueId = params.uniqueId;
+    }
+    else {
+        this.uniqueId = 'rand' + Math.random();
+    }
+    this.objectId = params.uniqueId + 'Obj';
 
-    var borderX = params.objectWidth - cropWidth;
-    var borderY = params.objectHeight - cropHeight;
-    var translateX =  (-(borderX / 2.0) + params.translateX);
-    var translateY =  (-(borderY / 2.0) + params.translateY);
-    translateX = translateX * 2048 / cropWidth;
-    translateY = translateY * 2048 / cropWidth;
-    // End of flash 'zoom out' reversal calculations
+    if (typeof(params.svgId) != "undefined") {
+        this.svgId = params.svgId;
+    }
+
+    // scaleX
+    if (typeof(params.scaleX) != "undefined") {
+        this.scaleX= params.scaleX;
+    }
+    else {
+        this.scaleX=1.0;
+    }
+
+    // scaleY
+    if (typeof(params.scaleY) != "undefined") {
+        this.scaleY= params.scaleY;
+    }
+    else {
+        this.scaleY=1.0;
+    }
+
+    // translateX
+    if (typeof(params.translateX) != "undefined") {
+        this.translateX= params.translateX;
+    }
+    else {
+        this.translateX=0;
+    }
+
+    // translateY
+    if (typeof(params.translateY) != "undefined") {
+        this.translateY= params.translateY;
+    }
+    else {
+        this.translateY=0;
+    }
+
+    // bgcolor
+    if (typeof(params.bgcolor) != "undefined") {
+        this.bgcolor = params.bgcolor;
+    }
+    else {
+        this.bgcolor = '';
+    }
+
+    // debug
+    if (typeof(params.debug) != "undefined") {
+        this.debug = params.debug;
+    }
+    else {
+        this.debug = false;
+    }
+
+}
+
+SVGFlashHandler.prototype.createFlashHTML = function() {
+
+    var bgcolor ='';
+    if (this.bgcolor != '') {
+        bgcolor = ' bgcolor=' + this.bgcolor;
+    }
 
     var flashVars = 
         '"' +
-        'uniqueId=' + params.uniqueId +
-        '&translateX=' + translateX + 
-        '&translateY=' + translateY + 
-        '&scaleX=' + scaleX +
-        '&scaleY=' + scaleY +
-        '&sourceType=' + params.sourceType +
-        '&svgURL=' + params.svgURL +
-        '&debug=' + params.debug;
-    if (typeof(params.svgId) != "undefined") {
-        flashVars = flashVars  + '&svgId=' + params.svgId;
+        'uniqueId=' + this.uniqueId +
+        '&sourceType=' + this.sourceType +
+        '&svgURL=' + this.svgURL +
+        '&scaleMode=' + this.scaleMode +
+        '&translateX=' + this.translateX + 
+        '&translateY=' + this.translateY + 
+        '&scaleX=' + this.scaleX +
+        '&scaleY=' + this.scaleY +
+        '&debug=' + this.debug;
+    if (typeof(this.svgId) != "undefined") {
+        flashVars = flashVars  + '&svgId=' + this.svgId;
     }
     flashVars = flashVars  + '"';
-    //SVGLog.info(flashVars);
-    var objectHTML = 
-        '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" ' +
-        '        codebase="" id="' + params.objectId + '" ' + 
-        '        width=' + params.objectWidth + ' height=' + params.objectHeight + ' style="float: left"> ' +
+
+    //svgviewer.info(flashVars);
+
+    var html='<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" ' +
+        '        codebase="" id="' + this.objectId + '" ' + 
+        '        width=' + this.objectWidth + ' height=' + this.objectHeight + ' style="float: left"> ' +
         '    <param name=AllowScriptAccess value="always"/> ' +
         '    <param name=movie value="svgviewer.swf"> ' +
         '    <param name=FlashVars value=' + flashVars + '> ' +
         '    <param name="wmode" value="transparent"> ' +
-        '    <embed  name="' + params.objectId + '" play=false ' +
+        '    <embed  name="' + this.objectId + '" play=false ' +
         '            swliveconnect="true" AllowScriptAccess="always" ' +
-        '            src="svgviewer.swf" quality=high wmode=transparent ' + bgcolor + 
-        '            width=' + params.objectWidth + ' height=' + params.objectHeight +
+        '            src="svgviewer.swf" quality=high wmode=transparent ' + bgcolor +
+        '            width=' + this.objectWidth + ' height=' + this.objectHeight +
         '            type="application/x-shockwave-flash" ' +
         '            FlashVars=' + flashVars + '> ' +
         '    </embed> ' +
         '</object> ';
 
-    var node = document.getElementById(params.parentId);
-    if (node) {
-        node.innerHTML = objectHTML;
-    }
+    //svgviewer.info(html);
+    return html;
 }
 
-function receiveFromFlash(flashMsg) {
-    if (flashMsg.type == 'event') {
-        // The flash control actionscript calls this on startup.
-        // We use this to know the flash control is ready for activity.
-        if (flashMsg.eventType == 'onLoad') {
-            var svgString;
-            var params = svgviewer.svgParamsDict[flashMsg.uniqueId];
-            /**
-             If the type is inline_script, that means that the SVG is available
-             in the local DOM within a script tag. Also, since this message is being received,
-             the javascript interface is available. Therefore, an optimzation can be performed.
-             In this case, the flash control leaves control to the browser (this code)
-             and we pull the SVG directly from the DOM and pass it to flash through the available
-             javascript interface. This avoids having the flash control pulling the data using
-             a URLRequest which is, theoretically, much more expensive.
 
-             Note that this provides a simple example of how to load SVG on the fly from a string.
-            **/
-            if (params.sourceType == 'inline_script') {
-                var flashSVG = svgviewer.getFlashMovieObject(params.objectId);
-                svgString = document.getElementById(params.svgId).innerHTML;
-                flashSVG.sendToFlash({type: 'load', sourceType: 'string', svgString: svgString});
-            }
-        }
+SVGFlashHandler.prototype.sendToFlash = function(flashMsg) {
+   flashMsg.uniqueId = this.uniqueId;
+   if (typeof(this.flashObj) == "undefined") {
+      this.flashObj = this.getFlashObject();
+   }
+   var retval = null;
+   try {
+       retval = this.flashObj.sendToFlash(flashMsg);
+   }
+   catch(e) {
+   }
+   return retval;
+}
+
+SVGFlashHandler.prototype.onMessage = function(flashMsg) {
+    if (flashMsg.type == 'event') {
+        this.onEvent(flashMsg);
         return;
     }
     if (flashMsg.type == 'log') {
-        svgviewer.info(flashMsg.logString);
+        this.onLog(flashMsg);
         return;
     }
+    if (flashMsg.type == 'script') {
+        this.onScript(flashMsg);
+        return;
+    }
+}
+
+SVGFlashHandler.prototype.onLog = function(flashMsg) {
+    svgviewer.info(flashMsg.logString);
+}
+
+
+SVGFlashHandler.prototype.onEvent = function(flashMsg) {
+    if (flashMsg.eventType == 'onLoad') {
+        this.onLoad(flashMsg);
+        return;
+    }
+    if (flashMsg.eventType == 'onStartup') {
+        this.onStartup(flashMsg);
+        return;
+    }
+}
+
+/*
+ * 
+ * The flash control actionscript calls this on startup.
+ * We use this to know the flash control is ready for activity.
+ * 
+ */
+
+SVGFlashHandler.prototype.onStartup = function(flashMsg) {
+    // Recording the flash object was deferred until it actually exists!
+    this.flashObj = this.getFlashObject();
+
+    /**
+     If the type is inline_script, that means that the SVG is available
+     in the local DOM within a script tag. Also, since this message is being received,
+     the javascript interface is available. Therefore, an optimzation can be performed.
+     In this case, the flash control leaves control to the browser (this code)
+     and we pull the SVG directly from the DOM and pass it to flash through the available
+     javascript interface. This avoids having the flash control pulling the data using
+     a URLRequest which is, theoretically, much more expensive.
+
+     Note that this provides a simple example of how to load SVG on the fly from a string.
+    **/
+   // svgviewer.info("onStartup: sourcetype:  " + this.sourceType);
+    if (this.sourceType == 'inline_script') {
+        var svgText = document.getElementById(this.svgId).innerHTML;
+    svgviewer.info("delme1");
+        this.sendToFlash({type: 'load', sourceType: 'string', svgString: svgText});
+    }
+
+}
+
+
+SVGFlashHandler.prototype.onLoad = function(flashMsg) {
+    // Recording the flash object was deferred until it actually exists!
+
+    // Recording the root SVG documentElement was deferred until it actually exists!
+    this.documentElement = new SVGNode(this);
+    svgviewer.info("delme2");
+    var flashMsg = this.sendToFlash({type: 'invoke', method: 'getRoot'});
+    this.documentElement.elementId = flashMsg.elementId;
+
+}
+
+/*
+ * onScript
+ *
+ */
+SVGFlashHandler.prototype.scriptReplacements = [
+                                 { pattern: ';_SVGNL_;', replacement: '\\n' },
+                                 { pattern: 'document.createElementNS', replacement: 'svgviewer.svgHandlers["_SVG_UNIQ_ID_"].createElementNS' },
+                                 { pattern: 'document.documentElement', replacement: 'svgviewer.svgHandlers["_SVG_UNIQ_ID_"].documentElement' },
+                                 { pattern: 'document.getElementById', replacement: 'svgviewer.svgHandlers["_SVG_UNIQ_ID_"].getElementById' },
+                                 { pattern: 'document.createTextNode', replacement: 'svgviewer.svgHandlers["_SVG_UNIQ_ID_"].createTextNode' } 
+                               ];
+
+
+SVGFlashHandler.prototype.onScript = function(flashMsg) {
+    var svgScript = flashMsg.script;
+    for (var i in this.scriptReplacements) {
+        var repObj = this.scriptReplacements[i];
+        var replaceStr = repObj.replacement.replace('_SVG_UNIQ_ID_', flashMsg.uniqueId);
+        svgScript = svgScript.replace(repObj.pattern, replaceStr, 'g');
+    }
+    this.svgScript = svgScript;
+    setTimeout('eval(svgviewer.svgHandlers["' + this.uniqueId + '"].svgScript);', 100);
+}
+
+
+// Used by onLoad
+SVGFlashHandler.prototype.getFlashObject = function() {
+    if (window.document[this.objectId]) {
+        if (document[this.objectId].length != undefined) {
+            return document[this.objectId][1];
+        }
+        return document[this.objectId];
+    }
+    if (navigator.appName.indexOf("Microsoft Internet")==-1) {
+        if (document.embeds && document.embeds[this.objectId]) {
+            return document.embeds[this.objectId]; 
+        }
+    }
+    else {
+        return document.getElementById(this.objectId);
+    }
+}
+
+SVGFlashHandler.prototype.getElementById = function(elementId) {
+    svgviewer.info("delme3:" + elementId);
+   var returnMsg = this.sendToFlash({ type: 'invoke', method: 'getElementById',
+                                      elementId: elementId
+                                    });
+   if (!returnMsg) {
+       return null;
+   }
+   var svgNode = new SVGNode(this);
+   svgNode.elementId = returnMsg.elementId;
+   return svgNode;
+}
+
+
+SVGFlashHandler.prototype.setTransform = function(transformParam) {
+    svgviewer.info("delme4");
+   var returnMsg = this.sendToFlash({ type: 'invoke', method: 'setTransform',
+                                      transform: transformParam
+                                    });
+}
+
+SVGFlashHandler.prototype.createElementNS = function(elementNS, elementType) {
+   var svgNode = new SVGNode(this);
+   svgNode.elementId = 'rand' + Math.random();
+    svgviewer.info("delme5");
+   var returnMsg = this.sendToFlash({ type: 'invoke', method: 'createElementNS',
+                                      elementType: elementType, 
+                                      elementId: svgNode.elementId
+                                    });
+   return svgNode;
+}
+
+SVGFlashHandler.prototype.createTextNode = function(elementText) {
+   var textNode = new SVGNode(this.svgHandler);
+   textNode.elementId = 'rand' + Math.random();
+   textNode.type = 'textNode';
+   textNode.text = elementText;
+   return textNode;
+
+}
+/*
+ *  Class SVGNode
+ *
+ */
+function SVGNode(svgHandler) {
+    this.svgHandler = svgHandler;
+    this.eventHandlers = {};
+    this.childNodes = [];
+    this.childNodes.item = function(i) { return this[i]; };
+}
+
+SVGNode.prototype.sendToFlash = function(flashMsg) {
+   return this.svgHandler.sendToFlash(flashMsg);
+}
+
+SVGNode.prototype.createElementNS = function(elementNS, elementType) {
+   return this.svgHandler.createElementNS(elementNS, elementType);
+}
+
+SVGNode.prototype.getElementById = function(elementId) {
+   return this.svgHandler.getElementById(elementId);
+}
+
+SVGNode.prototype.createTextNode = function(elementText) {
+   return this.svgHandler.createTextNode(elementText);
+}
+
+SVGNode.prototype.setAttribute = function(attrName, attrValue) {
+   this.sendToFlash({ type: 'invoke', method: 'setAttribute',
+                      elementId: this.elementId,
+                      attrName: attrName, attrValue: attrValue });
+   if (attrName == 'id') {
+       this.elementId = attrValue;
+   }
+}
+
+SVGNode.prototype.getAttribute = function(attrName) {
+   var returnMsg = this.sendToFlash({ type: 'invoke', method: 'getAttribute',
+                                      elementId: this.elementId,
+                                      attrName: attrName });
+   if (!returnMsg) {
+       return null;
+   }
+   return returnMsg.attrValue;
+}
+
+SVGNode.prototype.addEventListener = function(eventName, eventListener, dummy) {
+   if (typeof(this.eventHandlers[eventName]) == 'undefined') {
+       this.eventHandlers[eventName] = [ eventListener ];
+   }
+   else {
+       this.eventHandlers[eventName].push(eventListener);
+   }
+   this.sendToFlash({ type: 'invoke', method: 'addEventListener',
+                      elementId: this.elementId,
+                      eventName: eventName });
+}
+
+SVGNode.prototype.unsuspendRedraw = function(dummy) {
+}
+
+SVGNode.prototype.suspendRedraw = function(dummy) {
+}
+
+SVGNode.prototype.appendChild = function(childNode) {
+   this.sendToFlash({ type: 'invoke', method: 'appendChild',
+                      elementId: this.elementId,
+                      childId: childNode.elementId });
+   this.childNodes.push(childNode);
 }
 

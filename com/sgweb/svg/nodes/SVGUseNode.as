@@ -35,7 +35,7 @@ package com.sgweb.svg.nodes
         }    
 
 
-        override protected function transformNode():void {
+        override public function transformNode():void {
             this.transform.matrix = new Matrix();
         }    
         override protected function setupFilters():void {

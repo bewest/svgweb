@@ -38,18 +38,20 @@ and so on.
 
 package com.sgweb.svg
 {
+    import flash.display.Sprite;
     
     import com.sgweb.svg.nodes.SVGRoot;
+    import com.sgweb.svg.nodes.SVGNode;
     
     import flash.events.Event;
     import flash.geom.Transform;
     import flash.geom.Matrix;
+    import flash.display.StageScaleMode;
     import flash.display.LoaderInfo;
     import flash.external.ExternalInterface;
     
     import flash.net.URLLoader;
     import flash.net.URLRequest;
-    import flash.display.Sprite;
 
     [SWF(frameRate="24", width="2048", height="1024")]
     /**
@@ -57,20 +59,18 @@ package com.sgweb.svg
      **/
     public class SVGViewer extends Sprite
     {
-        private var _xml:XML;
         private var _svgRoot:SVGRoot;
         private var html:String;
         private var js_uniqueId:String = "";
+        private var js_createdElements:Object = {};
         private var myXMLLoader:URLLoader= new URLLoader ();
         private var myHTMLLoader:URLLoader= new URLLoader ();
 
-        public  var paramsObj:Object;
         protected var sourceTypeParam:String = "";
         protected var svgURLParam:String = "";
         protected var svgIdParam:String = "";
-        protected var scaleXParam:Number = 1.0;
-        protected var scaleYParam:Number = 1.0;
         protected var debugEnabled:Boolean = false;
+        protected var scriptSentToJS:Boolean = false;
 
 
         public function SVGViewer():void {
@@ -78,6 +78,7 @@ package com.sgweb.svg
 
             this._svgRoot = new SVGRoot(null);
             this._svgRoot.debug = this.debug;
+            this._svgRoot.handleScript = this.handleScript;
             this._svgRoot.svgRoot = this._svgRoot;
             this.addChild(this._svgRoot);
 
@@ -89,10 +90,25 @@ package com.sgweb.svg
         public function debug(debugMessage:String):void {
             if (this.debugEnabled) {
                 try {
-                    ExternalInterface.call("receiveFromFlash", { type: 'log', logString: debugMessage } );
+                    ExternalInterface.call("receiveFromFlash", { type: 'log',
+                                                                 uniqueId: this.js_uniqueId,
+                                                                 logString: debugMessage
+                                                               } );
                 }
                 catch(error:SecurityError) {
                 }
+            }
+        }
+        public function handleScript(script:String):void {
+            if (!this.scriptSentToJS) {           
+                try {
+                    ExternalInterface.call("receiveFromFlash", { type: 'script',
+                                                                 uniqueId: this.js_uniqueId,
+                                                                 script: script } );
+                }
+                catch(error:SecurityError) {
+                }
+                this.scriptSentToJS=true;
             }
         }
 
@@ -100,34 +116,78 @@ package com.sgweb.svg
          * @public
          **/
         public function xmlLoaded(event : Event):void {
-           var dataXML:XML = new XML(event.target.data);
-           this.xml = dataXML;
+            this.debug("xmlLoaded:" + this.js_uniqueId);
+            var dataXML:XML = new XML(event.target.data);
+            this._svgRoot.xml = dataXML;
+            // notify browser javascript that we are loaded and ready
+            try {
+                var result:Object = ExternalInterface.call("receiveFromFlash",
+                    { type: 'event', eventType: 'onLoad', uniqueId: this.js_uniqueId } );
+            }
+            catch(error:SecurityError) {
+                var myURL:String = this.root.loaderInfo.loaderURL;
+                var debugstr:String = "Security Error on ExternalInterface.call(...). ";
+                if (myURL.substring(0,4) == "file") {
+                    debugstr += "This is expected when loaded from a local file.";
+                }
+                this.debug(debugstr);
+            }
         }
 
         public function htmlLoaded(event : Event):void {
-           this.html = event.target.data;
-           var htmlStrings:Object = this.html.split('\n');
-           var svgString:String="";
-           var svgCopying:Boolean=false;
-           var svgStartString1:String= 'id="'+this.svgIdParam+'"';
-           var svgStartString2:String= "id='"+this.svgIdParam+"'";
-           var svgEndString:String="</svg>";
-           for (var i:String in htmlStrings) {
-               if (svgCopying) {
-                   svgString += (htmlStrings[i] + "\n");
-                   if (htmlStrings[i].indexOf(svgEndString) != -1) {
-                       svgCopying=false;
-                   }
-               }
-               if (htmlStrings[i].indexOf(svgStartString1) != -1) {
-                   svgCopying=true;
-               }
-               if (htmlStrings[i].indexOf(svgStartString2) != -1) {
-                   svgCopying=true;
-               }
-           }
-           var dataXML:XML = XML(svgString);
-           this.xml = dataXML;
+            var svgString:String="";
+            var svgScriptString:String="";
+            var svgCopying:Boolean=false;
+            var svgCopyingScript:Boolean=false;
+            var svgStartString1:String= 'id="'+this.svgIdParam+'"';
+            var svgStartString2:String= "id='"+this.svgIdParam+"'";
+            var svgEndString:String="</svg>";
+            var svgScriptStartString:String="<script";
+            var svgScriptEndString:String="]]";
+
+            this.html = event.target.data;
+            this.html = this.html.replace('\\n', '\\\\n');
+            var htmlStrings:Object = this.html.split('\n');
+            for (var i:String in htmlStrings) {
+                if (svgCopying) {
+                    svgString += (htmlStrings[i] + "\n");
+                    if (svgCopyingScript) {
+                        svgScriptString += (htmlStrings[i] + "\n");
+                        if (htmlStrings[i].indexOf(svgScriptEndString) != -1) {
+                            svgCopyingScript=false;
+                        }
+                    }
+                    if (htmlStrings[i].indexOf(svgScriptStartString) != -1) {
+                        svgCopyingScript=true;
+                    }
+                    if (htmlStrings[i].indexOf(svgEndString) != -1) {
+                        svgCopying=false;
+                    }
+                }
+                if (htmlStrings[i].indexOf(svgStartString1) != -1) {
+                    svgCopying=true;
+                }
+                if (htmlStrings[i].indexOf(svgStartString2) != -1) {
+                    svgCopying=true;
+                }
+            }
+            //this.debug('found script total: ' + svgScriptString);
+            var dataXML:XML = XML(svgString);
+            this._svgRoot.xml = dataXML;
+ 
+            // notify browser javascript that we are loaded
+            try {
+                var result:Object = ExternalInterface.call("receiveFromFlash",
+                    { type: 'event', eventType: 'onLoad', uniqueId: this.js_uniqueId } );
+            }
+            catch(error:SecurityError) {
+                var myURL:String = this.root.loaderInfo.loaderURL;
+                var debugstr:String = "Security Error on ExternalInterface.call(...). ";
+                if (myURL.substring(0,4) == "file") {
+                    debugstr += "This is expected when loaded from a local file.";
+                }
+                this.debug(debugstr);
+            }
         }
 
         public function loadSVGURL():void {
@@ -195,8 +255,11 @@ package com.sgweb.svg
                     if (jsMsg.type == 'load') {
                         return outerthis.js_handleLoad(jsMsg);
                     }
+                    if (jsMsg.type == 'invoke') {
+                        return outerthis.js_handleInvoke(jsMsg);
+                    }
                     if (jsMsg.type == 'getVersion') {
-                        return { type: 'version', version: '0.6' };
+                        return { type: 'version', version: '0.7' };
                     }
                     return null;
                 }
@@ -211,22 +274,17 @@ package com.sgweb.svg
                     }
                     this.debug(debugstr);
                 }
-                // notify browser javascript that we are loaded and ready
-                try {
-                    var result:Object = ExternalInterface.call("receiveFromFlash",
-                        { type: 'event', eventType: 'onLoad', uniqueId: this.js_uniqueId } );
-                }
-                catch(error:SecurityError) {
-                    debugstr = "Security Error on ExternalInterface.call(...). ";
-                    if (myURL.substring(0,4) == "file") {
-                        debugstr += "This is expected when loaded from a local file.";
-                    }
-                    this.debug(debugstr);
-                }
 
                 // process <object> parameters
                 var matr:Matrix;
                 for (item in paramsObj) {
+                    if (item == "scaleMode") {
+                        this._svgRoot.scaleModeParam = paramsObj[item];
+                        if (this._svgRoot.scaleModeParam == "showAll_svg"
+                            || this._svgRoot.scaleModeParam == "noScale") {
+                            this.stage.scaleMode = StageScaleMode.NO_SCALE;
+                        }
+                    }
                     if (item == "sourceType") {
                         this.sourceTypeParam = paramsObj[item];
                     }
@@ -237,22 +295,16 @@ package com.sgweb.svg
                         this.svgIdParam = paramsObj[item];
                     }
                     if (item == "scaleX") {
-                        this.scaleXParam = Number(paramsObj[item]);
-                        matr = new Matrix();
-                        matr.scale(this.scaleXParam, this.scaleYParam);
-                        this.transform.matrix = matr;
+                        this._svgRoot.scaleXParam = Number(paramsObj[item]);
                     }
                     if (item == "scaleY") {
-                        this.scaleYParam = Number(paramsObj[item]);
-                        matr = new Matrix();
-                        matr.scale(this.scaleXParam, this.scaleYParam);
-                        this.transform.matrix = matr;
+                        this._svgRoot.scaleYParam = Number(paramsObj[item]);
                     }
                     if (item == "translateX") {
-                        this.x = Number(paramsObj[item]);
+                        this._svgRoot.translateXParam = Number(paramsObj[item]);
                     }
                     if (item == "translateY") {
-                        this.y = Number(paramsObj[item]);
+                        this._svgRoot.translateYParam = Number(paramsObj[item]);
                     }
                 }
 
@@ -289,6 +341,20 @@ package com.sgweb.svg
                         this.debug("active, so assume javascript is in charge and do nothing.");
                     }
                 }
+
+
+                // notify browser javascript that we are started and ready
+                try {
+                    var result:Object = ExternalInterface.call("receiveFromFlash",
+                        { type: 'event', eventType: 'onStartup', uniqueId: this.js_uniqueId } );
+                }
+                catch(error:SecurityError) {
+                    debugstr = "Security Error on ExternalInterface.call(...). ";
+                    if (myURL.substring(0,4) == "file") {
+                        debugstr += "This is expected when loaded from a local file.";
+                    }
+                    this.debug(debugstr);
+                }
             }
             else {
                 this.debug("External interface not available.");
@@ -303,110 +369,107 @@ package com.sgweb.svg
             if (jsMsg.sourceType == 'string') {
                 this.sourceTypeParam = 'string';
                 var dataXML:XML = XML(jsMsg.svgString);
-                this.xml = dataXML;
+                this._svgRoot.xml = dataXML;
             }
             if (jsMsg.sourceType == 'url_svg') {
                 this.sourceTypeParam = 'url_svg';
                 this.svgURLParam = jsMsg.svgURL;
                 this.loadSVGURL();
             }
-            return null;
+            return jsMsg;
+        }
+        public function js_handleInvoke(jsMsg:Object):Object {
+            var element:SVGNode;
+            if (jsMsg.method == 'createElementNS') {
+                var xmlString:String = '<' + jsMsg.elementType + ' id="' + jsMsg.elementId +  '" />';
+                var childXML:XML = new XML(xmlString);
+                this.js_createdElements[jsMsg.elementId] = this._svgRoot.parseNode(childXML);
+            }
+            if (jsMsg.method == 'setTransform') {
+                this.transform.matrix = this._svgRoot.parseTransform(jsMsg.transform); 
+            }
+            if (jsMsg.method == 'getElementById') {
+                if (typeof(this.js_createdElements[jsMsg.elementId]) != "undefined") {
+                    return this.js_createdElements[jsMsg.elementId];
+                }
+                if (!this._svgRoot.getElement(jsMsg.elementId)) {
+                    this.debug("getElem:not found: " + jsMsg.elementId);
+                    return null;
+                }
+            }
+            if (jsMsg.method == 'appendChild') {
+                if (typeof(this.js_createdElements[jsMsg.elementId]) != "undefined") {
+                    element=this.js_createdElements[jsMsg.elementId];
+                }
+                else {
+                    element = this._svgRoot.getElement(jsMsg.elementId);
+                }
+                var childNode:SVGNode;
+                if (typeof(this.js_createdElements[jsMsg.childId]) != "undefined") {
+                    childNode=this.js_createdElements[jsMsg.childId];
+                }
+                else {
+                    childNode = this._svgRoot.getElement(jsMsg.childId);
+                }
+                if (element && childNode)  {
+                    element.addChild(childNode);
+                }
+            }
+            if (jsMsg.method == 'getRoot') {
+                 if (this._svgRoot._xml.@id) {
+                     //this.debug("..root id found: " + this._svgRoot.xml.@id.toString());
+                     jsMsg.elementId = this._svgRoot.xml.@id.toString();
+                     if (!this._svgRoot.getElement(jsMsg.elementId)) {
+                         this.debug("root element not found");
+                     }
+                 }
+                 else {
+                     this.debug("root id not found");
+                 }
+            }
+            if (jsMsg.method == 'getAttribute') {
+                if (typeof(this.js_createdElements[jsMsg.elementId]) != "undefined") {
+                    element=this.js_createdElements[jsMsg.elementId];
+                }
+                else {
+                    element = this._svgRoot.getElement(jsMsg.elementId);
+                }
+                if (element) {
+                    if (  (typeof(element.xml.@[jsMsg.attrName]) != 'undefined')
+                       && (element.xml.@[jsMsg.attrName] != null) ) {
+                        jsMsg.attrValue = String(element.xml.@[jsMsg.attrName].toString());
+                    }
+                    else {
+                        this.debug("ERR:GET ATTR not found attr: " + jsMsg.attrName);
+                    }
+                }
+                else {
+                    this.debug("ERR:GET ATTR element not found id: " + jsMsg.elementId);
+                }
+            }
+            if (jsMsg.method == 'setAttribute') {
+                if (typeof(this.js_createdElements[jsMsg.elementId]) != "undefined") {
+                    element=this.js_createdElements[jsMsg.elementId];
+                }
+                else {
+                    element = this._svgRoot.getElement(jsMsg.elementId);
+                }
+                if (element) {
+                    element.xml.@[jsMsg.attrName] = jsMsg.attrValue.toString();
+                    if (jsMsg.attrName == 'transform') {
+                        element.transformNode();
+                    }
+                    else {
+                        element.invalidateDisplay();
+                    }
+                }
+                else {
+                    this.debug("ERR:SET ATTR not found id: " + jsMsg.elementId);
+                }
+            }
+
+            return jsMsg;
         }
 
-        /**
-         * @public
-         **/
-        public function set xml(value:XML):void {
-            this._svgRoot.xml = value;
-        }
-        
-        /**
-         * SVG XML value
-         **/
-        public function get xml():XML {
-            return this._svgRoot.xml;
-        }
-        
-        /**
-         * @private
-         **/
-        public function set scale(scale:Number):void {
-            this._svgRoot.scale = scale;
-        }
-        
-        /**
-         * Set scaleX and scaleY at the same time
-         **/
-        public function get scale():Number {
-            return this._svgRoot.scale;
-        }
-        
-        
-        /**
-         * @private
-         **/
-        override public function set scaleX(value:Number):void {
-            this.scale = value;
-        }
-        
-        override public function get scaleX():Number {
-            return this._svgRoot.scaleX;
-        }
-        
-        
-        /**
-         * @private
-         **/
-        override public function set scaleY(value:Number):void {
-            this.scale = value;
-        }
-        
-        override public function get scaleY():Number {
-            return this._svgRoot.scaleY;
-        }
-        
-        
-        /**
-         * @private
-         **/
-        override public function set rotation(value:Number):void {
-            this._svgRoot.rotation = value;
-        }
-        
-        override public function get rotation():Number {
-            return this._svgRoot.rotation;
-        }
-        
-        
-        /**
-         * @private
-         **/
-        override public function set transform(value:Transform):void {
-            this._svgRoot.transform = value;
-        }
-        
-        override public function get transform():Transform {
-            return this._svgRoot.transform; 
-        }
-        
-        
-        /**
-         * @private
-         **/
-        override public function set filters(value:Array):void {
-            this._svgRoot.filters = value;
-        }
-        
-        override public function get filters():Array {
-            return this._svgRoot.filters;
-        }
-        
-        /**
-         * Title of SVG
-         **/
-        public function get title():String {
-            return this._svgRoot.title;
-        }
-        
     }
 }
