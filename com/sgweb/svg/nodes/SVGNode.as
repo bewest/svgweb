@@ -93,6 +93,9 @@ package com.sgweb.svg.nodes
          **/
         protected var _invalidDisplay:Boolean = false;
         
+
+        protected var initialRenderDone:Boolean = false;
+
         /**
          * Constructor
          *
@@ -103,6 +106,9 @@ package com.sgweb.svg.nodes
         public function SVGNode(svgRoot:SVGRoot, xml:XML = null):void {    
             this.svgRoot = svgRoot;            
             this.xml = xml;            
+            if (this.svgRoot != null) {
+                this.svgRoot.renderStart(this);
+            }
             this.addEventListener(Event.ADDED, registerId);            
         }                    
         
@@ -991,6 +997,10 @@ package com.sgweb.svg.nodes
 */
 
                 //this.svgRoot.debug("done drawing " + this.xml.@id + " type " + describeType(this).@name);
+            }
+            if (!(this is SVGRoot) && !this.initialRenderDone) {
+                this.svgRoot.renderDone(this);
+                this.initialRenderDone = true;
             }
         }
         

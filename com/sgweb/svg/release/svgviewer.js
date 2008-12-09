@@ -99,6 +99,7 @@ function receiveFromFlash(flashMsg) {
  */
 
 function SVGFlashHandler(params) {
+    this.svgScript = '';
     this.sourceType = params.sourceType;
     this.svgURL = params.svgURL;
     this.objectWidth= params.objectWidth;
@@ -290,7 +291,6 @@ SVGFlashHandler.prototype.onStartup = function(flashMsg) {
    // svgviewer.info("onStartup: sourcetype:  " + this.sourceType);
     if (this.sourceType == 'inline_script') {
         var svgText = document.getElementById(this.svgId).innerHTML;
-    svgviewer.info("delme1");
         this.sendToFlash({type: 'load', sourceType: 'string', svgString: svgText});
     }
 
@@ -298,14 +298,12 @@ SVGFlashHandler.prototype.onStartup = function(flashMsg) {
 
 
 SVGFlashHandler.prototype.onLoad = function(flashMsg) {
-    // Recording the flash object was deferred until it actually exists!
-
-    // Recording the root SVG documentElement was deferred until it actually exists!
     this.documentElement = new SVGNode(this);
-    svgviewer.info("delme2");
-    var flashMsg = this.sendToFlash({type: 'invoke', method: 'getRoot'});
-    this.documentElement.elementId = flashMsg.elementId;
+    var getRootMsg = this.sendToFlash({type: 'invoke', method: 'getRoot'});
+    this.documentElement.elementId = getRootMsg.elementId;
 
+    this.svgScript = this.svgScript + flashMsg.onLoad;
+    setTimeout('eval(svgviewer.svgHandlers["' + this.uniqueId + '"].svgScript);', 100);
 }
 
 /*
@@ -328,8 +326,7 @@ SVGFlashHandler.prototype.onScript = function(flashMsg) {
         var replaceStr = repObj.replacement.replace('_SVG_UNIQ_ID_', flashMsg.uniqueId);
         svgScript = svgScript.replace(repObj.pattern, replaceStr, 'g');
     }
-    this.svgScript = svgScript;
-    setTimeout('eval(svgviewer.svgHandlers["' + this.uniqueId + '"].svgScript);', 100);
+    this.svgScript = this.svgScript + svgScript;
 }
 
 
@@ -352,7 +349,6 @@ SVGFlashHandler.prototype.getFlashObject = function() {
 }
 
 SVGFlashHandler.prototype.getElementById = function(elementId) {
-    svgviewer.info("delme3:" + elementId);
    var returnMsg = this.sendToFlash({ type: 'invoke', method: 'getElementById',
                                       elementId: elementId
                                     });
@@ -366,7 +362,6 @@ SVGFlashHandler.prototype.getElementById = function(elementId) {
 
 
 SVGFlashHandler.prototype.setTransform = function(transformParam) {
-    svgviewer.info("delme4");
    var returnMsg = this.sendToFlash({ type: 'invoke', method: 'setTransform',
                                       transform: transformParam
                                     });
@@ -375,7 +370,6 @@ SVGFlashHandler.prototype.setTransform = function(transformParam) {
 SVGFlashHandler.prototype.createElementNS = function(elementNS, elementType) {
    var svgNode = new SVGNode(this);
    svgNode.elementId = 'rand' + Math.random();
-    svgviewer.info("delme5");
    var returnMsg = this.sendToFlash({ type: 'invoke', method: 'createElementNS',
                                       elementType: elementType, 
                                       elementId: svgNode.elementId
@@ -437,7 +431,12 @@ SVGNode.prototype.getAttribute = function(attrName) {
    return returnMsg.attrValue;
 }
 
-SVGNode.prototype.addEventListener = function(eventName, eventListener, dummy) {
+SVGNode.prototype.addEventListener = function(eventName, eventListener, captureFlag) {
+   if (eventName == 'keydown') {
+       window.document.addEventListener(eventName, eventListener, captureFlag);
+       return;
+   }
+
    if (typeof(this.eventHandlers[eventName]) == 'undefined') {
        this.eventHandlers[eventName] = [ eventListener ];
    }

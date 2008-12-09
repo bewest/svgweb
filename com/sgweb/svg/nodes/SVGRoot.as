@@ -58,8 +58,11 @@ package com.sgweb.svg.nodes
         public var translateXParam:Number = 0.0;
         public var translateYParam:Number = 0.0;
 
+        public var renderCurrent:Number = 0;
         public var debug:Object;
         public var handleScript:Object;
+        public var handleOnLoad:Object;
+        public var firedOnLoad:Boolean;
         public var title:String;
                 
         public function SVGRoot(xml:XML = null):void {
@@ -174,6 +177,18 @@ package com.sgweb.svg.nodes
             
             return style;            
                     
+        }
+        public function renderStart(node:SVGNode):void {
+            this.renderCurrent++;
+        }
+        public function renderDone(node:SVGNode):void {
+            this.renderCurrent--;
+            if (this.renderCurrent == 0) {
+                if (!this.firedOnLoad) {
+                    this.handleOnLoad();
+                    this.firedOnLoad = true;
+                }
+            }
         }
         
         override public function transformNode():void {

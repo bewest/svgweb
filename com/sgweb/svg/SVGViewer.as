@@ -79,6 +79,7 @@ package com.sgweb.svg
             this._svgRoot = new SVGRoot(null);
             this._svgRoot.debug = this.debug;
             this._svgRoot.handleScript = this.handleScript;
+            this._svgRoot.handleOnLoad = this.handleOnLoad;
             this._svgRoot.svgRoot = this._svgRoot;
             this.addChild(this._svgRoot);
 
@@ -97,6 +98,20 @@ package com.sgweb.svg
                 }
                 catch(error:SecurityError) {
                 }
+            }
+        }
+        public function handleOnLoad():void {
+            var onLoadHandler:String = '';
+            if (this._svgRoot.xml.@onload) {
+                onLoadHandler = this._svgRoot.xml.@onload;
+            }
+            try {
+                ExternalInterface.call("receiveFromFlash", { type: 'event',
+                                                             eventType: "onLoad",
+                                                             uniqueId: this.js_uniqueId,
+                                                             onLoad: onLoadHandler } );
+            }
+            catch(error:SecurityError) {
             }
         }
         public function handleScript(script:String):void {
@@ -119,19 +134,6 @@ package com.sgweb.svg
             this.debug("xmlLoaded:" + this.js_uniqueId);
             var dataXML:XML = new XML(event.target.data);
             this._svgRoot.xml = dataXML;
-            // notify browser javascript that we are loaded and ready
-            try {
-                var result:Object = ExternalInterface.call("receiveFromFlash",
-                    { type: 'event', eventType: 'onLoad', uniqueId: this.js_uniqueId } );
-            }
-            catch(error:SecurityError) {
-                var myURL:String = this.root.loaderInfo.loaderURL;
-                var debugstr:String = "Security Error on ExternalInterface.call(...). ";
-                if (myURL.substring(0,4) == "file") {
-                    debugstr += "This is expected when loaded from a local file.";
-                }
-                this.debug(debugstr);
-            }
         }
 
         public function htmlLoaded(event : Event):void {
