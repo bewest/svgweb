@@ -288,16 +288,15 @@ package com.sgweb.svg.nodes
          * Perform transformations defined by the transform attribute 
          **/
         public function transformNode():void {
-            
-            var trans:String = this.getAttribute('transform');
 
-            var nodeMatrix:Matrix = new Matrix();
+            // Get original Matrix
             var newMatrix:Matrix;
             if (this._origMatrix == null) {
                 this._origMatrix = this.transform.matrix.clone();
             }
             newMatrix = this._origMatrix.clone();
 
+            // Apply viewbox transform
             var viewBox:String = this.getAttribute('viewBox');
             if (viewBox != null) {
                 var points:Array = viewBox.split(/\s+/);
@@ -344,10 +343,13 @@ package com.sgweb.svg.nodes
 
             }
 
-
             this.transform.matrix = newMatrix;
             newMatrix = this.transform.matrix.clone();
+
             
+            // Apply transform attribute 
+            var trans:String = this.getAttribute('transform');
+            var nodeMatrix:Matrix;
             if (trans != null) {
                 var transArray:Array = trans.match(/\S+\(.*?\)/sg);
                 for each(var tran:String in transArray) {
@@ -360,6 +362,7 @@ package com.sgweb.svg.nodes
                         args = args.replace(/ /g, '');
                         var argsArray:Array = args.split(/[, ]/);
                         
+                        nodeMatrix = new Matrix();
                         switch (command) {
                             case "matrix":
                                 if (argsArray.length == 6) {
@@ -369,52 +372,36 @@ package com.sgweb.svg.nodes
                                     nodeMatrix.d = argsArray[3];
                                     nodeMatrix.tx = argsArray[4];
                                     nodeMatrix.ty = argsArray[5];
-                                    
-                                    newMatrix.concat(nodeMatrix);
-
-                                    this.transform.matrix = newMatrix;
-                                    newMatrix = this.transform.matrix.clone();
-                                    
                                 }
                                 break;
                                 
                             case "translate":
                                 if (argsArray.length == 1) {
-                                    this.x = SVGColors.cleanNumber(argsArray[0]) + SVGColors.cleanNumber(this.getAttribute('x'));                                    
+                                    nodeMatrix.tx = argsArray[0]; 
                                 }
                                 else if (argsArray.length == 2) {
-                                    this.x = SVGColors.cleanNumber(argsArray[0]) + SVGColors.cleanNumber(this.getAttribute('x'));
-                                    this.y = SVGColors.cleanNumber(argsArray[1]) + SVGColors.cleanNumber(this.getAttribute('y'));
+                                    nodeMatrix.tx = argsArray[0]; 
+                                    nodeMatrix.ty = argsArray[1]; 
                                 }
-                                newMatrix = this.transform.matrix.clone();
                                 break;
                                 
                             case "scale":
                                 if (argsArray.length == 1) {
                                     nodeMatrix.a = argsArray[0];
                                     nodeMatrix.d = argsArray[0];
-                                    
-                                    newMatrix.concat(nodeMatrix);
-                                    this.transform.matrix = newMatrix;
                                 }
                                 else if (argsArray.length == 2) {
                                     nodeMatrix.a = argsArray[0];
                                     nodeMatrix.d = argsArray[1];
-                                    
-                                    newMatrix.concat(nodeMatrix);
-                                    this.transform.matrix = newMatrix;
                                 }
-                                newMatrix = this.transform.matrix.clone();
                                 break;
                                 
                             case "skewX":
-                                // To Do
-                                this.svgRoot.debug('Unimplemented Transformation: ' + command);
+                                nodeMatrix.a = argsArray[0];
                                 break;
                                 
                             case "skewY":
-                                // To Do
-                                this.svgRoot.debug('Unimplemented Transformation: ' + command);
+                                nodeMatrix.d = argsArray[0];
                                 break;
                                 
                             case "rotate":
@@ -424,6 +411,9 @@ package com.sgweb.svg.nodes
                             default:
                                 this.svgRoot.debug('Unknown Transformation: ' + command);
                         }
+                        newMatrix.concat(nodeMatrix);
+                        this.transform.matrix = newMatrix;
+                        newMatrix = this.transform.matrix.clone();
                     }
                 }                
             }
