@@ -78,6 +78,43 @@ svgviewer.createSVG = function ( params ) {
     return svgHandler;
 }
 
+svgviewer.inBrowserString = function(browserString) {
+    if (typeof(navigator) == "undefined") {
+        return false;
+    }
+    if (typeof(navigator.userAgent) != "string") {
+        return false;
+    }
+    if (navigator.userAgent.indexOf(browserString) != -1) {
+        return true;
+    }
+    return false;
+}
+
+svgviewer.addEvent = function( obj, type, fn )
+{
+    if (obj.addEventListener)
+        obj.addEventListener( type, fn, false );
+    else if (obj.attachEvent)
+    {
+        obj["e"+type+fn] = fn;
+        obj[type+fn] = function() { obj["e"+type+fn]( window.event ); }
+        obj.attachEvent( "on"+type, obj[type+fn] );
+    }
+}
+
+svgviewer.removeEvent = function ( obj, type, fn )
+{
+    if (obj.removeEventListener)
+        obj.removeEventListener( type, fn, false );
+    else if (obj.detachEvent)
+    {
+        obj.detachEvent( "on"+type, obj[type+fn] );
+        obj[type+fn] = null;
+        obj["e"+type+fn] = null;
+    }
+}
+
 function receiveFromFlash(flashMsg) {
     var svgHandler = svgviewer.svgHandlers[flashMsg.uniqueId];
     if (svgHandler) {
@@ -303,13 +340,20 @@ SVGFlashHandler.prototype.onStartup = function(flashMsg) {
 }
 
 
+
 SVGFlashHandler.prototype.onLoad = function(flashMsg) {
     this.documentElement = new SVGNode(this);
     var getRootMsg = this.sendToFlash({type: 'invoke', method: 'getRoot'});
     this.documentElement.elementId = getRootMsg.elementId;
 
     this.svgScript = this.svgScript + flashMsg.onLoad;
-    setTimeout('eval(window.svgviewer.svgHandlers["' + this.uniqueId + '"].svgScript);', 100);
+
+    if (svgviewer.inBrowserString("MSIE")) {
+        window.execScript(svgviewer.svgHandlers[this.uniqueId].svgScript);
+    }
+    else {
+        setTimeout('eval(window.svgviewer.svgHandlers["' + this.uniqueId + '"].svgScript);', 100);
+    }
 }
 
 /*
@@ -329,8 +373,8 @@ SVGFlashHandler.prototype.onScript = function(flashMsg) {
     var svgScript = flashMsg.script;
     for (var i in this.scriptReplacements) {
         var repObj = this.scriptReplacements[i];
-        var replaceStr = repObj.replacement.replace('_SVG_UNIQ_ID_', flashMsg.uniqueId);
-        svgScript = svgScript.replace(repObj.pattern, replaceStr, 'g');
+        var replaceStr = repObj.replacement.split('_SVG_UNIQ_ID_').join(flashMsg.uniqueId);
+        svgScript = svgScript.split(repObj.pattern).join(replaceStr);
     }
     this.svgScript = this.svgScript + svgScript;
 }
@@ -460,7 +504,15 @@ SVGNode.prototype.getAttribute = function(attrName) {
 
 SVGNode.prototype.addEventListener = function(eventName, eventListener, captureFlag) {
    if (eventName == 'keydown') {
-       window.document.addEventListener(eventName, eventListener, captureFlag);
+       svgviewer.addEvent(window.document, eventName, 
+                          (function(myListener) {
+                              return function(myEvent) {
+                                  if (!myEvent.preventDefault) {
+                                      myEvent.preventDefault=function() { this.returnValue=false;};
+                                  }
+                                  myListener(myEvent);
+                              }
+                          })(eventListener) );
        return;
    }
 
