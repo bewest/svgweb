@@ -77,17 +77,12 @@ svgviewer.createSVG = function ( params ) {
     }
     return svgHandler;
 }
-svgviewer.c = function ( uniqueId ) {
-    return svgviewer.svgHandlers[uniqueId];
-}
 
 function receiveFromFlash(flashMsg) {
-    //svgviewer.info("js:in receive from flash");
     var svgHandler = svgviewer.svgHandlers[flashMsg.uniqueId];
     if (svgHandler) {
         svgHandler.onMessage(flashMsg);
     }
-    //svgviewer.info("js:out receive from flash");
 }
 
 /* end svgviewer global functions */
@@ -104,6 +99,7 @@ function SVGFlashHandler(params) {
     this.svgURL = params.svgURL;
     this.objectWidth= params.objectWidth;
     this.objectHeight= params.objectHeight;
+    this.svgNodes = {};
 
 
     if (typeof(params.scaleMode) != "undefined") {
@@ -165,6 +161,14 @@ function SVGFlashHandler(params) {
         this.bgcolor = '';
     }
 
+    // transparent
+    if (typeof(params.transparent) != "undefined") {
+        this.transparent = params.transparent;
+    }
+    else {
+        this.transparent = false;
+    }
+
     // debug
     if (typeof(params.debug) != "undefined") {
         this.debug = params.debug;
@@ -181,6 +185,11 @@ SVGFlashHandler.prototype.createFlashHTML = function() {
     if (this.bgcolor != '') {
         bgcolor = ' bgcolor=' + this.bgcolor;
     }
+    var transparent ='';
+    if (this.transparent) {
+        transparent = ' wmode=transparent ';
+    }
+
 
     var flashVars = 
         '"' +
@@ -198,25 +207,22 @@ SVGFlashHandler.prototype.createFlashHTML = function() {
     }
     flashVars = flashVars  + '"';
 
-    //svgviewer.info(flashVars);
-
     var html='<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" ' +
         '        codebase="" id="' + this.objectId + '" ' + 
         '        width=' + this.objectWidth + ' height=' + this.objectHeight + ' style="float: left"> ' +
         '    <param name=AllowScriptAccess value="always"/> ' +
         '    <param name=movie value="svgviewer.swf"> ' +
         '    <param name=FlashVars value=' + flashVars + '> ' +
-        '    <param name="wmode" value="transparent"> ' +
+        (this.transparent ? '    <param name="wmode" value="transparent"> ' : '') +
         '    <embed  name="' + this.objectId + '" play=false ' +
         '            swliveconnect="true" AllowScriptAccess="always" ' +
-        '            src="svgviewer.swf" quality=high wmode=transparent ' + bgcolor +
+        '            src="svgviewer.swf" quality=high ' + transparent + bgcolor +
         '            width=' + this.objectWidth + ' height=' + this.objectHeight +
         '            type="application/x-shockwave-flash" ' +
         '            FlashVars=' + flashVars + '> ' +
         '    </embed> ' +
         '</object> ';
 
-    //svgviewer.info(html);
     return html;
 }
 
@@ -303,7 +309,7 @@ SVGFlashHandler.prototype.onLoad = function(flashMsg) {
     this.documentElement.elementId = getRootMsg.elementId;
 
     this.svgScript = this.svgScript + flashMsg.onLoad;
-    setTimeout('eval(svgviewer.svgHandlers["' + this.uniqueId + '"].svgScript);', 100);
+    setTimeout('eval(window.svgviewer.svgHandlers["' + this.uniqueId + '"].svgScript);', 100);
 }
 
 /*
@@ -349,14 +355,25 @@ SVGFlashHandler.prototype.getFlashObject = function() {
 }
 
 SVGFlashHandler.prototype.getElementById = function(elementId) {
+   // We may have a local copy if we have created the object from
+   // script or if we have looked up the object before.
+   if (typeof(this.svgNodes[elementId]) != "undefined") {
+       // XXX should refresh attributes from the flash version
+       // (animations could change getter/setter values)
+       return this.svgNodes[elementId];
+   }
+
    var returnMsg = this.sendToFlash({ type: 'invoke', method: 'getElementById',
                                       elementId: elementId
                                     });
    if (!returnMsg) {
        return null;
    }
+   // This is the first time we have looked up the object, so cache the object
+   // XXX should refresh from flash (animations could change getter/setter values)
    var svgNode = new SVGNode(this);
    svgNode.elementId = returnMsg.elementId;
+   this.svgNodes[elementId] = svgNode;
    return svgNode;
 }
 
@@ -374,15 +391,19 @@ SVGFlashHandler.prototype.createElementNS = function(elementNS, elementType) {
                                       elementType: elementType, 
                                       elementId: svgNode.elementId
                                     });
+
+   this.svgNodes[svgNode.elementId] = svgNode;
    return svgNode;
 }
 
 SVGFlashHandler.prototype.createTextNode = function(elementText) {
-   var textNode = new SVGNode(this.svgHandler);
-   textNode.elementId = 'rand' + Math.random();
-   textNode.type = 'textNode';
-   textNode.text = elementText;
-   return textNode;
+   var svgNode = new SVGNode(this);
+   svgNode.elementId = 'rand' + Math.random();
+   var returnMsg = this.sendToFlash({ type: 'invoke', method: 'createTextNode',
+                                      elementId: svgNode.elementId,
+                                      text: elementText
+                                    });
+   return svgNode;
 
 }
 /*
@@ -394,31 +415,37 @@ function SVGNode(svgHandler) {
     this.eventHandlers = {};
     this.childNodes = [];
     this.childNodes.item = function(i) { return this[i]; };
+    this.style = {};
 }
 
 SVGNode.prototype.sendToFlash = function(flashMsg) {
-   return this.svgHandler.sendToFlash(flashMsg);
+    return this.svgHandler.sendToFlash(flashMsg);
 }
 
 SVGNode.prototype.createElementNS = function(elementNS, elementType) {
-   return this.svgHandler.createElementNS(elementNS, elementType);
+    return this.svgHandler.createElementNS(elementNS, elementType);
 }
 
 SVGNode.prototype.getElementById = function(elementId) {
-   return this.svgHandler.getElementById(elementId);
+    return this.svgHandler.getElementById(elementId);
 }
 
 SVGNode.prototype.createTextNode = function(elementText) {
-   return this.svgHandler.createTextNode(elementText);
+    return this.svgHandler.createTextNode(elementText);
 }
 
 SVGNode.prototype.setAttribute = function(attrName, attrValue) {
-   this.sendToFlash({ type: 'invoke', method: 'setAttribute',
-                      elementId: this.elementId,
-                      attrName: attrName, attrValue: attrValue });
-   if (attrName == 'id') {
-       this.elementId = attrValue;
-   }
+    this.sendToFlash({ type: 'invoke', method: 'setAttribute',
+                       elementId: this.elementId,
+                       attrName: attrName, attrValue: attrValue });
+    if (attrName == 'id') {
+        this.elementId = attrValue;
+        this.id = attrValue;
+        this.svgHandler.svgNodes[attrValue] = this;
+    }
+}
+SVGNode.prototype.setAttributeNS = function(NS, attrName, attrValue) {
+    this.setAttribute(attrName, attrValue);
 }
 
 SVGNode.prototype.getAttribute = function(attrName) {

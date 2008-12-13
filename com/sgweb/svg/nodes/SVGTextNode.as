@@ -57,7 +57,7 @@ package com.sgweb.svg.nodes
         /**
          * Bitmap to display text rendered by _textField
          **/
-        private var _textBitmap:Bitmap;
+        //private var _textBitmap:Bitmap;
         
         public function SVGTextNode(svgRoot:SVGRoot, xml:XML):void {            
             super(svgRoot, xml);            
@@ -114,7 +114,7 @@ package com.sgweb.svg.nodes
                                 
                 this._textField.text = this._text;
                 this._textField.setTextFormat(textFormat);
-                
+ /*               
                 var bitmapData:BitmapData = new BitmapData(this._textField.width, this._textField.height, true, 0x000000);
                 
                 bitmapData.draw(this._textField);
@@ -129,6 +129,7 @@ package com.sgweb.svg.nodes
                 var textLineMetrics:TextLineMetrics = this._textField.getLineMetrics(0);
                 this._textBitmap.x = -textLineMetrics.x - 2; //account for 2px gutter
                 this._textBitmap.y =  -textLineMetrics.ascent - 2; //account for 2px gutter
+ */               
             }
         }    
         
@@ -137,9 +138,20 @@ package com.sgweb.svg.nodes
          **/
         override protected function draw():void {
             super.draw();
-            if (this._textBitmap != null) {
-                this.addChild(this._textBitmap);            
+
+
+            if (this._textField != null) {
+                var textLineMetrics:TextLineMetrics = this._textField.getLineMetrics(0);
+                //this.x = this.x -textLineMetrics.x - 2; //account for 2px gutter
+                this.y = this.y - textLineMetrics.ascent - 1;
+
+                this.addChild(this._textField);            
             }            
+            /* bitmaps dont scale
+            if (this._textBitmap != null) {
+                this.addChild(this._textField);            
+            }            
+            */
         }             
     }
 }

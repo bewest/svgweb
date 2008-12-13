@@ -30,6 +30,8 @@ Limitations
 Scripting
     Script.1: What javascript helper functions are available for loading SVG content?
     Script.2: What javascript functions are available as part of the standard W3C SVG interface?
+    Script.3: Are there any quirks to be aware of with the SVG scripting support?
+    Script.4: How are mouse and keyboard events handled?
 
 Future
     Future.1: What are the plans for SVGViewer?
@@ -96,13 +98,62 @@ Sizing
             is. The width and height of the flash area is defined at the top
             of SVGViewer.as in the [SWF] directive. Currently, this is 2048
             by 1024.
+
             When you use svgviewer in your web page you specify a height and
             width (either in the <object> tag or by passing in parameters to
             javascript functions) and then the flash coordinates are mapped
-            into that height and width.
+            into that height and width by flash. Flash uses the Stage.scaleMode
+            parameter to determine exactly how the scaling is done. By default,
+            it sizes the image to the object to a size which allows you to see
+            the entire image within the area, preserves the ascpect ratio, and
+            is as large as possible within those constraints ("showAll").
+
             If you specify a width and height of an SVG object as 512 by 256,
             then the image will appear four times smaller than would be
-            rendered by SVG if loaded natively by the browser. 
+            rendered by SVG if loaded natively by the browser because it must
+            scale the 2048x1024 flash axises each by .25 to get to 512x256.
+
+            Now, the interesting quirk of design comes in here. The method by
+            which flash scales the control is based on the aspect ratio of the
+            html object parameters. In contrast, in the case of a native SVG loaded
+            into your browser, there are no such parameters and the image is
+            scaled according to the aspect ratio of the root <svg> element.
+            This aspect ratio is based on the width and height parameters of the top
+            svg element if they exist. If a viewBox is present, the aspect ratio
+            of the viewBox is used instead. If neither of these exist, the width
+            and height default to 100% by 100%, which refers to the containing
+            object. In our case, the containing object is the flash control, with
+            a virtual area of 2048x1024, as specified in the source code.
+
+            The problem with the above discrepency arises when the top svg element
+            uses a viewbox or width/height that is more tall than wide. In this case,
+            when the browser renders the SVG natively, it correctly places borders
+            on the sides. However, in our case, unless we specify an object size that
+            is wider in aspect resolution than 2048x1024 (unlikely), flash resizing
+            still places the borders on the top and bottom because it still thinks the
+            object is more wide than tall (2048x1024). So, we cannot rely on flash resizing
+            to help us scale the svg the right way because it is not aware
+            of the svg aspect ratio. Therefore, an additional scaleMode is implemented
+            by SVGViewer to implement the SVG behavior for the corresponding
+            flash "showAll" scaleMode. This is named "showAll_svg". This mode works
+            by disabling flash scaling with the "noScale" mode and then performing the
+            scaling in SVGViewer.
+
+            The flash "showAll" behavior (which is the flash default) is named
+            "showAll_flash" in this library to remove ambiguity with "showAll_svg".
+            With the existing 2048x1024 size, "showAll_flash", will always
+            have borders at the top and bottom. Correspondingly, if you created
+            a flash control that was more tall than wide, its borders would always be
+            on the sides, regardless of the SVG aspect resolution.
+
+            A design goal is to replicate what a browser would do with a raw svg file.
+            The default scaleMode is therefore "showAll_svg" because this should
+            result in that behavior. This mode prefers the svg scaling behavior
+            above the flash control scaling behavior in precedence. This is the
+            design quirk. However, it is presumed that users of this library will prefer
+            that the 'right' svg thing will occur by default and the flash issue of
+            2048x1024 is something they can ignore and perhaps remain blissly unaware of.
+
        
 
 
@@ -140,14 +191,24 @@ Scripting
         setAttributeNodeNS
         setNamedItemNS
 
+        createTextNode
+
         Example:
             var svgNS = 'http://www.w3.org/2000/svg';
             var foo_g = createElementNS(svgNS, 'g')
             foo_g.getAttributeNS(null, 'x');
             foo_g.setAttributeNS(svgNS, 'x', '100');
 
+    Script.3: Are there any quirks to be aware of with the SVG scripting support?
+        Yes, the interface is implemented in a rather complex way. There is a possibility that a script
+        which does something unusual will not work properly. Be aware that the javascript evaluator
+        replaces certain patterns in the javascript in order to intercept certain necessary methods.
+        For example, 'document.createElementNS' is replaced with 'svgviewer.document.createElementNS'
+        which actually implementes that method. This is done because the real document variable apparently
+        cannot be altered. So, if the script invokes a document method in an unusual way, for example, 
+        it may not be executed because the svgviewer method may not intercept it.
 
-    Script.3: How are mouse and keyboard events handled?
+    Script.4: How are mouse and keyboard events handled?
         There are methods for event registration.
         Mouse Events
         Key Events

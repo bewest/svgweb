@@ -41,11 +41,10 @@ package com.sgweb.svg.nodes
             
             this._graphicsCommands = new  Array();
             
-            //x & y loaded in setAttributes()
-            var x:Number = 0; //this.getAttribute('x',0);
-            var y:Number = 0; //this.getAttribute('y',0);
-            var width:Number = this.getAttribute('width',0);
-            var height:Number = this.getAttribute('height',0);
+            var widthStr:String = this.getAttribute('width','0');
+            var heightStr:String = this.getAttribute('height','0');
+            var width:Number = SVGColors.cleanNumber2(widthStr, getWidth());
+            var height:Number = SVGColors.cleanNumber2(heightStr, getHeight());
             
             var rx:String = this.getAttribute('rx');
             var ry:String = this.getAttribute('ry');            
@@ -57,14 +56,12 @@ package com.sgweb.svg.nodes
                 rx = ry;
             }
             
-            var rxVal:Number = Number(rx);
-            var ryVal:Number = Number(ry);
-            
+            //x & y loaded in setAttributes()
             if (rx != null) {
-                this._graphicsCommands.push(['RECT', x, y, width, height, (SVGColors.cleanNumber(rx) * 2), SVGColors.cleanNumber(ry) * 2]);                
+                this._graphicsCommands.push(['RECT', 0, 0, width, height, (SVGColors.cleanNumber(rx) * 2), SVGColors.cleanNumber(ry) * 2]);                
             }
             else {
-                this._graphicsCommands.push(['RECT', x, y, width, height]);
+                this._graphicsCommands.push(['RECT', 0, 0, width, height]);
             }
         }        
     }

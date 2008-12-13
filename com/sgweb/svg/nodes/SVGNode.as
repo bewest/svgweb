@@ -106,7 +106,7 @@ package com.sgweb.svg.nodes
         public function SVGNode(svgRoot:SVGRoot, xml:XML = null):void {    
             this.svgRoot = svgRoot;            
             this.xml = xml;            
-            if (this.svgRoot != null) {
+            if (!(this is SVGRoot)) {
                 this.svgRoot.renderStart(this);
             }
             this.addEventListener(Event.ADDED, registerId);            
@@ -283,6 +283,53 @@ package com.sgweb.svg.nodes
             }
             return null;
         }
+
+
+        public function getWidth():Number {
+            if (this.xml.@width) {
+                var widthStr:String = this.xml.@width;
+                if (widthStr.match(/%/)) {
+                    widthStr=widthStr.replace(/%/g, "");
+                    var num:Number = SVGColors.cleanNumber(widthStr);
+                    if (this.parent) {
+                        return SVGNode(this.parent).getWidth() * num / 100;
+                    }
+                    else {
+                        return 0;
+                    }
+                }
+                else {
+                    return SVGColors.cleanNumber(widthStr);
+                }
+            }
+            else
+                return SVGNode(this.parent).getWidth();
+        }
+
+
+        public function getHeight():Number {
+            if (this.xml.@height) {
+                var heightStr:String = this.xml.@height;
+                if (heightStr.match(/%/)) {
+                    heightStr=heightStr.replace(/%/g, "");
+                    var num:Number = SVGColors.cleanNumber(heightStr);
+                    if (this.parent) {
+                        return SVGNode(this.parent).getHeight() * num / 100;
+                    }
+                    else {
+                        return 0;
+                    }
+                }
+                else {
+                    return SVGColors.cleanNumber(heightStr);
+                }
+            }
+            else
+                return SVGNode(this.parent).getWidth();
+        }
+
+
+
             
         /** 
          * Perform transformations defined by the transform attribute 
@@ -305,6 +352,8 @@ package com.sgweb.svg.nodes
                 var viewWidth:Number = Number(points[2]);
                 var viewHeight:Number = Number(points[3]);
 
+                // XXX assumes root
+                // should be parent width or height for internal <svg>
                 var canvasWidth:Number = 2048.0;
                 var canvasHeight:Number =1024.0;
 
@@ -442,6 +491,22 @@ package com.sgweb.svg.nodes
             }
             var tmp:String = this.getAttribute(name);
             if (tmp != null) {
+                if (name == 'x') {
+                    this[field] = SVGColors.cleanNumber2(tmp, this.getWidth());
+                    return;
+                }
+                if (name == 'y') {
+                    this[field] = SVGColors.cleanNumber2(tmp, this.getHeight());
+                    return;
+                }
+                if (name == 'width') {
+                    this[field] = SVGColors.cleanNumber2(tmp, this.getWidth());
+                    return;
+                }
+                if (name == 'height') {
+                    this[field] = SVGColors.cleanNumber2(tmp, this.getHeight());
+                    return;
+                }
                 this[field] = SVGColors.cleanNumber(tmp);
             }
         } 
@@ -467,11 +532,8 @@ package com.sgweb.svg.nodes
          * Clear current graphics and call runGraphicsCommands to render SVG element 
          **/
         protected function draw():void {
-            //this.svgRoot.debug("drawing " + this._xml.@id);
             this.graphics.clear();            
             this.runGraphicsCommands();
-            //this.svgRoot.debug("done drawing " + this._xml.@id);
-            
         }
                 
                 

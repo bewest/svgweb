@@ -303,5 +303,17 @@ package com.sgweb.svg.data
             numString = numString.replace(/[^0-9\.-]+/sig,'');
             return Number(numString);
         }
+        static public function cleanNumber2(numParam:*, max:Number):Number {
+            var numString:String = String(numParam);
+            if (numString.match(/%/)) {
+                numString=numString.replace(/%/g, "");
+                var num:Number = SVGColors.cleanNumber(numString);
+                num = num * max / 100;
+                return num;
+            }
+            else {
+                return SVGColors.cleanNumber(numString);
+            }
+        }
     }
 }

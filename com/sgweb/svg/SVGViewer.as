@@ -43,6 +43,8 @@ package com.sgweb.svg
     import com.sgweb.svg.nodes.SVGRoot;
     import com.sgweb.svg.nodes.SVGNode;
     
+    import flash.xml.XMLNode;
+    import flash.xml.XMLNodeType;
     import flash.events.Event;
     import flash.geom.Transform;
     import flash.geom.Matrix;
@@ -63,6 +65,7 @@ package com.sgweb.svg
         private var html:String;
         private var js_uniqueId:String = "";
         private var js_createdElements:Object = {};
+        private var js_createdTextNodes:Object = {};
         private var myXMLLoader:URLLoader= new URLLoader ();
         private var myHTMLLoader:URLLoader= new URLLoader ();
 
@@ -261,7 +264,7 @@ package com.sgweb.svg
                         return outerthis.js_handleInvoke(jsMsg);
                     }
                     if (jsMsg.type == 'getVersion') {
-                        return { type: 'version', version: '0.7' };
+                        return { type: 'version', version: '0.7.1' };
                     }
                     return null;
                 }
@@ -282,10 +285,6 @@ package com.sgweb.svg
                 for (item in paramsObj) {
                     if (item == "scaleMode") {
                         this._svgRoot.scaleModeParam = paramsObj[item];
-                        if (this._svgRoot.scaleModeParam == "showAll_svg"
-                            || this._svgRoot.scaleModeParam == "noScale") {
-                            this.stage.scaleMode = StageScaleMode.NO_SCALE;
-                        }
                     }
                     if (item == "sourceType") {
                         this.sourceTypeParam = paramsObj[item];
@@ -309,6 +308,10 @@ package com.sgweb.svg
                         this._svgRoot.translateYParam = Number(paramsObj[item]);
                     }
                 }
+                if (this._svgRoot.scaleModeParam == "showAll_svg"
+                    || this._svgRoot.scaleModeParam == "noScale") {
+                    this.stage.scaleMode = StageScaleMode.NO_SCALE;
+                }
 
                 if (this.sourceTypeParam == 'url_svg') {
                     this.loadSVGURL();
@@ -322,12 +325,12 @@ package com.sgweb.svg
                     this.debug("The SWF file URL is: " + myURL);
                     /* If the swf url starts with "file" then we need to use the url retrieval
                        routines to get the entire html file and then get the svg element 
-                       because flash does not allow javascript to pass it in. This is
+                       because flash does not allow browser javascript to pass it in. This is
                        because when loaded from file, network access is also not allowed, to
                        prevent transfer of local data to network, and flash includes javascript
                        access as part of its network access profile and disables it for local files.
                        Therefore, we cannot rely on the more efficient mechanism where javascript
-                       retrieves the SVG directly from the DOM and must do it here ourselves.
+                       retrieves the SVG directly from the DOM, and so must do it here ourselves.
 
                        If the url is http, then javascript would be active and would pass in
                        svg text directly so there is no need to do this url retrieval here
@@ -387,46 +390,67 @@ package com.sgweb.svg
                 var childXML:XML = new XML(xmlString);
                 this.js_createdElements[jsMsg.elementId] = this._svgRoot.parseNode(childXML);
             }
+            if (jsMsg.method == 'createTextNode') {
+                this.js_createdTextNodes[jsMsg.elementId] = new XMLNode(XMLNodeType.TEXT_NODE, jsMsg.text);
+            }
             if (jsMsg.method == 'setTransform') {
                 this.transform.matrix = this._svgRoot.parseTransform(jsMsg.transform); 
             }
             if (jsMsg.method == 'getElementById') {
+                this.debug("0getElementById: " + jsMsg.elementId);
                 if (typeof(this.js_createdElements[jsMsg.elementId]) != "undefined") {
-                    return this.js_createdElements[jsMsg.elementId];
+                    this.debug("1getElementById: " + jsMsg.elementId + "," + this.js_createdElements[jsMsg.elementId]);
+                    return jsMsg;
                 }
+                this.debug("2getElementById: " + jsMsg.elementId);
                 if (!this._svgRoot.getElement(jsMsg.elementId)) {
                     this.debug("getElem:not found: " + jsMsg.elementId);
                     return null;
                 }
+                this.debug("3getElementById: " + jsMsg.elementId);
             }
             if (jsMsg.method == 'appendChild') {
+                // Get the parent node
                 if (typeof(this.js_createdElements[jsMsg.elementId]) != "undefined") {
                     element=this.js_createdElements[jsMsg.elementId];
                 }
                 else {
                     element = this._svgRoot.getElement(jsMsg.elementId);
                 }
-                var childNode:SVGNode;
-                if (typeof(this.js_createdElements[jsMsg.childId]) != "undefined") {
-                    childNode=this.js_createdElements[jsMsg.childId];
+                // Get the child node
+
+                // If the node is text, then just modify the text xml
+                if (element && element.xml.localName() == 'text') {
+                    var childTextNode:XMLNode;
+                    childTextNode=this.js_createdTextNodes[jsMsg.childId];
+                    if (childTextNode)  {
+                        element.xml.appendChild(childTextNode);
+                        element.invalidateDisplay();
+                    }
                 }
                 else {
-                    childNode = this._svgRoot.getElement(jsMsg.childId);
-                }
-                if (element && childNode)  {
-                    element.addChild(childNode);
+                    // If the node is not text, then add the SVGNode
+                    var childNode:SVGNode;
+                    if (typeof(this.js_createdElements[jsMsg.childId]) != "undefined") {
+                        childNode=this.js_createdElements[jsMsg.childId];
+                    }
+                    else {
+                        childNode = this._svgRoot.getElement(jsMsg.childId);
+                    }
+                    if (element && childNode)  {
+                        element.addChild(childNode);
+                    }
                 }
             }
             if (jsMsg.method == 'getRoot') {
                  if (this._svgRoot._xml.@id) {
-                     //this.debug("..root id found: " + this._svgRoot.xml.@id.toString());
                      jsMsg.elementId = this._svgRoot.xml.@id.toString();
                      if (!this._svgRoot.getElement(jsMsg.elementId)) {
                          this.debug("root element not found");
                      }
                  }
                  else {
-                     this.debug("root id not found");
+                     this.debug("SVGViewer: root id not found");
                  }
             }
             if (jsMsg.method == 'getAttribute') {
@@ -442,11 +466,11 @@ package com.sgweb.svg
                         jsMsg.attrValue = String(element.xml.@[jsMsg.attrName].toString());
                     }
                     else {
-                        this.debug("ERR:GET ATTR not found attr: " + jsMsg.attrName);
+                        this.debug("error:getAttribute: id not found: " + jsMsg.elementId);
                     }
                 }
                 else {
-                    this.debug("ERR:GET ATTR element not found id: " + jsMsg.elementId);
+                    this.debug("error:getAttribute: id not found: " + jsMsg.elementId);
                 }
             }
             if (jsMsg.method == 'setAttribute') {
@@ -458,6 +482,9 @@ package com.sgweb.svg
                 }
                 if (element) {
                     element.xml.@[jsMsg.attrName] = jsMsg.attrValue.toString();
+                    if (jsMsg.attrName == 'id') {
+                        this.js_createdElements[jsMsg.attrValue] = element;
+                    }
                     if (jsMsg.attrName == 'transform') {
                         element.transformNode();
                     }
@@ -466,7 +493,7 @@ package com.sgweb.svg
                     }
                 }
                 else {
-                    this.debug("ERR:SET ATTR not found id: " + jsMsg.elementId);
+                    this.debug("error:setAttribute: id not found: " + jsMsg.elementId);
                 }
             }
 

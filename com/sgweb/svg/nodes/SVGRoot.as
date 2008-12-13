@@ -178,10 +178,57 @@ package com.sgweb.svg.nodes
             return style;            
                     
         }
+
+        override public function getWidth():Number {
+            var canvasWidth:Number = 2048.0;
+            if (this.scaleModeParam == "showAll_svg") {
+                canvasWidth = this.stage.stageWidth;
+            }
+            var widthStr:String = this.xml.@width;
+            if (widthStr) {
+                if (widthStr.match(/%/)) {
+                    widthStr=widthStr.replace(/%/g, "");
+                    var num:Number = SVGColors.cleanNumber(widthStr);
+                    return canvasWidth * num / 100;
+                }
+                else {
+                    return SVGColors.cleanNumber(widthStr);
+                }
+            }
+            else {
+                return canvasWidth;
+            }
+        }
+
+        override public function getHeight():Number {
+            var canvasHeight:Number = 1024.0;
+            if (this.svgRoot.scaleModeParam == "showAll_svg") {
+                canvasHeight = this.stage.stageHeight;
+            }
+
+            var heightStr:String = this.xml.@height;
+            if (heightStr) {
+                if (heightStr.match(/%/)) {
+                    heightStr=heightStr.replace(/%/g, "");
+                    var num:Number = SVGColors.cleanNumber(heightStr);
+                    return canvasHeight * num / 100;
+                }
+                else {
+                    return SVGColors.cleanNumber(heightStr);
+                }
+            }
+            else {
+                return canvasHeight;
+            }
+        }
+
+
         public function renderStart(node:SVGNode):void {
             this.renderCurrent++;
+            //this.debug("render start: " + node.xml.@id);
         }
         public function renderDone(node:SVGNode):void {
+            //this.debug("render done: " + node.xml.@id);
             this.renderCurrent--;
             if (this.renderCurrent == 0) {
                 if (!this.firedOnLoad) {

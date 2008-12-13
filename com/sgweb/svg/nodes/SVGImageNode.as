@@ -50,6 +50,7 @@ package com.sgweb.svg.nodes
          * Decode the base 64 image and load it
          **/    
         protected override function draw():void {
+        /*
             var decoder:Base64Decoder = new Base64Decoder();
             var byteArray:ByteArray;
             
@@ -64,6 +65,7 @@ package com.sgweb.svg.nodes
                 loadBytes(byteArray);
                     
             }
+        */
         }
         
         /**
