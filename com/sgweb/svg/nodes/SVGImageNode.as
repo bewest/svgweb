@@ -31,9 +31,11 @@ package com.sgweb.svg.nodes
     import flash.display.DisplayObject;
     import flash.display.Loader;
     import flash.display.LoaderInfo;
+    import flash.display.Shape;
     import flash.events.Event;
     import flash.geom.Matrix;
     import flash.utils.ByteArray;
+    import flash.net.URLRequest;
     
     import mx.utils.Base64Decoder;
     
@@ -46,30 +48,49 @@ package com.sgweb.svg.nodes
             super(svgRoot, xml);
         }    
         
-        /**
-         * Decode the base 64 image and load it
-         **/    
         protected override function draw():void {
-        /*
-            var decoder:Base64Decoder = new Base64Decoder();
-            var byteArray:ByteArray;
             
-            var base64String:String = this._xml.@xlink::href;
-        
-            if (base64String.match(/^data:[a-z\/]*;base64,/)) {
-                base64String = base64String.replace(/^data:[a-z\/]*;base64,/, '');
+            var imageHref:String = this._xml.@href;
+            if (!imageHref)
+                return;
+
+            if (imageHref.match(/^http:/) && this._xml.@width && this._xml.@height) {
+                var loader:Loader = new Loader();
+                // Create a mask for the loader so it does not exceed the object
+                var rect:Shape = new Shape();
+                rect.graphics.beginFill(0xFFFFFF);
+                rect.graphics.drawRect(0, 0, Number(this._xml.@width), Number(this._xml.@height));
+                rect.graphics.endFill();
+                addChild(rect);
+                loader.mask=rect;
+
+                var urlReq:URLRequest = new URLRequest(imageHref);
+                loader.load(urlReq);
+                addChild(loader);
+                return;
+            }
+
+            // For data: href, decode the base 64 image and load it
+            if (imageHref.match(/^data:[a-z\/]*;base64,/)) {
+                /*  xxx: base64decoder adds about 8.5K to swf file
+                    Which is why the following lines are commented out
+                var decoder:Base64Decoder = new Base64Decoder();
+                var byteArray:ByteArray;
+
+                var base64String:String = imageHref.replace(/^data:[a-z\/]*;base64,/, '');
                 
                 decoder.decode( base64String );
                 byteArray = decoder.flush();
                 
                 loadBytes(byteArray);
-                    
+                */
             }
-        */
+
         }
         
         /**
          * Load image byte array
+         * Used to support data: href.
          **/
         private function loadBytes(byteArray:ByteArray):void {
             
@@ -79,7 +100,8 @@ package com.sgweb.svg.nodes
         }
         
         /**
-         * Display image bitmap once bytes have loaded
+         * Display image bitmap once bytes have loaded 
+         * Used to support data: href.
          **/
         private function onBytesLoaded( event:Event ) :void
         {

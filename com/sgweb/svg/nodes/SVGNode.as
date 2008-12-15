@@ -30,7 +30,7 @@ package com.sgweb.svg.nodes
     import com.sgweb.svg.nodes.mask.SVGMask;
     import com.sgweb.svg.nodes.mask.SVGBlurMaskParent;
     import com.sgweb.svg.nodes.mask.SVGClipMaskParent;
-    
+
     import flash.display.CapsStyle;
     import flash.display.DisplayObject;
     import flash.display.JointStyle;
@@ -39,31 +39,31 @@ package com.sgweb.svg.nodes
     import flash.events.Event;
     import flash.geom.Matrix;
     import flash.utils.*;
-        
+
     /** Base node extended by all other SVG Nodes **/
     public class SVGNode extends Sprite
-    {    
+    {
         public static const attributeList:Array = ['stroke', 'stroke-width', 'stroke-dasharray', 
                                          'stroke-opacity', 'stroke-linecap', 'stroke-linejoin',
                                          'fill', 'fill-opacity', 'opacity', 'stop-color', 'stop-opacity',
                                          'font-family', 'font-size', 'letter-spacing', 'filter'];
-        
-        
+
+
         public namespace xlink = 'http://www.w3.org/1999/xlink';
         public namespace svg = 'http://www.w3.org/2000/svg';
         
         /**
          * 
-         **/ 
+         **/
         public var svgRoot:SVGRoot = null;
-            
+
         /**
          * SVG XML for this node
-         **/    
+         **/
         protected var _originalXML:XML; // used in case xlink:href is applied
         public var _xml:XML;
         protected var _revision:int = 0;
-    
+
         /**
          * xlink:href base handling
          **/
@@ -99,21 +99,21 @@ package com.sgweb.svg.nodes
         /**
          * Constructor
          *
-         * @param xml XML object containing the SVG document. @default null    
+         * @param xml XML object containing the SVG document. @default null
          *
-         * @return void.        
+         * @return void.
          */
-        public function SVGNode(svgRoot:SVGRoot, xml:XML = null):void {    
-            this.svgRoot = svgRoot;            
-            this.xml = xml;            
+        public function SVGNode(svgRoot:SVGRoot, xml:XML = null):void {
+            this.svgRoot = svgRoot;
+            this.xml = xml;
             if (!(this is SVGRoot)) {
                 this.svgRoot.renderStart(this);
             }
-            this.addEventListener(Event.ADDED, registerId);            
-        }                    
-        
+            this.addEventListener(Event.ADDED, registerId);
+        }
+
         /** 
-         * Called to generate AS3 graphics commands from the SVG instructions            
+         * Called to generate AS3 graphics commands from the SVG instructions
          **/
         protected function generateGraphicsCommands():void {
             this._graphicsCommands = new  Array();    
@@ -172,9 +172,9 @@ package com.sgweb.svg.nodes
             this.loadAttribute('rotate', 'rotation');
             
             this.loadStyle('opacity', 'alpha');
-                                
+
         }
- 
+
 
         public function overwriteStyles(baseStylesStr:String, newStylesStr:String):String {
 
@@ -279,7 +279,7 @@ package com.sgweb.svg.nodes
                                 this.svgRoot.debug('Unknown Transformation: ' + command);
                         }
                     }
-                }                
+                }
             }
             return null;
         }
@@ -330,12 +330,11 @@ package com.sgweb.svg.nodes
 
 
 
-            
-        /** 
+
+        /**
          * Perform transformations defined by the transform attribute 
          **/
         public function transformNode():void {
-
             // Get original Matrix
             var newMatrix:Matrix;
             if (this._origMatrix == null) {
@@ -395,7 +394,7 @@ package com.sgweb.svg.nodes
             this.transform.matrix = newMatrix;
             newMatrix = this.transform.matrix.clone();
 
-            
+
             // Apply transform attribute 
             var trans:String = this.getAttribute('transform');
             var nodeMatrix:Matrix;
@@ -404,13 +403,13 @@ package com.sgweb.svg.nodes
                 for each(var tran:String in transArray) {
                     var tranArray:Array = tran.split('(',2);
                     if (tranArray.length == 2)
-                    {                        
+                    {
                         var command:String = String(tranArray[0]);
                         var args:String = String(tranArray[1]);
                         args = args.replace(')','');
                         args = args.replace(/ /g, '');
                         var argsArray:Array = args.split(/[, ]/);
-                        
+
                         nodeMatrix = new Matrix();
                         switch (command) {
                             case "matrix":
@@ -423,7 +422,7 @@ package com.sgweb.svg.nodes
                                     nodeMatrix.ty = argsArray[5];
                                 }
                                 break;
-                                
+
                             case "translate":
                                 if (argsArray.length == 1) {
                                     nodeMatrix.tx = argsArray[0]; 
@@ -433,7 +432,7 @@ package com.sgweb.svg.nodes
                                     nodeMatrix.ty = argsArray[1]; 
                                 }
                                 break;
-                                
+
                             case "scale":
                                 if (argsArray.length == 1) {
                                     nodeMatrix.a = argsArray[0];
@@ -454,7 +453,7 @@ package com.sgweb.svg.nodes
                                 break;
                                 
                             case "rotate":
-                                this.rotation = argsArray[0];
+                                nodeMatrix.rotate(argsArray[0]);
                                 break;
                                 
                             default:
@@ -464,7 +463,7 @@ package com.sgweb.svg.nodes
                         this.transform.matrix = newMatrix;
                         newMatrix = this.transform.matrix.clone();
                     }
-                }                
+                }
             }
 
 
@@ -478,7 +477,7 @@ package com.sgweb.svg.nodes
 
 
         }
-        
+
         /**
          * Load an XML attribute into the current node
          * 
@@ -510,7 +509,7 @@ package com.sgweb.svg.nodes
                 this[field] = SVGColors.cleanNumber(tmp);
             }
         } 
-        
+
         /**
          * Load an SVG style into the current node
          * 
@@ -526,8 +525,8 @@ package com.sgweb.svg.nodes
                 this[field] = tmp;
             }
         }
-        
-        
+
+
         /** 
          * Clear current graphics and call runGraphicsCommands to render SVG element 
          **/
@@ -535,8 +534,8 @@ package com.sgweb.svg.nodes
             this.graphics.clear();            
             this.runGraphicsCommands();
         }
-                
-                
+
+
         /** 
          * Called at the start of drawing an SVG element.
          * Sets fill and stroke styles
@@ -545,7 +544,7 @@ package com.sgweb.svg.nodes
             //Fill
             var fill_alpha:Number = 0;
             var fill_color:Number = 0;
-            
+
             var fill:String = this.getStyle('fill');
             if ((fill != 'none') && (fill != '')) {
                 var matches:Array = fill.match(/url\(#([^\)]+)\)/si);
@@ -562,19 +561,19 @@ package com.sgweb.svg.nodes
                     if (fillNode is SVGRadialGradient) {
                          SVGRadialGradient(fillNode).beginGradientFill(this, this.graphics);
                     }
-                }            
-                else {            
+                }
+                else {
                     fill_alpha = SVGColors.cleanNumber(this.getStyle('fill-opacity'));
                     fill_color = SVGColors.getColor(fill);
                     this.graphics.beginFill(fill_color, fill_alpha);
                 }
             }
-            
+
             //Stroke
             var line_color:Number;
             var line_alpha:Number;
             var line_width:Number;
-            
+
             var stroke:String = this.getStyle('stroke');
             if ((stroke == 'none') || (stroke == '')) {
                 line_alpha = 0;
@@ -586,7 +585,7 @@ package com.sgweb.svg.nodes
                 line_alpha = SVGColors.cleanNumber(this.getStyle('stroke-opacity'));
                 line_width = SVGColors.cleanNumber(this.getStyle('stroke-width'));
             }
-            
+
             var capsStyle:String = this.getStyle('stroke-linecap');
             if (capsStyle == 'round'){
                 capsStyle = CapsStyle.ROUND;
@@ -632,9 +631,9 @@ package com.sgweb.svg.nodes
                     if (strokeNode is SVGRadialGradient) {
                          SVGRadialGradient(strokeNode).lineGradientStyle(this, this.graphics, line_alpha);
                     }
-                }            
+                }
             }
-                    
+
         }
         
         /** 
@@ -643,15 +642,15 @@ package com.sgweb.svg.nodes
         protected function nodeEndFill():void {
             this.graphics.endFill();
         }
-        
+
         /**
          * Execute graphics commands contained in var _graphicsCommands
          **/ 
         protected function runGraphicsCommands():void {
-            
+
             var firstX:Number = 0;
             var firstY:Number = 0;
-                    
+
             for each (var command:Array in this._graphicsCommands) {
                 switch(command[0]) {
                     case "SF":
@@ -705,7 +704,7 @@ package com.sgweb.svg.nodes
                 }
             }
         }
-        
+
         /**
          * If node has an "id" attribute, register it with the root node
          **/
@@ -717,23 +716,19 @@ package com.sgweb.svg.nodes
                 //this.svgRoot.debug("registering " + id);
                 this.svgRoot.registerElement(id, this);
             }
-                        
+
         }
-        
+
         /**
          * Parse the SVG XML.
          * This handles creation of child nodes.
          **/
         protected function parse():void {
             //this.svgRoot.debug("parse: " + this.xml.@id + " type " + describeType(this).@name);
-            // xxx we may miss referenced href changes because we only check hrefs
-            // when this referencing object is redrawn. The fix
-            // is to invalidate all referencing objects when any referenced
-            // object is changed...
             this.refreshHref();
             
             for each (var childXML:XML in this._xml.children()) {    
-                    
+
                 if (childXML.nodeKind() == 'element') {
 
                     // This handle strange gradient bugs with negative transforms
@@ -960,7 +955,7 @@ package com.sgweb.svg.nodes
             }
             return null;
         }
-            
+
         /**
          * @param attribute Attribute to retrieve from SVG XML
          * 
@@ -976,8 +971,8 @@ package com.sgweb.svg.nodes
             return defaultValue;
             
         }
-            
-        
+
+
         /**
          * Remove all child nodes
          **/        
@@ -1014,28 +1009,28 @@ package com.sgweb.svg.nodes
             
             if (this._invalidDisplay) {                
                 //this.svgRoot.debug("redrawNode: " + this.xml.@id + " type " + describeType(this).@name);
-                if (this._xml != null) {    
+                if (this._xml != null) {
                 
-                    this.graphics.clear();        
+                    this.graphics.clear();
                     
-                    this.parse();                        
+                    this.parse();
                     this.x = 0;
                     this.y = 0;
-                    this.setAttributes();                        
+                    this.setAttributes();
 
                     if (!this.isChildOfDef() && !this.isDisplayNone()) {
-                        this.generateGraphicsCommands();    
-                        this.transformNode();        
-                        this.draw();    
-                        this.setupFilters();                                
+                        this.generateGraphicsCommands();
+                        this.transformNode();
+                        this.draw();
+                        this.setupFilters();
                     }
                 }
                 
                 this._invalidDisplay = false;
-                this.removeEventListener(Event.ENTER_FRAME, redrawNode);        
+                this.removeEventListener(Event.ENTER_FRAME, redrawNode);
 
                 if (this.xml.@id)  {
-                    this.svgRoot.invalidateReferers(this.xml.@id) 
+                    this.svgRoot.invalidateReferers(this.xml.@id);
                 }
 
 /*
@@ -1172,11 +1167,11 @@ package com.sgweb.svg.nodes
         public function get invalidDisplay():Boolean {
             return this._invalidDisplay;
         }
-            
-        /** 
+
+        /**
          *
-        **/        
-        public function set xml(xml:XML):void {        
+        **/
+        public function set xml(xml:XML):void {
             this._originalXML = xml.copy();
             this._xml = xml;
             this._revision++;
@@ -1198,10 +1193,10 @@ package com.sgweb.svg.nodes
             return id;
         }
 
-        /** 
+        /**
          *
-        **/        
-        public function get revision():int {        
+        **/
+        public function get revision():int {
             return this._revision;
         }
         

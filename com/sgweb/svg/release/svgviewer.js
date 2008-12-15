@@ -299,6 +299,10 @@ SVGFlashHandler.prototype.onLog = function(flashMsg) {
 
 
 SVGFlashHandler.prototype.onEvent = function(flashMsg) {
+    if (flashMsg.eventType == 'mousemove') {
+        this.onMouseMove(flashMsg);
+        return;
+    }
     if (flashMsg.eventType == 'onLoad') {
         this.onLoad(flashMsg);
         return;
@@ -306,6 +310,56 @@ SVGFlashHandler.prototype.onEvent = function(flashMsg) {
     if (flashMsg.eventType == 'onStartup') {
         this.onStartup(flashMsg);
         return;
+    }
+    if (flashMsg.eventType == 'mouseup') {
+        this.onMouseUp(flashMsg);
+        return;
+    }
+    if (flashMsg.eventType == 'mousedown') {
+        this.onMouseDown(flashMsg);
+        return;
+    }
+}
+
+SVGFlashHandler.prototype.onMouseUp = function(flashMsg) {
+    var element = this.getElementById(flashMsg.elementId);
+    var myEvent = { target: element, 
+                    clientX: flashMsg.clientX,
+                    clientY: flashMsg.clientY,
+                    preventDefault: function() { this.returnValue=false; }
+                  };
+    var handlers = element.eventHandlers[flashMsg.eventType];
+    for (var i in handlers) {
+        var handler = handlers[i];
+        handler(myEvent);
+    }
+}
+
+SVGFlashHandler.prototype.onMouseDown = function(flashMsg) {
+    var element = this.getElementById(flashMsg.elementId);
+    var myEvent = { target: element,
+                    clientX: flashMsg.clientX,
+                    clientY: flashMsg.clientY,
+                    preventDefault: function() { this.returnValue=false; }
+                  };
+    var handlers = element.eventHandlers[flashMsg.eventType];
+    for (var i in handlers) {
+        var handler = handlers[i];
+        handler(myEvent);
+    }
+}
+
+SVGFlashHandler.prototype.onMouseMove = function(flashMsg) {
+    var element = this.getElementById(flashMsg.elementId);
+    var myEvent = { target: element,
+                    clientX: flashMsg.clientX,
+                    clientY: flashMsg.clientY,
+                    preventDefault: function() { this.returnValue=false; }
+                  };
+    var handlers = element.eventHandlers[flashMsg.eventType];
+    for (var i in handlers) {
+        var handler = handlers[i];
+        handler(myEvent);
     }
 }
 
@@ -331,7 +385,6 @@ SVGFlashHandler.prototype.onStartup = function(flashMsg) {
 
      Note that this provides a simple example of how to load SVG on the fly from a string.
     **/
-   // svgviewer.info("onStartup: sourcetype:  " + this.sourceType);
     if (this.sourceType == 'inline_script') {
         var svgText = document.getElementById(this.svgId).innerHTML;
         this.sendToFlash({type: 'load', sourceType: 'string', svgString: svgText});
@@ -502,9 +555,9 @@ SVGNode.prototype.getAttribute = function(attrName) {
    return returnMsg.attrValue;
 }
 
-SVGNode.prototype.addEventListener = function(eventName, eventListener, captureFlag) {
-   if (eventName == 'keydown') {
-       svgviewer.addEvent(window.document, eventName, 
+SVGNode.prototype.addEventListener = function(eventTypeParam, eventListener, captureFlag) {
+   if (eventTypeParam == 'keydown') {
+       svgviewer.addEvent(window.document, eventTypeParam, 
                           (function(myListener) {
                               return function(myEvent) {
                                   if (!myEvent.preventDefault) {
@@ -516,15 +569,15 @@ SVGNode.prototype.addEventListener = function(eventName, eventListener, captureF
        return;
    }
 
-   if (typeof(this.eventHandlers[eventName]) == 'undefined') {
-       this.eventHandlers[eventName] = [ eventListener ];
+   if (typeof(this.eventHandlers[eventTypeParam]) == 'undefined') {
+       this.eventHandlers[eventTypeParam] = [ eventListener ];
    }
    else {
-       this.eventHandlers[eventName].push(eventListener);
+       this.eventHandlers[eventTypeParam].push(eventListener);
    }
    this.sendToFlash({ type: 'invoke', method: 'addEventListener',
                       elementId: this.elementId,
-                      eventName: eventName });
+                      eventType: eventTypeParam });
 }
 
 SVGNode.prototype.unsuspendRedraw = function(dummy) {
@@ -534,9 +587,18 @@ SVGNode.prototype.suspendRedraw = function(dummy) {
 }
 
 SVGNode.prototype.appendChild = function(childNode) {
+   childNode.parentNode = this;
    this.sendToFlash({ type: 'invoke', method: 'appendChild',
                       elementId: this.elementId,
                       childId: childNode.elementId });
    this.childNodes.push(childNode);
+}
+
+SVGNode.prototype.removeChild = function(childNode) {
+   // xxx not implemented
+   this.sendToFlash({ type: 'invoke', method: 'removeChild',
+                      elementId: this.elementId,
+                      childId: childNode.elementId });
+   this.childNodes.splice(this.childNodes.indexOf(childNode), 1);
 }
 

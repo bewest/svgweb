@@ -38,22 +38,25 @@ and so on.
 
 package com.sgweb.svg
 {
-    import flash.display.Sprite;
     
     import com.sgweb.svg.nodes.SVGRoot;
     import com.sgweb.svg.nodes.SVGNode;
     
-    import flash.xml.XMLNode;
-    import flash.xml.XMLNodeType;
-    import flash.events.Event;
-    import flash.geom.Transform;
-    import flash.geom.Matrix;
+    import flash.display.Sprite;
     import flash.display.StageScaleMode;
     import flash.display.LoaderInfo;
+    import flash.events.Event;
+    import flash.events.MouseEvent;
+    import flash.geom.Transform;
+    import flash.geom.Matrix;
     import flash.external.ExternalInterface;
-    
     import flash.net.URLLoader;
     import flash.net.URLRequest;
+    import flash.xml.XMLNode;
+    import flash.xml.XMLNodeType;
+
+    import mx.core.Singleton;
+    import flash.system.ApplicationDomain;
 
     [SWF(frameRate="24", width="2048", height="1024")]
     /**
@@ -77,6 +80,14 @@ package com.sgweb.svg
 
 
         public function SVGViewer():void {
+
+            // This fixes an exception with creating a Base64Decoder. My suspicion is that it has
+            // dependencies on mx framework which I avoid for size reasons.
+            // see http://groups.google.com/group/flex_india/browse_thread/thread/b53a0a828f1346eb
+            //var resourceManagerImpl:Object =
+                //flash.system.ApplicationDomain.currentDomain.getDefinition("mx.resources::ResourceManagerImpl");
+            //mx.core.Singleton.registerClass("mx.resources::IResourceManager", Class(resourceManagerImpl));
+
             super();
 
             this._svgRoot = new SVGRoot(null);
@@ -397,17 +408,84 @@ package com.sgweb.svg
                 this.transform.matrix = this._svgRoot.parseTransform(jsMsg.transform); 
             }
             if (jsMsg.method == 'getElementById') {
-                this.debug("0getElementById: " + jsMsg.elementId);
                 if (typeof(this.js_createdElements[jsMsg.elementId]) != "undefined") {
-                    this.debug("1getElementById: " + jsMsg.elementId + "," + this.js_createdElements[jsMsg.elementId]);
                     return jsMsg;
                 }
-                this.debug("2getElementById: " + jsMsg.elementId);
                 if (!this._svgRoot.getElement(jsMsg.elementId)) {
                     this.debug("getElem:not found: " + jsMsg.elementId);
                     return null;
                 }
-                this.debug("3getElementById: " + jsMsg.elementId);
+            }
+            if (jsMsg.method == 'addEventListener') {
+                // Get the parent node
+                if (typeof(this.js_createdElements[jsMsg.elementId]) != "undefined") {
+                    element=this.js_createdElements[jsMsg.elementId];
+                }
+                else {
+                    element = this._svgRoot.getElement(jsMsg.elementId);
+                }
+                if (element) {
+                    if (jsMsg.eventType == 'mouseup') {
+                        element.addEventListener(MouseEvent.MOUSE_UP,
+                            (function (myElem:SVGNode, myUniqueId:String, myElementId:String):Object {
+                                return function(event:MouseEvent):void {
+                                           try {
+                                               ExternalInterface.call("receiveFromFlash",
+                                                                      { type: 'event',
+                                                                        uniqueId: myUniqueId,
+                                                                        elementId: myElementId,
+                                                                        eventType: "mouseup",
+                                                                        clientX: event.localX,
+                                                                        clientY: event.localY
+                                                                      } );
+                                           }
+                                           catch(error:SecurityError) {
+                                           }
+                                       };
+                             })(element, this.js_uniqueId, jsMsg.elementId));
+                    }
+                    if (jsMsg.eventType == 'mousedown') {
+                        element.addEventListener(MouseEvent.MOUSE_DOWN,
+                            (function (myElem:SVGNode, myUniqueId:String, myElementId:String):Object {
+                                return function(event:MouseEvent):void {
+                                           try {
+                                               ExternalInterface.call("receiveFromFlash",
+                                                                      { type: 'event',
+                                                                        uniqueId: myUniqueId,
+                                                                        elementId: myElementId,
+                                                                        eventType: "mousedown",
+                                                                        clientX: event.localX,
+                                                                        clientY: event.localY
+                                                                      } );
+                                           }
+                                           catch(error:SecurityError) {
+                                           }
+                                       };
+                             })(element, this.js_uniqueId, jsMsg.elementId));
+                    }
+                    if (jsMsg.eventType == 'mousemove') {
+                        element.addEventListener(MouseEvent.MOUSE_MOVE,
+                            (function (myElem:SVGNode, myUniqueId:String, myElementId:String):Object {
+                                return function(event:MouseEvent):void {
+                                           try {
+                                               ExternalInterface.call("receiveFromFlash",
+                                                                      { type: 'event',
+                                                                        uniqueId: myUniqueId,
+                                                                        elementId: myElementId,
+                                                                        eventType: "mousemove",
+                                                                        clientX: event.localX,
+                                                                        clientY: event.localY
+                                                                      } );
+                                           }
+                                           catch(error:SecurityError) {
+                                           }
+                                       };
+                             })(element, this.js_uniqueId, jsMsg.elementId));
+                    }
+                }
+                else {
+                    this.debug("AddEvent:not found: " + jsMsg.elementId);
+                }
             }
             if (jsMsg.method == 'appendChild') {
                 // Get the parent node
