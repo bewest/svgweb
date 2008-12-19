@@ -299,10 +299,6 @@ SVGFlashHandler.prototype.onLog = function(flashMsg) {
 
 
 SVGFlashHandler.prototype.onEvent = function(flashMsg) {
-    if (flashMsg.eventType == 'mousemove') {
-        this.onMouseMove(flashMsg);
-        return;
-    }
     if (flashMsg.eventType == 'onLoad') {
         this.onLoad(flashMsg);
         return;
@@ -311,21 +307,21 @@ SVGFlashHandler.prototype.onEvent = function(flashMsg) {
         this.onStartup(flashMsg);
         return;
     }
-    if (flashMsg.eventType == 'mouseup') {
-        this.onMouseUp(flashMsg);
-        return;
-    }
-    if (flashMsg.eventType == 'mousedown') {
-        this.onMouseDown(flashMsg);
+    if (flashMsg.eventType.substr(0,5) == 'mouse') {
+        this.onMouseEvent(flashMsg);
         return;
     }
 }
 
-SVGFlashHandler.prototype.onMouseUp = function(flashMsg) {
+SVGFlashHandler.prototype.onMouseEvent = function(flashMsg) {
+    //svgviewer.info("Got mouse event target id: " + flashMsg.elementId + " type:" + flashMsg.eventType);
     var element = this.getElementById(flashMsg.elementId);
+    // xxx need to compute proper coordinates
     var myEvent = { target: element, 
-                    clientX: flashMsg.clientX,
-                    clientY: flashMsg.clientY,
+                    clientX: flashMsg.screenX,
+                    clientY: flashMsg.screenY,
+                    screenX: flashMsg.screenX,
+                    screenY: flashMsg.screenY,
                     preventDefault: function() { this.returnValue=false; }
                   };
     var handlers = element.eventHandlers[flashMsg.eventType];
@@ -335,33 +331,7 @@ SVGFlashHandler.prototype.onMouseUp = function(flashMsg) {
     }
 }
 
-SVGFlashHandler.prototype.onMouseDown = function(flashMsg) {
-    var element = this.getElementById(flashMsg.elementId);
-    var myEvent = { target: element,
-                    clientX: flashMsg.clientX,
-                    clientY: flashMsg.clientY,
-                    preventDefault: function() { this.returnValue=false; }
-                  };
-    var handlers = element.eventHandlers[flashMsg.eventType];
-    for (var i in handlers) {
-        var handler = handlers[i];
-        handler(myEvent);
-    }
-}
 
-SVGFlashHandler.prototype.onMouseMove = function(flashMsg) {
-    var element = this.getElementById(flashMsg.elementId);
-    var myEvent = { target: element,
-                    clientX: flashMsg.clientX,
-                    clientY: flashMsg.clientY,
-                    preventDefault: function() { this.returnValue=false; }
-                  };
-    var handlers = element.eventHandlers[flashMsg.eventType];
-    for (var i in handlers) {
-        var handler = handlers[i];
-        handler(myEvent);
-    }
-}
 
 /*
  * 
@@ -470,6 +440,7 @@ SVGFlashHandler.prototype.getElementById = function(elementId) {
    // XXX should refresh from flash (animations could change getter/setter values)
    var svgNode = new SVGNode(this);
    svgNode.elementId = returnMsg.elementId;
+   svgNode.id = returnMsg.elementId;
    this.svgNodes[elementId] = svgNode;
    return svgNode;
 }
@@ -512,7 +483,23 @@ function SVGNode(svgHandler) {
     this.eventHandlers = {};
     this.childNodes = [];
     this.childNodes.item = function(i) { return this[i]; };
-    this.style = {};
+    var svgNode=this;
+    this.style = { node: svgNode };
+    if (!svgviewer.inBrowserString("MSIE")) {
+        this.style.__defineGetter__("opacity", function(){
+            return this.node.getAttribute('opacity');
+        });
+        this.style.__defineSetter__("opacity", function(newOpacity){
+            this.node.setAttribute('opacity', newOpacity);
+        });
+        this.style.__defineGetter__("visibility", function(){
+            return this.node.getAttribute('visibility');
+        });
+        this.style.__defineSetter__("visibility", function(newVisibility){
+            this.node.setAttribute('style', 'visibility:' + newVisibility);
+        });
+    }
+
 }
 
 SVGNode.prototype.sendToFlash = function(flashMsg) {
@@ -599,6 +586,7 @@ SVGNode.prototype.removeChild = function(childNode) {
    this.sendToFlash({ type: 'invoke', method: 'removeChild',
                       elementId: this.elementId,
                       childId: childNode.elementId });
+   // xxx indexOf may not work with Arrays in ie6
    this.childNodes.splice(this.childNodes.indexOf(childNode), 1);
 }
 

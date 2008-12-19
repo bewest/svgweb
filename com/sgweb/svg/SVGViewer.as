@@ -425,6 +425,8 @@ package com.sgweb.svg
                     element = this._svgRoot.getElement(jsMsg.elementId);
                 }
                 if (element) {
+                    var handler:Function;
+                    var i:Number;
                     if (jsMsg.eventType == 'mouseup') {
                         element.addEventListener(MouseEvent.MOUSE_UP,
                             (function (myElem:SVGNode, myUniqueId:String, myElementId:String):Object {
@@ -436,7 +438,9 @@ package com.sgweb.svg
                                                                         elementId: myElementId,
                                                                         eventType: "mouseup",
                                                                         clientX: event.localX,
-                                                                        clientY: event.localY
+                                                                        clientY: event.localY,
+                                                                        screenX: event.stageX,
+                                                                        screenY: event.stageY
                                                                       } );
                                            }
                                            catch(error:SecurityError) {
@@ -455,7 +459,9 @@ package com.sgweb.svg
                                                                         elementId: myElementId,
                                                                         eventType: "mousedown",
                                                                         clientX: event.localX,
-                                                                        clientY: event.localY
+                                                                        clientY: event.localY,
+                                                                        screenX: event.stageX,
+                                                                        screenY: event.stageY
                                                                       } );
                                            }
                                            catch(error:SecurityError) {
@@ -464,7 +470,7 @@ package com.sgweb.svg
                              })(element, this.js_uniqueId, jsMsg.elementId));
                     }
                     if (jsMsg.eventType == 'mousemove') {
-                        element.addEventListener(MouseEvent.MOUSE_MOVE,
+                        handler =
                             (function (myElem:SVGNode, myUniqueId:String, myElementId:String):Object {
                                 return function(event:MouseEvent):void {
                                            try {
@@ -474,13 +480,79 @@ package com.sgweb.svg
                                                                         elementId: myElementId,
                                                                         eventType: "mousemove",
                                                                         clientX: event.localX,
-                                                                        clientY: event.localY
+                                                                        clientY: event.localY,
+                                                                        screenX: event.stageX,
+                                                                        screenY: event.stageY
                                                                       } );
                                            }
                                            catch(error:SecurityError) {
                                            }
                                        };
-                             })(element, this.js_uniqueId, jsMsg.elementId));
+                             })(element, this.js_uniqueId, jsMsg.elementId);
+                        element.addEventListener(MouseEvent.MOUSE_MOVE, handler);
+                    }
+                    if (jsMsg.eventType == 'mouseover') {
+                        handler =
+                            (function (myElem:SVGNode, myUniqueId:String):Object {
+                                return function(event:MouseEvent):void {
+                                           try { ExternalInterface.call("receiveFromFlash",
+                                                                      { type: 'event',
+                                                                        uniqueId: myUniqueId,
+                                                                        elementId: myElem.xml.@id.toString(),
+                                                                        eventType: "mouseover",
+                                                                        clientX: event.localX,
+                                                                        clientY: event.localY,
+                                                                        screenX: event.stageX,
+                                                                        screenY: event.stageY
+                                                                      } );
+                                           } catch(error:SecurityError) { }
+                                       };
+                             })(element, this.js_uniqueId);
+                        element.addEventListener(MouseEvent.MOUSE_OVER, handler);
+                        for(i=0; i<element.numChildren-1; i++) {
+                            handler =
+                                (function (myElem:SVGNode, myUniqueId:String):Object {
+                                    return function(event:MouseEvent):void {
+                                               try { ExternalInterface.call("receiveFromFlash",
+                                                                          { type: 'event',
+                                                                            uniqueId: myUniqueId,
+                                                                            elementId: myElem.xml.@id.toString(),
+                                                                            eventType: "mouseover",
+                                                                            clientX: event.localX,
+                                                                            clientY: event.localY,
+                                                                            screenX: event.stageX,
+                                                                            screenY: event.stageY
+                                                                          } );
+                                               } catch(error:SecurityError) { }
+                                           };
+                                 })(element.getChildAt(i), this.js_uniqueId);
+                            element.getChildAt(i).addEventListener(MouseEvent.MOUSE_OVER, handler);
+                        }
+                    }
+                    if (jsMsg.eventType == 'mouseout') {
+                        handler =
+                            (function (myElem:SVGNode, myUniqueId:String, myElementId:String):Object {
+                                return function(event:MouseEvent):void {
+                                           try {
+                                               ExternalInterface.call("receiveFromFlash",
+                                                                      { type: 'event',
+                                                                        uniqueId: myUniqueId,
+                                                                        elementId: myElementId,
+                                                                        eventType: "mouseout",
+                                                                        clientX: event.localX,
+                                                                        clientY: event.localY,
+                                                                        screenX: event.stageX,
+                                                                        screenY: event.stageY
+                                                                      } );
+                                           }
+                                           catch(error:SecurityError) {
+                                           }
+                                       };
+                             })(element, this.js_uniqueId, jsMsg.elementId);
+                        element.addEventListener(MouseEvent.MOUSE_OUT, handler);
+                        for(i=0; i<element.numChildren-1; i++) {
+                            element.getChildAt(i).addEventListener(MouseEvent.MOUSE_OVER, handler);
+                        }
                     }
                 }
                 else {
@@ -567,7 +639,15 @@ package com.sgweb.svg
                         element.transformNode();
                     }
                     else {
-                        element.invalidateDisplay();
+                        if (   (jsMsg.attrName == 'display' || jsMsg.attrName == 'visibility')
+                            || (jsMsg.attrName == 'style' && 
+                                    (   (jsMsg.attrValue.indexOf('visibility') != -1 )
+                                     || (jsMsg.attrValue.indexOf('display') != -1 ) ) ) ) {
+                            element.invalidateDisplayTree();
+                        }
+                        else {
+                            element.invalidateDisplay();
+                        }
                     }
                 }
                 else {

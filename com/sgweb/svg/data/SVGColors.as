@@ -181,30 +181,6 @@ package com.sgweb.svg.data
             colors.yellow = 0xffff00;
             colors.yellowgreen = 0x9acd32;
             
-        /**
-         * Convert a decimal number to hex
-         **/
-        static public function d2h( d:int ) : String {
-            var c:Array = [ '0', '1', '2', '3', '4', '5', '6', '7', '8',
-                    '9', 'A', 'B', 'C', 'D', 'E', 'F' ];
-            if( d > 255 ) d = 255;
-            var l:int = d / 16;
-            var r:int = d % 16;
-            return c[l] + c[r];
-        }
-        
-        
-        /**
-         * Convert a color number to red, green and blue values
-         **/
-        static public function numberToRgb(num:Number):Object {
-            var red:Number       = num >> 16;
-            var greenBlue:Number = num-(red << 16);
-            var green:Number     = greenBlue >> 8;
-            var blue:Number      = greenBlue-(green << 8);
-            
-            return {r:red, g:green, b:blue};
-        }
         
         static public function rgbToNumber (r:uint, g:uint, b:uint):Number {
             return (r << 16) | (g << 8) | (b);
@@ -215,7 +191,7 @@ package com.sgweb.svg.data
          * 
          * @param color String value of a color ('black', '#ff0000', etc...)
          * 
-         * @return Numeric value of color
+         * @return  [ Numeric value of color , opacity ]
          **/
         static public function getColor(color:String):Number {
             var r:int = 0;
@@ -271,26 +247,100 @@ package com.sgweb.svg.data
             }            
             return 0x000000;
         }
-                
-        /**
-         * Get a hex string of a color string
-         * 
-         * @param color String value of a color ('black', '#ff0000', etc...)
-         * 
-         * @return Hex value of color
-         **/
-        static public function getHexColor(color:String):String {
-            if(color.match(/^#/)) {
-                return color;
-            }
-            else if (colors.hasOwnProperty(color)) {
-                var rgb:Object = numberToRgb(SVGColors.colors[color]);
-                return('#' + d2h(rgb.r) + d2h(rgb.g) + d2h(rgb.b));
-            }
-            
-            return '#000000';
+        static public function getColorAndAlpha(color:String):Array {
+            var r:int = 0;
+            var g:int = 0;
+            var b:int = 0;
+            var a:Number = 0.0;
+            var str:Array;
+
+            if (color != null) {
+                color=color.replace(/ /g, "");
+                if(color.match(/^#/)) {
+                    // #456 is short for #445566
+                    if (color.length == 4) {
+                        var rval:String, gval:String, bval:String;
+                        rval = color.substring(1,1) + color.substring(1,1);
+                        gval = color.substring(2,1) + color.substring(2,1);
+                        bval = color.substring(3,1) + color.substring(3,1);
+                        color = "#" + rval + gval + bval;
+                    }
+                    color = color.replace('#', '0x');
+                    return [ parseInt(color), 1.0 ];
+                }
+                else if(color.indexOf("rgba") != -1) {
+                    str = color.replace(/\s|rgba\(|\)/g, "").split(",");
+                    if (str[0].match(/%/)) {
+                        str[0]=str[0].replace(/%/g, "");
+                        r = str[0];
+                        r = r * 256 / 100;
+                    }
+                    else {
+                           r = str[0];
+                    }
+                    if (str[1].match(/%/)) {
+                        str[1]=str[1].replace(/%/g, "");
+                        g = str[1];
+                        g = g * 256 / 100;
+                    }
+                    else {
+                           g = str[1];
+                    }
+                    if (str[2].match(/%/)) {
+                        str[2]=str[2].replace(/%/g, "");
+                        b = str[2];
+                        b = b * 256 / 100;
+                    }
+                    else {
+                        b = str[2];
+                    }
+                    if (str[3].match(/%/)) {
+                        str[3]=str[3].replace(/%/g, "");
+                        a = str[3];
+                        a = a / 100.0;
+                    }
+                    else {
+                        a = str[3];
+                    }
+                    return [ rgbToNumber(r, g, b), a ];
+                   
+                }
+                else if(color.indexOf("rgb") != -1) {
+                    str = color.replace(/\s|rgb\(|\)/g, "").split(",");
+                    if (str[0].match(/%/)) {
+                        str[0]=str[0].replace(/%/g, "");
+                        r = str[0];
+                        r = r * 256 / 100;
+                    }
+                    else {
+                           r = str[0];
+                    }
+                    if (str[1].match(/%/)) {
+                        str[1]=str[1].replace(/%/g, "");
+                        g = str[1];
+                        g = g * 256 / 100;
+                    }
+                    else {
+                           g = str[1];
+                    }
+                    if (str[2].match(/%/)) {
+                        str[2]=str[2].replace(/%/g, "");
+                        b = str[2];
+                        b = b * 256 / 100;
+                    }
+                    else {
+                        b = str[2];
+                    }
+                    return [ rgbToNumber(r, g, b), 1.0 ];
+                   
+                }
+                else if (colors.hasOwnProperty(color)) {
+                    return [ colors[color], 1.0 ];
+                }
+            }            
+            return [ 0x000000, 0.0 ];
         }
-        
+                
         /**
          * Remove the numeric value of string will all characters removed except '0-9', '.', and '-'
          * 
@@ -303,6 +353,8 @@ package com.sgweb.svg.data
             numString = numString.replace(/[^0-9\.-]+/sig,'');
             return Number(numString);
         }
+
+        // the second parameter is the maximum value to be used for percent values
         static public function cleanNumber2(numParam:*, max:Number):Number {
             var numString:String = String(numParam);
             if (numString.match(/%/)) {

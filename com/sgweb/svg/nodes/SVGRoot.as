@@ -80,7 +80,6 @@ package com.sgweb.svg.nodes
             default xml namespace = svg;
             this._elementById = new Object();    
             this._referersById = new Object();    
-            this.clearChildren();        
             super.xml = value;    
             
             this._loadTime = getTimer();

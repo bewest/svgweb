@@ -46,7 +46,7 @@ package com.sgweb.svg.nodes
         public static const attributeList:Array = ['stroke', 'stroke-width', 'stroke-dasharray', 
                                          'stroke-opacity', 'stroke-linecap', 'stroke-linejoin',
                                          'fill', 'fill-opacity', 'opacity', 'stop-color', 'stop-opacity',
-                                         'font-family', 'font-size', 'letter-spacing', 'filter'];
+                                         'font-family', 'font-size', 'letter-spacing', 'filter', 'visibility'];
 
 
         public namespace xlink = 'http://www.w3.org/1999/xlink';
@@ -92,6 +92,7 @@ package com.sgweb.svg.nodes
          * Set to true on any change to xml
          **/
         protected var _invalidDisplay:Boolean = false;
+        protected var _parsedChildren:Boolean = false;
         
 
         protected var initialRenderDone:Boolean = false;
@@ -400,6 +401,7 @@ package com.sgweb.svg.nodes
             var nodeMatrix:Matrix;
             if (trans != null) {
                 var transArray:Array = trans.match(/\S+\(.*?\)/sg);
+                transArray.reverse();
                 for each(var tran:String in transArray) {
                     var tranArray:Array = tran.split('(',2);
                     if (tranArray.length == 2)
@@ -453,7 +455,7 @@ package com.sgweb.svg.nodes
                                 break;
                                 
                             case "rotate":
-                                nodeMatrix.rotate(argsArray[0]);
+                                nodeMatrix.rotate(Number(argsArray[0])* Math.PI / 180.0); 
                                 break;
                                 
                             default:
@@ -467,7 +469,8 @@ package com.sgweb.svg.nodes
             }
 
 
-/*
+/* blur mask is disabled because it appears it can only be computed
+   reliably for simple svg elements
             if (this.parent is SVGMask && this.getSVGBlurMaskAncestor() != null) {
                 var blurMask:SVGBlurMaskParent = this.getSVGBlurMaskAncestor();
                 setTimeout(function():void { blurMask.updateBlurMaskTransform() }, 10);
@@ -542,17 +545,21 @@ package com.sgweb.svg.nodes
          **/
         protected function nodeBeginFill():void {
             //Fill
+            var color_and_alpha:Array = [0, 0];
+            var color_core:Number = 0;
+            var color_alpha:Number = 0;
             var fill_alpha:Number = 0;
-            var fill_color:Number = 0;
+            var node_alpha:Number = 0;
 
             var fill:String = this.getStyle('fill');
-            if ((fill != 'none') && (fill != '')) {
+            if ( (fill != 'none') && (fill != '') && (this.getStyle('visibility') != 'hidden') ) {
                 var matches:Array = fill.match(/url\(#([^\)]+)\)/si);
                 if (matches != null && matches.length > 0) {
                     var fillName:String = matches[1];
                     this.svgRoot.addReference(this.xml.@id, fillName);
                     var fillNode:SVGNode = this.svgRoot.getElement(fillName);
                     if (!fillNode) {
+                         // this happens normally
                          //this.svgRoot.debug("Gradient " + fillName + " not (yet?) available for " + this.xml.@id);
                     }
                     if (fillNode is SVGLinearGradient) {
@@ -563,9 +570,13 @@ package com.sgweb.svg.nodes
                     }
                 }
                 else {
-                    fill_alpha = SVGColors.cleanNumber(this.getStyle('fill-opacity'));
-                    fill_color = SVGColors.getColor(fill);
-                    this.graphics.beginFill(fill_color, fill_alpha);
+                    color_and_alpha = SVGColors.getColorAndAlpha(fill);
+                    color_core = color_and_alpha[0];
+                    color_alpha = color_and_alpha[1];
+                    node_alpha = Number(this.getStyle('opacity'));
+
+                    fill_alpha = SVGColors.cleanNumber( this.getStyle('fill-opacity') ) * color_alpha;
+                    this.graphics.beginFill(color_core, fill_alpha);
                 }
             }
 
@@ -575,7 +586,7 @@ package com.sgweb.svg.nodes
             var line_width:Number;
 
             var stroke:String = this.getStyle('stroke');
-            if ((stroke == 'none') || (stroke == '')) {
+            if ( (stroke == 'none') || (stroke == '') || (this.getStyle('visibility') == 'hidden') ) {
                 line_alpha = 0;
                 line_color = 0;
                 line_width = 0;
@@ -616,13 +627,14 @@ package com.sgweb.svg.nodes
             this.graphics.lineStyle(line_width, line_color, line_alpha, false, LineScaleMode.NORMAL,
                                     capsStyle, jointStyle, SVGColors.cleanNumber(miterLimit));
 
-            if ((stroke != 'none') && (stroke != '')) {
+            if ( (stroke != 'none') && (stroke != '')  && (this.getStyle('visibility') != 'hidden') ) {
                 var strokeMatches:Array = stroke.match(/url\(#([^\)]+)\)/si);
                 if (strokeMatches != null && strokeMatches.length > 0) {
                     var strokeName:String = strokeMatches[1];
                     this.svgRoot.addReference(this.xml.@id, strokeName);
                     var strokeNode:SVGNode = this.svgRoot.getElement(strokeName);
                     if (!strokeNode) {
+                         // this happens normally
                          //this.svgRoot.debug("stroke gradient " + strokeName + " not (yet?) available for " + this.xml.@id);
                     }
                     if (strokeNode is SVGLinearGradient) {
@@ -984,13 +996,25 @@ package com.sgweb.svg.nodes
         
                 
         /**
-         * Force a redraw of a node and its children
+         * Force a redraw of a node
          **/
         public function invalidateDisplay():void {
             if (this._invalidDisplay == false) {
                 this._invalidDisplay = true;
                 this.addEventListener(Event.ENTER_FRAME, redrawNode);                
             }            
+        }
+
+        /**
+         * Force a redraw of a node and its children
+         **/
+        public function invalidateDisplayTree():void {
+            this.invalidateDisplay();
+            for(var i:Number=0; i < this.numChildren; i++) {
+                if (this.getChildAt(i) is SVGNode) {
+                    SVGNode(this.getChildAt(i)).invalidateDisplayTree();
+                }
+            }
         }
 
 
@@ -1007,13 +1031,16 @@ package com.sgweb.svg.nodes
                 return;
             }
             
-            if (this._invalidDisplay) {                
+            if (this._invalidDisplay) {
                 //this.svgRoot.debug("redrawNode: " + this.xml.@id + " type " + describeType(this).@name);
                 if (this._xml != null) {
                 
                     this.graphics.clear();
                     
-                    this.parse();
+                    if (!this._parsedChildren) {
+                        this.parse();
+                        this._parsedChildren = true;
+                    }
                     this.x = 0;
                     this.y = 0;
                     this.setAttributes();
@@ -1175,6 +1202,8 @@ package com.sgweb.svg.nodes
             this._originalXML = xml.copy();
             this._xml = xml;
             this._revision++;
+            this.clearChildren();
+            this._parsedChildren = false;
             this.invalidateDisplay();
         }
         
