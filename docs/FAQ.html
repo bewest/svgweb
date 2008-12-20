@@ -31,7 +31,6 @@ Scripting
     Script.1: What javascript helper functions are available for loading SVG content?
     Script.2: What javascript functions are available as part of the standard W3C SVG interface?
     Script.3: Are there any quirks to be aware of with the SVG scripting support?
-    Script.4: How are mouse and keyboard events handled?
 
 Future
     Future.1: What are the plans for SVGViewer?
@@ -67,12 +66,12 @@ Basic
         references, gaussian blurs, and javascript scripting and fixed numerous minor issues.
         Rick can be contacted here: grick23 at gmail.com.
 
-    Basic.6: What is sgweb?
+    Basic.5: What is sgweb?
         sgweb is the project that Rick Masters started as an umbrella project for scalable graphics
         utilities for web browsers. Simply put: sgweb is the parent project for svgviewer.
         The sgweb project seeks to promote vector markup languages in web browsers and is agnostic
         on technology. The first utility of this project is svgviewer. There may be other utilities
-        added to the sgweb project for Xaml, javafx, and other markup languages in the future.
+        added to the sgweb project for other technologies in the future such as Xaml, javafx, or fxg.
 
 Deployment
     For simple deployments, place svgviewer.swf in the same directory as your html and svg file.
@@ -111,7 +110,7 @@ Sizing
             If you specify a width and height of an SVG object as 512 by 256,
             then the image will appear four times smaller than would be
             rendered by SVG if loaded natively by the browser because it must
-            scale the 2048x1024 flash axises each by .25 to get to 512x256.
+            scale the 2048x1024 flash axis each by .25 to get to 512x256.
 
             Now, the interesting quirk of design comes in here. The method by
             which flash scales the control is based on the aspect ratio of the
@@ -137,7 +136,7 @@ Sizing
             by SVGViewer to implement the SVG behavior for the corresponding
             flash "showAll" scaleMode. This is named "showAll_svg". This mode works
             by disabling flash scaling with the "noScale" mode and then performing the
-            scaling in SVGViewer.
+            scaling manually in SVGViewer.
 
             The flash "showAll" behavior (which is the flash default) is named
             "showAll_flash" in this library to remove ambiguity with "showAll_svg".
@@ -161,20 +160,58 @@ Limitations
 
     Limit.1: What parts of SVG are not implemented?
         * Compressed SVG files are not supported.
-        * Scripting is not yet supported.
-        * Animation is not yet supported.
+
+        * preserveAspectRatio settings other than the default "xMidYMid meet",
+              (which are uncommon) are not supported.  This is coming soon.
+
+        * <svg> within <svg> (which is uncommon) is not supported. This is coming soon.
+
+        * Animations are not yet supported. This is coming.
+
+        * Getter/Setter scripting syntax (e.g. myobj.style.visibility='hidden') are partially implemented
+          for Firefox/Safari, but it is not supported on IE.
+              (Use this syntax instead: myobj.setAttribute('visibility', 'hidden'))
+              For IE6&7, the future plan is to replace this syntax with regex translations to the setAttribute syntax.
+              For IE8, there is an alternate getter/setter syntax that can be used but it has not been implemented yet.
+
+        * script method getElementsByTagName() is not yet implemented
+
+        * script method removeChild() is not yet implemented
+
+        * script DOM types like "var foo=new Path()" are not implemented. You can use createElementNS(SVGNS, 'path') instead.
+
         * Only the gaussian blur filter is implemented. No plan to support other filters (which are rarely used).
+
         * Off center radial gradients (which are rarely used) are not yet supported.
+
+        * External links to other svg files (which are rarely used) are not supported. 
+
+        * Views (which are rarely used) are not supported. 
+
         * SVG Masks (which are rarely used) are not supported. As a best effort, clipping paths
                are used in their place. No plans to support further.
-        * Patterns (which are rarerly used) are not supported. No plan to support at this time.
+
+        * Patterns (which are rarely used) are not supported. No plan to support at this time.
+
+        * Markers (which are rarely used) are not supported. No plan to support at this time.
 
 
 Scripting
 
     Script.1: What javascript helper functions are available for loading SVG content?
-        sgweb.createSVGFlashObject(parentDivId, uniqueId, objectWidth, objectHeight, svgId, bgcolor, scaleX, scaleY, translateX, translateY)
-        sgweb.loadSVGURL()
+        params = { parentId: ... ,
+                   uniqueId: ... ,
+                   objectWidth: ... ,
+                   objectHeight: ... ,
+                   svgId: ... ,
+                   bgcolor: ... ,
+                   scaleX: ... ,
+                   scaleY: ... ,
+                   translateX: ... ,
+                   translateY: ...
+                 }
+        sgweb.createSVG(params)
+
 
     Script.2: What javascript methods are available as part of the standard W3C SVG interface?
         (note these are not yet implemented)
@@ -204,23 +241,22 @@ Scripting
         which does something unusual will not work properly. Be aware that the javascript evaluator
         replaces certain patterns in the javascript in order to intercept certain necessary methods.
         For example, 'document.createElementNS' is replaced with 'svgviewer.document.createElementNS'
-        which actually implementes that method. This is done because the real document variable apparently
+        which actually implements that method. This is done because the top level document variable apparently
         cannot be altered. So, if the script invokes a document method in an unusual way, for example, 
         it may not be executed because the svgviewer method may not intercept it.
-
-    Script.4: How are mouse and keyboard events handled?
-        There are methods for event registration.
-        Mouse Events
-        Key Events
 
 
 Future
     Future.1: What are the plans for SVGViewer?
         The current author tends to work on specific SVG files until they render as well as possible, fixing
-        or implementing new functionality along the way. Currently all files render well. If you have an SVG file
-        that you would like me to work on, send it to grick23@gmail.com.
-        The current task list, as of Nov 28 2008, is:
-          1. Implement javascript scripting in order to support svgtetris.svg
-          2. Implement animation
+        or implementing new functionality along the way. Currently all files render well, however scripting is
+        a work in progress. If you have an SVG file that you would like me to work on, send it to grick23@gmail.com.
+        The current task list, as of Dec 19 2008, is:
+          1. Improve javascript scripting in order to support photos.svg and USStates.svg
+                 (support getElementsByTagName, support TextNode.nodeValue)
+          2. IE getter/setter support (IE8 natively / munge scripts for IE6&7)
+          3. Implement preserveAspectRatio (see tests/preserveAspectRatio.svg)
+          4. Support <svg> within <svg> (see tests/preserveAspectRatio.svg)
+          5. Implement animations
 
 

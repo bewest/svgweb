@@ -762,6 +762,7 @@ package com.sgweb.svg.nodes
                             var scriptString:String = childXML.toXMLString();
                             scriptString = scriptString.split('\\n').join(';_SVGNL_;');
                             scriptString = scriptString.replace(/<script.*/, '');
+                            scriptString = scriptString.replace(/<svg:script.*/, '');
                             scriptString = scriptString.replace(/]].*$/, '');
                             this.svgRoot.handleScript(scriptString);
                         }

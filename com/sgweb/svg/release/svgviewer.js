@@ -324,7 +324,15 @@ SVGFlashHandler.prototype.onMouseEvent = function(flashMsg) {
                     screenY: flashMsg.screenY,
                     preventDefault: function() { this.returnValue=false; }
                   };
-    var handlers = element.eventHandlers[flashMsg.eventType];
+
+    var handlers;
+    if (flashMsg.parentId) {
+        var parentElem = this.getElementById(flashMsg.parentId);
+        handlers = parentElem.eventHandlers[flashMsg.eventType];
+    }
+    else {
+        handlers = element.eventHandlers[flashMsg.eventType];
+    }
     for (var i in handlers) {
         var handler = handlers[i];
         handler(myEvent);

@@ -41,6 +41,7 @@ package com.sgweb.svg
     
     import com.sgweb.svg.nodes.SVGRoot;
     import com.sgweb.svg.nodes.SVGNode;
+    import com.sgweb.svg.nodes.SVGGroupNode;
     
     import flash.display.Sprite;
     import flash.display.StageScaleMode;
@@ -394,6 +395,55 @@ package com.sgweb.svg
             }
             return jsMsg;
         }
+
+        public static function js_dispatchMouseEvent(myUniqueId:String, myElem:SVGNode, event:MouseEvent, eventType:String):void {
+            var i:int;
+            if (myElem is SVGGroupNode) {
+                for(i=0; i < myElem.numChildren; i++) {
+                    SVGViewer.js_sendChildMouseEvent(myUniqueId, myElem, SVGNode(myElem.getChildAt(i)), event, eventType);
+                }
+            }
+            else {
+                SVGViewer.js_sendMouseEvent(myUniqueId, myElem, event, eventType);
+            }
+        }
+
+        public static function js_sendMouseEvent(myUniqueId:String, myElem:SVGNode, event:MouseEvent, eventType:String):void {
+            try {
+                ExternalInterface.call("receiveFromFlash",
+                                         { type: 'event',
+                                           uniqueId: myUniqueId,
+                                           elementId: myElem.xml.@id.toString(),
+                                           eventType: eventType,
+                                           clientX: event.localX,
+                                           clientY: event.localY,
+                                           screenX: event.stageX,
+                                           screenY: event.stageY
+                                         } );
+            }
+            catch(error:SecurityError) {
+            }
+        }
+
+        public static function js_sendChildMouseEvent(myUniqueId:String, parentNode:SVGNode, childNode:SVGNode,
+                                                      event:MouseEvent, eventType:String):void {
+            try {
+                ExternalInterface.call("receiveFromFlash",
+                                         { type: 'event',
+                                           uniqueId: myUniqueId,
+                                           parentId: parentNode.xml.@id.toString(),
+                                           elementId: childNode.xml.@id.toString(),
+                                           eventType: eventType,
+                                           clientX: event.localX,
+                                           clientY: event.localY,
+                                           screenX: event.stageX,
+                                           screenY: event.stageY
+                                         } );
+            }
+            catch(error:SecurityError) {
+            }
+        }
+
         public function js_handleInvoke(jsMsg:Object):Object {
             var element:SVGNode;
             if (jsMsg.method == 'createElementNS') {
@@ -428,131 +478,44 @@ package com.sgweb.svg
                     var handler:Function;
                     var i:Number;
                     if (jsMsg.eventType == 'mouseup') {
-                        element.addEventListener(MouseEvent.MOUSE_UP,
-                            (function (myElem:SVGNode, myUniqueId:String, myElementId:String):Object {
-                                return function(event:MouseEvent):void {
-                                           try {
-                                               ExternalInterface.call("receiveFromFlash",
-                                                                      { type: 'event',
-                                                                        uniqueId: myUniqueId,
-                                                                        elementId: myElementId,
-                                                                        eventType: "mouseup",
-                                                                        clientX: event.localX,
-                                                                        clientY: event.localY,
-                                                                        screenX: event.stageX,
-                                                                        screenY: event.stageY
-                                                                      } );
-                                           }
-                                           catch(error:SecurityError) {
-                                           }
-                                       };
-                             })(element, this.js_uniqueId, jsMsg.elementId));
+                        handler = function (myUniqueId:String, myElem:SVGNode):Object {
+                                       return function(event:MouseEvent):void {
+                                                  SVGViewer.js_dispatchMouseEvent(myUniqueId, myElem, event, 'mouseup');
+                                              };
+                                   }(this.js_uniqueId, element);
+                        element.addEventListener(MouseEvent.MOUSE_UP, handler);
                     }
                     if (jsMsg.eventType == 'mousedown') {
-                        element.addEventListener(MouseEvent.MOUSE_DOWN,
-                            (function (myElem:SVGNode, myUniqueId:String, myElementId:String):Object {
-                                return function(event:MouseEvent):void {
-                                           try {
-                                               ExternalInterface.call("receiveFromFlash",
-                                                                      { type: 'event',
-                                                                        uniqueId: myUniqueId,
-                                                                        elementId: myElementId,
-                                                                        eventType: "mousedown",
-                                                                        clientX: event.localX,
-                                                                        clientY: event.localY,
-                                                                        screenX: event.stageX,
-                                                                        screenY: event.stageY
-                                                                      } );
-                                           }
-                                           catch(error:SecurityError) {
-                                           }
-                                       };
-                             })(element, this.js_uniqueId, jsMsg.elementId));
+                        handler = function (myUniqueId:String, myElem:SVGNode):Object {
+                                       return function(event:MouseEvent):void {
+                                                  SVGViewer.js_dispatchMouseEvent(myUniqueId, myElem, event, 'mousedown');
+                                              };
+                                   }(this.js_uniqueId, element);
+                        element.addEventListener(MouseEvent.MOUSE_DOWN, handler);
                     }
                     if (jsMsg.eventType == 'mousemove') {
-                        handler =
-                            (function (myElem:SVGNode, myUniqueId:String, myElementId:String):Object {
-                                return function(event:MouseEvent):void {
-                                           try {
-                                               ExternalInterface.call("receiveFromFlash",
-                                                                      { type: 'event',
-                                                                        uniqueId: myUniqueId,
-                                                                        elementId: myElementId,
-                                                                        eventType: "mousemove",
-                                                                        clientX: event.localX,
-                                                                        clientY: event.localY,
-                                                                        screenX: event.stageX,
-                                                                        screenY: event.stageY
-                                                                      } );
-                                           }
-                                           catch(error:SecurityError) {
-                                           }
-                                       };
-                             })(element, this.js_uniqueId, jsMsg.elementId);
+                        handler = (function (myUniqueId:String, myElem:SVGNode):Object {
+                                       return function(event:MouseEvent):void {
+                                                  SVGViewer.js_dispatchMouseEvent(myUniqueId, myElem, event, 'mousemove');
+                                              };
+                                   })(this.js_uniqueId, element);
                         element.addEventListener(MouseEvent.MOUSE_MOVE, handler);
                     }
                     if (jsMsg.eventType == 'mouseover') {
-                        handler =
-                            (function (myElem:SVGNode, myUniqueId:String):Object {
-                                return function(event:MouseEvent):void {
-                                           try { ExternalInterface.call("receiveFromFlash",
-                                                                      { type: 'event',
-                                                                        uniqueId: myUniqueId,
-                                                                        elementId: myElem.xml.@id.toString(),
-                                                                        eventType: "mouseover",
-                                                                        clientX: event.localX,
-                                                                        clientY: event.localY,
-                                                                        screenX: event.stageX,
-                                                                        screenY: event.stageY
-                                                                      } );
-                                           } catch(error:SecurityError) { }
-                                       };
-                             })(element, this.js_uniqueId);
+                        handler = function (myUniqueId:String, myElem:SVGNode):Object {
+                                       return function(event:MouseEvent):void {
+                                                  SVGViewer.js_dispatchMouseEvent(myUniqueId, myElem, event, 'mouseover');
+                                              };
+                                   }(this.js_uniqueId, element);
                         element.addEventListener(MouseEvent.MOUSE_OVER, handler);
-                        for(i=0; i<element.numChildren-1; i++) {
-                            handler =
-                                (function (myElem:SVGNode, myUniqueId:String):Object {
-                                    return function(event:MouseEvent):void {
-                                               try { ExternalInterface.call("receiveFromFlash",
-                                                                          { type: 'event',
-                                                                            uniqueId: myUniqueId,
-                                                                            elementId: myElem.xml.@id.toString(),
-                                                                            eventType: "mouseover",
-                                                                            clientX: event.localX,
-                                                                            clientY: event.localY,
-                                                                            screenX: event.stageX,
-                                                                            screenY: event.stageY
-                                                                          } );
-                                               } catch(error:SecurityError) { }
-                                           };
-                                 })(element.getChildAt(i), this.js_uniqueId);
-                            element.getChildAt(i).addEventListener(MouseEvent.MOUSE_OVER, handler);
-                        }
                     }
                     if (jsMsg.eventType == 'mouseout') {
-                        handler =
-                            (function (myElem:SVGNode, myUniqueId:String, myElementId:String):Object {
-                                return function(event:MouseEvent):void {
-                                           try {
-                                               ExternalInterface.call("receiveFromFlash",
-                                                                      { type: 'event',
-                                                                        uniqueId: myUniqueId,
-                                                                        elementId: myElementId,
-                                                                        eventType: "mouseout",
-                                                                        clientX: event.localX,
-                                                                        clientY: event.localY,
-                                                                        screenX: event.stageX,
-                                                                        screenY: event.stageY
-                                                                      } );
-                                           }
-                                           catch(error:SecurityError) {
-                                           }
-                                       };
-                             })(element, this.js_uniqueId, jsMsg.elementId);
+                        handler = function (myUniqueId:String, myElem:SVGNode):Object {
+                                       return function(event:MouseEvent):void {
+                                                  SVGViewer.js_dispatchMouseEvent(myUniqueId, myElem, event, 'mouseout');
+                                              };
+                                   }(this.js_uniqueId, element);
                         element.addEventListener(MouseEvent.MOUSE_OUT, handler);
-                        for(i=0; i<element.numChildren-1; i++) {
-                            element.getChildAt(i).addEventListener(MouseEvent.MOUSE_OVER, handler);
-                        }
                     }
                 }
                 else {
@@ -635,6 +598,7 @@ package com.sgweb.svg
                     if (jsMsg.attrName == 'id') {
                         this.js_createdElements[jsMsg.attrValue] = element;
                     }
+                    // xxx the following probably belongs in SVGNode
                     if (jsMsg.attrName == 'transform') {
                         element.transformNode();
                     }
