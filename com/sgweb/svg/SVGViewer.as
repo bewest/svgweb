@@ -79,8 +79,9 @@ package com.sgweb.svg
         protected var debugEnabled:Boolean = false;
         protected var scriptSentToJS:Boolean = false;
 
-
         public function SVGViewer():void {
+            XML.ignoreProcessingInstructions = false;
+            XML.ignoreComments = false;
 
             // This fixes an exception with creating a Base64Decoder. My suspicion is that it has
             // dependencies on mx framework which I avoid for size reasons.
@@ -146,9 +147,20 @@ package com.sgweb.svg
          * @public
          **/
         public function xmlLoaded(event : Event):void {
-            this.debug("xmlLoaded:" + this.js_uniqueId);
-            var dataXML:XML = new XML(event.target.data);
+            var dataXML:XML = new XML(SVGViewer.expandEntities(event.target.data));
             this._svgRoot.xml = dataXML;
+        }
+
+        public static function expandEntities(xmlString:String):String {
+            var entityMap:Object = {};
+            for each(var myMatch:String in xmlString.match(/.*<!ENTITY\s+(\S+)\s+"([^"]*)"\s*>/mg) ) {
+                 var parts:Array = myMatch.match(/.*<!ENTITY\s+(\S+)\s+"([^"]*)"\s*>/m);
+                 entityMap[parts[1]]=parts[2];
+            }
+            for (var myEntity:String in entityMap) {
+                xmlString = xmlString.split("&" + myEntity + ";").join(entityMap[myEntity]);
+            }
+            return xmlString;
         }
 
         public function htmlLoaded(event : Event):void {
@@ -189,7 +201,7 @@ package com.sgweb.svg
                 }
             }
             //this.debug('found script total: ' + svgScriptString);
-            var dataXML:XML = XML(svgString);
+            var dataXML:XML = new XML(SVGViewer.expandEntities(svgString));
             this._svgRoot.xml = dataXML;
  
             // notify browser javascript that we are loaded

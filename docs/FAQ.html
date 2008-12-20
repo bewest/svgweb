@@ -159,7 +159,9 @@ Sizing
 Limitations
 
     Limit.1: What parts of SVG are not implemented?
-        * Compressed SVG files are not supported.
+        * Compressed SVG files are not supported directly. However, it should not be too
+          difficult to have your web server gzip files for you, especially when you use
+          the inline html format.
 
         * preserveAspectRatio settings other than the default "xMidYMid meet",
               (which are uncommon) are not supported.  This is coming soon.
@@ -167,6 +169,8 @@ Limitations
         * <svg> within <svg> (which is uncommon) is not supported. This is coming soon.
 
         * Animations are not yet supported. This is coming.
+
+        * Only a few script events are supported (onload and mouse and keyboard events)
 
         * Getter/Setter scripting syntax (e.g. myobj.style.visibility='hidden') are partially implemented
           for Firefox/Safari, but it is not supported on IE.
@@ -252,11 +256,10 @@ Future
         or implementing new functionality along the way. Currently all files render well, however scripting is
         a work in progress. If you have an SVG file that you would like me to work on, send it to grick23@gmail.com.
         The current task list, as of Dec 19 2008, is:
-          1. Improve javascript scripting in order to support photos.svg and USStates.svg
+          1. Implement preserveAspectRatio (see tests/preserveAspectRatio.svg)
+          2. Improve javascript scripting in order to support photos.svg and USStates.svg
                  (support getElementsByTagName, support TextNode.nodeValue)
-          2. IE getter/setter support (IE8 natively / munge scripts for IE6&7)
-          3. Implement preserveAspectRatio (see tests/preserveAspectRatio.svg)
-          4. Support <svg> within <svg> (see tests/preserveAspectRatio.svg)
-          5. Implement animations
+          3. IE getter/setter support (IE8 natively / munge scripts for IE6&7)
+          4. Animations
 
 

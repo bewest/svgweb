@@ -50,9 +50,9 @@ package com.sgweb.svg.nodes
          **/
         private var _loadTime:int;
         
-        private var _width:Number;
-        private var _height:Number;
-
+        /**
+         * Passed in transform parameters
+         **/
         public var scaleXParam:Number = 1.0;
         public var scaleYParam:Number = 1.0;
         public var translateXParam:Number = 0.0;
@@ -75,12 +75,10 @@ package com.sgweb.svg.nodes
          * Create new _elementById object
          **/
         public override function set xml(value:XML):void {        
-            this._width = 0;
-            this._height = 0;
             default xml namespace = svg;
             this._elementById = new Object();    
             this._referersById = new Object();    
-            super.xml = value;    
+            super.xml = value;
             
             this._loadTime = getTimer();
             
@@ -224,10 +222,8 @@ package com.sgweb.svg.nodes
 
         public function renderStart(node:SVGNode):void {
             this.renderCurrent++;
-            //this.debug("render start: " + node.xml.@id);
         }
         public function renderDone(node:SVGNode):void {
-            //this.debug("render done: " + node.xml.@id);
             this.renderCurrent--;
             if (this.renderCurrent == 0) {
                 if (!this.firedOnLoad) {
