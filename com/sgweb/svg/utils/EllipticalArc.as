@@ -123,12 +123,10 @@ package com.sgweb.svg.utils
             angleExtent %= 360;
             angleStart %= 360;
             
-            return Object({x:LastPointX,y:LastPointY,startAngle:angleStart,arc:angleExtent,radius:rx,yRadius:ry,xAxisRotation:xAxisRotation});
-            
-            return null;
-            
+            //return Object({x:LastPointX,y:LastPointY,startAngle:angleStart,arc:angleExtent,radius:rx,yRadius:ry,xAxisRotation:xAxisRotation});        
+            return Object({x:LastPointX,y:LastPointY,startAngle:angleStart,arc:angleExtent,radius:rx,yRadius:ry,xAxisRotation:xAxisRotation, cx:cx,cy:cy});
         }
-        
+
         /**
         * @private
         * Convert degrees to radians
@@ -149,73 +147,56 @@ package com.sgweb.svg.utils
          * @private
          * Create quadratic circle graphics commands from an elliptical arc
          **/
-        private static function drawEllipticalArc(x:Number, y:Number, startAngle:Number, arc:Number, radius:Number,yRadius:Number,commandStack:Array):void
+        private static function drawEllipticalArc(x:Number, y:Number, startAngle:Number, arc:Number, radius:Number,yRadius:Number, xAxisRotation:Number, commandStack:Array):void
         {
-            
-            var ax:Number;
-            var ay:Number;
-                        
             // Circumvent drawing more than is needed
             if (Math.abs(arc)>360) 
             {
                 arc = 360;
-            }
-            
-            // Draw in a maximum of 45 degree segments. First we calculate how many 
+            }           
+
+            // Draw in a maximum of 45 degree segments. First we calculate how many
             // segments are needed for our arc.
-            var segs:Number = Math.ceil(Math.abs(arc)/45);
-            
+            var segs:Number = Math.ceil(Math.abs(arc)/45);          
+
             // Now calculate the sweep of each segment
-            var segAngle:Number = arc/segs;
-            
-            // The math requires radians rather than degrees. To convert from degrees
-            // use the formula (degrees/180)*Math.PI to get radians. 
-            var theta:Number = -(segAngle/180)*Math.PI;
-            
-            // convert angle startAngle to radians
-            var angle:Number = -(startAngle/180)*Math.PI;
-            
-            // find our starting points (ax,ay) relative to the secified x,y
-            ax = x-Math.cos(angle)*radius;
-            ay = y-Math.sin(angle)*yRadius;
-            
+            var segAngle:Number = arc/segs;         
+
+            var theta:Number = degressToRadius(segAngle);
+            var angle:Number = degressToRadius(startAngle);
+
             // Draw as 45 degree segments
             if (segs>0) 
             {                
-                var oldX:Number = x;
-                var oldY:Number = y;
+                var beta:Number = degressToRadius(xAxisRotation);
+                var sinbeta:Number = Math.sin(beta);
+                var cosbeta:Number = Math.cos(beta);
+
                 var cx:Number;
                 var cy:Number;
                 var x1:Number;
                 var y1:Number;
-                                
+
                 // Loop for drawing arc segments
-                for (var i:int = 0; i<segs; i++) 
-                {
+                for (var i:int = 0; i<segs; i++) {
                     
-                    // increment our angle
                     angle += theta;
-                    
-                    //find the angle halfway between the last angle and the new one,
-                    //calculate our end point, our control point, and draw the arc segment
-                
-                    cx=ax+Math.cos(angle-(theta/2))*(radius/Math.cos(theta/2));
-                    
-                    cy=ay+Math.sin(angle-(theta/2))*(yRadius/Math.cos(theta/2));
-                    
-                    x1=ax+Math.cos(angle)*radius;
-                    
-                    y1=ay+Math.sin(angle)*yRadius;
-                                    
-                    
-                    // save 
+
+                    var sinangle:Number = Math.sin(angle-(theta/2));
+                    var cosangle:Number = Math.cos(angle-(theta/2));
+
+                    var div:Number = Math.cos(theta/2);
+                    cx = x + (radius * cosangle * cosbeta - yRadius * sinangle * sinbeta)/div; //Why divide by Math.cos(theta/2)? - FIX THIS
+                    cy = y + (radius * cosangle * sinbeta + yRadius * sinangle * cosbeta)/div; //Why divide by Math.cos(theta/2)? - FIX THIS                    
+
+                    sinangle = Math.sin(angle);
+                    cosangle = Math.cos(angle);                 
+
+                    x1 = x + (radius * cosangle * cosbeta - yRadius * sinangle * sinbeta);
+                    y1 = y + (radius * cosangle * sinbeta + yRadius * sinangle * cosbeta);
+
                     commandStack.push(["C", cx, cy, x1, y1]);
-                
-                    oldX = x1;
-                    oldY = y1;
-                                        
                 }
-                    
             }
         }
         
@@ -245,7 +226,7 @@ package com.sgweb.svg.utils
         public static function drawArc(rx:Number, ry:Number,angle:Number,largeArcFlag:Boolean,sweepFlag:Boolean,
                                                 x:Number,y:Number,LastPointX:Number, LastPointY:Number, graphicCommands:Array):void {
             var ellipticalArc:Object = EllipticalArc.computeSvgArc(rx, ry, angle, largeArcFlag, sweepFlag, x, y, LastPointX, LastPointY);    
-            EllipticalArc.drawEllipticalArc(ellipticalArc.x, ellipticalArc.y, ellipticalArc.startAngle, ellipticalArc.arc, ellipticalArc.radius, ellipticalArc.yRadius, graphicCommands);
+            EllipticalArc.drawEllipticalArc(ellipticalArc.cx, ellipticalArc.cy, ellipticalArc.startAngle, ellipticalArc.arc, ellipticalArc.radius, ellipticalArc.yRadius, ellipticalArc.xAxisRotation, graphicCommands);
                                                     
         }
         
