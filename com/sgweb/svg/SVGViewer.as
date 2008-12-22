@@ -254,7 +254,12 @@ package com.sgweb.svg
             }
         }
 
+        private function resizeListener (e:Event):void {
+            this._svgRoot.invalidateDisplay();
+        }
+
         private function addedToStage(event:Event = null):void {
+            stage.addEventListener(Event.RESIZE, resizeListener);
 
             var outerthis:SVGViewer = this;
             //this.debug("Got addedToStage event.");
@@ -570,9 +575,8 @@ package com.sgweb.svg
             if (jsMsg.method == 'getRoot') {
                  if (this._svgRoot._xml.@id) {
                      jsMsg.elementId = this._svgRoot.xml.@id.toString();
-                     if (!this._svgRoot.getElement(jsMsg.elementId)) {
-                         this.debug("root element not found");
-                     }
+                     jsMsg.width = this._svgRoot.getWidth();
+                     jsMsg.height = this._svgRoot.getHeight();
                  }
                  else {
                      this.debug("SVGViewer: root id not found");

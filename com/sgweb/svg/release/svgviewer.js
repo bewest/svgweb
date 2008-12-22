@@ -220,16 +220,15 @@ SVGFlashHandler.prototype.createFlashHTML = function() {
 
     var bgcolor ='';
     if (this.bgcolor != '') {
-        bgcolor = ' bgcolor=' + this.bgcolor;
+        bgcolor = ' bgcolor="' + this.bgcolor + '"';
     }
     var transparent ='';
     if (this.transparent) {
-        transparent = ' wmode=transparent ';
+        transparent = ' wmode="transparent" ';
     }
 
 
-    var flashVars = 
-        '"' +
+    var flashVars = '"' +
         'uniqueId=' + this.uniqueId +
         '&sourceType=' + this.sourceType +
         '&svgURL=' + this.svgURL +
@@ -246,15 +245,15 @@ SVGFlashHandler.prototype.createFlashHTML = function() {
 
     var html='<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" ' +
         '        codebase="" id="' + this.objectId + '" ' + 
-        '        width=' + this.objectWidth + ' height=' + this.objectHeight + ' style="float: left"> ' +
-        '    <param name=AllowScriptAccess value="always"/> ' +
-        '    <param name=movie value="svgviewer.swf"> ' +
-        '    <param name=FlashVars value=' + flashVars + '> ' +
-        (this.transparent ? '    <param name="wmode" value="transparent"> ' : '') +
-        '    <embed  name="' + this.objectId + '" play=false ' +
+        '        width="' + this.objectWidth + '" height="' + this.objectHeight + '" style="float: left;"> ' +
+        '    <param name="AllowScriptAccess" value="always"/> ' +
+        '    <param name="movie" value="svgviewer.swf"/> ' +
+        '    <param name="FlashVars" value=' + flashVars + '/> ' +
+        (this.transparent ? '    <param name="wmode" value="transparent"/> ' : '') +
+        '    <embed  name="' + this.objectId + '" play="false" ' +
         '            swliveconnect="true" AllowScriptAccess="always" ' +
-        '            src="svgviewer.swf" quality=high ' + transparent + bgcolor +
-        '            width=' + this.objectWidth + ' height=' + this.objectHeight +
+        '            src="svgviewer.swf" quality="high" ' + transparent + bgcolor +
+        '            width="' + this.objectWidth + '" height="' + this.objectHeight + '"' +
         '            type="application/x-shockwave-flash" ' +
         '            FlashVars=' + flashVars + '> ' +
         '    </embed> ' +
@@ -377,6 +376,12 @@ SVGFlashHandler.prototype.onLoad = function(flashMsg) {
     var getRootMsg = this.sendToFlash({type: 'invoke', method: 'getRoot'});
     this.documentElement.elementId = getRootMsg.elementId;
 
+    // resize to the <svg> width
+    if (this.sizeToSVG) {
+        this.flashObj.width = getRootMsg.width;
+        this.flashObj.height = getRootMsg.height;
+    }
+
     this.svgScript = this.svgScript + flashMsg.onLoad;
 
     if (svgviewer.inBrowserString("MSIE")) {
@@ -392,12 +397,16 @@ SVGFlashHandler.prototype.onLoad = function(flashMsg) {
  *
  */
 SVGFlashHandler.prototype.scriptReplacements = [
-                                 { pattern: ';_SVGNL_;', replacement: '\\n' },
-                                 { pattern: 'document.createElementNS', replacement: 'svgviewer.svgHandlers["_SVG_UNIQ_ID_"].createElementNS' },
-                                 { pattern: 'document.documentElement', replacement: 'svgviewer.svgHandlers["_SVG_UNIQ_ID_"].documentElement' },
-                                 { pattern: 'document.getElementById', replacement: 'svgviewer.svgHandlers["_SVG_UNIQ_ID_"].getElementById' },
-                                 { pattern: 'document.createTextNode', replacement: 'svgviewer.svgHandlers["_SVG_UNIQ_ID_"].createTextNode' } 
-                               ];
+      { pattern: ';_SVGNL_;', replacement: '\\n' },
+      { pattern: 'document.createElementNS',
+        replacement: 'svgviewer.svgHandlers["_SVG_UNIQ_ID_"].createElementNS' },
+      { pattern: 'document.documentElement',
+        replacement: 'svgviewer.svgHandlers["_SVG_UNIQ_ID_"].documentElement' },
+      { pattern: 'document.getElementById',
+        replacement: 'svgviewer.svgHandlers["_SVG_UNIQ_ID_"].getElementById' },
+      { pattern: 'document.createTextNode',
+        replacement: 'svgviewer.svgHandlers["_SVG_UNIQ_ID_"].createTextNode' } 
+      ];
 
 
 SVGFlashHandler.prototype.onScript = function(flashMsg) {
