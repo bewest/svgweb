@@ -1508,12 +1508,12 @@ div.BottomRightQuad {
         mycmd1 = 'myroot1.setAttribute("transform", "' + mymatrix1 + '");myrootx1=myrootx1+(myrootx1<500 ? 1:-500);' +
                  'myroot2.setAttribute("transform", "' + mymatrix2 + '");myrootx2=myrootx2+(myrootx2<500 ? 1:-500);';
 
-        scim1=svgviewer.c('scimitar1');myroot1=scim1.getElementById('svg11242');
-        scim2=svgviewer.c('scimitar2');myroot2=scim2.getElementById('svg11242');
+        scim1=svgviewer.svgHandlers['scimitar1'];myroot1=scim1.getElementById('svg11242');
+        scim2=svgviewer.svgHandlers['scimitar2'];myroot2=scim2.getElementById('svg11242');
         myrootx1 = 1; myrootx2 = 1; foo1=setInterval(mycmd1, 10);
         setTimeout("clearInterval(foo1);", 30000);
     }
-    setTimeout("later();", 5000);
+    setTimeout("later();", 10000);
 
 </script>
 

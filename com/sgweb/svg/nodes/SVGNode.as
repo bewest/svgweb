@@ -35,9 +35,11 @@ package com.sgweb.svg.nodes
     import flash.display.DisplayObject;
     import flash.display.JointStyle;
     import flash.display.LineScaleMode;
+    import flash.display.Shape;
     import flash.display.Sprite;
     import flash.events.Event;
     import flash.geom.Matrix;
+    import flash.geom.Point;
     import flash.utils.*;
 
     /** Base node extended by all other SVG Nodes **/
@@ -333,60 +335,193 @@ package com.sgweb.svg.nodes
          * Perform transformations defined by the transform attribute 
          **/
         public function transformNode():void {
+            var canvasWidth:Number;
+            var canvasHeight:Number;
             // Get original Matrix
             var newMatrix:Matrix;
+            var undoViewBoxMatrix:Matrix = new Matrix();
             if (this._origMatrix == null) {
                 this._origMatrix = this.transform.matrix.clone();
             }
             newMatrix = this._origMatrix.clone();
 
+
+            // <svg> and <image> nodes get an implicit mask of their height and width
+            if (this is SVGRoot || this is SVGSVGNode || this is SVGImageNode) {
+                if (   (this.xml.@width != undefined) 
+                    && (this.xml.@height != undefined) ) {
+                    canvasWidth = SVGColors.cleanNumber2(this.xml.@width, this.getWidth());
+                    canvasHeight = SVGColors.cleanNumber2(this.xml.@height, this.getHeight());
+                    if (this.mask == null) {
+                        var myMask:Shape = new Shape();
+                        this.addChild(myMask);
+                        this.mask = myMask;
+                    }
+                    if (this.mask is Shape) {
+                        Shape(this.mask).graphics.clear();
+                        Shape(this.mask).graphics.beginFill(0x000000);
+                        Shape(this.mask).graphics.drawRect(0, 0, canvasWidth, canvasHeight);
+                        Shape(this.mask).graphics.endFill();
+                    }
+                }
+            }
+
             // Apply viewbox transform
             var viewBox:String = this.getAttribute('viewBox');
-            if (viewBox != null) {
-                var points:Array = viewBox.split(/\s+/);
-                var viewX:Number = Number(points[0]);
-                var viewY:Number = Number(points[1]);
-                var viewWidth:Number = Number(points[2]);
-                var viewHeight:Number = Number(points[3]);
+            if (viewBox != null ||
+                   (    (this._xml.@preserveAspectRatio != undefined) 
+                     && (this._xml.@width != undefined)
+                     && (this._xml.@height != undefined) ) ) {
 
-                // XXX assumes root
-                // should be parent width or height for internal <svg>
-                var canvasWidth:Number = 2048.0;
-                var canvasHeight:Number =1024.0;
+                /**
+                 * Canvas, the viewport
+                 **/
+                canvasWidth = 2048.0;
+                canvasHeight =1024.0;
 
                 if (this.scaleModeParam == "showAll_svg") {
                     canvasWidth = this.stage.stageWidth;
                     canvasHeight = this.stage.stageHeight;
                 }
 
+                if (this.xml.@width != undefined) {
+                    canvasWidth = SVGColors.cleanNumber2(this.xml.@width, canvasWidth);
+                }
+                if (this.xml.@height != undefined) {
+                    canvasHeight = SVGColors.cleanNumber2(this.xml.@height, canvasHeight);
+                }
+
+                /**
+                 * Viewbox
+                 **/
+                var viewX:Number;
+                var viewY:Number;
+                var viewWidth:Number;
+                var viewHeight:Number;
+                if (viewBox != null) {
+                    var points:Array = viewBox.split(/\s+/);
+                    viewX = SVGColors.cleanNumber(points[0]);
+                    viewY = SVGColors.cleanNumber(points[1]);
+                    viewWidth = SVGColors.cleanNumber(points[2]);
+                    viewHeight = SVGColors.cleanNumber(points[3]);
+                }
+                else {
+                    viewX = 0;
+                    viewY = 0;
+                    viewWidth = canvasWidth;
+                    viewHeight = canvasHeight;
+                    if (this is SVGImageNode) {
+                        if (SVGImageNode(this).imageWidth > 0) {
+                            viewWidth = SVGImageNode(this).imageWidth;
+                        }
+                        if (SVGImageNode(this).imageHeight > 0) {
+                            viewHeight = SVGImageNode(this).imageHeight;
+                        }
+                    }
+                }
+
+
                 var oldAspectRes:Number = viewWidth / viewHeight;
                 var newAspectRes:Number = canvasWidth /  canvasHeight;
                 var cropWidth:Number;
                 var cropHeight:Number;
-                if (newAspectRes > oldAspectRes) {
-                   cropWidth = canvasHeight * oldAspectRes;
-                   cropHeight = canvasHeight;
+
+                var preserveAspectRatio:String = 'xMidYMid meet';
+                if (this.xml.@preserveAspectRatio != undefined) {
+                    preserveAspectRatio = this.xml.@preserveAspectRatio.toString();
+                }
+                var alignMode:String = preserveAspectRatio.substr(0,8);
+                var meetOrSlice:String = 'meet';
+                if (preserveAspectRatio.indexOf('slice') != -1) {
+                    meetOrSlice = 'slice';
+                }
+
+                /**
+                 * Handle Scaling
+                 **/
+                if (alignMode == 'none') {
+                    // stretch to fit viewport width and height
+
+                    cropWidth = canvasWidth;
+                    cropHeight = canvasHeight;
                 }
                 else {
-                   cropWidth = canvasWidth;
-                   cropHeight = canvasWidth / oldAspectRes;
-                }
+                    if (meetOrSlice == 'meet') {
+                        // shrink to fit inside viewport
 
+                        if (newAspectRes > oldAspectRes) {
+                            cropWidth = canvasHeight * oldAspectRes;
+                            cropHeight = canvasHeight;
+                        }
+                        else {
+                            cropWidth = canvasWidth;
+                            cropHeight = canvasWidth / oldAspectRes;
+                        }
+    
+                    }
+                    else {
+                        // meetOrSlice == 'slice'
+                        // Expand to cover viewport.
+
+                        if (newAspectRes > oldAspectRes) {
+                            cropWidth = canvasWidth;
+                            cropHeight = canvasWidth / oldAspectRes;
+                        }
+                        else {
+                            cropWidth = canvasHeight * oldAspectRes;
+                            cropHeight = canvasHeight;
+                        }
+    
+                    }
+                }
                 var scaleX:Number = cropWidth / viewWidth;
                 var scaleY:Number = cropHeight / viewHeight;
-
                 newMatrix.translate(-viewX, -viewY);
+                undoViewBoxMatrix.translate(viewX, viewY);
                 newMatrix.scale(scaleX, scaleY);
+                undoViewBoxMatrix.scale(1/scaleX, 1/scaleY);
 
 
-                var borderX:Number = canvasWidth - cropWidth;
-                var borderY:Number = canvasHeight - cropHeight;
-
-                var translateX:Number = borderX / 2.0;
-                var translateY:Number = borderY / 2.0;
-
-                newMatrix.translate(translateX, translateY);
-
+                /**
+                 * Handle Alignment
+                 **/
+                var borderX:Number;
+                var borderY:Number;
+                var translateX:Number;
+                var translateY:Number;
+                if (alignMode != 'none') {
+                    translateX=0;
+                    translateY=0;
+                    var xAlignMode:String = alignMode.substr(0,4);
+                    switch (xAlignMode) {
+                        case 'xMin':
+                            break;
+                        case 'xMax':
+                            translateX = canvasWidth - cropWidth;
+                            break;
+                        case 'xMid':
+                        default:
+                            borderX = canvasWidth - cropWidth;
+                            translateX = borderX / 2.0;
+                            break;
+                    }
+                    var yAlignMode:String = alignMode.substr(4,4);
+                    switch (yAlignMode) {
+                        case 'YMin':
+                            break;
+                        case 'YMax':
+                            translateY = canvasHeight - cropHeight;
+                            break;
+                        case 'YMid':
+                        default:
+                            borderY = canvasHeight - cropHeight;
+                            translateY = borderY / 2.0;
+                            break;
+                    }
+                    newMatrix.translate(translateX, translateY);
+                    undoViewBoxMatrix.translate(-translateX/scaleX, -translateY/scaleY);
+                    undoViewBoxMatrix.translate(translateX, translateY);
+                }
             }
 
             this.transform.matrix = newMatrix;
@@ -463,6 +598,30 @@ package com.sgweb.svg.nodes
                         newMatrix = this.transform.matrix.clone();
                     }
                 }
+            }
+            // Reverse all tranforms against the mask because the viewbox coordinates are
+            // in the parent coordinate space. Since the mask is a child of this node,
+            // the resulting coordinate mismatch is unfortunate.
+            if (this.mask is Shape) {
+                var maskMatrix:Matrix = new Matrix();
+                if (this is SVGImageNode) {
+                    maskMatrix.concat(undoViewBoxMatrix);
+                }
+                else {
+                    newMatrix.invert();
+                    maskMatrix.concat(newMatrix);
+                }
+                this.mask.transform.matrix = maskMatrix;
+            }
+
+            // Our x,y should not be affected by viewbox transform.
+            // xxx perhaps we should apply the transform to the child
+            // bitmap image object so the SVGImageNode coordinates are not affected!
+            if (this is SVGImageNode) {
+                var myPos:Point = new Point(this.x, this.y);
+                myPos = undoViewBoxMatrix.transformPoint(myPos);
+                this.x = myPos.x;
+                this.y = myPos.y;
             }
 
 

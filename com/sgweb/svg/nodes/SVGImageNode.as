@@ -34,7 +34,7 @@ package com.sgweb.svg.nodes
     import flash.display.Shape;
     import flash.events.Event;
     import flash.geom.Matrix;
-    import flash.utils.ByteArray;
+    import flash.utils.*;
     import flash.net.URLRequest;
     
     import mx.utils.Base64Decoder;
@@ -43,30 +43,28 @@ package com.sgweb.svg.nodes
     {        
         private var bitmap:Bitmap;
         private var orignalBitmap:Bitmap;
+        public var imageWidth:Number = 0;
+        public var imageHeight:Number = 0;
                    
         public function SVGImageNode(svgRoot:SVGRoot, xml:XML):void {
             super(svgRoot, xml);
         }    
         
         protected override function draw():void {
-            
             var imageHref:String = this._xml.@href;
-            if (!imageHref)
+            if (!imageHref) {
+                imageHref = this._xml.@xlink::href;
+            }
+            if (!imageHref) {
                 return;
+            }
 
             if (imageHref.match(/^http:/) && this._xml.@width && this._xml.@height) {
                 var loader:Loader = new Loader();
-                // Create a mask for the loader so it does not exceed the object
-                var rect:Shape = new Shape();
-                rect.graphics.beginFill(0xFFFFFF);
-                rect.graphics.drawRect(0, 0, Number(this._xml.@width), Number(this._xml.@height));
-                rect.graphics.endFill();
-                addChild(rect);
-                loader.mask=rect;
-
                 var urlReq:URLRequest = new URLRequest(imageHref);
                 loader.load(urlReq);
-                addChild(loader);
+                loader.contentLoaderInfo.addEventListener( Event.COMPLETE, onImageLoaded );
+                this.addChild(loader);
                 return;
             }
 
@@ -87,22 +85,26 @@ package com.sgweb.svg.nodes
             }
 
         }
+        private function onImageLoaded( event:Event ):void {
+            this.imageWidth = event.target.width;
+            this.imageHeight = event.target.height;
+            this.transformNode();
+        }
         
         /**
          * Load image byte array
          * Used to support data: href.
-         **/
         private function loadBytes(byteArray:ByteArray):void {
             
             var loader:Loader = new Loader();
             loader.contentLoaderInfo.addEventListener( Event.COMPLETE, onBytesLoaded );            
             loader.loadBytes( byteArray );                
         }
+         **/
         
         /**
          * Display image bitmap once bytes have loaded 
          * Used to support data: href.
-         **/
         private function onBytesLoaded( event:Event ) :void
         {
             var content:DisplayObject = LoaderInfo( event.target ).content;
@@ -112,7 +114,9 @@ package com.sgweb.svg.nodes
             bitmap = new Bitmap( bitmapData );
             bitmap.opaqueBackground = null;
             this.addChild(bitmap);            
+
             
         }                
+         **/
     }
 }

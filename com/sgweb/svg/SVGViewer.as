@@ -288,7 +288,7 @@ package com.sgweb.svg
                         return outerthis.js_handleInvoke(jsMsg);
                     }
                     if (jsMsg.type == 'getVersion') {
-                        return { type: 'version', version: '0.7.1' };
+                        return { type: 'version', version: '0.7.2' };
                     }
                     return null;
                 }

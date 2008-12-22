@@ -75,7 +75,7 @@ package com.sgweb.svg.nodes.mask
                     clipPathXML.@['transform'] = this._childToMaskXML.@['transform'];
                 }
                 // xxx svgmask should handle this
-                var stubClipPathXML:XML = <clipPath></clipPath>;
+                var stubClipPathXML:XML = <svgMask></svgMask>;
                 stubClipPathXML.appendChild(clipPathXML.toXMLString());
 
                 svgMask = new SVGMask(this.svgRoot, stubClipPathXML);
