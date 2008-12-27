@@ -242,11 +242,6 @@ package com.sgweb.svg.nodes.mask
         }
 
 
-        override protected function generateGraphicsCommands():void {
-            //Do Nothing
-            this._graphicsCommands = new Array();
-        }
-
         override protected function registerId(event:Event):void {
             this.removeEventListener(Event.ADDED, registerId);
         }

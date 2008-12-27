@@ -7,6 +7,9 @@ build/svgviewer.swf: SVGViewer.as *.as data/*.as nodes/*.as utils/*.as nodes/mas
 make_release:
 	cp build/svgviewer.swf release/
 
+make_install:
+	cp release/*.html release/*.js build/*.swf samples/*.svg $(SVGSRV)
+
 clean:
 	rm build/*
 

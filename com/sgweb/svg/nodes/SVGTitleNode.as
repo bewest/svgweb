@@ -50,6 +50,7 @@ package com.sgweb.svg.nodes
         }
         
         override protected function setAttributes():void {
+            super.setAttributes();
             this.svgRoot.title = this._title;
         }
         

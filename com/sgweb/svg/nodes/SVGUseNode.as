@@ -90,8 +90,8 @@ package com.sgweb.svg.nodes
                         }
                         if (attr.name() == "style") {
                             if (child.@style) {
-                                // psuedo: mergedStyles = overwriteStyles(baseStyles, newStyles)
-                                child.@style = this.overwriteStyles(child.@style, this._xml.@style);
+                                // pseudo: mergedStyles = overwriteStyles(baseStyles, newStyles)
+                                child.@style = SVGNode.overwriteStyles(child.@style, this._xml.@style);
                             }
                             else {
                                 child.@style = this._xml.@style;

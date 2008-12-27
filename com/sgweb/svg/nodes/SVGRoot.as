@@ -79,14 +79,12 @@ package com.sgweb.svg.nodes
             this._elementById = new Object();    
             this._referersById = new Object();    
             super.xml = value;
-            
             this._loadTime = getTimer();
-            
             if (this.xml.@id) {
                 this._elementById[this.xml.@id] = this;
             }
             this.dispatchEvent(new Event(Event.RESIZE));
-                    
+            this.renderCurrent = 0;
         }
         
         /**
@@ -224,7 +222,9 @@ package com.sgweb.svg.nodes
             this.renderCurrent++;
         }
         public function renderDone(node:SVGNode):void {
-            this.renderCurrent--;
+            if (node.parent) {
+                this.renderCurrent--;
+            }
             if (this.renderCurrent == 0) {
                 if (!this.firedOnLoad) {
                     this.handleOnLoad();

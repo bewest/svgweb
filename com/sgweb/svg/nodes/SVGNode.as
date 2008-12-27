@@ -97,7 +97,7 @@ package com.sgweb.svg.nodes
         protected var _parsedChildren:Boolean = false;
         
 
-        protected var initialRenderDone:Boolean = false;
+        public var _initialRenderDone:Boolean = false;
 
         /**
          * Constructor
@@ -109,9 +109,6 @@ package com.sgweb.svg.nodes
         public function SVGNode(svgRoot:SVGRoot, xml:XML = null):void {
             this.svgRoot = svgRoot;
             this.xml = xml;
-            if (!(this is SVGRoot)) {
-                this.svgRoot.renderStart(this);
-            }
             this.addEventListener(Event.ADDED, registerId);
         }
 
@@ -179,7 +176,7 @@ package com.sgweb.svg.nodes
         }
 
 
-        public function overwriteStyles(baseStylesStr:String, newStylesStr:String):String {
+        public static function overwriteStyles(baseStylesStr:String, newStylesStr:String):String {
 
             var mergedStyles:Object = new Object();
             var mergedStylesStr:String = "";
@@ -1128,6 +1125,32 @@ package com.sgweb.svg.nodes
             return null;
         }
 
+
+        public function parseStyle(styleAttr:String):String {
+            if (!this._xml.@style)
+                return null;
+
+            var styleSet:Array;
+            var attrName:String;
+            var attrValue:String;
+            var style:String;
+
+            var baseStyles:Array = this._xml.@style.split(';');
+            for each(style in baseStyles) {
+                styleSet = style.split(':');
+                if (styleSet.length == 2) {
+                    attrName = styleSet[0];
+                    attrValue = styleSet[1];
+                    // Trim leading whitespace.
+                    attrName = attrName.replace(/^\s+/, '');
+                    attrValue = attrValue.replace(/^\s+/, '');
+                    if (attrName == styleAttr)
+                        return attrValue;
+                }
+            }
+            return null;
+        }
+
         /**
          * @param attribute Attribute to retrieve from SVG XML
          * 
@@ -1148,7 +1171,7 @@ package com.sgweb.svg.nodes
         /**
          * Remove all child nodes
          **/        
-        protected function clearChildren():void {            
+        protected function clearChildren():void {
             while(this.numChildren) {
                 this.removeChildAt(0);
             }
@@ -1187,11 +1210,9 @@ package com.sgweb.svg.nodes
          * Redraws node graphics if _invalidDisplay == true
          **/
         protected function redrawNode(event:Event):void {
-            if (this.parent == null) {
-                return;
-            }
-            
-            if (this._invalidDisplay) {
+
+            if ( (this.parent != null) && (this._invalidDisplay) ) {
+                this._invalidDisplay = false;
                 //this.dbg("redrawNode: " + this.xml.@id + " type " + describeType(this).@name);
                 if (this._xml != null) {
                 
@@ -1213,7 +1234,6 @@ package com.sgweb.svg.nodes
                     }
                 }
                 
-                this._invalidDisplay = false;
                 this.removeEventListener(Event.ENTER_FRAME, redrawNode);
 
                 if (this.xml.@id)  {
@@ -1232,9 +1252,9 @@ package com.sgweb.svg.nodes
 
                 //this.dbg("done drawing " + this.xml.@id + " type " + describeType(this).@name);
             }
-            if (!(this is SVGRoot) && !this.initialRenderDone) {
+            if (!(this._initialRenderDone)) {
+                this._initialRenderDone = true;
                 this.svgRoot.renderDone(this);
-                this.initialRenderDone = true;
             }
         }
         
@@ -1242,6 +1262,9 @@ package com.sgweb.svg.nodes
          *
          **/
         override public function addChild(child:DisplayObject):DisplayObject {
+            if (child is SVGNode) {
+                this.svgRoot.renderStart(SVGNode(child));
+            }
             super.addChild(child);
             return child;
         }
@@ -1488,7 +1511,7 @@ package com.sgweb.svg.nodes
                     }
                     else {
                         if (this._xml.@style) {
-                            this._xml.@style = this.overwriteStyles(this.xml.@style, myattr.toString);
+                            this._xml.@style = SVGNode.overwriteStyles(this.xml.@style, myattr.toString);
                         }
                         else {
                             this._xml.@style = myattr.toString;

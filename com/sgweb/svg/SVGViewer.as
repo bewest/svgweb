@@ -124,6 +124,8 @@ package com.sgweb.svg
             try {
                 ExternalInterface.call("receiveFromFlash", { type: 'event',
                                                              eventType: "onLoad",
+                                                             width: this._svgRoot.getWidth(),
+                                                             height: this._svgRoot.getHeight(),
                                                              uniqueId: this.js_uniqueId,
                                                              onLoad: onLoadHandler } );
             }
@@ -147,6 +149,7 @@ package com.sgweb.svg
          * @public
          **/
         public function xmlLoaded(event : Event):void {
+            this.debug("xml is loaded. length: "+ String(event.target.data).length);
             var dataXML:XML = new XML(SVGViewer.expandEntities(event.target.data));
             this._svgRoot.xml = dataXML;
         }
@@ -573,14 +576,15 @@ package com.sgweb.svg
                 }
             }
             if (jsMsg.method == 'getRoot') {
-                 if (this._svgRoot._xml.@id) {
-                     jsMsg.elementId = this._svgRoot.xml.@id.toString();
-                     jsMsg.width = this._svgRoot.getWidth();
-                     jsMsg.height = this._svgRoot.getHeight();
-                 }
-                 else {
-                     this.debug("SVGViewer: root id not found");
-                 }
+                if (this._svgRoot._xml.@id) {
+                    jsMsg.elementId = this._svgRoot.xml.@id.toString();
+                }
+                else {
+                    this.debug("SVGViewer: root id not found");
+                }
+            }
+            if (jsMsg.method == 'getXML') {
+                jsMsg.xmlString = this._svgRoot.xml.toString();
             }
             if (jsMsg.method == 'getAttribute') {
                 if (typeof(this.js_createdElements[jsMsg.elementId]) != "undefined") {
@@ -592,7 +596,12 @@ package com.sgweb.svg
                 if (element) {
                     if (  (typeof(element.xml.@[jsMsg.attrName]) != 'undefined')
                        && (element.xml.@[jsMsg.attrName] != null) ) {
-                        jsMsg.attrValue = String(element.xml.@[jsMsg.attrName].toString());
+                        if (jsMsg.getFromStyle) {
+                            jsMsg.attrValue = element.parseStyle(jsMsg.attrName);
+                        }
+                        else {
+                            jsMsg.attrValue = String(element.xml.@[jsMsg.attrName].toString());
+                        }
                     }
                     else {
                         this.debug("error:getAttribute: id not found: " + jsMsg.elementId);
@@ -610,7 +619,20 @@ package com.sgweb.svg
                     element = this._svgRoot.getElement(jsMsg.elementId);
                 }
                 if (element) {
-                    element.xml.@[jsMsg.attrName] = jsMsg.attrValue.toString();
+                    if (jsMsg.applyToStyle) {
+                        if (element._xml.@style) {
+                            element._xml.@style = SVGNode.overwriteStyles(element._xml.@style,
+                                                                          jsMsg.attrName + ": "
+                                                                        + jsMsg.attrValue.toString());
+                        }
+                        else {
+                            element._xml.@style = jsMsg.attrName + ": " + jsMsg.attrValue.toString();
+                        }
+                    }
+                    else {
+                        element._xml.@[jsMsg.attrName] = jsMsg.attrValue.toString();
+                    }
+
                     if (jsMsg.attrName == 'id') {
                         this.js_createdElements[jsMsg.attrValue] = element;
                     }

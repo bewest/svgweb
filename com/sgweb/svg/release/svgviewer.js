@@ -77,6 +77,16 @@ svgviewer.createSVG = function ( params ) {
     }
     return svgHandler;
 }
+svgviewer.clientWidth=function() {
+    return (window.innerWidth > 0) ? window.innerWidth :
+            ((document.documentElement && (document.documentElement.clientWidth > 0)) ? document.documentElement.clientWidth :
+             document.body.clientWidth);
+}
+svgviewer.clientHeight=function() {
+    return (window.innerHeight > 0) ? window.innerHeight :
+            ((document.documentElement && (document.documentElement.clientHeight > 0)) ? document.documentElement.clientHeight :
+             document.body.clientHeight);
+}
 
 svgviewer.inBrowserString = function(browserString) {
     if (typeof(navigator) == "undefined") {
@@ -134,10 +144,26 @@ function SVGFlashHandler(params) {
     this.svgScript = '';
     this.sourceType = params.sourceType;
     this.svgURL = params.svgURL;
-    this.objectWidth= params.objectWidth;
-    this.objectHeight= params.objectHeight;
     this.svgNodes = {};
 
+
+    if (typeof(params.sizeToSVG) != "undefined") {
+        this.sizeToSVG = params.sizeToSVG;
+    }
+    else {
+        this.sizeToSVG = false;
+    }
+
+    if (   (typeof(params.width) == "undefined")
+        || (typeof(params.height) == "undefined") ) {
+        this.width= 2048;
+        this.height= 1024;
+        this.sizeToSVG = true;
+    }
+    else {
+        this.width = params.width ;
+        this.height = params.height ;
+    }
 
     if (typeof(params.scaleMode) != "undefined") {
         this.scaleMode = params.scaleMode;
@@ -245,7 +271,7 @@ SVGFlashHandler.prototype.createFlashHTML = function() {
 
     var html='<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" ' +
         '        codebase="" id="' + this.objectId + '" ' + 
-        '        width="' + this.objectWidth + '" height="' + this.objectHeight + '" style="float: left;"> ' +
+        '        width="' + this.width + '" height="' + this.height + '" style="float: left;"> ' +
         '    <param name="AllowScriptAccess" value="always"/> ' +
         '    <param name="movie" value="svgviewer.swf"/> ' +
         '    <param name="FlashVars" value=' + flashVars + '/> ' +
@@ -253,7 +279,7 @@ SVGFlashHandler.prototype.createFlashHTML = function() {
         '    <embed  name="' + this.objectId + '" play="false" ' +
         '            swliveconnect="true" AllowScriptAccess="always" ' +
         '            src="svgviewer.swf" quality="high" ' + transparent + bgcolor +
-        '            width="' + this.objectWidth + '" height="' + this.objectHeight + '"' +
+        '            width="' + this.width + '" height="' + this.height + '"' +
         '            type="application/x-shockwave-flash" ' +
         '            FlashVars=' + flashVars + '> ' +
         '    </embed> ' +
@@ -313,7 +339,6 @@ SVGFlashHandler.prototype.onEvent = function(flashMsg) {
 }
 
 SVGFlashHandler.prototype.onMouseEvent = function(flashMsg) {
-    //svgviewer.info("Got mouse event target id: " + flashMsg.elementId + " type:" + flashMsg.eventType);
     var element = this.getElementById(flashMsg.elementId);
     // xxx need to compute proper coordinates
     var myEvent = { target: element, 
@@ -369,27 +394,36 @@ SVGFlashHandler.prototype.onStartup = function(flashMsg) {
 
 }
 
-
-
 SVGFlashHandler.prototype.onLoad = function(flashMsg) {
     this.documentElement = new SVGNode(this);
     var getRootMsg = this.sendToFlash({type: 'invoke', method: 'getRoot'});
     this.documentElement.elementId = getRootMsg.elementId;
 
     // resize to the <svg> width
+    svgviewer.info("svg w,h=" + flashMsg.width + "," + flashMsg.height);
     if (this.sizeToSVG) {
-        this.flashObj.width = getRootMsg.width;
-        this.flashObj.height = getRootMsg.height;
+        if (   (this.flashObj.width != flashMsg.width)
+            || (this.flashObj.height != flashMsg.height) ) {
+            this.flashObj.parentNode.style.visibility='hidden';
+            this.flashObj.width = flashMsg.width;
+            this.flashObj.height = flashMsg.height;
+            setTimeout('svgviewer.svgHandlers["' + this.uniqueId + '"].flashObj.parentNode.setStyleAttribute("visibility","visible");', 10);
+        }
     }
 
     this.svgScript = this.svgScript + flashMsg.onLoad;
 
     if (svgviewer.inBrowserString("MSIE")) {
-        window.execScript(svgviewer.svgHandlers[this.uniqueId].svgScript);
+        window.execScript(this.svgScript);
     }
     else {
         setTimeout('eval(window.svgviewer.svgHandlers["' + this.uniqueId + '"].svgScript);', 100);
     }
+}
+
+SVGFlashHandler.prototype.getXML = function() {
+    var getXMLMsg = this.sendToFlash({type: 'invoke', method: 'getXML'});
+    return getXMLMsg.xmlString;
 }
 
 /*
@@ -415,6 +449,20 @@ SVGFlashHandler.prototype.onScript = function(flashMsg) {
         var repObj = this.scriptReplacements[i];
         var replaceStr = repObj.replacement.split('_SVG_UNIQ_ID_').join(flashMsg.uniqueId);
         svgScript = svgScript.split(repObj.pattern).join(replaceStr);
+    }
+    svgScript=svgScript.replace(/const(\s*\S+\s*=)/g, 'var$1');
+    // xxx should use new getter/setter syntax if this is ie8 or higher.
+    // This is unreliable until then.
+    if (svgviewer.inBrowserString("MSIE")) {
+        svgScript=svgScript.replace(/([\S]*).style.visibility\s*=\s*(\S+);/g, '$1.setStyleAttribute("visibility",$2);');
+        svgScript=svgScript.replace(/([\S]*).style.opacity\s*=\s*(\S+);/g, '$1.setStyleAttribute("opacity",$2);');
+        svgScript=svgScript.replace(/([\S]*).style.stroke\s*=\s*(\S+);/g, '$1.setStyleAttribute("stroke",$2);');
+        svgScript=svgScript.replace(/([\S]*).style.fill\s*=\s*(\S+);/g, '$1.setStyleAttribute("fill",$2);');
+    
+        svgScript=svgScript.replace(/.style.visibility/g, '.getStyleAttribute("visibility")');
+        svgScript=svgScript.replace(/.style.opacity/g, '.getStyleAttribute("opacity")');
+        svgScript=svgScript.replace(/.style.stroke/g, '.getStyleAttribute("stroke")');
+        svgScript=svgScript.replace(/.style.fill/g, '.getStyleAttribute("fill")');
     }
     this.svgScript = this.svgScript + svgScript;
 }
@@ -545,8 +593,30 @@ SVGNode.prototype.setAttribute = function(attrName, attrValue) {
         this.svgHandler.svgNodes[attrValue] = this;
     }
 }
+SVGNode.prototype.setStyleAttribute = function(attrName, attrValue) {
+    this.sendToFlash({ type: 'invoke', method: 'setAttribute',
+                       elementId: this.elementId,
+                       applyToStyle: true,
+                       attrName: attrName, attrValue: attrValue });
+    if (attrName == 'id') {
+        this.elementId = attrValue;
+        this.id = attrValue;
+        this.svgHandler.svgNodes[attrValue] = this;
+    }
+}
 SVGNode.prototype.setAttributeNS = function(NS, attrName, attrValue) {
     this.setAttribute(attrName, attrValue);
+}
+
+SVGNode.prototype.getStyleAttribute = function(attrName) {
+   var returnMsg = this.sendToFlash({ type: 'invoke', method: 'getAttribute',
+                                      elementId: this.elementId,
+                                      getFromStyle: true,
+                                      attrName: attrName });
+   if (!returnMsg) {
+       return null;
+   }
+   return returnMsg.attrValue;
 }
 
 SVGNode.prototype.getAttribute = function(attrName) {
@@ -603,7 +673,11 @@ SVGNode.prototype.removeChild = function(childNode) {
    this.sendToFlash({ type: 'invoke', method: 'removeChild',
                       elementId: this.elementId,
                       childId: childNode.elementId });
-   // xxx indexOf may not work with Arrays in ie6
-   this.childNodes.splice(this.childNodes.indexOf(childNode), 1);
+   for (i in this.childNodes) {
+       if (childNode == this.childNodes[i]) {
+           this.childNodes.splice(i, 1);
+           return;
+       }
+   }
 }
 
