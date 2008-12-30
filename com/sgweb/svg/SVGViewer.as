@@ -70,6 +70,7 @@ package com.sgweb.svg
         private var js_uniqueId:String = "";
         private var js_createdElements:Object = {};
         private var js_createdTextNodes:Object = {};
+        private var js_savedXML:String = "";
         private var myXMLLoader:URLLoader= new URLLoader ();
         private var myHTMLLoader:URLLoader= new URLLoader ();
 
@@ -150,6 +151,7 @@ package com.sgweb.svg
          **/
         public function xmlLoaded(event : Event):void {
             this.debug("xml is loaded. length: "+ String(event.target.data).length);
+            this.js_savedXML = event.target.data;
             var dataXML:XML = new XML(SVGViewer.expandEntities(event.target.data));
             this._svgRoot.xml = dataXML;
         }
@@ -168,14 +170,10 @@ package com.sgweb.svg
 
         public function htmlLoaded(event : Event):void {
             var svgString:String="";
-            var svgScriptString:String="";
             var svgCopying:Boolean=false;
-            var svgCopyingScript:Boolean=false;
             var svgStartString1:String= 'id="'+this.svgIdParam+'"';
             var svgStartString2:String= "id='"+this.svgIdParam+"'";
             var svgEndString:String="</svg>";
-            var svgScriptStartString:String="<script";
-            var svgScriptEndString:String="]]";
 
             this.html = event.target.data;
             this.html = this.html.replace('\\n', '\\\\n');
@@ -183,15 +181,6 @@ package com.sgweb.svg
             for (var i:String in htmlStrings) {
                 if (svgCopying) {
                     svgString += (htmlStrings[i] + "\n");
-                    if (svgCopyingScript) {
-                        svgScriptString += (htmlStrings[i] + "\n");
-                        if (htmlStrings[i].indexOf(svgScriptEndString) != -1) {
-                            svgCopyingScript=false;
-                        }
-                    }
-                    if (htmlStrings[i].indexOf(svgScriptStartString) != -1) {
-                        svgCopyingScript=true;
-                    }
                     if (htmlStrings[i].indexOf(svgEndString) != -1) {
                         svgCopying=false;
                     }
@@ -203,7 +192,7 @@ package com.sgweb.svg
                     svgCopying=true;
                 }
             }
-            //this.debug('found script total: ' + svgScriptString);
+            this.js_savedXML = svgString;
             var dataXML:XML = new XML(SVGViewer.expandEntities(svgString));
             this._svgRoot.xml = dataXML;
  
@@ -405,7 +394,8 @@ package com.sgweb.svg
         public function js_handleLoad(jsMsg:Object):Object {
             if (jsMsg.sourceType == 'string') {
                 this.sourceTypeParam = 'string';
-                var dataXML:XML = XML(jsMsg.svgString);
+                this.js_savedXML = jsMsg.svgString;
+                var dataXML:XML = new XML(SVGViewer.expandEntities(jsMsg.svgString));
                 this._svgRoot.xml = dataXML;
             }
             if (jsMsg.sourceType == 'url_svg') {
@@ -584,7 +574,7 @@ package com.sgweb.svg
                 }
             }
             if (jsMsg.method == 'getXML') {
-                jsMsg.xmlString = this._svgRoot.xml.toString();
+                jsMsg.xmlString = this.js_savedXML.split('\\n').join(';_SVGNL_;');
             }
             if (jsMsg.method == 'getAttribute') {
                 if (typeof(this.js_createdElements[jsMsg.elementId]) != "undefined") {
@@ -637,7 +627,7 @@ package com.sgweb.svg
                         this.js_createdElements[jsMsg.attrValue] = element;
                     }
                     // xxx the following probably belongs in SVGNode
-                    if (jsMsg.attrName == 'transform') {
+                    if (jsMsg.attrName == 'transform' || jsMsg.attrName=='viewBox') {
                         element.transformNode();
                     }
                     else {

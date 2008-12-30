@@ -157,9 +157,13 @@ Sizing
             that the 'right' svg thing will occur by default and the flash issue of
             2048x1024 is something they can ignore and perhaps remain blissly unaware of.
 
-    Size.2:
-    Size.3:
-    Size.4:
+    Size.2: How do I make the size of an SVG object resize along with the
+            browser window, ignoring the object's original aspect ratio?
+    Size.3: How do I make the size of an SVG object resize along with the
+            browser window, but maintain the object's original aspect ratio?
+    Size.4: How do I make the size of an SVG object fit a given % of the
+            screen size and resize along with the browser?
+
             Just create the SVG using the appropriate flash scaleMode and set the html object width
             and height to the size you want in your javascript resize event handler.
             See FAQ Size.1 and the flash documention for Stage.scaleMode here:
@@ -189,6 +193,8 @@ Limitations
         * script method removeChild() is not yet implemented
 
         * script DOM types like "var foo=new Path()" are not implemented. You can use createElementNS(SVGNS, 'path') instead.
+
+        * XML bindings are not supported.
 
         * Only the gaussian blur filter is implemented. No plan to support other filters (which are rarely used).
 

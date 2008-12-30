@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2008 Richard R. Masters.
+Copyright (c) 2008 Richard R. Masters
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -49,32 +49,33 @@ svgviewer.error = svgviewer.info;
 
 
 svgviewer.createSVG = function ( params ) {
+    if (typeof(params.parentId) == "undefined") {
+        svgviewer.error('svgviewer.js: createSVG: no parentId');
+        return;
+    }
     if (typeof(params.sourceType) == "undefined") {
-        svgviewer.error('create svg: no sourceType');
+        svgviewer.error('svgviewer.js: createSVG: no sourceType');
         return;
     }
     if (typeof(params.svgURL) == "undefined") {
-        svgviewer.error('create svg: no svgURL');
+        svgviewer.error('svgviewer.js: createSVG: no svgURL');
         return;
     }
     if (params.sourceType == "inline_script" && 
         typeof(params.svgId) == "undefined") {
-        svgviewer.error('create svg: no svgId');
+        svgviewer.error('svgviewer.js: createSVG: no svgId');
         return;
     }
     if (params.sourceType == "url_script" && 
         typeof(params.svgId) == "undefined") {
-        svgviewer.error('create svg: no svgId');
+        svgviewer.error('svgviewer.js: createSVG: no svgId');
         return;
     }
 
     var svgHandler = new SVGFlashHandler(params);
     svgviewer.svgHandlers[svgHandler.uniqueId] = svgHandler;
 
-    var node = document.getElementById(params.parentId);
-    if (node) {
-        node.innerHTML = svgHandler.createFlashHTML();
-    }
+    svgHandler.createSVGHTML();
     return svgHandler;
 }
 svgviewer.clientWidth=function() {
@@ -142,10 +143,18 @@ function receiveFromFlash(flashMsg) {
 
 function SVGFlashHandler(params) {
     this.svgScript = '';
+    this.parentId = params.parentId;
     this.sourceType = params.sourceType;
     this.svgURL = params.svgURL;
     this.svgNodes = {};
 
+    // debug
+    if (typeof(params.debug) != "undefined") {
+        this.debug = params.debug;
+    }
+    else {
+        this.debug = false;
+    }
 
     if (typeof(params.sizeToSVG) != "undefined") {
         this.sizeToSVG = params.sizeToSVG;
@@ -182,6 +191,36 @@ function SVGFlashHandler(params) {
 
     if (typeof(params.svgId) != "undefined") {
         this.svgId = params.svgId;
+    }
+
+    if (typeof(params.renderer) != "undefined") {
+        var renderers = params.renderer.split(/\s*,\s*/)
+        var currentIndex=0;
+        while (currentIndex < renderers.length && !this.renderer) {
+            switch (renderers[currentIndex]) {
+                case 'native':
+                    if (!svgviewer.inBrowserString('MSIE')) {
+                        this.renderer=renderers[currentIndex];
+                    }
+                    break;
+                case 'svgviewer':
+                    this.renderer=renderers[currentIndex];
+                    break;
+                default:
+                    break;
+            }
+            currentIndex++;
+        }
+        if (!this.renderer) {
+            this.renderer = 'svgviewer';
+        }
+    }
+    else {
+        this.renderer = "svgviewer";
+    }
+
+    if (this.debug) {
+        svgviewer.info('svgviewer.js: renderer is: ' + this.renderer);
     }
 
     // scaleX
@@ -232,14 +271,28 @@ function SVGFlashHandler(params) {
         this.transparent = false;
     }
 
-    // debug
-    if (typeof(params.debug) != "undefined") {
-        this.debug = params.debug;
-    }
-    else {
-        this.debug = false;
+    if (typeof(params.onLoad) == "function") {
+        this.onLoadCallback = params.onLoad;
     }
 
+}
+
+SVGFlashHandler.prototype.createSVGHTML = function() {
+    if (this.renderer == 'native') {
+        return this.createNativeHTML();
+    }
+    return this.createFlashHTML();
+}
+
+SVGFlashHandler.prototype.createNativeHTML = function() {
+    var svgObject = document.createElement('object');
+    svgObject.setAttribute('type', 'image/svg+xml');
+    svgObject.setAttribute('data', this.svgURL);
+    svgObject.setAttribute('style', 'overflow:hidden');
+    svgObject.setAttribute('width', this.width);
+    svgObject.setAttribute('height', this.height);
+    var parentNode = document.getElementById(this.parentId);
+    parentNode.appendChild(svgObject);
 }
 
 SVGFlashHandler.prototype.createFlashHTML = function() {
@@ -285,7 +338,10 @@ SVGFlashHandler.prototype.createFlashHTML = function() {
         '    </embed> ' +
         '</object> ';
 
-    return html;
+    var node = document.getElementById(this.parentId);
+    if (node) {
+        node.innerHTML = html;
+    }
 }
 
 
@@ -395,9 +451,10 @@ SVGFlashHandler.prototype.onStartup = function(flashMsg) {
 }
 
 SVGFlashHandler.prototype.onLoad = function(flashMsg) {
-    this.documentElement = new SVGNode(this);
     var getRootMsg = this.sendToFlash({type: 'invoke', method: 'getRoot'});
+    this.documentElement = new SVGNode(this);
     this.documentElement.elementId = getRootMsg.elementId;
+    this.rootElement = this.documentElement;
 
     // resize to the <svg> width
     svgviewer.info("svg w,h=" + flashMsg.width + "," + flashMsg.height);
@@ -407,8 +464,14 @@ SVGFlashHandler.prototype.onLoad = function(flashMsg) {
             this.flashObj.parentNode.style.visibility='hidden';
             this.flashObj.width = flashMsg.width;
             this.flashObj.height = flashMsg.height;
+            this.width = flashMsg.width;
+            this.height = flashMsg.height;
             setTimeout('svgviewer.svgHandlers["' + this.uniqueId + '"].flashObj.parentNode.setStyleAttribute("visibility","visible");', 10);
         }
+    }
+
+    if (this.onLoadCallback) {
+        this.onLoadCallback(flashMsg);
     }
 
     this.svgScript = this.svgScript + flashMsg.onLoad;
@@ -421,9 +484,18 @@ SVGFlashHandler.prototype.onLoad = function(flashMsg) {
     }
 }
 
+SVGFlashHandler.prototype.getSVGDocument = function() {
+    if (this.renderer == 'svgviewer') {
+        return this;
+    }
+    if (this.renderer == 'native') {
+        return document.getElementById(this.parentId).childNodes[0].contentDocument;
+    }
+}
+
 SVGFlashHandler.prototype.getXML = function() {
     var getXMLMsg = this.sendToFlash({type: 'invoke', method: 'getXML'});
-    return getXMLMsg.xmlString;
+    return getXMLMsg.xmlString.split(';_SVGNL_;').join('\\n');
 }
 
 /*

@@ -1,0 +1,283 @@
+
+Table of Contents
+    HTML Reference
+    Javascript Reference
+        svgviewer namespace
+        svgviewer.createSVG()
+
+
+HTML Reference
+
+    HTML Example:
+        <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
+                codebase="" id="mySVGViewerObj" width=1250.0 height=750.0 style='float: left'>
+            <param name=movie value="svgviewer.swf">
+            <param name="FlashVars" value="sourceType=url_svg&svgURL=scimitar.svg">
+            <param name="wmode" value="transparent">
+            <embed play=false name="mySVGViewerObj" 
+                    src="svgviewer.swf" quality=high wmode="transparent"
+                    width=1250.0 height=750.0 type="application/x-shockwave-flash"
+                    FlashVars="sourceType=url_svg&svgURL=scimitar.svg">
+            </embed >
+        </object>
+
+    The following parameters are valid for HTML. That means they can be
+    passed directly to flash with the "FlashVars" parameter.
+        uniqueId, sourceType, svgURL, svgId, scaleMode,
+        translateX, translateY, scaleX, scaleY
+
+Javascript Reference
+
+    svgviewer:
+        The svgviewer object represents the top level entry point
+        into the svgviewer javascript library. You use the createSVG
+        method to place SVG files in your web page.
+
+    svgviewer.createSVG(params)
+        Example:
+        <div id = 'mySVGDiv'><!--SVG will go here --></div>
+        <script type='text/javascript'>
+        svgviewer.createSVG({ parentId: 'mySVGDiv',
+                              sourceType: "url_svg",
+                              svgURL: "scimitar.svg"
+                            });
+        </script>
+
+
+            This method is used to create the html for the SVG file you wish
+        to place on your web page. You pass the ID of the parent element
+        (typically a <div>) and it adds the image to the parent element.
+        The library currently removes existing children of the parent element
+        before adding the html necessary to display the svg.
+
+    createSVG parameter values:
+        uniqueId: optional parameter
+            type: string
+            default value:
+                If you do not specify a unique id, a random one is
+                chosen for you.
+
+            A name used for referencing the SVG image which is useful if you load
+            multiple SVG images.
+       
+        sourceType:
+            parameter kind: required parameter
+            type: string
+            default value: none
+            Allowable Values:
+                "url_svg":
+                       The SVG is located in an SVG file at the URL specified by the svgURL parameter.
+                "string":
+                       The SVG is located in the svgString parameter.
+                "url_script":
+                       The SVG is located within script tags in a file located
+                       by the svgURL paremeter. The script tag needs to have an
+                       id specified by the svgId parameter.
+                "inline_script":
+                       The SVG is located within script tags inline with the
+                       current HTML file. The script tag needs to have an id
+                       specified by the svgId parameter.
+
+        svgURL:
+            parameter kind: required parameter
+            type: string
+            default value: none
+            Examples: "foo.svg", "http://some.example.com/foo.svg"
+ 
+        svgId: required parameter when the sourceType parameter is set to
+               "inline_script" or "url_script".
+            type: string
+            default value: none
+
+            This is used when the sourceType parameter is set to "inline_script"
+            or "url_script".
+
+        svgString:
+            type: string
+            default value: none
+            Specifies the starting SVG XML string to use for creating the SVG
+            object.
+            Example: "<svg></svg>"
+            Note: currently only supported via javascript to flash messaging.
+            See the Developers Manual.
+
+        renderer:
+            parameter kind: optional
+            type: string
+            default value: "svgviewer"
+
+            Specifies the renderer(s) for the svg source in order of preference.
+            Renderers should be seperated by ",". See examples below.
+            Currently svgviewer (the flash renderer) is always assumed to be
+            installed and is the default renderer when all specified renderers 
+            are unavailable.
+
+            Allowable Values:
+                "<renderer>[:<renderer>]*" where <renderer> is one of:
+                    "native":
+                        Rendered by the browser by creating an <svg> tag.
+                        If the browser does not support svg natively, then the
+                        the next renderer in the list is used.
+                    "plugin": (NOT IMPLEMENTED YET)
+                        Rendered by the Adobe SVG viewer plugin. If this is
+                        not installed, proceed to the next renderer.
+                    "svgviewer":
+                        Rendered by flash using the svgviewer swf object.
+                    
+                Examples:
+                    "native,plugin"
+                    "native,plugin,svgviewer"
+                    "plugin,svgviewer"
+                    "native,svgviewer"
+                    "native"
+
+                    Note that the first two and last two examples above are
+                    equivalent because "svgviewer" is always assumed to be
+                    the last renderer in the list. If specified (which is
+                    unnecessary) "svgviewer" should always be last because
+                    it is assumed to always be present and so any other
+                    renderers following it will be ignored.
+
+
+        width:
+            parameter kind: optional
+            type: number
+            Specifies the width of the html object.
+
+        height:
+            type: number
+            Specifies the height of the html object.
+
+        sizeToSVG:
+            type: boolean
+            Specifies whether the javascript library should resize the html
+            object to the width and height of the svg file as specified
+            within the file itself. If this is set to true, this resizing
+            will occur when the file is loaded.
+
+            See FAQ Issue.1: Why is there a flicker when the SVG is first
+            rendered?
+            Flicker at the end of the initial rendering can occur if you
+            use automatic resizing. To avoid this, make sure to specify an
+            object 'width' and 'height' with your createSVG parameters and
+            leave the "sizeToSVG" parameter set to false. If you do not
+            specify width or height, or if you set sizeToSVG to true, then
+            svgviewer assumes you want the html object to have the same
+            height and width as the SVG file. However, it does not know what
+            the size of the SVG file is until it loads it. Before it is
+            loaded, the object has to have some height and width. If you do
+            not tell svgviewer what size to use, the object
+            will have a width and height of 2048 and 1024 respectively. Once
+            the SVG file is loaded, it resizes to the correct size.
+
+            Here is how automatic resizing works.  After the svg image is
+            loaded, flash tells javascript what the height and width of the
+            SVG file is (which it gets from the top <svg> tag). Javascript
+            then resizes the object by changing the width and height
+            attributes of the html object. When this occurs, flash receives
+            a resize event and then it transforms the image to fit in the
+            new area.  In the brief moment between when the object resizes
+            and when flash resizes, the image will be off center and that
+            results in a "herky jerky" effect. To avoid that, the image is
+            briefly hidden and then unhidden using html styles. When it is
+            unhidden, it will not be off center because flash will have
+            already repositioned by then. It only takes a moment for flash
+            to reposition.  This hide and unhide causes the flicker. Another
+            alternative is to not display anything until the entire object is
+            drawn and resized properly. This is probably the most technically
+            correct behavior.
+
+            However, for large SVG files, delaying visibility results in
+            absolutely no drawing feedback to the user for possible a very
+            long time. For now, this will not be the behavior. You can
+            simulate this behavior by using a width and height of 1, but be
+            sure the SVG file has a height and width (which is not a %), or
+            else it will not resize any bigger! A future setting will allow
+            choosing between "hide for resize" (the current default),
+            "herky jerky", and "hide until done." The goal is to add a
+            progress indicator for drawing large files, in which case it
+            would then be acceptable to make "hide until done" the future
+            default for this setting.
+            Note: does not apply to native rendering.
+
+        scaleMode:
+            type: string
+            default value: "showAll_svg"
+            Allowable values: "showAll_svg", "showAll", "exactFit", "noBorder", "noScale"
+
+        translateX:
+            type: number
+            default value: 0
+            Note: does not apply to native rendering.
+
+        translateY:
+            type: number
+            default value: 0
+            Note: does not apply to native rendering.
+
+        scaleX:
+            type: number
+            default value: 1.0
+            Note: does not apply to native rendering.
+
+        scaleY:
+            type: number
+            default value: 1.0
+            Note: does not apply to native rendering.
+
+        bgcolor:
+            type: string
+            Specifies the background color.
+
+        transparent:
+            Specifies whether the flash control should be transparent. This
+            allows overlapping html and other flash controls. Note this does
+            not appear to be functional on linux.
+
+        debug:
+            type: boolean
+            Specifies whether the flash control and javascript should output
+            debug messages.  Note that the easiest way to see these messages
+            is to use Firefox and install the firebug extension.
+
+        onLoad:
+            type: function
+            Specifies a function to call back to when the SVG file is loaded.
+            The reason for providing this is that the current svgviewer
+            javascript API combines the step of creating and loading the SVG
+            file, so there is no opportunity to add an onload handler.
+            This may change in the future if the createDocument method is
+            supported.
+
+
+            onLoad callback example:
+                function onLoadCallback(flashMsg) {
+                    return;
+                }
+
+
+
+    Examples:
+
+    <div id = 'mySVGDiv'><!--SVG will go here --></div>
+    <script type='text/javascript'>
+    svgviewer.createSVG({ uniqueId: 'scimitar1',
+                          parentId: 'mySVGDiv',
+                          sourceType: "url_svg",
+                          svgURL: "scimitar.svg",
+                          debug: true,
+                          bgcolor: '#ffffff',
+                          transparent: false,
+                          width: 1250.0,
+                          height: 750.0,
+                          translateX: 0, translateY: 0,
+                          scaleX: 1.0, scaleY: 1.0
+                        });
+    </script>
+
+
+
+
+
+
+
