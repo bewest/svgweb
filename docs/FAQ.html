@@ -29,6 +29,7 @@ Limitations
 
 Issues:
     Issue.1: Why is there a flicker when the SVG is first rendered?
+    Issue.2: Why doesn't scripting work from local files?
 
 Scripting
     Script.1: What javascript helper functions are available for loading SVG content?
@@ -238,6 +239,12 @@ Issues
         bigger! A future setting will allow choosing between "hide for resize" (the current default), "herky jerky",
         and "hide until done." The goal is to add a progress indicator for drawing large files, in which case it
         would then be acceptable to make "hide until done" the future default for this setting.
+
+    Issue.2: Why doesn't scripting work for local files?
+        Because when the html document is loaded from file, network access is also not allowed within Flash, to
+        prevent transfer of local data to network, and flash includes javascript access as part of its network
+        access profile and disables it for local files. This means that if you want to use active SVG files, they
+        must be loaded from the network. 
 
 
 
