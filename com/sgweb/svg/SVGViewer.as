@@ -626,21 +626,7 @@ package com.sgweb.svg
                     if (jsMsg.attrName == 'id') {
                         this.js_createdElements[jsMsg.attrValue] = element;
                     }
-                    // xxx the following probably belongs in SVGNode
-                    if (jsMsg.attrName == 'transform' || jsMsg.attrName=='viewBox') {
-                        element.transformNode();
-                    }
-                    else {
-                        if (   (jsMsg.attrName == 'display' || jsMsg.attrName == 'visibility')
-                            || (jsMsg.attrName == 'style' && 
-                                    (   (jsMsg.attrValue.indexOf('visibility') != -1 )
-                                     || (jsMsg.attrValue.indexOf('display') != -1 ) ) ) ) {
-                            element.invalidateDisplayTree();
-                        }
-                        else {
-                            element.invalidateDisplay();
-                        }
-                    }
+                    element.handleAttrChange(jsMsg.attrName, jsMsg.attrValue.toString());
                 }
                 else {
                     this.debug("error:setAttribute: id not found: " + jsMsg.elementId);
