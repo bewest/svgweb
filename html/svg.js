@@ -326,12 +326,12 @@ SVGFlashHandler.prototype.createFlashHTML = function() {
         '        codebase="" id="' + this.objectId + '" ' + 
         '        width="' + this.width + '" height="' + this.height + '" style="float: left;"> ' +
         '    <param name="AllowScriptAccess" value="always"/> ' +
-        '    <param name="movie" value="svgviewer.swf"/> ' +
+        '    <param name="movie" value="svg.swf"/> ' +
         '    <param name="FlashVars" value=' + flashVars + '/> ' +
         (this.transparent ? '    <param name="wmode" value="transparent"/> ' : '') +
         '    <embed  name="' + this.objectId + '" play="false" ' +
         '            swliveconnect="true" AllowScriptAccess="always" ' +
-        '            src="svgviewer.swf" quality="high" ' + transparent + bgcolor +
+        '            src="svg.swf" quality="high" ' + transparent + bgcolor +
         '            width="' + this.width + '" height="' + this.height + '"' +
         '            type="application/x-shockwave-flash" ' +
         '            FlashVars=' + flashVars + '> ' +
