@@ -32,5 +32,12 @@ package com.sgweb.svg.nodes
             super(svgRoot, xml);
         }    
         
+        override protected function draw():void {
+        	//Node should not be visible
+        	//Only acts as a data holder
+        	
+        	this.visible = false;
+        }
+        
     }
 }

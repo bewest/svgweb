@@ -76,7 +76,7 @@ package com.sgweb.svg.nodes.mask
                 }
                 // xxx svgmask should handle this
                 var stubClipPathXML:XML = <svgMask></svgMask>;
-                stubClipPathXML.appendChild(clipPathXML.toXMLString());
+                stubClipPathXML.appendChild(clipPathXML.children());
 
                 svgMask = new SVGMask(this.svgRoot, stubClipPathXML);
                 this.addChild(svgMask);

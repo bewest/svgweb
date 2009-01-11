@@ -204,9 +204,9 @@ package com.sgweb.svg.data
                     // #456 is short for #445566
                     if (color.length == 4) {
                         var rval:String, gval:String, bval:String;
-                        rval = color.substring(1,1) + color.substring(1,1);
-                        gval = color.substring(2,1) + color.substring(2,1);
-                        bval = color.substring(3,1) + color.substring(3,1);
+                        rval = color.substr(1,1) + color.substr(1,1);
+                        gval = color.substr(2,1) + color.substr(2,1);
+                        bval = color.substr(3,1) + color.substr(3,1);
                         color = "#" + rval + gval + bval;
                     }
                     color = color.replace('#', '0x');
@@ -255,14 +255,14 @@ package com.sgweb.svg.data
             var str:Array;
 
             if (color != null) {
-                color=color.replace(/ /g, "");
+                color=color.replace(/\s/g, "");
                 if(color.match(/^#/)) {
                     // #456 is short for #445566
                     if (color.length == 4) {
                         var rval:String, gval:String, bval:String;
-                        rval = color.substring(1,1) + color.substring(1,1);
-                        gval = color.substring(2,1) + color.substring(2,1);
-                        bval = color.substring(3,1) + color.substring(3,1);
+                        rval = color.substr(1,1) + color.substr(1,1);
+                        gval = color.substr(2,1) + color.substr(2,1);
+                        bval = color.substr(3,1) + color.substr(3,1);
                         color = "#" + rval + gval + bval;
                     }
                     color = color.replace('#', '0x');

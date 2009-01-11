@@ -27,10 +27,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 package com.sgweb.svg.nodes
 {
     import com.sgweb.svg.data.SVGColors;
-    import com.sgweb.svg.nodes.mask.SVGMask;
     import com.sgweb.svg.nodes.mask.SVGBlurMaskParent;
     import com.sgweb.svg.nodes.mask.SVGClipMaskParent;
-
+    import com.sgweb.svg.nodes.mask.SVGMask;
+    
     import flash.display.CapsStyle;
     import flash.display.DisplayObject;
     import flash.display.JointStyle;

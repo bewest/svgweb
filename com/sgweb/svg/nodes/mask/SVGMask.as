@@ -29,30 +29,22 @@ package com.sgweb.svg.nodes.mask
     import com.sgweb.svg.nodes.SVGNode;
     import com.sgweb.svg.nodes.SVGRoot;
     
-    import flash.events.Event;
     import flash.geom.Matrix;
     
 
-    public class SVGMask extends SVGNode
-    {
+    public class SVGMask extends SVGNode {
 
         protected var _clipPathXML:XML;
 
         public function SVGMask(svgRoot:SVGRoot, clipPathXML:XML):void {
-            this._clipPathXML = new XML(this.copyXMLUnique(clipPathXML).toXMLString());
-            //svgRoot.debug("_clipPathXML: " + this._clipPathXML.toXMLString());
+            this._clipPathXML = new XML(this.copyXMLUnique(clipPathXML).toXMLString());            
+            
             super(svgRoot, this._clipPathXML);
         }    
-
 
         public function getClipId():String {
             return this._clipPathXML.child(0).@id;
         }
-
-        override public function transformNode():void {
-            this.transform.matrix = new Matrix();
-        }
-
 
     }
 }
