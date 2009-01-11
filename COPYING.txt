@@ -1,0 +1,26 @@
+TODO: Put Apache 2 or MIT license blurbage here
+
+Code contributors:
+
+* James Hight (http://labs.zavoo.com/)
+* Rick Masters 
+* Brad Neuberg (http://codinginparadise.org)
+
+
+Third-Party Licenses, Versions, and Build Information:
+
+* utils/yuicompressor-2.4.1.jar - This is the YUI Compressor, version 2.4.1 - http://developer.yahoo.com/yui/compressor/ - BSD License (http://developer.yahoo.com/yui/license.html)
+
+* html/svg.js - Browser detection code at top of file adapted from Dojo 1.1 browser detection code - http://dojotoolkit.org - available under either modified 'new' BSD license or Academic Free License 2.1 (http://trac.dojotoolkit.org/browser/dojo/trunk/LICENSE)
+
+* html/svg.js - Code to embed SVG into normal HTML for browsers that natively support SVG adapted from Sam Ruby's code - http://intertwingly.net/blog/2006/12/05/HOWTO-Embed-MathML-and-SVG-into-HTML4 - currently under the MIT license - contacting author about relicensing to Apache 2
+
+* html/svg.js - DOMContentLoaded code adapted from Dean Edwards blog article (http://dean.edwards.name/weblog/2005/09/busted/)
+
+* html/svg.htc - Flash embedding code adapted from Dojo Flash (Dojo 1.1.0); Brad Neuberg created Dojo Flash and owns the copyright so can freely relicense it (it's under the standard Dojo license anyway)
+
+* samples/blocks_game.svg - Alex Fritze (http://www.croczilla.com/) - Permission given by email to freely use code under any license needed.
+
+* samples/photos.svg - Vladimir Vukićević (http://blog.vlad1.com/) - Permission given by email to freely use code under any license needed.
+
+TODO: If you borrowed any code while creating your Flash ActionScript document it here, where it came from, version, etc. This is good open source hygiene :)
