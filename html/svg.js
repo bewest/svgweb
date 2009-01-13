@@ -466,7 +466,7 @@ SVGFlashHandler.prototype.onLoad = function(flashMsg) {
             this.flashObj.height = flashMsg.height;
             this.width = flashMsg.width;
             this.height = flashMsg.height;
-            setTimeout('svgviewer.svgHandlers["' + this.uniqueId + '"].flashObj.parentNode.setStyleAttribute("visibility","visible");', 10);
+            setTimeout('svgviewer.svgHandlers["' + this.uniqueId + '"].flashObj.parentNode.style.visibility="visible";', 10);
         }
     }
 
