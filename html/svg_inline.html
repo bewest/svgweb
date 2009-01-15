@@ -1418,7 +1418,7 @@ svgviewer.getFlashMovieObject = function (movieName)
 // The flash control actionscript calls this on startup.
 // We use this to know the flash control is ready for activity.
 function receiveFromFlash(flashMsg) {
-    if (flashMsg.type == 'event' && flashMsg.eventType == 'onLoad') {
+    if (flashMsg.type == 'event' && flashMsg.eventType == 'onStartup') {
         var svgText= document.getElementById('svgsource').innerHTML;
         svgviewer.getFlashMovieObject("mySVGViewerObj").sendToFlash(
             {type:'load', sourceType:'string', svgString:svgText});
