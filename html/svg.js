@@ -35,6 +35,46 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 \*------------------------------------------------------------*/
 
+var SVGNS = 'http://www.w3.org/2000/svg';
+  
+// browser detection adapted from Dojo
+
+var isOpera = false, isSafari = false, isMoz = false, isIE = false, 
+    isAIR = false, isKhtml = false, isFF = false;
+  
+function _detectBrowsers() {
+    var n = navigator,
+        dua = n.userAgent,
+        dav = n.appVersion,
+        tv = parseFloat(dav);
+
+    if (dua.indexOf('Opera') >= 0) { isOpera = tv; }
+    // safari detection derived from:
+    //    http://developer.apple.com/internet/safari/faq.html#anchor2
+    //    http://developer.apple.com/internet/safari/uamatrix.html
+    var index = Math.max(dav.indexOf('WebKit'), dav.indexOf('Safari'), 0);
+    if (index) {
+        // try to grab the explicit Safari version first. If we don't get
+        // one, look for 419.3+ as the indication that we're on something
+        // "Safari 3-ish". Lastly, default to "Safari 2" handling.
+        isSafari = parseFloat(dav.split('Version/')[1]) ||
+            (parseFloat(dav.substr(index + 7)) > 419.3) ? 3 : 2;
+    }
+    if (dua.indexOf('AdobeAIR') >= 0) { isAIR = 1; }
+    if (dav.indexOf('Konqueror') >= 0 || isSafari) { isKhtml =  tv; }
+    if (dua.indexOf('Gecko') >= 0 && !isKhtml) { isMoz = tv; }
+    if (isMoz) {
+        isFF = parseFloat(dua.split('Firefox/')[1]) || undefined;
+    }
+    if (document.all && !isOpera) {
+        isIE = parseFloat(dav.split('MSIE ')[1]) || undefined;
+    }
+}
+
+_detectBrowsers();
+  
+// end browser detection
+
 // be able to have debug output when there is no Firebug
 if (typeof console == 'undefined' || !console.debug || !console.log) {
     var queue = [];
@@ -75,7 +115,6 @@ var svgviewer = {};
 svgviewer.svgHandlers = {};
 
 svgviewer.createSVG = function ( params ) {
-  console.log('createSVG');
     if (typeof(params.parentId) == "undefined") {
         console.error('svg.js: createSVG: no parentId');
         return;
@@ -114,19 +153,6 @@ svgviewer.clientHeight=function() {
     return (window.innerHeight > 0) ? window.innerHeight :
             ((document.documentElement && (document.documentElement.clientHeight > 0)) ? document.documentElement.clientHeight :
              document.body.clientHeight);
-}
-
-svgviewer.inBrowserString = function(browserString) {
-    if (typeof(navigator) == "undefined") {
-        return false;
-    }
-    if (typeof(navigator.userAgent) != "string") {
-        return false;
-    }
-    if (navigator.userAgent.indexOf(browserString) != -1) {
-        return true;
-    }
-    return false;
 }
 
 svgviewer.addEvent = function( obj, type, fn )
@@ -227,7 +253,7 @@ function SVGFlashHandler(params) {
         while (currentIndex < renderers.length && !this.renderer) {
             switch (renderers[currentIndex]) {
                 case 'native':
-                    if (!svgviewer.inBrowserString('MSIE')) {
+                    if (!isIE) {
                         this.renderer=renderers[currentIndex];
                     }
                     break;
@@ -502,7 +528,7 @@ SVGFlashHandler.prototype.onLoad = function(flashMsg) {
 
     this.svgScript = this.svgScript + flashMsg.onLoad;
 
-    if (svgviewer.inBrowserString("MSIE")) {
+    if (isIE) {
         window.execScript(this.svgScript);
     }
     else {
@@ -551,7 +577,7 @@ SVGFlashHandler.prototype.onScript = function(flashMsg) {
     svgScript=svgScript.replace(/const(\s*\S+\s*=)/g, 'var$1');
     // xxx should use new getter/setter syntax if this is ie8 or higher.
     // This is unreliable until then.
-    if (svgviewer.inBrowserString("MSIE")) {
+    if (isIE) {
         svgScript=svgScript.replace(/([\S]*).style.visibility\s*=\s*(\S+);/g, '$1.setStyleAttribute("visibility",$2);');
         svgScript=svgScript.replace(/([\S]*).style.opacity\s*=\s*(\S+);/g, '$1.setStyleAttribute("opacity",$2);');
         svgScript=svgScript.replace(/([\S]*).style.stroke\s*=\s*(\S+);/g, '$1.setStyleAttribute("stroke",$2);');
@@ -648,7 +674,7 @@ function SVGNode(svgHandler) {
     this.childNodes.item = function(i) { return this[i]; };
     var svgNode=this;
     this.style = { node: svgNode };
-    if (!svgviewer.inBrowserString("MSIE")) {
+    if (!isIE) {
         this.style.__defineGetter__("opacity", function(){
             return this.node.getAttribute('opacity');
         });

@@ -84,7 +84,7 @@
         }
     }
     function showXML(newXMLString) {
-        var newline=svgviewer.inBrowserString("MSIE") ? '\r\n' : '\n';
+        var newline=isIE ? '\r\n' : '\n';
         newXMLString = newXMLString.split(/\r\n/g).join(newline);
         newXMLString = newXMLString.split(/\n|\r/g).join(newline);
         var xmlText = document.createTextNode(newXMLString);
@@ -155,7 +155,7 @@
         currentSVGHandler.getSVGDocument().documentElement.setAttribute('viewBox', viewBox);
     }
     showSVG(true);
-    if (svgviewer.inBrowserString('MSIE')) {
+    if (isIE) {
         document.getElementById('selectRenderer').disabled='true';
     }
     </script>
