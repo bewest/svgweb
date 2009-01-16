@@ -35,40 +35,67 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 \*------------------------------------------------------------*/
 
+// be able to have debug output when there is no Firebug
+if (typeof console == 'undefined' || !console.debug || !console.log) {
+    var queue = [];
+    console = {};
+    console.debug = console.log = console.error = function(msg) {
+        var body = null;
+        // IE can sometimes throw an exception if document.body is accessed
+        // before the document is fully loaded
+        try {
+            body = document.body;
+        } catch (exp) {
+            body = null;
+        }
+
+        if (!body) {
+            queue.push(msg);
+            return;
+        }
+      
+        var p;
+        while (queue.length) {
+            var oldMsg = queue.shift();
+            p = document.createElement('p');
+            p.appendChild(document.createTextNode(oldMsg));
+            document.getElementsByTagName('body')[0].appendChild(p);
+        }
+    
+        // display new message now
+        p = document.createElement('p');
+        p.className = 'debug-message';
+        p.appendChild(document.createTextNode(msg));
+        document.getElementsByTagName('body')[0].appendChild(p);
+    };
+}
+// end debug output methods
+
 var svgviewer = {};
 svgviewer.svgHandlers = {};
 
-svgviewer.suppressLog= ((typeof(console)=="undefined") || (typeof(console.info) == "undefined"));
-svgviewer.info = function(logString) {
-    if (svgviewer.suppressLog) {
-        return;
-    }
-    console.info(logString);
-}
-svgviewer.error = svgviewer.info;
-
-
 svgviewer.createSVG = function ( params ) {
+  console.log('createSVG');
     if (typeof(params.parentId) == "undefined") {
-        svgviewer.error('svgviewer.js: createSVG: no parentId');
+        console.error('svg.js: createSVG: no parentId');
         return;
     }
     if (typeof(params.sourceType) == "undefined") {
-        svgviewer.error('svgviewer.js: createSVG: no sourceType');
+        console.error('svg.js: createSVG: no sourceType');
         return;
     }
     if (typeof(params.svgURL) == "undefined") {
-        svgviewer.error('svgviewer.js: createSVG: no svgURL');
+        console.error('svg.js: createSVG: no svgURL');
         return;
     }
     if (params.sourceType == "inline_script" && 
         typeof(params.svgId) == "undefined") {
-        svgviewer.error('svgviewer.js: createSVG: no svgId');
+        console.error('svg.js: createSVG: no svgId');
         return;
     }
     if (params.sourceType == "url_script" && 
         typeof(params.svgId) == "undefined") {
-        svgviewer.error('svgviewer.js: createSVG: no svgId');
+        console.error('svg.js: createSVG: no svgId');
         return;
     }
 
@@ -142,6 +169,7 @@ function receiveFromFlash(flashMsg) {
  */
 
 function SVGFlashHandler(params) {
+    console.log('SVGFlashHandler, params='+params);
     this.svgScript = '';
     this.parentId = params.parentId;
     this.sourceType = params.sourceType;
@@ -220,7 +248,7 @@ function SVGFlashHandler(params) {
     }
 
     if (this.debug) {
-        svgviewer.info('svgviewer.js: renderer is: ' + this.renderer);
+        console.log('svg.js: renderer is: ' + this.renderer);
     }
 
     // scaleX
@@ -296,7 +324,6 @@ SVGFlashHandler.prototype.createNativeHTML = function() {
 }
 
 SVGFlashHandler.prototype.createFlashHTML = function() {
-
     var bgcolor ='';
     if (this.bgcolor != '') {
         bgcolor = ' bgcolor="' + this.bgcolor + '"';
@@ -305,7 +332,6 @@ SVGFlashHandler.prototype.createFlashHTML = function() {
     if (this.transparent) {
         transparent = ' wmode="transparent" ';
     }
-
 
     var flashVars = '"' +
         'uniqueId=' + this.uniqueId +
@@ -344,7 +370,6 @@ SVGFlashHandler.prototype.createFlashHTML = function() {
     }
 }
 
-
 SVGFlashHandler.prototype.sendToFlash = function(flashMsg) {
    flashMsg.uniqueId = this.uniqueId;
    if (typeof(this.flashObj) == "undefined") {
@@ -375,7 +400,7 @@ SVGFlashHandler.prototype.onMessage = function(flashMsg) {
 }
 
 SVGFlashHandler.prototype.onLog = function(flashMsg) {
-    svgviewer.info(flashMsg.logString);
+    console.log('FLASH: ' + flashMsg.logString);
 }
 
 
@@ -429,6 +454,7 @@ SVGFlashHandler.prototype.onMouseEvent = function(flashMsg) {
  */
 
 SVGFlashHandler.prototype.onStartup = function(flashMsg) {
+    console.log('SVGFlashHandler, flashMsg='+flashMsg);
     // Recording the flash object was deferred until it actually exists!
     this.flashObj = this.getFlashObject();
 
@@ -457,7 +483,7 @@ SVGFlashHandler.prototype.onLoad = function(flashMsg) {
     this.rootElement = this.documentElement;
 
     // resize to the <svg> width
-    svgviewer.info("svg w,h=" + flashMsg.width + "," + flashMsg.height);
+    console.log("svg w,h=" + flashMsg.width + "," + flashMsg.height);
     if (this.sizeToSVG) {
         if (   (this.flashObj.width != flashMsg.width)
             || (this.flashObj.height != flashMsg.height) ) {
