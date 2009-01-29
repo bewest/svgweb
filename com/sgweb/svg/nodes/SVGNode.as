@@ -566,11 +566,11 @@ package com.sgweb.svg.nodes
                                 break;
                                 
                             case "skewX":
-                                nodeMatrix.a = argsArray[0];
+                                nodeMatrix.c = Math.tan(argsArray[0] * Math.PI / 180.0);
                                 break;
                                 
                             case "skewY":
-                                nodeMatrix.d = argsArray[0];
+                                nodeMatrix.b = Math.tan(argsArray[0] * Math.PI / 180.0);
                                 break;
                                 
                             case "rotate":
