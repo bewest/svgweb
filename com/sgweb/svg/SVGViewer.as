@@ -69,6 +69,7 @@ package com.sgweb.svg
 
         protected var sourceTypeParam:String = "";
         protected var svgURLParam:String = "";
+        protected var renderStartTime:Number;
         protected var svgIdParam:String = "";
         protected var debugEnabled:Boolean = false;
         protected var scriptSentToJS:Boolean = false;
@@ -111,6 +112,7 @@ package com.sgweb.svg
             }
         }
         public function handleOnLoad():void {
+            this.debug("render time: " + ( (new Date()).valueOf()  - this.renderStartTime) + "ms");
             var onLoadHandler:String = '';
             if (this._svgRoot.xml.@onload) {
                 onLoadHandler = this._svgRoot.xml.@onload;
@@ -144,6 +146,7 @@ package com.sgweb.svg
          **/
         public function xmlLoaded(event : Event):void {
             this.debug("xml is loaded. length: "+ String(event.target.data).length);
+            this.renderStartTime =  (new Date()).valueOf();
             this.js_savedXML = event.target.data;
             var dataXML:XML = new XML(SVGViewer.expandEntities(event.target.data));
             this._svgRoot.xml = dataXML;
@@ -162,6 +165,7 @@ package com.sgweb.svg
         }
 
         public function htmlLoaded(event : Event):void {
+            this.renderStartTime =  (new Date()).valueOf();
             var svgString:String="";
             var svgCopying:Boolean=false;
             var svgStartString1:String= 'id="'+this.svgIdParam+'"';
@@ -202,6 +206,13 @@ package com.sgweb.svg
                 }
                 this.debug(debugstr);
             }
+        }
+
+        public function loadSVGString(svgString:String):void {
+            this.renderStartTime =  (new Date()).valueOf();
+            this.js_savedXML = svgString;
+            var dataXML:XML = new XML(SVGViewer.expandEntities(svgString));
+            this._svgRoot.xml = dataXML;
         }
 
         public function loadSVGURL():void {
@@ -387,9 +398,7 @@ package com.sgweb.svg
         public function js_handleLoad(jsMsg:Object):Object {
             if (jsMsg.sourceType == 'string') {
                 this.sourceTypeParam = 'string';
-                this.js_savedXML = jsMsg.svgString;
-                var dataXML:XML = new XML(SVGViewer.expandEntities(jsMsg.svgString));
-                this._svgRoot.xml = dataXML;
+                this.loadSVGString(jsMsg.svgString);
             }
             if (jsMsg.sourceType == 'url_svg') {
                 this.sourceTypeParam = 'url_svg';
