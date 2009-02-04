@@ -205,55 +205,79 @@ package com.sgweb.svg.nodes
         }
             
 
-        public function parseTransform(trans:String):Matrix {
+        public function parseTransform(trans:String, baseMatrix:Matrix = null):Matrix {
+            if (!baseMatrix) {
+                baseMatrix = new Matrix();
+            }
+            
             if (trans != null) {
                 var transArray:Array = trans.match(/\S+\(.*?\)/sg);
+                transArray.reverse();
                 for each(var tran:String in transArray) {
                     var tranArray:Array = tran.split('(',2);
                     if (tranArray.length == 2)
-                    {                        
+                    {
                         var command:String = String(tranArray[0]);
                         var args:String = String(tranArray[1]);
                         args = args.replace(')','');
                         args = args.replace(/ /g, '');
-                        var argsArray:Array = args.split(/[,]/);
-                        
-                        var nodeMatrix:Matrix;
+                        var argsArray:Array = args.split(/[, ]/);
+
+                        var nodeMatrix:Matrix = new Matrix();
                         switch (command) {
                             case "matrix":
                                 if (argsArray.length == 6) {
-                                    nodeMatrix = new Matrix();
                                     nodeMatrix.a = argsArray[0];
                                     nodeMatrix.b = argsArray[1];
                                     nodeMatrix.c = argsArray[2];
                                     nodeMatrix.d = argsArray[3];
                                     nodeMatrix.tx = argsArray[4];
                                     nodeMatrix.ty = argsArray[5];
-                                    return nodeMatrix;
                                 }
                                 break;
 
                             case "translate":
                                 if (argsArray.length == 1) {
-                                    nodeMatrix = new Matrix();
-                                    nodeMatrix.tx = SVGColors.cleanNumber(argsArray[0])
-                                    return nodeMatrix;
+                                    nodeMatrix.tx = argsArray[0]; 
                                 }
                                 else if (argsArray.length == 2) {
-                                    nodeMatrix = new Matrix();
-                                    nodeMatrix.tx = SVGColors.cleanNumber(argsArray[0])
-                                    nodeMatrix.ty = SVGColors.cleanNumber(argsArray[1])
-                                    return nodeMatrix;
+                                    nodeMatrix.tx = argsArray[0]; 
+                                    nodeMatrix.ty = argsArray[1]; 
+                                }
+                                break;
+
+                            case "scale":
+                                if (argsArray.length == 1) {
+                                    nodeMatrix.a = argsArray[0];
+                                    nodeMatrix.d = argsArray[0];
+                                }
+                                else if (argsArray.length == 2) {
+                                    nodeMatrix.a = argsArray[0];
+                                    nodeMatrix.d = argsArray[1];
                                 }
                                 break;
                                 
+                            case "skewX":
+                                nodeMatrix.c = Math.tan(argsArray[0] * Math.PI / 180.0);
+                                break;
+                                
+                            case "skewY":
+                                nodeMatrix.b = Math.tan(argsArray[0] * Math.PI / 180.0);
+                                break;
+                                
+                            case "rotate":
+                                nodeMatrix.rotate(Number(argsArray[0])* Math.PI / 180.0); 
+                                break;
+                                
                             default:
-                                this.dbg('Unknown Transformation: ' + command);
+                                //this.dbg('Unknown Transformation: ' + command);
                         }
+                        baseMatrix.concat(nodeMatrix);
                     }
                 }
             }
-            return null;
+            
+            return baseMatrix;
         }
 
 
