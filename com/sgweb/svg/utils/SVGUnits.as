@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 
-package com.sgweb.svg.data
+package com.sgweb.svg.utils
 {    
     import flash.system.Capabilities;
     

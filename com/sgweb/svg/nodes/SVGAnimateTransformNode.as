@@ -19,6 +19,8 @@
 
 package com.sgweb.svg.nodes
 {
+    import com.sgweb.svg.core.SVGNode;
+
     public class SVGAnimateTransformNode extends SVGAnimateNode
     {
         public function SVGAnimateTransformNode(svgRoot:SVGRoot, xml:XML):void {

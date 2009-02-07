@@ -19,7 +19,8 @@
 
 package com.sgweb.svg.nodes
 {
-    import com.sgweb.svg.data.SVGColors;
+    import com.sgweb.svg.core.SVGNode;
+    import com.sgweb.svg.utils.SVGColors;
     
     public class SVGRectNode extends SVGNode
     {                

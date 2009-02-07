@@ -19,7 +19,8 @@
 
 package com.sgweb.svg.nodes
 {
-    
+    import com.sgweb.svg.core.SVGNode;
+
     public class SVGSVGNode extends SVGNode
     {
         public function SVGSVGNode(svgRoot:SVGRoot, xml:XML):void {

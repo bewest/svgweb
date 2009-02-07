@@ -19,7 +19,7 @@
 
 package com.sgweb.svg.nodes
 {
-    import flash.display.Sprite;
+    import com.sgweb.svg.core.SVGNode;
     
     public class SVGClipPathNode extends SVGNode
     {    

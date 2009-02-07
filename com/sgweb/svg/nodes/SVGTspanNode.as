@@ -19,7 +19,8 @@
 
 package com.sgweb.svg.nodes
 {
-    
+    import com.sgweb.svg.core.SVGNode;
+
     public class SVGTspanNode extends SVGTextNode
     {        
         public function SVGTspanNode(svgRoot:SVGRoot, xml:XML):void {

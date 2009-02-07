@@ -19,6 +19,8 @@
 
 package com.sgweb.svg.nodes
 {
+    import com.sgweb.svg.core.SVGNode;
+
     /** 
      * Contains drawing instructions used by SVGUseNode
      * It is not rendered directly

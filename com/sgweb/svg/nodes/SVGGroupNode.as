@@ -19,6 +19,8 @@
 
 package com.sgweb.svg.nodes
 {
+    import com.sgweb.svg.core.SVGNode;
+
     /**
      * Acts as a container for other nodes
      **/

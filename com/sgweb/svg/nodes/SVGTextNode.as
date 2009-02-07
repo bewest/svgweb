@@ -19,8 +19,10 @@
 
 package com.sgweb.svg.nodes
 {
-    import com.sgweb.svg.data.SVGColors;
-    import com.sgweb.svg.data.SVGUnits;
+    import com.sgweb.svg.core.SVGNode;
+    import com.sgweb.svg.utils.SVGColors;
+    import com.sgweb.svg.utils.SVGUnits;
+
     
     import flash.text.TextField;
     import flash.text.TextFieldAutoSize;

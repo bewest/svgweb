@@ -20,6 +20,7 @@
 package com.sgweb.svg.nodes
 {
     import com.sgweb.svg.utils.EllipticalArc;
+    import com.sgweb.svg.core.SVGNode;
     
     import mx.utils.StringUtil;
     

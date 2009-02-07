@@ -32,8 +32,8 @@ and so on.
 package com.sgweb.svg
 {
     
+    import com.sgweb.svg.core.SVGNode;
     import com.sgweb.svg.nodes.SVGRoot;
-    import com.sgweb.svg.nodes.SVGNode;
     import com.sgweb.svg.nodes.SVGGroupNode;
     
     import flash.display.Sprite;

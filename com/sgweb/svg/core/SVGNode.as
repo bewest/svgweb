@@ -17,13 +17,12 @@
  limitations under the License.
 */
 
-package com.sgweb.svg.nodes
+package com.sgweb.svg.core
 {
-    import com.sgweb.svg.data.SVGColors;
-    import com.sgweb.svg.data.SVGUnits;
-    import com.sgweb.svg.nodes.mask.SVGBlurMaskParent;
-    import com.sgweb.svg.nodes.mask.SVGClipMaskParent;
-    import com.sgweb.svg.nodes.mask.SVGMask;
+    import com.sgweb.svg.utils.SVGColors;
+    import com.sgweb.svg.utils.SVGUnits;
+    import com.sgweb.svg.nodes.*;
+    import com.sgweb.svg.nodes.mask.*;
     
     import flash.display.CapsStyle;
     import flash.display.DisplayObject;

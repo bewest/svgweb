@@ -19,7 +19,7 @@
 
 package com.sgweb.svg.nodes
 {
-    import flash.events.Event;
+    import com.sgweb.svg.core.SVGNode;
     
     /** 
      * Contains drawing instructions used by SVGUseNode

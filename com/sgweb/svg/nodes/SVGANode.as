@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 package com.sgweb.svg.nodes {
+    import com.sgweb.svg.core.SVGNode;
     import flash.events.MouseEvent;
     import flash.net.URLRequest;    
     

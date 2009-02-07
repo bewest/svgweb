@@ -19,7 +19,8 @@
 
 package com.sgweb.svg.nodes
 {
-    import com.sgweb.svg.data.SVGColors;
+    import com.sgweb.svg.utils.SVGColors;
+    import com.sgweb.svg.core.SVGNode;
     
     import flash.display.Shape;
     import flash.events.Event;

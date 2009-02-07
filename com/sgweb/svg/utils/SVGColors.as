@@ -18,7 +18,7 @@
 */
 
 
-package com.sgweb.svg.data
+package com.sgweb.svg.utils
 {    
     public class SVGColors
     {

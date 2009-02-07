@@ -20,6 +20,7 @@
 package com.sgweb.svg.nodes
 {
     import com.sgweb.svg.utils.Base64;
+    import com.sgweb.svg.core.SVGNode;
 
     import flash.display.Bitmap;
     import flash.display.BitmapData;

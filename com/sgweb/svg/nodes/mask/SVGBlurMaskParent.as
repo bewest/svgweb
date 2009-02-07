@@ -19,7 +19,7 @@
 
 package com.sgweb.svg.nodes.mask
 {
-    import com.sgweb.svg.nodes.SVGNode;
+    import com.sgweb.svg.core.SVGNode;
     import com.sgweb.svg.nodes.SVGRoot;
     import com.sgweb.svg.nodes.mask.SVGMask;
     import com.sgweb.svg.nodes.mask.SVGClipMaskParent;

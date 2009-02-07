@@ -19,6 +19,7 @@
 
 package com.sgweb.svg.nodes
 {
+    import com.sgweb.svg.core.SVGNode;
     public class SVGLineNode extends SVGNode
     {        
         public function SVGLineNode(svgRoot:SVGRoot, xml:XML):void {

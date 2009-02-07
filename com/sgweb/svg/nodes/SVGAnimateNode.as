@@ -20,7 +20,8 @@
 package com.sgweb.svg.nodes
 {
     
-    import com.sgweb.svg.data.SVGColors;
+    import com.sgweb.svg.utils.SVGColors;
+    import com.sgweb.svg.core.SVGNode;
     
     import flash.events.Event;
     import flash.utils.getTimer;

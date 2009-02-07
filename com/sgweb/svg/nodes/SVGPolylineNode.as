@@ -20,6 +20,8 @@
 package com.sgweb.svg.nodes
 {
     import mx.utils.StringUtil;
+    import com.sgweb.svg.core.SVGNode;
+
     
     public class SVGPolylineNode extends SVGNode
     {        
