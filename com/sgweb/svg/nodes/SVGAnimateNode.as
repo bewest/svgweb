@@ -116,7 +116,7 @@ package com.sgweb.svg.nodes
                         
             if (this._state == this.STATE_BEGIN) {        
                                 
-                this._fromVal = (this._fromValString) ? SVGColors.cleanNumber(this._fromValString) : SVGColors.cleanNumber(SVGNode(this.parent).getStyle(this._field));
+                this._fromVal = (this._fromValString) ? SVGColors.cleanNumber(this._fromValString) : SVGColors.cleanNumber(SVGNode(this.parent).getAttribute(this._field));
                 this._toVal = (this._byValString) ? this._fromVal + SVGColors.cleanNumber(this._byValString) : this._toVal = SVGColors.cleanNumber(this._toValString);
                 this._valSpan = this._toVal - this._fromVal;
                 
@@ -129,12 +129,12 @@ package com.sgweb.svg.nodes
             if (runTime < this._duration) {
                 var factor:Number = runTime / this._duration;
                 newVal = this._fromVal + (factor * this._valSpan);
-                SVGNode(this.parent).setStyle(this._field, newVal.toString());
+                SVGNode(this.parent).setAttribute(this._field, newVal.toString());
             }
             else {
                 newVal = this._toVal;
                 if (this._state == this.STATE_RUN) {
-                    SVGNode(this.parent).setStyle(this._field, newVal.toString());                    
+                    SVGNode(this.parent).setAttribute(this._field, newVal.toString());                    
                 }
                 this._state = this.STATE_END;
                 if (timeElapsed > this._end) {

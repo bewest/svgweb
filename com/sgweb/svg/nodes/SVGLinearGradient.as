@@ -48,10 +48,10 @@ package com.sgweb.svg.nodes
                         stop.doRedrawNow();
                     }
 
-                    var color:Number = SVGColors.getColor(stop.getStyle('stop-color'));
+                    var color:Number = SVGColors.getColor(stop.getAttribute('stop-color'));
                     colors.push(color);
 
-                    var stopOpacity:String = stop.getStyle('stop-opacity');
+                    var stopOpacity:String = stop.getAttribute('stop-opacity');
                     if (stopOpacity == null)
                         stopOpacity="1";
                     var alpha:Number = SVGColors.cleanNumber(stopOpacity);
@@ -157,10 +157,10 @@ package com.sgweb.svg.nodes
                         stop.doRedrawNow();
                     }
 
-                    var color:Number = SVGColors.getColor(stop.getStyle('stop-color'));
+                    var color:Number = SVGColors.getColor(stop.getAttribute('stop-color'));
                     colors.push(color);
 
-                    var stopOpacity:String = stop.getStyle('stop-opacity');
+                    var stopOpacity:String = stop.getAttribute('stop-opacity');
                     if (stopOpacity == null)
                         stopOpacity="1";
                     var alpha:Number = SVGColors.cleanNumber(stopOpacity);

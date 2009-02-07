@@ -586,18 +586,7 @@ package com.sgweb.svg
                     element = this._svgRoot.getElement(jsMsg.elementId);
                 }
                 if (element) {
-                    if (  (typeof(element.xml.@[jsMsg.attrName]) != 'undefined')
-                       && (element.xml.@[jsMsg.attrName] != null) ) {
-                        if (jsMsg.getFromStyle) {
-                            jsMsg.attrValue = element.parseStyle(jsMsg.attrName);
-                        }
-                        else {
-                            jsMsg.attrValue = String(element.xml.@[jsMsg.attrName].toString());
-                        }
-                    }
-                    else {
-                        this.debug("error:getAttribute: id not found: " + jsMsg.elementId);
-                    }
+                    jsMsg.attrValue = element.getAttribute(jsMsg.attrName);
                 }
                 else {
                     this.debug("error:getAttribute: id not found: " + jsMsg.elementId);
@@ -611,24 +600,11 @@ package com.sgweb.svg
                     element = this._svgRoot.getElement(jsMsg.elementId);
                 }
                 if (element) {
-                    if (jsMsg.applyToStyle) {
-                        if (element._xml.@style) {
-                            element._xml.@style = SVGNode.overwriteStyles(element._xml.@style,
-                                                                          jsMsg.attrName + ": "
-                                                                        + jsMsg.attrValue.toString());
-                        }
-                        else {
-                            element._xml.@style = jsMsg.attrName + ": " + jsMsg.attrValue.toString();
-                        }
-                    }
-                    else {
-                        element._xml.@[jsMsg.attrName] = jsMsg.attrValue.toString();
-                    }
+                    element.setAttribute(jsMsg.attrName, jsMsg.attrValue.toString());
 
                     if (jsMsg.attrName == 'id') {
                         this.js_createdElements[jsMsg.attrValue] = element;
                     }
-                    element.handleAttrChange(jsMsg.attrName, jsMsg.attrValue.toString());
                 }
                 else {
                     this.debug("error:setAttribute: id not found: " + jsMsg.elementId);

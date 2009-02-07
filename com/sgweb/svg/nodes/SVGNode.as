@@ -20,6 +20,7 @@
 package com.sgweb.svg.nodes
 {
     import com.sgweb.svg.data.SVGColors;
+    import com.sgweb.svg.data.SVGUnits;
     import com.sgweb.svg.nodes.mask.SVGBlurMaskParent;
     import com.sgweb.svg.nodes.mask.SVGClipMaskParent;
     import com.sgweb.svg.nodes.mask.SVGMask;
@@ -33,15 +34,14 @@ package com.sgweb.svg.nodes
     import flash.events.Event;
     import flash.geom.Matrix;
     import flash.geom.Point;
-    import flash.utils.*;
+    import flash.utils.getDefinitionByName;
+    import flash.utils.getQualifiedClassName;
 
     /** Base node extended by all other SVG Nodes **/
     public class SVGNode extends Sprite
     {
-        public static const attributeList:Array = ['stroke', 'stroke-width', 'stroke-dasharray', 
-                                         'stroke-opacity', 'stroke-linecap', 'stroke-linejoin',
-                                         'fill', 'fill-opacity', 'opacity', 'stop-color', 'stop-opacity',
-                                         'font-family', 'font-size', 'letter-spacing', 'filter', 'visibility'];
+        public static const ATTRIBUTES_NOT_INHERITED:Array = ['id', 'x', 'y', 'width', 'height', 'rotate', 'transform', 
+                                        'gradientTransform', 'opacity', 'mask', 'clip-path', 'href', 'target', 'viewBox'];
 
 
         public namespace xlink = 'http://www.w3.org/1999/xlink';
@@ -72,14 +72,7 @@ package com.sgweb.svg.nodes
         protected var _graphicsCommands:Array;
         public var scaleModeParam:String = "showAll_svg";
 
-
-
-        /**
-         * Used for caching node attribute style values. font, font-size, stroke, etc...
-         * Set by setAttributes()
-         * Used by getStyle()
-         **/
-        protected var _style:Object;
+        protected var _styles:Object;
 
         /**
          * If true, redraw sprite graphics
@@ -110,46 +103,13 @@ package com.sgweb.svg.nodes
         protected function generateGraphicsCommands():void {
             this._graphicsCommands = new  Array();    
         }
-        
-        /**
-         * Load attributes/styling from the XML. 
-         * Attributes are applied in functions called later.
-         **/
+
         protected function setAttributes():void {
-            
-            var xmlList:XMLList;
-            this._style = new Object();
-
-            // Get styling from XML attribute list
-            for each (var attribute:String in SVGNode.attributeList) {
-                xmlList = this._xml.attribute(attribute);
-                if (xmlList.length() > 0) {
-                    this._style[attribute] = xmlList[0].toString();
-                }
-            }
-            
-            // Get styling from XML attribute 'style'
-            xmlList = this._xml.attribute('style');
-            if (xmlList.length() > 0) {
-                var styleString:String = xmlList[0].toString();
-                var styles:Array = styleString.split(';');
-                for each(var style:String in styles) {
-                    var styleSet:Array = style.split(':');
-                    if (styleSet.length == 2) {
-                        var attrName:String = styleSet[0];
-                        var attrValue:String = styleSet[1];
-                        // Trim leading whitespace.
-                        attrName = attrName.replace(/^\s+/, '');
-                        attrValue = attrValue.replace(/^\s+/, '');
-                        this._style[attrName] = attrValue;
-                    }
-                }
-            }
-            
-            this.loadStyle('opacity', 'alpha');
-
+            this.loadAttribute('x');
+            this.loadAttribute('y');
+            this.loadAttribute('rotate','rotation');
+            this.loadAttribute('opacity','alpha');
         }
-
 
         public static function overwriteStyles(baseStylesStr:String, newStylesStr:String):String {
 
@@ -680,23 +640,6 @@ package com.sgweb.svg.nodes
             }
         } 
 
-        /**
-         * Load an SVG style into the current node
-         * 
-         * @param name Name of the SVG style to load
-         * @param field Name of the node field to set. If null, the value of name will be used as the field attribute.
-         **/ 
-        protected function loadStyle(name:String, field:String = null):void {
-            if (field == null) {
-                field = name;
-            }
-            var tmp:String = this.getStyle(name);
-            if (tmp != null) {
-                this[field] = tmp;
-            }
-        }
-
-
         /** 
          * Clear current graphics and call runGraphicsCommands to render SVG element 
          **/
@@ -716,10 +659,9 @@ package com.sgweb.svg.nodes
             var color_core:Number = 0;
             var color_alpha:Number = 0;
             var fill_alpha:Number = 0;
-            var node_alpha:Number = 0;
 
-            var fill:String = this.getStyle('fill');
-            if ( (fill != 'none') && (fill != '') && (this.getStyle('visibility') != 'hidden') ) {
+            var fill:String = this.getAttribute('fill');
+            if ( (fill != 'none') && (fill != '') && (this.getAttribute('visibility') != 'hidden') ) {
                 var matches:Array = fill.match(/url\(#([^\)]+)\)/si);
                 if (matches != null && matches.length > 0) {
                     var fillName:String = matches[1];
@@ -740,9 +682,7 @@ package com.sgweb.svg.nodes
                     color_and_alpha = SVGColors.getColorAndAlpha(fill);
                     color_core = color_and_alpha[0];
                     color_alpha = color_and_alpha[1];
-                    node_alpha = Number(this.getStyle('opacity'));
-
-                    fill_alpha = SVGColors.cleanNumber( this.getStyle('fill-opacity') ) * color_alpha;
+                    fill_alpha = SVGColors.cleanNumber( this.getAttribute('fill-opacity') ) * color_alpha;
                     this.graphics.beginFill(color_core, fill_alpha);
                 }
             }
@@ -752,19 +692,19 @@ package com.sgweb.svg.nodes
             var line_alpha:Number;
             var line_width:Number;
 
-            var stroke:String = this.getStyle('stroke');
-            if ( (stroke == 'none') || (stroke == '') || (this.getStyle('visibility') == 'hidden') ) {
+            var stroke:String = this.getAttribute('stroke');
+            if ( (stroke == 'none') || (stroke == '') || (this.getAttribute('visibility') == 'hidden') ) {
                 line_alpha = 0;
                 line_color = 0;
                 line_width = 0;
             }
             else {
                 line_color = SVGColors.cleanNumber(SVGColors.getColor(stroke));
-                line_alpha = SVGColors.cleanNumber(this.getStyle('stroke-opacity'));
-                line_width = SVGColors.cleanNumber(this.getStyle('stroke-width'));
+                line_alpha = SVGColors.cleanNumber(this.getAttribute('stroke-opacity'));
+                line_width = SVGColors.cleanNumber(this.getAttribute('stroke-width'));
             }
 
-            var capsStyle:String = this.getStyle('stroke-linecap');
+            var capsStyle:String = this.getAttribute('stroke-linecap');
             if (capsStyle == 'round'){
                 capsStyle = CapsStyle.ROUND;
             }
@@ -775,7 +715,7 @@ package com.sgweb.svg.nodes
                 capsStyle = CapsStyle.NONE;
             }
             
-            var jointStyle:String = this.getStyle('stroke-linejoin');
+            var jointStyle:String = this.getAttribute('stroke-linejoin');
             if (jointStyle == 'round'){
                 jointStyle = JointStyle.ROUND;
             }
@@ -786,7 +726,7 @@ package com.sgweb.svg.nodes
                 jointStyle = JointStyle.MITER;
             }
             
-            var miterLimit:String = this.getStyle('stroke-miterlimit');
+            var miterLimit:String = this.getAttribute('stroke-miterlimit');
             if (miterLimit == null) {
                 miterLimit = '4';
             }
@@ -794,7 +734,7 @@ package com.sgweb.svg.nodes
             this.graphics.lineStyle(line_width, line_color, line_alpha, false, LineScaleMode.NORMAL,
                                     capsStyle, jointStyle, SVGColors.cleanNumber(miterLimit));
 
-            if ( (stroke != 'none') && (stroke != '')  && (this.getStyle('visibility') != 'hidden') ) {
+            if ( (stroke != 'none') && (stroke != '')  && (this.getAttribute('visibility') != 'hidden') ) {
                 var strokeMatches:Array = stroke.match(/url\(#([^\)]+)\)/si);
                 if (strokeMatches != null && strokeMatches.length > 0) {
                     var strokeName:String = strokeMatches[1];
@@ -939,9 +879,8 @@ package com.sgweb.svg.nodes
                         continue;
                     }
                     newChildNode.refreshHref();
-                    newChildNode.setAttributes();
 
-                    var filterStr:String = newChildNode.getStyle('filter');
+                    var filterStr:String = newChildNode.getAttribute('filter');
 
                     // Objects with a gaussian filter need to be 
                     // masked by their own shape to mask any gaussian blurs
@@ -1087,101 +1026,76 @@ package com.sgweb.svg.nodes
             return childNode;
         }
 
-        
-        /**
-         * Get a node style (ex: fill, stroke, etc..)
-         * Also checks parent nodes for the value if it is not set in the current node.
-         *
-         * @param name Name of style to retreive
-         * 
-         * @return Value of style or null if it is not found
-         **/
-        public function getStyle(name:String):String {
-
-            if (this.getSVGMaskAncestor() != null 
-                 || (this is SVGClipMaskParent)
-                 || (this is SVGBlurMaskParent)) {
-
-                if (  (name == 'opacity')
-                    || (name == 'fill-opacity')
-                    || (name == 'stroke-width')
-                    || (name == 'stroke-opacity') ) {
-                    return '1';
-                }
-
-                if (name == 'fill') {
-                    return 'black';
-                }
-
-                if (name == 'stroke') {
-                    return 'none';
-                    //return 'black';
-                }
-
-                if (name == 'filter') {
-                    return null;
-                }
-            }
-
-            if (this._style.hasOwnProperty(name)) {
-                return this._style[name];
-            }
+        private function parseStyle():void {
+            //Get styling from XML attribute 'style'
+            _styles = new Object();
             
-            var attribute:String = this.getAttribute(name);
-            if (attribute) {
-                return attribute;
-            }
-            
-            //Opacity should not be inherited
-            else if (name == 'opacity') {
-                return '1';
-            }
-            else if (this.parent is SVGNode) {
-                return SVGNode(this.parent).getStyle(name);
-            }
-            return null;
-        }
-
-
-        public function parseStyle(styleAttr:String):String {
-            if (!this._xml.@style)
-                return null;
-
-            var styleSet:Array;
-            var attrName:String;
-            var attrValue:String;
-            var style:String;
-
-            var baseStyles:Array = this._xml.@style.split(';');
-            for each(style in baseStyles) {
-                styleSet = style.split(':');
-                if (styleSet.length == 2) {
-                    attrName = styleSet[0];
-                    attrValue = styleSet[1];
-                    // Trim leading whitespace.
-                    attrName = attrName.replace(/^\s+/, '');
-                    attrValue = attrValue.replace(/^\s+/, '');
-                    if (attrName == styleAttr)
-                        return attrValue;
+            var xmlList:XMLList = this._xml.attribute('style');
+            if (xmlList.length() > 0) {
+                var styleString:String = xmlList[0].toString();
+                var styles:Array = styleString.split(';');
+                for each(var style:String in styles) {
+                    var styleSet:Array = style.split(':');
+                    if (styleSet.length == 2) {
+                        this._styles[SVGColors.trim(styleSet[0])] = SVGColors.trim(styleSet[1]);
+                    }
                 }
             }
-            return null;
         }
 
         /**
          * @param attribute Attribute to retrieve from SVG XML
          * 
-         * @param defaultValue to return if attribute is not found
+         * @param defaultValue Value to return if attribute is not found
+         * 
+         * @param inherit If attribute is not set in this node try to retrieve it from the parent node
          * 
          * @return Returns the value of defaultValue
          **/
-        protected function getAttribute(attribute:*, defaultValue:* = null):* {
-            var xmlList:XMLList = this._xml.attribute(attribute);
+        public function getAttribute(name:String, defaultValue:* = null, inherit:Boolean = true):* {            
+            var value:String = this._getAttribute(name);
+            
+            if (value == "inherit") {
+                value = null;
+            }
+            
+            if (value) {
+                return value;
+            }
+            
+            if (ATTRIBUTES_NOT_INHERITED.indexOf(name) != -1) {            
+                return defaultValue;        
+            }
+            
+            if (inherit && (this.parent is SVGNode)) {
+                return SVGNode(this.parent).getAttribute(name, defaultValue);
+            }
+            
+            return defaultValue;            
+        }
+        
+        protected function _getAttribute(name:String):String {
+            var value:String;
+            
+            if (name == "href") {
+                //this._xml@href handled normally
+                value = this._xml.@xlink::href;                             
+                if (value && (value != "")) {
+                    return value;
+                }
+            }
+            
+            var xmlList:XMLList = this._xml.attribute(name);
+            
             if (xmlList.length() > 0) {
                 return xmlList[0].toString();
-            }            
-            return defaultValue;
+            }   
+                     
+            if (_styles.hasOwnProperty(name)) {
+                return (_styles[name]);
+            }
             
+            return null;
         }
 
 
@@ -1270,8 +1184,7 @@ package com.sgweb.svg.nodes
                         this.parse();
                         this._parsedChildren = true;
                     }
-                    this.x = 0;
-                    this.y = 0;
+
                     this.setAttributes();
 
                     if (!this.isChildOfDef() && !this.isDisplayNone()) {
@@ -1322,7 +1235,7 @@ package com.sgweb.svg.nodes
          * Add any assigned filters to node
          **/
         protected function setupFilters():void {
-            var filterName:String = this.getStyle('filter');
+            var filterName:String = this.getAttribute('filter');
             if ((filterName != null)
                 && (filterName != '')) {
                 var matches:Array = filterName.match(/url\(#([^\)]+)\)/si);
@@ -1358,12 +1271,12 @@ package com.sgweb.svg.nodes
          **/ 
         public function isDisplayNone():Boolean {
             var node:DisplayObject = this;
-            if (this.getStyle('display') == 'none') {
+            if (this.getAttribute('display') == 'none') {
                 return true;
             }
             while (node && !(node is SVGRoot)) {
                 node=node.parent;
-                if (node && node is SVGNode && SVGNode(node).getStyle('display') == 'none') {
+                if (node && node is SVGNode && SVGNode(node).getAttribute('display') == 'none') {
                     return true;
                 }
             }
@@ -1422,6 +1335,7 @@ package com.sgweb.svg.nodes
             this._revision++;
             this.clearChildren();
             this._parsedChildren = false;
+            this.parseStyle();
             this.invalidateDisplay();
         }
         
@@ -1446,57 +1360,45 @@ package com.sgweb.svg.nodes
         public function get graphicsCommands():Array {
             return this._graphicsCommands;
         }
-            
-        
-        /**
-         * Set node style to new value
-         * 
-         * @param name Name of style
-         * @param value New value for style
-         **/
-        public function setStyle(name:String, value:String):void {
-            //Stick in the main attribute if it exists
-            var attribute:String = this.getAttribute(name);
-            if (attribute != null) {
-                if (attribute != value) {
-                    this._xml.@[name] = value;
-                    this.handleAttrChange(name, value);
-                }
-            }
-            else {
-                updateStyleString(name, value);
-            }
-        }
-        
-        /**
-         * Update a value inside the attribute style
-         * <node style="...StyleString...">
-         * 
-         * @param name Name of style
-         * @param value New value for style
-         **/ 
-        private function updateStyleString(name:String, value:String):void {
-            if (this._style[name] == value) {
+
+
+        public function setAttribute(name:String, value:String):void {
+            if (name == "style") {
+                this._xml.@style = value;
+                this.parseStyle();
                 return;
             }
+
+            if (this._styles.hasOwnProperty(name)) {
+                this._styles[name] = value;
+                updateStyle();
+            }
+            else {
+                this._xml.@[name] = value;
+            }
             
-            this._style[name] = value;
-            
+            this.handleAttrChange(name, value);
+        }
+ 
+       /**
+         * Update style attribute from _styles
+         * <node style="...StyleString...">
+         * 
+         **/ 
+        private function updateStyle():void {
             var newStyleString:String = '';
             
-            for (var key:String in this._style) {
+            for (var key:String in this._styles) {
                 if (newStyleString.length > 0) {
                     newStyleString += ';';
                 }
-                newStyleString += key + ':' + this._style[key];
+                newStyleString += key + ':' + this._styles[key];
             }
             
-            this._xml.@style = newStyleString;        
-            
-            this.handleAttrChange(name, value);
-            
+            this._xml.@style = newStyleString;
         }
-        
+ 
+     
         /**
          * Load _href content and then append/replace back original content
          **/

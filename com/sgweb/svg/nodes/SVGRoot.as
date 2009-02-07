@@ -134,38 +134,40 @@ package com.sgweb.svg.nodes
             return null;
         }
 
-        
-        /**
-         * Support default SVG style values
-         **/
-        override public function getStyle(name:String):String {
-            var style:String = super.getStyle(name);
-            
-            //Return default values if a style is not set
+
+        override public function getAttribute(name:String, defaultValue:* = null, inherit:Boolean = true):* {
+
+            var value:String = this._getAttribute(name);
+            if (value) {
+                return value;
+            }
+
+            if (ATTRIBUTES_NOT_INHERITED.indexOf(name) != -1) {
+                return defaultValue;
+            }
+
+            if (inherit && (this.parent is SVGNode)) {
+                return SVGNode(this.parent).getAttribute(name, defaultValue, inherit);
+            }
+
             if ((name == 'opacity') 
                 || (name == 'fill-opacity')
                 || (name == 'stroke-opacity')
                 || (name == 'stroke-width')) {
-                if (style == null) {
-                    style = '1';
-                }
+                return '1';
             }
-            
+
             if (name == 'fill') {
-                if (style == null) {
-                    style = 'black';
-                }
+                return 'black';
             }
-            
+
             if (name == 'stroke') {
-                if (style == null) {
-                    style = 'none';
-                }
+                return 'none';
             }
-            
-            return style;            
-                    
+
+            return defaultValue;
         }
+
 
         override public function getWidth():Number {
             var canvasWidth:Number = 2048.0;

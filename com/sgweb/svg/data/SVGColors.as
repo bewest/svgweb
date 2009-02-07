@@ -360,5 +360,12 @@ package com.sgweb.svg.data
                 return SVGColors.cleanNumber(numString);
             }
         }
+        
+        static public function trim(string:String):String {
+            if (string) {
+                return string.replace(/^\s+/s, '').replace(/\s+$/s, '');            
+            }
+            return string;        
+        }
     }
 }

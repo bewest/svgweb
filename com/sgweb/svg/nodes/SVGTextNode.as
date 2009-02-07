@@ -82,11 +82,11 @@ package com.sgweb.svg.nodes
             super.setAttributes();
             
             if (this._textField != null) {
-                var fontFamily:String = this.getStyle('font-family');                
-                var fontSize:String = this.getStyle('font-size');
-                var fill:String = this.getStyle('fill');
-                var fontWeight:String = this.getStyle('font-weight');
-                var textAnchor:String = this.getStyle('text-anchor');
+                var fontFamily:String = this.getAttribute('font-family');                
+                var fontSize:String = this.getAttribute('font-size');
+                var fill:String = this.getAttribute('fill');
+                var fontWeight:String = this.getAttribute('font-weight');
+                var textAnchor:String = this.getAttribute('text-anchor');
                 
                 var textFormat:TextFormat = this._textField.getTextFormat();
                 
@@ -124,7 +124,7 @@ package com.sgweb.svg.nodes
                 while (fontWeight == 'inherit') {                    
                     if (currentNode.parent is SVGNode) {
                         currentNode = SVGNode(currentNode.parent);
-                        fontWeight = currentNode.getStyle('font-weight');
+                        fontWeight = currentNode.getAttribute('font-weight');
                     }
                     else {
                         fontWeight = null;
@@ -142,7 +142,7 @@ package com.sgweb.svg.nodes
                 while (textAnchor == 'inherit') {                    
                     if (currentNode.parent is SVGNode) {
                         currentNode = SVGNode(currentNode.parent);
-                        textAnchor = currentNode.getStyle('text-anchor');
+                        textAnchor = currentNode.getAttribute('text-anchor');
                     }
                     else {
                         textAnchor = null;
