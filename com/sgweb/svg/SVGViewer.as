@@ -357,18 +357,6 @@ package com.sgweb.svg
                     if (item == "svgId") {
                         this.svgIdParam = paramsObj[item];
                     }
-                    if (item == "scaleX") {
-                        this._svgRoot.scaleXParam = Number(paramsObj[item]);
-                    }
-                    if (item == "scaleY") {
-                        this._svgRoot.scaleYParam = Number(paramsObj[item]);
-                    }
-                    if (item == "translateX") {
-                        this._svgRoot.translateXParam = Number(paramsObj[item]);
-                    }
-                    if (item == "translateY") {
-                        this._svgRoot.translateYParam = Number(paramsObj[item]);
-                    }
                 }
                 if (this.scaleModeParam == "showAll_svg"
                         || this.scaleModeParam == "noScale") {

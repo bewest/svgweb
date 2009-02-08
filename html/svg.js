@@ -270,38 +270,6 @@ function SVGFlashHandler(params) {
         console.log('svg.js: renderer is: ' + this.renderer);
     }
 
-    // scaleX
-    if (typeof(params.scaleX) != "undefined") {
-        this.scaleX= params.scaleX;
-    }
-    else {
-        this.scaleX=1.0;
-    }
-
-    // scaleY
-    if (typeof(params.scaleY) != "undefined") {
-        this.scaleY= params.scaleY;
-    }
-    else {
-        this.scaleY=1.0;
-    }
-
-    // translateX
-    if (typeof(params.translateX) != "undefined") {
-        this.translateX= params.translateX;
-    }
-    else {
-        this.translateX=0;
-    }
-
-    // translateY
-    if (typeof(params.translateY) != "undefined") {
-        this.translateY= params.translateY;
-    }
-    else {
-        this.translateY=0;
-    }
-
     // bgcolor
     if (typeof(params.bgcolor) != "undefined") {
         this.bgcolor = params.bgcolor;
@@ -357,10 +325,6 @@ SVGFlashHandler.prototype.createFlashHTML = function() {
         '&sourceType=' + this.sourceType +
         '&svgURL=' + this.svgURL +
         '&scaleMode=' + this.scaleMode +
-        '&translateX=' + this.translateX + 
-        '&translateY=' + this.translateY + 
-        '&scaleX=' + this.scaleX +
-        '&scaleY=' + this.scaleY +
         '&debug=' + this.debug;
     if (typeof(this.svgId) != "undefined") {
         flashVars = flashVars  + '&svgId=' + this.svgId;

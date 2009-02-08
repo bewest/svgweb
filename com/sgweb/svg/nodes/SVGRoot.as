@@ -44,14 +44,6 @@ package com.sgweb.svg.nodes
          **/
         private var _loadTime:int;
         
-        /**
-         * Passed in transform parameters
-         **/
-        public var scaleXParam:Number = 1.0;
-        public var scaleYParam:Number = 1.0;
-        public var translateXParam:Number = 0.0;
-        public var translateYParam:Number = 0.0;
-
         public var renderCurrent:Number = 0;
         public var debug:Object;
         public var handleScript:Object;
