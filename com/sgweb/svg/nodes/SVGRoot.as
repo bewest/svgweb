@@ -170,50 +170,6 @@ package com.sgweb.svg.nodes
         }
 
 
-        override public function getWidth():Number {
-            var canvasWidth:Number = 2048.0;
-            if (this.scaleModeParam == "showAll_svg") {
-                canvasWidth = this.stage.stageWidth;
-            }
-            var widthStr:String = this.xml.@width;
-            if (widthStr) {
-                if (widthStr.match(/%/)) {
-                    widthStr=widthStr.replace(/%/g, "");
-                    var num:Number = SVGColors.cleanNumber(widthStr);
-                    return canvasWidth * num / 100;
-                }
-                else {
-                    return SVGColors.cleanNumber(widthStr);
-                }
-            }
-            else {
-                return canvasWidth;
-            }
-        }
-
-        override public function getHeight():Number {
-            var canvasHeight:Number = 1024.0;
-            if (this.svgRoot.scaleModeParam == "showAll_svg") {
-                canvasHeight = this.stage.stageHeight;
-            }
-
-            var heightStr:String = this.xml.@height;
-            if (heightStr) {
-                if (heightStr.match(/%/)) {
-                    heightStr=heightStr.replace(/%/g, "");
-                    var num:Number = SVGColors.cleanNumber(heightStr);
-                    return canvasHeight * num / 100;
-                }
-                else {
-                    return SVGColors.cleanNumber(heightStr);
-                }
-            }
-            else {
-                return canvasHeight;
-            }
-        }
-
-
         public function renderStart(node:SVGNode):void {
             this.renderCurrent++;
         }
@@ -229,23 +185,6 @@ package com.sgweb.svg.nodes
             }
         }
         
-        override public function transformNode():void {
-            super.transformNode();
-            var newMatrix:Matrix = this.transform.matrix.clone();
-
-            newMatrix.translate(this.translateXParam, this.translateYParam);
-            newMatrix.scale(this.scaleXParam, this.scaleYParam);
-            // showAll_svg uses flash noScale mode which centers the
-            // object within the 2048x1024 scale. This reverses that
-            // here so we start with the proper zero coordinate properly.
-            if (this.scaleModeParam == "showAll_svg" || this.scaleModeParam == "noScale") {
-                newMatrix.translate( (2048.0 - this.stage.stageWidth) / 2, (1024.0 - this.stage.stageHeight) / 2);
-            }
-
-            this.transform.matrix = newMatrix;
-        }
-
-
         /**
          * Used to synchronize tweens
          **/

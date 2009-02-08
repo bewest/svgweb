@@ -69,8 +69,9 @@ package com.sgweb.svg
 
         protected var sourceTypeParam:String = "";
         protected var svgURLParam:String = "";
-        protected var renderStartTime:Number;
         protected var svgIdParam:String = "";
+        public var scaleModeParam:String = "showAll_svg";
+        protected var renderStartTime:Number;
         protected var debugEnabled:Boolean = false;
         protected var scriptSentToJS:Boolean = false;
 
@@ -98,6 +99,30 @@ package com.sgweb.svg
 
         }
         
+        /*
+           The width and height that is used is the size of the coordinate space that
+           flash is using for scaling. The coordinate space comes from the SWF directive
+           (2048 x 1024) at the top of this file. However, if the scaleModeParam is
+           showAll_svg, then we use flash noScale mode and the size of the coordinate space
+           is the size of the flash object.
+        */
+        public function getWidth():Number {
+            if (this.scaleModeParam == "showAll_svg") {
+                return this.stage.stageWidth;
+            }
+            else {
+                return 2048.0
+            }
+        }
+
+        public function getHeight():Number {
+            if (this.scaleModeParam == "showAll_svg") {
+                return this.stage.stageHeight;
+            }
+            else {
+                return 1024.0;
+            }
+        }
 
         public function debug(debugMessage:String):void {
             if (this.debugEnabled) {
@@ -251,7 +276,19 @@ package com.sgweb.svg
         }
 
         private function resizeListener (e:Event):void {
+            this.transformViewer();
             this._svgRoot.invalidateDisplay();
+        }
+
+        protected function transformViewer():void {
+            // noScale mode centers the object within the 2048x1024 scale.
+            // transformViewer() reverses that so that we start with the
+            // proper zero coordinate.
+            if (this.scaleModeParam == "showAll_svg" || this.scaleModeParam == "noScale") {
+                var newMatrix:Matrix = new Matrix();
+                newMatrix.translate( (2048.0 - this.stage.stageWidth) / 2, (1024.0 - this.stage.stageHeight) / 2);
+                this.transform.matrix = newMatrix;
+            }
         }
 
         private function addedToStage(event:Event = null):void {
@@ -309,7 +346,7 @@ package com.sgweb.svg
                 var matr:Matrix;
                 for (item in paramsObj) {
                     if (item == "scaleMode") {
-                        this._svgRoot.scaleModeParam = paramsObj[item];
+                        this.scaleModeParam = paramsObj[item];
                     }
                     if (item == "sourceType") {
                         this.sourceTypeParam = paramsObj[item];
@@ -333,9 +370,10 @@ package com.sgweb.svg
                         this._svgRoot.translateYParam = Number(paramsObj[item]);
                     }
                 }
-                if (this._svgRoot.scaleModeParam == "showAll_svg"
-                    || this._svgRoot.scaleModeParam == "noScale") {
+                if (this.scaleModeParam == "showAll_svg"
+                        || this.scaleModeParam == "noScale") {
                     this.stage.scaleMode = StageScaleMode.NO_SCALE;
+                    this.transformViewer();
                 }
 
                 if (this.sourceTypeParam == 'url_svg') {
