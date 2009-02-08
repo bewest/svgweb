@@ -1365,15 +1365,15 @@ package com.sgweb.svg.core
             if (name == "style") {
                 this._xml.@style = value;
                 this.parseStyle();
-                return;
-            }
-
-            if (this._styles.hasOwnProperty(name)) {
-                this._styles[name] = value;
-                updateStyle();
             }
             else {
-                this._xml.@[name] = value;
+                if (this._styles.hasOwnProperty(name)) {
+                    this._styles[name] = value;
+                    updateStyle();
+                }
+                else {
+                    this._xml.@[name] = value;
+                }
             }
             
             this.handleAttrChange(name, value);
