@@ -24,7 +24,7 @@ package com.sgweb.svg.nodes
     public class SVGCircleNode extends SVGNode
     {
         
-        public function SVGCircleNode(svgRoot:SVGRoot, xml:XML):void {
+        public function SVGCircleNode(svgRoot:SVGSVGNode, xml:XML):void {
             super(svgRoot, xml);
         }    
         

@@ -32,7 +32,7 @@ package com.sgweb.svg.nodes
         private var lastCurveControlX:Number;
         private var lastCurveControlY:Number;
         
-        public function SVGPathNode(svgRoot:SVGRoot, xml:XML):void {
+        public function SVGPathNode(svgRoot:SVGSVGNode, xml:XML):void {
             super(svgRoot, xml);
         }    
         

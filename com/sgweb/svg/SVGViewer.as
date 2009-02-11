@@ -33,7 +33,7 @@ package com.sgweb.svg
 {
     
     import com.sgweb.svg.core.SVGNode;
-    import com.sgweb.svg.nodes.SVGRoot;
+    import com.sgweb.svg.nodes.SVGSVGNode;
     import com.sgweb.svg.nodes.SVGGroupNode;
     
     import flash.display.Sprite;
@@ -58,7 +58,7 @@ package com.sgweb.svg
      **/
     public class SVGViewer extends Sprite
     {
-        private var _svgRoot:SVGRoot;
+        private var _svgRoot:SVGSVGNode;
         private var html:String;
         private var js_uniqueId:String = "";
         private var js_createdElements:Object = {};
@@ -78,25 +78,8 @@ package com.sgweb.svg
         public function SVGViewer():void {
             XML.ignoreProcessingInstructions = false;
             XML.ignoreComments = false;
-
-            // This fixes an exception with creating a Base64Decoder. My suspicion is that it has
-            // dependencies on mx framework which I avoid for size reasons.
-            // see http://groups.google.com/group/flex_india/browse_thread/thread/b53a0a828f1346eb
-            //var resourceManagerImpl:Object =
-                //flash.system.ApplicationDomain.currentDomain.getDefinition("mx.resources::ResourceManagerImpl");
-            //mx.core.Singleton.registerClass("mx.resources::IResourceManager", Class(resourceManagerImpl));
-
             super();
-
-            this._svgRoot = new SVGRoot(null);
-            this._svgRoot.debug = this.debug;
-            this._svgRoot.handleScript = this.handleScript;
-            this._svgRoot.handleOnLoad = this.handleOnLoad;
-            this._svgRoot.svgRoot = this._svgRoot;
-            this.addChild(this._svgRoot);
-
             this.addEventListener(Event.ADDED_TO_STAGE, addedToStage);
-
         }
         
         /*
@@ -174,7 +157,8 @@ package com.sgweb.svg
             this.renderStartTime =  (new Date()).valueOf();
             this.js_savedXML = event.target.data;
             var dataXML:XML = new XML(SVGViewer.expandEntities(event.target.data));
-            this._svgRoot.xml = dataXML;
+            this._svgRoot = new SVGSVGNode(null, dataXML);
+            this.addChild(this._svgRoot);
         }
 
         public static function expandEntities(xmlString:String):String {
@@ -216,7 +200,8 @@ package com.sgweb.svg
             }
             this.js_savedXML = svgString;
             var dataXML:XML = new XML(SVGViewer.expandEntities(svgString));
-            this._svgRoot.xml = dataXML;
+            this._svgRoot = new SVGSVGNode(null, dataXML);
+            this.addChild(this._svgRoot);
  
             // notify browser javascript that we are loaded
             try {
@@ -237,7 +222,8 @@ package com.sgweb.svg
             this.renderStartTime =  (new Date()).valueOf();
             this.js_savedXML = svgString;
             var dataXML:XML = new XML(SVGViewer.expandEntities(svgString));
-            this._svgRoot.xml = dataXML;
+            this._svgRoot = new SVGSVGNode(null, dataXML);
+            this.addChild(this._svgRoot);
         }
 
         public function loadSVGURL():void {
@@ -594,7 +580,7 @@ package com.sgweb.svg
                 }
             }
             if (jsMsg.method == 'getRoot') {
-                if (this._svgRoot._xml.@id) {
+                if (this._svgRoot.xml.@id) {
                     jsMsg.elementId = this._svgRoot.xml.@id.toString();
                 }
                 else {

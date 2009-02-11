@@ -21,7 +21,7 @@ package com.sgweb.svg.nodes
 {
     public class SVGSetNode extends SVGAnimateNode
     {
-        public function SVGSetNode(svgRoot:SVGRoot, xml:XML):void {
+        public function SVGSetNode(svgRoot:SVGSVGNode, xml:XML):void {
             super(svgRoot, xml);
         }    
         

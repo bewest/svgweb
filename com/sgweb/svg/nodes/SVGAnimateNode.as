@@ -55,7 +55,7 @@ package com.sgweb.svg.nodes
         private var _repeat:int;
         
         
-        public function SVGAnimateNode(svgRoot:SVGRoot, xml:XML):void {
+        public function SVGAnimateNode(svgRoot:SVGSVGNode, xml:XML):void {
             super(svgRoot, xml);        
         }    
         

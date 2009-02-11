@@ -30,7 +30,7 @@ package com.sgweb.svg.nodes
     
     public class SVGLinearGradient extends SVGNode
     {                
-        public function SVGLinearGradient(svgRoot:SVGRoot, xml:XML):void {
+        public function SVGLinearGradient(svgRoot:SVGSVGNode, xml:XML):void {
             super(svgRoot, xml);
         }    
 

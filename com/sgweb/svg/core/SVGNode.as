@@ -19,6 +19,7 @@
 
 package com.sgweb.svg.core
 {
+    import com.sgweb.svg.SVGViewer;
     import com.sgweb.svg.utils.SVGColors;
     import com.sgweb.svg.utils.SVGUnits;
     import com.sgweb.svg.SVGViewer;
@@ -50,13 +51,13 @@ package com.sgweb.svg.core
         /**
          * 
          **/
-        public var svgRoot:SVGRoot = null;
+        public var svgRoot:SVGSVGNode = null;
 
         /**
          * SVG XML for this node
          **/
         protected var _originalXML:XML; // used in case xlink:href is applied
-        public var _xml:XML;
+        protected var _xml:XML;
         protected var _revision:int = 0;
 
         /**
@@ -90,7 +91,7 @@ package com.sgweb.svg.core
          *
          * @return void.
          */
-        public function SVGNode(svgRoot:SVGRoot, xml:XML = null):void {
+        public function SVGNode(svgRoot:SVGSVGNode, xml:XML = null):void {
             this.svgRoot = svgRoot;
             this.xml = xml;
             this.addEventListener(Event.ADDED, registerId);
@@ -302,7 +303,7 @@ package com.sgweb.svg.core
             newMatrix = this.transform.matrix.clone();
 
             // <svg> and <image> nodes get an implicit mask of their height and width
-            if (this is SVGRoot || this is SVGSVGNode || this is SVGImageNode) {
+            if (this is SVGSVGNode || this is SVGImageNode) {
                 if (   (this.xml.@width != undefined) 
                     && (this.xml.@height != undefined) ) {
                     if (this.mask == null) {
@@ -1172,9 +1173,9 @@ package com.sgweb.svg.core
 
                 //this.dbg("done drawing " + this.xml.@id + " type " + describeType(this).@name);
             }
-            if (!(this._initialRenderDone)) {
+            if (!this._initialRenderDone && this.parent) {
                 this._initialRenderDone = true;
-                this.svgRoot.renderDone(this);
+                this.svgRoot.renderFinished();
             }
         }
         
@@ -1183,7 +1184,7 @@ package com.sgweb.svg.core
          **/
         override public function addChild(child:DisplayObject):DisplayObject {
             if (child is SVGNode) {
-                this.svgRoot.renderStart(SVGNode(child));
+                this.svgRoot.renderPending();
             }
             super.addChild(child);
             return child;
@@ -1218,7 +1219,7 @@ package com.sgweb.svg.core
          **/ 
         public function isChildOfDef():Boolean {
             var node:SVGNode = this;
-            while (node && !(node is SVGRoot)) {
+            while (node && !(node is SVGSVGNode)) {
                 node=SVGNode(node.parent);
                 if (node is SVGDefsNode)
                     return true;
@@ -1233,7 +1234,7 @@ package com.sgweb.svg.core
             if (this.getAttribute('display') == 'none') {
                 return true;
             }
-            while (node && !(node is SVGRoot)) {
+            while (node && !(node is SVGSVGNode)) {
                 node=node.parent;
                 if (node && node is SVGNode && SVGNode(node).getAttribute('display') == 'none') {
                     return true;
@@ -1246,7 +1247,7 @@ package com.sgweb.svg.core
             var node:DisplayObject = this;
             if (node is SVGMask)
                 return SVGMask(node);
-            while (node && !(node is SVGRoot)) {
+            while (node && !(node is SVGSVGNode)) {
                 node=node.parent;
                 if (node && (node is SVGMask))
                     return SVGMask(node);
@@ -1256,7 +1257,7 @@ package com.sgweb.svg.core
 
         public function getSVGClipMaskAncestor():SVGClipMaskParent {
             var node:DisplayObject = this;
-            while (node && !(node is SVGRoot)) {
+            while (node && !(node is SVGSVGNode)) {
                 node=node.parent;
                 if (node && (node is SVGClipMaskParent)) {
                     return SVGClipMaskParent(node);
@@ -1268,7 +1269,7 @@ package com.sgweb.svg.core
 
         public function getSVGBlurMaskAncestor():SVGBlurMaskParent {
             var node:SVGNode = this;
-            while (node && !(node is SVGRoot)) {
+            while (node && !(node is SVGSVGNode)) {
                 node=SVGNode(node.parent);
                 if (node && (node is SVGBlurMaskParent)) {
                     return SVGBlurMaskParent(node);

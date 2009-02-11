@@ -33,7 +33,7 @@ package com.sgweb.svg.nodes {
         public var url:String; 
         public var target:String;
         
-        public function SVGANode(svgRoot:SVGRoot, xml:XML = null) {
+        public function SVGANode(svgRoot:SVGSVGNode, xml:XML = null) {
             super(svgRoot, xml);
         }
         

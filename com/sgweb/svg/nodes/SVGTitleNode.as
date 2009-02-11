@@ -29,7 +29,7 @@ package com.sgweb.svg.nodes
         
         private var _title:String = "";
         
-        public function SVGTitleNode(svgRoot:SVGRoot, xml:XML)
+        public function SVGTitleNode(svgRoot:SVGSVGNode, xml:XML)
         {
             super(svgRoot, xml);
         }

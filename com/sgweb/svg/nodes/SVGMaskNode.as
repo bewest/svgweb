@@ -23,7 +23,7 @@ package com.sgweb.svg.nodes
 
     public class SVGMaskNode extends SVGNode
     {
-        public function SVGMaskNode(svgRoot:SVGRoot, xml:XML):void {
+        public function SVGMaskNode(svgRoot:SVGSVGNode, xml:XML):void {
             super(svgRoot, xml);
         }    
         

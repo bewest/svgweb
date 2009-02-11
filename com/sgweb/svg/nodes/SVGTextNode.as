@@ -48,7 +48,7 @@ package com.sgweb.svg.nodes
          **/
         private var _textField:TextField;
         
-        public function SVGTextNode(svgRoot:SVGRoot, xml:XML):void {            
+        public function SVGTextNode(svgRoot:SVGSVGNode, xml:XML):void {            
             super(svgRoot, xml);            
         }
         

@@ -24,7 +24,7 @@ package com.sgweb.svg.nodes
     public class SVGClipPathNode extends SVGNode
     {    
         
-        public function SVGClipPathNode(svgRoot:SVGRoot, xml:XML):void {    
+        public function SVGClipPathNode(svgRoot:SVGSVGNode, xml:XML):void {    
             super(svgRoot, xml);
         }                
         

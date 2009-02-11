@@ -24,7 +24,7 @@ package com.sgweb.svg.nodes
     
     public class SVGUseNode extends SVGNode
     {        
-        public function SVGUseNode(svgRoot:SVGRoot, xml:XML):void {
+        public function SVGUseNode(svgRoot:SVGSVGNode, xml:XML):void {
             super(svgRoot, xml);
         }    
 
@@ -38,9 +38,9 @@ package com.sgweb.svg.nodes
 
         override public function refreshHref():void {
 
-            var href:String = this._xml.@xlink::href;
+            var href:String = this.xml.@xlink::href;
             if (!href || href == '') {
-                href = this._xml.@href;
+                href = this.xml.@href;
             }
             if (href && href != '') {
                 href = href.replace(/^#/,'');
@@ -61,7 +61,7 @@ package com.sgweb.svg.nodes
                     this._xml = this._originalXML.copy();
 
                     // Create a child to hold a copy of the referenced object.
-                    var child:XML = new XML(this.copyXMLUnique(this._href._xml).toXMLString());
+                    var child:XML = new XML(this.copyXMLUnique(this._href.xml).toXMLString());
 
                     /* XXX 
                        I think if we remove our transformNode override, then this precedence code

@@ -24,7 +24,7 @@ package com.sgweb.svg.nodes
     
     public class SVGRectNode extends SVGNode
     {                
-        public function SVGRectNode(svgRoot:SVGRoot, xml:XML):void {
+        public function SVGRectNode(svgRoot:SVGSVGNode, xml:XML):void {
             super(svgRoot, xml);
         }    
         

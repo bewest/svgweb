@@ -24,7 +24,7 @@ package com.sgweb.svg.nodes
     
     public class SVGPolygonNode extends SVGNode
     {        
-        public function SVGPolygonNode(svgRoot:SVGRoot, xml:XML):void {
+        public function SVGPolygonNode(svgRoot:SVGSVGNode, xml:XML):void {
             super(svgRoot, xml);
         }    
         

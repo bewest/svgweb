@@ -24,7 +24,7 @@ package com.sgweb.svg.nodes
 
     public class SVGGradientStop extends SVGNode
     {                
-        public function SVGGradientStop(svgRoot:SVGRoot, xml:XML):void {
+        public function SVGGradientStop(svgRoot:SVGSVGNode, xml:XML):void {
             super(svgRoot, xml);
         }    
         

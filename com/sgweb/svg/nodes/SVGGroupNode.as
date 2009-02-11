@@ -26,7 +26,7 @@ package com.sgweb.svg.nodes
      **/
     public class SVGGroupNode extends SVGNode
     {
-        public function SVGGroupNode(svgRoot:SVGRoot, xml:XML):void {
+        public function SVGGroupNode(svgRoot:SVGSVGNode, xml:XML):void {
             super(svgRoot, xml);
         }    
     }

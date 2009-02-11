@@ -24,7 +24,7 @@ package com.sgweb.svg.nodes
     public class SVGEllipseNode extends SVGNode
     {
         
-        public function SVGEllipseNode(svgRoot:SVGRoot, xml:XML):void {
+        public function SVGEllipseNode(svgRoot:SVGSVGNode, xml:XML):void {
             super(svgRoot, xml);
         }    
         

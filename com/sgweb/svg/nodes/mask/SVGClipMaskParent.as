@@ -21,7 +21,7 @@ package com.sgweb.svg.nodes.mask
 {
     import com.sgweb.svg.core.SVGNode;
     import com.sgweb.svg.nodes.SVGClipPathNode;
-    import com.sgweb.svg.nodes.SVGRoot;
+    import com.sgweb.svg.nodes.SVGSVGNode;
     import com.sgweb.svg.nodes.mask.SVGMask;
     import com.sgweb.svg.nodes.SVGFilterNode;
     
@@ -35,7 +35,7 @@ package com.sgweb.svg.nodes.mask
         protected var _childToMaskXML:XML;
         protected var _childCopyNode:SVGNode;
 
-        public function SVGClipMaskParent(svgRoot:SVGRoot, 
+        public function SVGClipMaskParent(svgRoot:SVGSVGNode, 
                                           childToMaskXML:XML):void {
             this._childToMaskXML = childToMaskXML;
             super(svgRoot, this._childToMaskXML);

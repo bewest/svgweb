@@ -38,7 +38,7 @@ package com.sgweb.svg.nodes
         public var imageWidth:Number = 0;
         public var imageHeight:Number = 0;
 
-        public function SVGImageNode(svgRoot:SVGRoot, xml:XML):void {
+        public function SVGImageNode(svgRoot:SVGSVGNode, xml:XML):void {
             super(svgRoot, xml);
         }    
 

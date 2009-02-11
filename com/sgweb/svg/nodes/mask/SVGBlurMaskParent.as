@@ -20,7 +20,7 @@
 package com.sgweb.svg.nodes.mask
 {
     import com.sgweb.svg.core.SVGNode;
-    import com.sgweb.svg.nodes.SVGRoot;
+    import com.sgweb.svg.nodes.SVGSVGNode;
     import com.sgweb.svg.nodes.mask.SVGMask;
     import com.sgweb.svg.nodes.mask.SVGClipMaskParent;
     import com.sgweb.svg.nodes.SVGFilterNode;
@@ -73,7 +73,7 @@ package com.sgweb.svg.nodes.mask
         protected var _childToMaskLastWidth:Number = -1;
         protected var _childToMaskLastHeight:Number = -1;
 
-        public function SVGBlurMaskParent(svgRoot:SVGRoot, 
+        public function SVGBlurMaskParent(svgRoot:SVGSVGNode, 
                                           childToMaskXML:XML,
                                           filterStr:String):void {
             this._childToMaskXML = childToMaskXML;

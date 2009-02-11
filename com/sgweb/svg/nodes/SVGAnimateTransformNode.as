@@ -23,7 +23,7 @@ package com.sgweb.svg.nodes
 
     public class SVGAnimateTransformNode extends SVGAnimateNode
     {
-        public function SVGAnimateTransformNode(svgRoot:SVGRoot, xml:XML):void {
+        public function SVGAnimateTransformNode(svgRoot:SVGSVGNode, xml:XML):void {
             super(svgRoot, xml);
         }    
         

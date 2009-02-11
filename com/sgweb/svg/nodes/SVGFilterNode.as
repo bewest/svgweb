@@ -20,6 +20,7 @@
 package com.sgweb.svg.nodes
 {
     import com.sgweb.svg.core.SVGNode;
+    import com.sgweb.svg.nodes.SVGSVGNode;
     import com.sgweb.svg.utils.SVGColors;
     import com.sgweb.svg.nodes.mask.SVGMask;
     import com.sgweb.svg.nodes.mask.SVGClipMaskParent;
@@ -33,7 +34,7 @@ package com.sgweb.svg.nodes
         
         private var _filters:Array;
         
-        public function SVGFilterNode(svgRoot:SVGRoot, xml:XML)
+        public function SVGFilterNode(svgRoot:SVGSVGNode, xml:XML)
         {
             super(svgRoot, xml);
         }
@@ -55,20 +56,15 @@ package com.sgweb.svg.nodes
             var oldMatrix:Matrix;
 
             while (svgNode) {
-                // The root does not get its matrix from xml; it gets it from direct
-                // assignment (for scaling purposes) when the flash control is created.
-                if (svgNode is SVGRoot) {
-                    oldMatrix = svgNode.transform.matrix;
-                    oldMatrix.concat(concatMatrix);
-                    concatMatrix = oldMatrix;
-                    break;
-                }
                 if (  !(svgNode is SVGClipMaskParent)
                    && !(svgNode is SVGBlurMaskParent)
                    && (svgNode.xml.@transform != undefined) ) {
                     oldMatrix = this.parseTransform(svgNode.xml.@transform);
                     oldMatrix.concat(concatMatrix);
                     concatMatrix = oldMatrix;
+                }
+                if (svgNode is SVGSVGNode) {
+                    break;
                 }
                 svgNode = SVGNode(svgNode.parent);
             }

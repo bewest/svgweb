@@ -20,7 +20,7 @@
 package com.sgweb.svg.nodes.mask
 {
     import com.sgweb.svg.core.SVGNode;
-    import com.sgweb.svg.nodes.SVGRoot;
+    import com.sgweb.svg.nodes.SVGSVGNode;
     
     import flash.geom.Matrix;
     
@@ -29,7 +29,7 @@ package com.sgweb.svg.nodes.mask
 
         protected var _clipPathXML:XML;
 
-        public function SVGMask(svgRoot:SVGRoot, clipPathXML:XML):void {
+        public function SVGMask(svgRoot:SVGSVGNode, clipPathXML:XML):void {
             this._clipPathXML = new XML(this.copyXMLUnique(clipPathXML).toXMLString());            
             
             super(svgRoot, this._clipPathXML);
