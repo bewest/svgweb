@@ -58,6 +58,7 @@ package com.sgweb.svg.core
          **/
         protected var _originalXML:XML; // used in case xlink:href is applied
         protected var _xml:XML;
+        protected var _id:String = null;
         protected var _revision:int = 0;
 
         /**
@@ -84,6 +85,12 @@ package com.sgweb.svg.core
 
         public var _initialRenderDone:Boolean = false;
 
+        //Clone vars
+        public var original:SVGNode;
+        protected var _isClone:Boolean = false;
+        protected var _clones:Array = new Array();
+
+
         /**
          * Constructor
          *
@@ -91,10 +98,16 @@ package com.sgweb.svg.core
          *
          * @return void.
          */
-        public function SVGNode(svgRoot:SVGSVGNode, xml:XML = null):void {
+        public function SVGNode(svgRoot:SVGSVGNode, xml:XML = null, original:SVGNode = null):void {
             this.svgRoot = svgRoot;
             this.xml = xml;
-            this.addEventListener(Event.ADDED, registerId);
+            if (original) {
+                this.original = original;
+                this._isClone = true;
+            }
+
+            this.addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
+            this.addEventListener(Event.REMOVED_FROM_STAGE, onRemovedFromStage);
         }
 
         /** 
@@ -626,7 +639,7 @@ package com.sgweb.svg.core
                 if (matches != null && matches.length > 0) {
                     var fillName:String = matches[1];
                     this.svgRoot.addReference(this.xml.@id, fillName);
-                    var fillNode:SVGNode = this.svgRoot.getElement(fillName);
+                    var fillNode:SVGNode = this.svgRoot.getNode(fillName);
                     if (!fillNode) {
                          // this happens normally
                          //this.dbg("Gradient " + fillName + " not (yet?) available for " + this.xml.@id);
@@ -699,7 +712,7 @@ package com.sgweb.svg.core
                 if (strokeMatches != null && strokeMatches.length > 0) {
                     var strokeName:String = strokeMatches[1];
                     this.svgRoot.addReference(this.xml.@id, strokeName);
-                    var strokeNode:SVGNode = this.svgRoot.getElement(strokeName);
+                    var strokeNode:SVGNode = this.svgRoot.getNode(strokeName);
                     if (!strokeNode) {
                          // this happens normally
                          //this.dbg("stroke gradient " + strokeName + " not (yet?) available for " + this.xml.@id);
@@ -782,20 +795,6 @@ package com.sgweb.svg.core
                         break;
                 }
             }
-        }
-
-        /**
-         * If node has an "id" attribute, register it with the root node
-         **/
-        protected function registerId(event:Event):void {
-            this.removeEventListener(Event.ADDED, registerId);
-            
-            var id:String = this._xml.@id;
-            if (id != "") {
-                //this.dbg("registering " + id);
-                this.svgRoot.registerElement(id, this);
-            }
-
         }
 
         /**
@@ -1044,7 +1043,16 @@ package com.sgweb.svg.core
                     return value;
                 }
             }
-            
+
+            if (this.original && (this.parent is SVGNode)) {
+                //Node is the top level of a clone
+                //Check for an override value from the parent
+                value = SVGNode(this.parent).getAttribute(name, null, false);
+                if (value) {
+                    return value;
+                }
+            }
+           
             var xmlList:XMLList = this._xml.attribute(name);
             
             if (xmlList.length() > 0) {
@@ -1079,14 +1087,13 @@ package com.sgweb.svg.core
             }            
         }
 
-        /**
-         * Force a redraw of a node and its children
-         **/
-        public function invalidateDisplayTree():void {
-            this.invalidateDisplay();
-            for(var i:Number=0; i < this.numChildren; i++) {
-                if (this.getChildAt(i) is SVGNode) {
-                    SVGNode(this.getChildAt(i)).invalidateDisplayTree();
+        public function invalidateChildren():void {
+            var child:DisplayObject;
+            for (var i:uint = 0; i < this.numChildren; i++) {
+                child = this.getChildAt(i);
+                if (child is SVGNode) {
+                    SVGNode(child).invalidateDisplay();
+                    SVGNode(child).invalidateChildren();
                 }
             }
         }
@@ -1109,14 +1116,12 @@ package com.sgweb.svg.core
                     break;
 
                 default:
+                    this.invalidateDisplay();
                     if (   (attrName == 'display' || attrName == 'visibility')
                         || (attrName == 'style' &&
                                 (   (attrValue.indexOf('visibility') != -1 )
                                  || (attrValue.indexOf('display') != -1 ) ) ) ) {
-                        this.invalidateDisplayTree();
-                    }
-                    else {
-                        this.invalidateDisplay();
+                        this.invalidateChildren();
                     }
                     break;
             }
@@ -1131,7 +1136,7 @@ package com.sgweb.svg.core
          * Triggers on ENTER_FRAME event
          * Redraws node graphics if _invalidDisplay == true
          **/
-        protected function redrawNode(event:Event):void {
+        protected function redrawNode(event:Event = null):void {
 
             if ( (this.parent != null) && (this._invalidDisplay) ) {
                 this._invalidDisplay = false;
@@ -1201,9 +1206,9 @@ package com.sgweb.svg.core
                 var matches:Array = filterName.match(/url\(#([^\)]+)\)/si);
                 if (matches.length > 0) {
                     filterName = matches[1];
-                    var filterNode:SVGFilterNode = this.svgRoot.getElement(filterName);
+                    var filterNode:SVGNode = this.svgRoot.getNode(filterName);
                     if (filterNode) {
-                        this.filters = filterNode.getFilters(this);
+                        this.filters = SVGFilterNode(filterNode).getFilters(this);
                     }
                     else {
                         //this.dbg("filter " + filterName + " not (yet?) available for " + this.xml.@id);
@@ -1297,6 +1302,7 @@ package com.sgweb.svg.core
             this._parsedChildren = false;
             this.parseStyle();
             this.invalidateDisplay();
+            this.updateClones();
         }
         
         public function get xml():XML {
@@ -1338,6 +1344,7 @@ package com.sgweb.svg.core
             }
             
             this.handleAttrChange(name, value);
+            this.updateClones();
         }
  
        /**
@@ -1376,7 +1383,7 @@ package com.sgweb.svg.core
             if (href && href != '') {
                 href = href.replace(/^#/,'');
 
-                this._href = this.svgRoot.getElement(href);
+                this._href = this.svgRoot.getNode(href);
                 if (!this._href) {
                      //this.dbg("href " + href + " not available for " + this.xml.@id);
                 }
@@ -1459,6 +1466,89 @@ package com.sgweb.svg.core
             }
 
         }
+
+        /*
+         * Node registration triggered by stage add / remove
+         */
+
+        protected function onAddedToStage(event:Event):void {
+            this.registerID();
+            if (this.original) {
+                this.original.registerClone(this);
+            }
+        }
+
+        protected function onRemovedFromStage(event:Event):void {
+            this.unregisterID();
+            if (this.original) {
+                this.original.unregisterClone(this);
+            }
+        }
+
+        protected function registerID():void {
+            if (this._isClone) {
+                return;
+            }
+
+            var id:String = this.getAttribute('id');
+
+            if (id == _id) {
+                return;
+            }
+
+            if (_id) {
+                this.svgRoot.unregisterNode(this);
+            }
+
+            if (id && id != "") {
+                _id = id;
+                this.svgRoot.registerNode(this);
+            }
+        }
+
+        protected function unregisterID():void {
+            if (this._id) {
+                this.svgRoot.unregisterNode(this);
+                _id = null;
+            }
+        }
+
+        /*
+         * Clone Handlers
+         */
+
+        public function clone():SVGNode {
+            var nodeClass:Class = getDefinitionByName(getQualifiedClassName(this)) as Class;
+            var newXML:XML = this._xml.copy();
+
+            var node:SVGNode = new nodeClass(this.svgRoot, newXML, this) as SVGNode;
+
+            return node;
+        }
+
+        public function registerClone(clone:SVGNode):void {
+            if (this._clones.indexOf(clone) == -1) {
+               this._clones.push(clone);
+            }
+        }
+
+        public function unregisterClone(clone:SVGNode):void {
+            var index:int = this._clones.indexOf(clone);
+            if (index > -1) {
+                this._clones = this._clones.splice(index, 1);
+            }
+        }
+
+        protected function updateClones():void {
+            for (var i:uint = 0; i < this._clones.length; i++) {
+               SVGNode(this._clones[i]).xml = this._xml.copy();
+            }
+        }
+
+        public function get isClone():Boolean {
+            return this._isClone;
+        }
+
 
         public function dbg(debugString:String):void {
             this.svgRoot.debug(debugString);

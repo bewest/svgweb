@@ -30,24 +30,21 @@ package com.sgweb.svg.nodes
         protected var firedOnLoad:Boolean = false;
         protected var scaleModeParam:String = 'svg_all';
 
-        protected var _elementById:Object;
+        private var _nodeLookup:Object;
         protected var _referersById:Object;
 
         public var title:String;
 
-        public function SVGSVGNode(svgRoot:SVGSVGNode = null, xml:XML = null) {
+        public function SVGSVGNode(svgRoot:SVGSVGNode = null, xml:XML = null, original:SVGNode = null):void {
             if (svgRoot) {
                 this.parentSVGRoot = svgRoot;
             }
-            super(this, xml);
+            super(this, xml, original);
         }
 
         public override function set xml(value:XML):void {        
-            this._elementById = new Object();    
+            this._nodeLookup = new Object();
             this._referersById = new Object();    
-            if (value.@id) {
-                this._elementById[value.@id] = this;
-            }
             super.xml = value;
 
             // If this is the top SVG element, then start the render tracking process.
@@ -125,8 +122,29 @@ package com.sgweb.svg.nodes
             }
         }
        
-        public function registerElement(id:String, node:*):void {    
-            this._elementById[id] = node;
+        public function registerNode(node:SVGNode):void {
+            _nodeLookup[node.id] = node;
+        }
+
+        public function unregisterNode(node:SVGNode):void {
+            delete _nodeLookup[node.id];
+        }
+
+        override protected function registerID():void {
+            super.registerID();
+
+            if (parentSVGRoot) {
+                parentSVGRoot.registerNode(this);
+            }
+        }
+
+        override protected function unregisterID():void {
+            super.unregisterID();
+
+            if (parentSVGRoot) {
+                parentSVGRoot.unregisterNode(this);
+                parentSVGRoot = null;
+            }
         }
 
         /**
@@ -150,23 +168,16 @@ package com.sgweb.svg.nodes
             if (this._referersById[id]) {
                 var referers:Array = this._referersById[id];
                 for (var referer:String in referers) {
-                    if (this.getElement(referer)) {
-                        this.getElement(referer).invalidateDisplay();
+                    if (this.getNode(referer)) {
+                        this.getNode(referer).invalidateDisplay();
                     }
                 }
             }
         }
 
-        /**
-         * Retrieve registered node by name
-         * 
-         * @param id id of node to be retrieved
-         * 
-         * @return node registered with id
-         **/
-        public function getElement(id:String):* {
-            if (this._elementById.hasOwnProperty(id)) {
-                return this._elementById[id]; 
+        public function getNode(name:String):SVGNode {
+            if (_nodeLookup.hasOwnProperty(name)) {
+                return _nodeLookup[name];
             }
             return null;
         }

@@ -34,9 +34,8 @@ package com.sgweb.svg.nodes
         
         private var _filters:Array;
         
-        public function SVGFilterNode(svgRoot:SVGSVGNode, xml:XML)
-        {
-            super(svgRoot, xml);
+        public function SVGFilterNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
+            super(svgRoot, xml, original);
         }
         
         override protected function parse():void {

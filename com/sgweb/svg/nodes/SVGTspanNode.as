@@ -23,9 +23,9 @@ package com.sgweb.svg.nodes
 
     public class SVGTspanNode extends SVGTextNode
     {        
-        public function SVGTspanNode(svgRoot:SVGSVGNode, xml:XML):void {
-            super(svgRoot, xml);
-        }    
+        public function SVGTspanNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
+            super(svgRoot, xml, original);
+        }
         
     }
 }

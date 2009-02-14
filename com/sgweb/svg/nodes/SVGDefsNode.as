@@ -28,9 +28,9 @@ package com.sgweb.svg.nodes
     public class SVGDefsNode extends SVGNode
     {
         
-        public function SVGDefsNode(svgRoot:SVGSVGNode, xml:XML):void {
-            super(svgRoot, xml);
-        }        
+        public function SVGDefsNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
+            super(svgRoot, xml, original);
+        }
                 
         override protected function draw():void {
             //Do Nothing

@@ -157,6 +157,11 @@ package com.sgweb.svg
             this.renderStartTime =  (new Date()).valueOf();
             this.js_savedXML = event.target.data;
             var dataXML:XML = new XML(SVGViewer.expandEntities(event.target.data));
+            // Make sure there is an id to identify the root node, in order to support
+            // javascript access to the documentElement.
+            if (dataXML.@id == undefined) {
+                dataXML.@id = "rand" + Math.random();
+            }
             this._svgRoot = new SVGSVGNode(null, dataXML);
             this.addChild(this._svgRoot);
         }
@@ -200,28 +205,24 @@ package com.sgweb.svg
             }
             this.js_savedXML = svgString;
             var dataXML:XML = new XML(SVGViewer.expandEntities(svgString));
+            // Make sure there is an id to identify the root node, in order to support
+            // javascript access to the documentElement.
+            if (dataXML.@id == undefined) {
+                dataXML.@id = "rand" + Math.random();
+            }
             this._svgRoot = new SVGSVGNode(null, dataXML);
             this.addChild(this._svgRoot);
- 
-            // notify browser javascript that we are loaded
-            try {
-                var result:Object = ExternalInterface.call("receiveFromFlash",
-                    { type: 'event', eventType: 'onLoad', uniqueId: this.js_uniqueId } );
-            }
-            catch(error:SecurityError) {
-                var myURL:String = this.root.loaderInfo.loaderURL;
-                var debugstr:String = "Security Error on ExternalInterface.call(...). ";
-                if (myURL.substring(0,4) == "file") {
-                    debugstr += "This is expected when loaded from a local file.";
-                }
-                this.debug(debugstr);
-            }
         }
 
         public function loadSVGString(svgString:String):void {
             this.renderStartTime =  (new Date()).valueOf();
             this.js_savedXML = svgString;
             var dataXML:XML = new XML(SVGViewer.expandEntities(svgString));
+            // Make sure there is an id to identify the root node, in order to support
+            // javascript access to the documentElement.
+            if (dataXML.@id == undefined) {
+                dataXML.@id = "rand" + Math.random();
+            }
             this._svgRoot = new SVGSVGNode(null, dataXML);
             this.addChild(this._svgRoot);
         }
@@ -485,7 +486,7 @@ package com.sgweb.svg
                 if (typeof(this.js_createdElements[jsMsg.elementId]) != "undefined") {
                     return jsMsg;
                 }
-                if (!this._svgRoot.getElement(jsMsg.elementId)) {
+                if (!this._svgRoot.getNode(jsMsg.elementId)) {
                     this.debug("getElem:not found: " + jsMsg.elementId);
                     return null;
                 }
@@ -496,7 +497,7 @@ package com.sgweb.svg
                     element=this.js_createdElements[jsMsg.elementId];
                 }
                 else {
-                    element = this._svgRoot.getElement(jsMsg.elementId);
+                    element = this._svgRoot.getNode(jsMsg.elementId);
                 }
                 if (element) {
                     var handler:Function;
@@ -552,7 +553,7 @@ package com.sgweb.svg
                     element=this.js_createdElements[jsMsg.elementId];
                 }
                 else {
-                    element = this._svgRoot.getElement(jsMsg.elementId);
+                    element = this._svgRoot.getNode(jsMsg.elementId);
                 }
                 // Get the child node
 
@@ -572,7 +573,7 @@ package com.sgweb.svg
                         childNode=this.js_createdElements[jsMsg.childId];
                     }
                     else {
-                        childNode = this._svgRoot.getElement(jsMsg.childId);
+                        childNode = this._svgRoot.getNode(jsMsg.childId);
                     }
                     if (element && childNode)  {
                         element.addChild(childNode);
@@ -595,7 +596,7 @@ package com.sgweb.svg
                     element=this.js_createdElements[jsMsg.elementId];
                 }
                 else {
-                    element = this._svgRoot.getElement(jsMsg.elementId);
+                    element = this._svgRoot.getNode(jsMsg.elementId);
                 }
                 if (element) {
                     jsMsg.attrValue = element.getAttribute(jsMsg.attrName);
@@ -609,7 +610,7 @@ package com.sgweb.svg
                     element=this.js_createdElements[jsMsg.elementId];
                 }
                 else {
-                    element = this._svgRoot.getElement(jsMsg.elementId);
+                    element = this._svgRoot.getNode(jsMsg.elementId);
                 }
                 if (element) {
                     element.setAttribute(jsMsg.attrName, jsMsg.attrValue.toString());

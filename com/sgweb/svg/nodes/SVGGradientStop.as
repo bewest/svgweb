@@ -24,11 +24,11 @@ package com.sgweb.svg.nodes
 
     public class SVGGradientStop extends SVGNode
     {                
-        public function SVGGradientStop(svgRoot:SVGSVGNode, xml:XML):void {
-            super(svgRoot, xml);
-        }    
+        public function SVGGradientStop(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
+            super(svgRoot, xml, original);
+        }
         
-        override protected function redrawNode(event:Event):void {
+        override protected function redrawNode(event:Event = null):void {
             super.redrawNode(event);
             //this.svgRoot.debug("stop " + this.xml.@id + " drawn. invalidating referers to " + SVGNode(this.parent).xml.@id);
             // XXX assumes parent has id

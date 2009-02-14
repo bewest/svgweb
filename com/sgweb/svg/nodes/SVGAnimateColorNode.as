@@ -19,11 +19,13 @@
 
 package com.sgweb.svg.nodes
 {
+    import com.sgweb.svg.core.SVGNode;
+
     public class SVGAnimateColorNode extends SVGAnimateNode
     {
-        public function SVGAnimateColorNode(svgRoot:SVGSVGNode, xml:XML):void {
-            super(svgRoot, xml);
-        }    
-        
+        public function SVGAnimateColorNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
+            super(svgRoot, xml, original);
+        }
+
     }
 }

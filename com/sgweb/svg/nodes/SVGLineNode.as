@@ -22,9 +22,9 @@ package com.sgweb.svg.nodes
     import com.sgweb.svg.core.SVGNode;
     public class SVGLineNode extends SVGNode
     {        
-        public function SVGLineNode(svgRoot:SVGSVGNode, xml:XML):void {
-            super(svgRoot, xml);
-        }    
+        public function SVGLineNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
+            super(svgRoot, xml, original);
+        }
         
         /**
          * Generate graphics commands to draw a line

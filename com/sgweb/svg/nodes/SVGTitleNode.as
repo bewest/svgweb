@@ -29,9 +29,8 @@ package com.sgweb.svg.nodes
         
         private var _title:String = "";
         
-        public function SVGTitleNode(svgRoot:SVGSVGNode, xml:XML)
-        {
-            super(svgRoot, xml);
+        public function SVGTitleNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
+            super(svgRoot, xml, original);
         }
         
         override protected function parse():void {

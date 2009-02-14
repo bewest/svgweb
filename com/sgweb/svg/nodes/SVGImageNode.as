@@ -38,9 +38,9 @@ package com.sgweb.svg.nodes
         public var imageWidth:Number = 0;
         public var imageHeight:Number = 0;
 
-        public function SVGImageNode(svgRoot:SVGSVGNode, xml:XML):void {
-            super(svgRoot, xml);
-        }    
+        public function SVGImageNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
+            super(svgRoot, xml, original);
+        }
 
         protected override function draw():void {
             var imageHref:String = this._xml.@href;

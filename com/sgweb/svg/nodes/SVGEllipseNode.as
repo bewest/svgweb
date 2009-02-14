@@ -24,9 +24,9 @@ package com.sgweb.svg.nodes
     public class SVGEllipseNode extends SVGNode
     {
         
-        public function SVGEllipseNode(svgRoot:SVGSVGNode, xml:XML):void {
-            super(svgRoot, xml);
-        }    
+        public function SVGEllipseNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
+            super(svgRoot, xml, original);
+        }
         
         /**
          * Generate graphics commands to draw an ellipse

@@ -25,9 +25,9 @@ package com.sgweb.svg.nodes
     
     public class SVGPolylineNode extends SVGNode
     {        
-        public function SVGPolylineNode(svgRoot:SVGSVGNode, xml:XML):void {
-            super(svgRoot, xml);
-        }    
+        public function SVGPolylineNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
+            super(svgRoot, xml, original);
+        }
         
         /**
          * Generate graphics commands to draw a polyline

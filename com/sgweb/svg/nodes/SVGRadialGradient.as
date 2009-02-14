@@ -29,9 +29,9 @@ package com.sgweb.svg.nodes
     
     public class SVGRadialGradient extends SVGNode
     {                
-        public function SVGRadialGradient(svgRoot:SVGSVGNode, xml:XML):void {
-            super(svgRoot, xml);
-        }    
+        public function SVGRadialGradient(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
+            super(svgRoot, xml, original);
+        }
 
         /**
          * 

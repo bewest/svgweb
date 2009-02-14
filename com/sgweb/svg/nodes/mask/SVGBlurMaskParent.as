@@ -141,12 +141,12 @@ package com.sgweb.svg.nodes.mask
         public function updateBlurMaskTransform():void {
 
             this.svgRoot.debug("UpdateBlurMask: looking up id: " + this._clipShapeId);
-            var clipNode:SVGNode = this.svgRoot.getElement(this._clipShapeId);
+            var clipNode:SVGNode = this.svgRoot.getNode(this._clipShapeId);
             if (clipNode == null) {
                 this.svgRoot.debug("UpdateBlurMask: clip not found");
                 return;
             }
-            var childToMask:SVGNode = this.svgRoot.getElement(this._childToMaskXML.@id);
+            var childToMask:SVGNode = this.svgRoot.getNode(this._childToMaskXML.@id);
             if (childToMask == null) {
                 this.svgRoot.debug("UpdateBlurMask: child not found");
                 return;
@@ -168,7 +168,7 @@ package com.sgweb.svg.nodes.mask
                 var matches:Array = this._filterStr.match(/url\(#([^\)]+)\)/si);
                 if (matches.length > 0) {
                     var filterName:String = matches[1];
-                    var filterNode:SVGFilterNode = this.svgRoot.getElement(filterName);
+                    var filterNode:SVGNode = this.svgRoot.getNode(filterName);
                     if (filterNode) {
                         this._childToMaskLastWidth = childToMask.width;
                         this._childToMaskLastHeight = childToMask.height;
@@ -235,8 +235,10 @@ package com.sgweb.svg.nodes.mask
         }
 
 
-        override protected function registerId(event:Event):void {
-            this.removeEventListener(Event.ADDED, registerId);
+        override protected function registerID():void {
+        }
+
+        override protected function unregisterID():void {
         }
 
     }

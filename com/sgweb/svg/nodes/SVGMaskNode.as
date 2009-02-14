@@ -23,9 +23,9 @@ package com.sgweb.svg.nodes
 
     public class SVGMaskNode extends SVGNode
     {
-        public function SVGMaskNode(svgRoot:SVGSVGNode, xml:XML):void {
-            super(svgRoot, xml);
-        }    
+        public function SVGMaskNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
+            super(svgRoot, xml, original);
+        }
         
         override protected function draw():void {
         	//Node should not be visible

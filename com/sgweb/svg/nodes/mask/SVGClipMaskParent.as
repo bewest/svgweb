@@ -56,7 +56,7 @@ package com.sgweb.svg.nodes.mask
             }
             var clipPath:String= clipList[0].toString();
             clipPath = clipPath.replace(/url\(#(.*?)\)/si,"$1");
-            var clipPathNode:SVGNode = this.svgRoot.getElement(clipPath);
+            var clipPathNode:SVGNode = this.svgRoot.getNode(clipPath);
 
             // Create and add the mask node
             // xxx would need to create random this.xml.@id if necessary.
@@ -103,8 +103,11 @@ package com.sgweb.svg.nodes.mask
             this._graphicsCommands = new Array();
         }
 
-        override protected function registerId(event:Event):void {
-            this.removeEventListener(Event.ADDED, registerId);
+        override protected function registerID():void {
         }
+
+        override protected function unregisterID():void {
+        }
+
     }
 }

@@ -55,9 +55,9 @@ package com.sgweb.svg.nodes
         private var _repeat:int;
         
         
-        public function SVGAnimateNode(svgRoot:SVGSVGNode, xml:XML):void {
-            super(svgRoot, xml);        
-        }    
+        public function SVGAnimateNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
+            super(svgRoot, xml, original);
+        }
         
         override protected function draw():void {        
             if (isChildOfDef())

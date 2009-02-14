@@ -23,9 +23,9 @@ package com.sgweb.svg.nodes
 
     public class SVGAnimateTransformNode extends SVGAnimateNode
     {
-        public function SVGAnimateTransformNode(svgRoot:SVGSVGNode, xml:XML):void {
-            super(svgRoot, xml);
-        }    
+        public function SVGAnimateTransformNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
+            super(svgRoot, xml, original);
+        }
         
     }
 }
