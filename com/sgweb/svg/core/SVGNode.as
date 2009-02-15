@@ -1036,6 +1036,32 @@ package com.sgweb.svg.core
         protected function _getAttribute(name:String):String {
             var value:String;
             
+            // If we are rendering a mask, then use a simple black fill.
+            if (this.getSVGMaskAncestor() != null
+                 || (this is SVGClipMaskParent)
+                 || (this is SVGBlurMaskParent)) {
+
+                if (  (name == 'opacity')
+                    || (name == 'fill-opacity')
+                    || (name == 'stroke-width')
+                    || (name == 'stroke-opacity') ) {
+                    return '1';
+                }
+
+                if (name == 'fill') {
+                    return 'black';
+                }
+
+                if (name == 'stroke') {
+                    return 'none';
+                    //return 'black';
+                }
+
+                if (name == 'filter') {
+                    return null;
+                }
+            }
+           
             if (name == "href") {
                 //this._xml@href handled normally
                 value = this._xml.@xlink::href;                             
