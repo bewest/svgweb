@@ -644,11 +644,8 @@ package com.sgweb.svg.core
                          // this happens normally
                          //this.dbg("Gradient " + fillName + " not (yet?) available for " + this.xml.@id);
                     }
-                    if (fillNode is SVGLinearGradient) {
-                         SVGLinearGradient(fillNode).beginGradientFill(this, this.graphics);
-                    }
-                    if (fillNode is SVGRadialGradient) {
-                         SVGRadialGradient(fillNode).beginGradientFill(this, this.graphics);
+                    if (fillNode is SVGGradient) {
+                         SVGGradient(fillNode).beginGradientFill(this);
                     }
                 }
                 else {
@@ -717,11 +714,8 @@ package com.sgweb.svg.core
                          // this happens normally
                          //this.dbg("stroke gradient " + strokeName + " not (yet?) available for " + this.xml.@id);
                     }
-                    if (strokeNode is SVGLinearGradient) {
-                         SVGLinearGradient(strokeNode).lineGradientStyle(this, this.graphics, line_alpha);
-                    }
-                    if (strokeNode is SVGRadialGradient) {
-                         SVGRadialGradient(strokeNode).lineGradientStyle(this, this.graphics, line_alpha);
+                    if (strokeNode is SVGGradient) {
+                         SVGGradient(strokeNode).lineGradientStyle(this, line_alpha);
                     }
                 }
             }
@@ -955,7 +949,7 @@ package com.sgweb.svg.core
                     childNode = new SVGSetNode(this.svgRoot, childXML);
                     break;
                 case "stop":
-                    childNode = new SVGGradientStop(this.svgRoot, childXML);            
+                    childNode = new SVGStopNode(this.svgRoot, childXML);            
                     break;
                 case "svg":
                     childNode = new SVGSVGNode(this.svgRoot, childXML);
