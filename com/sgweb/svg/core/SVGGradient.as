@@ -113,6 +113,44 @@ package com.sgweb.svg.core
             return stopData;
         }
 
+        /**
+         *
+         * This method supports href inheritence of attributes from base nodes of the same type.
+         *
+         **/
+        override protected function _getAttribute(name:String):String {
+
+            var value:String = super._getAttribute(name);
+            if (value) {
+                return value;
+            }
+
+            var href:String = this._xml.@xlink::href;
+            if (!href || href=='') {
+                href = this._xml.@href;
+            }
+
+            if (href && href != '') {
+                href = href.replace(/^#/,'');
+
+                var baseNode:SVGNode = this.svgRoot.getNode(href);
+                if (baseNode) {
+                    // Return value from href base node, perhaps recursively.
+                    // XXX possible circular reference problem.
+                    return baseNode.getAttribute(name, null, false);
+                }
+                else {
+                    // Href is not (yet) parsed, just return value for this node
+                    return value;
+                }
+            }
+            else {
+                // No href, just return value for this node
+                return value;
+            }
+
+        }
+
 
     }
 }

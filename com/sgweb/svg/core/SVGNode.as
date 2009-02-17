@@ -56,16 +56,8 @@ package com.sgweb.svg.core
         /**
          * SVG XML for this node
          **/
-        protected var _originalXML:XML; // used in case xlink:href is applied
         protected var _xml:XML;
         protected var _id:String = null;
-        protected var _revision:int = 0;
-
-        /**
-         * xlink:href base handling
-         **/
-        protected var _href:SVGNode; 
-        protected var _hrefRevision:int = -1;
 
         /**
          * List of graphics commands to draw node.
@@ -123,60 +115,6 @@ package com.sgweb.svg.core
             this.loadAttribute('rotate','rotation');
             this.loadAttribute('opacity','alpha');
         }
-
-        public static function overwriteStyles(baseStylesStr:String, newStylesStr:String):String {
-
-            var mergedStyles:Object = new Object();
-            var mergedStylesStr:String = "";
-            var styleSet:Array;
-            var attrName:String;
-            var attrValue:String;
-            var style:String;
-
-            // Create an object with the base styles
-            var baseStyles:Array = baseStylesStr.split(';');
-            for each(style in baseStyles) {
-                styleSet = style.split(':');
-                if (styleSet.length == 2) {
-                    attrName = styleSet[0];
-                    attrValue = styleSet[1];
-                    // Trim leading whitespace.
-                    attrName = attrName.replace(/^\s+/, '');
-                    attrValue = attrValue.replace(/^\s+/, '');
-                    mergedStyles[attrName] = attrValue;
-                }
-            }
-
-            // Set the new styles over the base styles
-            var newStyles:Array = newStylesStr.split(';');
-            for each(style in newStyles) {
-                styleSet = style.split(':');
-                if (styleSet.length == 2) {
-                    attrName = styleSet[0];
-                    attrValue = styleSet[1];
-                    // Trim leading whitespace.
-                    attrName = attrName.replace(/^\s+/, '');
-                    attrValue = attrValue.replace(/^\s+/, '');
-                    // overwriting fills have special rules.
-                    // url gradients take precedence over new rgb
-                    if (attrName == 'fill' && mergedStyles[attrName] != undefined) {
-                        if (   (mergedStyles[attrName].indexOf('url') == -1)
-                            || (attrValue.indexOf('url') != -1) ) {
-                            mergedStyles[attrName] = attrValue;
-                        }
-                    }
-                    else {
-                        mergedStyles[attrName] = attrValue;
-                    }
-                }
-            }
-
-            for (attrName in mergedStyles) {
-                mergedStylesStr = mergedStylesStr + attrName + ":" + mergedStyles[attrName] + ";";
-            }
-            return mergedStylesStr;
-        }
-            
 
         public function parseTransform(trans:String, baseMatrix:Matrix = null):Matrix {
             if (!baseMatrix) {
@@ -797,7 +735,6 @@ package com.sgweb.svg.core
          **/
         protected function parse():void {
             //this.dbg("parse: " + this.xml.@id + " type " + describeType(this).@name);
-            this.refreshHref();
             
             for each (var childXML:XML in this._xml.children()) {    
 
@@ -831,7 +768,6 @@ package com.sgweb.svg.core
                         }
                         continue;
                     }
-                    newChildNode.refreshHref();
 
                     var filterStr:String = newChildNode.getAttribute('filter');
 
@@ -1027,6 +963,12 @@ package com.sgweb.svg.core
             return defaultValue;            
         }
         
+        /**
+         *
+         * This method retrieves the attribute from the current node only and is
+         * used as a helper for getAttribute, which has css parent inheritance logic.
+         *
+         **/
         protected function _getAttribute(name:String):String {
             var value:String;
             
@@ -1048,7 +990,6 @@ package com.sgweb.svg.core
 
                 if (name == 'stroke') {
                     return 'none';
-                    //return 'black';
                 }
 
                 if (name == 'filter') {
@@ -1082,7 +1023,7 @@ package com.sgweb.svg.core
             if (_styles.hasOwnProperty(name)) {
                 return (_styles[name]);
             }
-            
+ 
             return null;
         }
 
@@ -1315,9 +1256,7 @@ package com.sgweb.svg.core
          *
         **/
         public function set xml(xml:XML):void {
-            this._originalXML = xml.copy();
             this._xml = xml;
-            this._revision++;
             this.clearChildren();
             this._parsedChildren = false;
             this.parseStyle();
@@ -1333,11 +1272,6 @@ package com.sgweb.svg.core
             var id:String = this._xml.@id;
             return id;
         }
-
-        public function get revision():int {
-            return this._revision;
-        }
-        
 
         /** 
          * @private
@@ -1386,87 +1320,6 @@ package com.sgweb.svg.core
         }
  
      
-        /**
-         * Load _href content and then append/replace back original content
-         **/
-        public function refreshHref():void {
-
-            /**
-             * If _href revision has changed, copy xml over
-             **/
-            var href:String = this._xml.@xlink::href;
-            if (!href || href=='') {
-                href = this._xml.@href;
-            }
-//            this.dbg("hrefresh: " + href + " mytype:" + describeType(this).@name + " myid: "+ this._xml.@id);
-
-            if (href && href != '') {
-                href = href.replace(/^#/,'');
-
-                this._href = this.svgRoot.getNode(href);
-                if (!this._href) {
-                     //this.dbg("href " + href + " not available for " + this.xml.@id);
-                }
-            }
-
-            if (this._href
-                && (this._href.revision != this._hrefRevision)) {
-                //this.dbg("Doing href refresh of " + this._xml.@xlink::href + " for " + this._xml.@id); 
-                /**
-                 * The call makes this refresh recursive
-                 **/
-                this._href.refreshHref();
-
-                /**
-                 * Copy the href
-                 **/
-
-
-                this._xml = this._originalXML.copy();
-
-                /**
-                 *
-                 **/
-
-                for (var index:int=0; index < this._href._xml.children().length(); index++) {
-                    var childCopyXML:XML =this._href._xml.children()[index];
-                    this._xml.appendChild(this.copyXMLUnique(childCopyXML).toXMLString());
-                    
-                }
-
-                for each( var attr:XML in this._href.xml.attributes() ) {
-                    this._xml.@[attr.name()] = attr.toString();
-                }
-
-                /**
-                 * Replace the previous attributes since they have
-                 * precedence over referenced xml.
-                 **/
-                for each( var myattr:XML in this._originalXML.attributes() ) {
-                    if (myattr.name()  != "style") {
-                        this._xml.@[myattr.name()] = myattr.toString();
-                    }
-                    else {
-                        if (this._xml.@style) {
-                            this._xml.@style = SVGNode.overwriteStyles(this.xml.@style, myattr.toString);
-                        }
-                        else {
-                            this._xml.@style = myattr.toString;
-                        }
-                    }
-                }
-
-
-                this._revision++;
-                this._hrefRevision = this._href._revision;
-            }
-            else {
-                //this.dbg("NOT Doing href refresh of " + this._xml.@xlink::href + " for " + this._xml.@id); 
-                //this.dbg("2NOT Doing href refresh of " + this._href + " type " + (typeof this._href)); 
-            }
-            return;
-        }
-
         public function copyXMLUnique(originalXML:XML):XML {
             var myXML:XML = originalXML.copy();
             this.makeUniqueIDs(myXML);

@@ -53,13 +53,6 @@ package com.sgweb.svg.nodes
             this.invalidateChildren();
         }
 
-        // Normally this routine is used to copy xml from the original when it changes,
-        // however, this is not appropriate for USE nodes.
-        // SVGUseNode creates a child from the original pointed to by href and updates
-        // are initiated by the original.
-        override public function refreshHref():void {
-        }
-
     }
 }
 
