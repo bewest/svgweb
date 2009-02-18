@@ -755,17 +755,7 @@ package com.sgweb.svg.core
                     var newChildNode:SVGNode = this.parseNode(childXML);
 
                     if (!newChildNode) {
-                        if (childXML.localName() == 'script') {
-                            var scriptString:String = childXML.toXMLString();
-                            scriptString = scriptString.split('\\n').join(';_SVGNL_;');
-                            scriptString = scriptString.replace(/<script.*/, '');
-                            scriptString = scriptString.replace(/<svg:script.*/, '');
-                            scriptString = scriptString.replace(/]].*$/, '');
-                            this.svgRoot.handleScript(scriptString);
-                        }
-                        else {
-                            this.dbg("did not add object!:" + childXML.localName());
-                        }
+                        this.dbg("did not add object!:" + childXML.localName());
                         continue;
                     }
 
@@ -880,6 +870,9 @@ package com.sgweb.svg.core
                     break;    
                 case "rect":
                     childNode = new SVGRectNode(this.svgRoot, childXML);
+                    break;
+                case "script":
+                    childNode = new SVGScriptNode(this.svgRoot, childXML);
                     break;
                 case "set":
                     childNode = new SVGSetNode(this.svgRoot, childXML);

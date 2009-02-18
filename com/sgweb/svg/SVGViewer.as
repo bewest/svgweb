@@ -137,7 +137,12 @@ package com.sgweb.svg
             }
         }
         public function handleScript(script:String):void {
+
             if (!this.scriptSentToJS) {           
+                script = script.split('\\n').join(';_SVGNL_;');
+                script = script.replace(/<script.*/, '');
+                script = script.replace(/<svg:script.*/, '');
+                script = script.replace(/]].*$/, '');
                 try {
                     ExternalInterface.call("receiveFromFlash", { type: 'script',
                                                                  uniqueId: this.js_uniqueId,
