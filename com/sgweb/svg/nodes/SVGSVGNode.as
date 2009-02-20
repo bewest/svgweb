@@ -20,7 +20,7 @@
 package com.sgweb.svg.nodes
 {
     import com.sgweb.svg.core.SVGNode;
-    import com.sgweb.svg.SVGViewer;
+    import com.sgweb.svg.core.SVGViewer;
     import flash.geom.Matrix;
 
     public class SVGSVGNode extends SVGNode

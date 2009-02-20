@@ -592,12 +592,6 @@ SVGFlashHandler.prototype.getElementById = function(elementId) {
 }
 
 
-SVGFlashHandler.prototype.setTransform = function(transformParam) {
-   var returnMsg = this.sendToFlash({ type: 'invoke', method: 'setTransform',
-                                      transform: transformParam
-                                    });
-}
-
 SVGFlashHandler.prototype.createElementNS = function(elementNS, elementType) {
    var svgNode = new SVGNode(this);
    svgNode.elementId = 'rand' + Math.random();

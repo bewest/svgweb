@@ -19,10 +19,9 @@
 
 package com.sgweb.svg.core
 {
-    import com.sgweb.svg.SVGViewer;
+    import com.sgweb.svg.core.SVGViewer;
     import com.sgweb.svg.utils.SVGColors;
     import com.sgweb.svg.utils.SVGUnits;
-    import com.sgweb.svg.SVGViewer;
     import com.sgweb.svg.nodes.*;
     import com.sgweb.svg.nodes.mask.*;
     
@@ -1249,11 +1248,16 @@ package com.sgweb.svg.core
          *
         **/
         public function set xml(xml:XML):void {
-            this._xml = xml;
+            _xml = xml;
+
             this.clearChildren();
-            this._parsedChildren = false;
-            this.parseStyle();
-            this.invalidateDisplay();
+
+            if (_xml) {
+                this._parsedChildren = false;
+                this.parseStyle();
+                this.invalidateDisplay();
+            }
+
             this.updateClones();
         }
         
