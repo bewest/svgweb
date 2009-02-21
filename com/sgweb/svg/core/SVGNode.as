@@ -851,7 +851,7 @@ package com.sgweb.svg.core
                     childNode = new SVGMaskNode(this.svgRoot, childXML);
                     break;                        
                 case "metadata":
-                    //Do Nothing
+                    childNode = new SVGMetadataNode(this.svgRoot, childXML);
                     break;
                 case "namedview":
                     //Add Handling 
