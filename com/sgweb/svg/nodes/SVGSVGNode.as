@@ -200,6 +200,24 @@ package com.sgweb.svg.nodes
             }
         }
 
+        public function addActionListener(eventType:String, target:SVGNode):void {
+            if (this.parentSVGRoot) {
+                this.parentSVGRoot.addActionListener(eventType, target);
+            }
+            else if (this.parent is SVGViewer) {
+                SVGViewer(this.parent).addActionListener(eventType, target);
+            }
+        }
+
+        public function removeActionListener(eventType:String, target:SVGNode):void {
+            if (this.parentSVGRoot) {
+                this.parentSVGRoot.removeActionListener(eventType, target);
+            }
+            else if (this.parent is SVGViewer) {
+                SVGViewer(this.parent).removeActionListener(eventType, target);
+            }
+        }
+
         public function debug(debugString:String):void {
             if (this.parentSVGRoot) {
                 this.parentSVGRoot.debug(debugString);

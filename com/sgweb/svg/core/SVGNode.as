@@ -32,6 +32,7 @@ package com.sgweb.svg.core
     import flash.display.Shape;
     import flash.display.Sprite;
     import flash.events.Event;
+    import flash.events.MouseEvent;
     import flash.geom.Matrix;
     import flash.geom.Point;
     import flash.utils.getDefinitionByName;
@@ -1132,11 +1133,41 @@ package com.sgweb.svg.core
                 //this.dbg("done drawing " + this.xml.@id + " type " + describeType(this).@name);
             }
             if (!this._initialRenderDone && this.parent) {
+                this.attachEventListeners();
                 this._initialRenderDone = true;
                 this.svgRoot.renderFinished();
             }
         }
-        
+
+        protected function attachEventListeners():void {
+            var action:String;
+
+            action = this.getAttribute("onclick", null, false);
+            if (action)
+                this.svgRoot.addActionListener(MouseEvent.CLICK, this);
+
+            action = this.getAttribute("onmousedown", null, false);
+            if (action)
+                this.svgRoot.addActionListener(MouseEvent.MOUSE_DOWN, this);
+
+            action = this.getAttribute("onmouseup", null, false);
+            if (action)
+                this.svgRoot.addActionListener(MouseEvent.MOUSE_UP, this);
+
+            action = this.getAttribute("onmousemove", null, false);
+            if (action)
+                this.svgRoot.addActionListener(MouseEvent.MOUSE_MOVE, this);
+
+            action = this.getAttribute("onmouseover", null, false);
+            if (action)
+                this.svgRoot.addActionListener(MouseEvent.MOUSE_OVER, this);
+
+            action = this.getAttribute("onmouseout", null, false);
+            if (action)
+                this.svgRoot.addActionListener(MouseEvent.MOUSE_OUT, this);
+
+        }
+
         /**
          *
          **/
