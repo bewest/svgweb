@@ -210,7 +210,7 @@ package com.sgweb.svg.utils
                     if (str[0].match(/%/)) {
                         str[0]=str[0].replace(/%/g, "");
                         r = str[0];
-                        r = r * 256 / 100;
+                        r = r * 255 / 100;
                     }
                     else {
                            r = str[0];
@@ -218,7 +218,7 @@ package com.sgweb.svg.utils
                     if (str[1].match(/%/)) {
                         str[1]=str[1].replace(/%/g, "");
                         g = str[1];
-                        g = g * 256 / 100;
+                        g = g * 255 / 100;
                     }
                     else {
                            g = str[1];
@@ -226,7 +226,7 @@ package com.sgweb.svg.utils
                     if (str[2].match(/%/)) {
                         str[2]=str[2].replace(/%/g, "");
                         b = str[2];
-                        b = b * 256 / 100;
+                        b = b * 255 / 100;
                     }
                     else {
                         b = str[2];
@@ -266,7 +266,7 @@ package com.sgweb.svg.utils
                     if (str[0].match(/%/)) {
                         str[0]=str[0].replace(/%/g, "");
                         r = str[0];
-                        r = r * 256 / 100;
+                        r = r * 255 / 100;
                     }
                     else {
                            r = str[0];
@@ -274,7 +274,7 @@ package com.sgweb.svg.utils
                     if (str[1].match(/%/)) {
                         str[1]=str[1].replace(/%/g, "");
                         g = str[1];
-                        g = g * 256 / 100;
+                        g = g * 255 / 100;
                     }
                     else {
                            g = str[1];
@@ -282,7 +282,7 @@ package com.sgweb.svg.utils
                     if (str[2].match(/%/)) {
                         str[2]=str[2].replace(/%/g, "");
                         b = str[2];
-                        b = b * 256 / 100;
+                        b = b * 255 / 100;
                     }
                     else {
                         b = str[2];
@@ -303,7 +303,7 @@ package com.sgweb.svg.utils
                     if (str[0].match(/%/)) {
                         str[0]=str[0].replace(/%/g, "");
                         r = str[0];
-                        r = r * 256 / 100;
+                        r = r * 255 / 100;
                     }
                     else {
                            r = str[0];
@@ -311,7 +311,7 @@ package com.sgweb.svg.utils
                     if (str[1].match(/%/)) {
                         str[1]=str[1].replace(/%/g, "");
                         g = str[1];
-                        g = g * 256 / 100;
+                        g = g * 255 / 100;
                     }
                     else {
                            g = str[1];
@@ -319,7 +319,7 @@ package com.sgweb.svg.utils
                     if (str[2].match(/%/)) {
                         str[2]=str[2].replace(/%/g, "");
                         b = str[2];
-                        b = b * 256 / 100;
+                        b = b * 255 / 100;
                     }
                     else {
                         b = str[2];
