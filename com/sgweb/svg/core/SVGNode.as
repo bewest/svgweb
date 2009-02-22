@@ -616,7 +616,7 @@ package com.sgweb.svg.core
             if (capsStyle == 'round'){
                 capsStyle = CapsStyle.ROUND;
             }
-            if (capsStyle == 'square'){
+            else if (capsStyle == 'square'){
                 capsStyle = CapsStyle.SQUARE;
             }
             else {
