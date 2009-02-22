@@ -70,9 +70,10 @@ package com.sgweb.svg.nodes
             
             var command:String;
 
-            var isAbs:Boolean = false;
-            var pathData:String = this.normalizeSVGData(this._xml.@d);            
+            var lineAbs:Boolean;
+            var isAbs:Boolean;
 
+            var pathData:String = this.normalizeSVGData(this._xml.@d);            
             var szSegs:Array = pathData.split(',');
             
             this._graphicsCommands.push(['SF']);
@@ -87,13 +88,14 @@ package com.sgweb.svg.nodes
                     case "M":
                         isAbs = true;
                     case "m":
+                        lineAbs = isAbs;
                         if (firstMove) { //If first move is 'm' treate as absolute
                             isAbs = true;
                             firstMove = false;
                         }
                         this.moveTo(szSegs[pos++],szSegs[pos++], isAbs);
                         while (pos < szSegs.length && !isNaN(Number(szSegs[pos]))) {
-                            this.line(szSegs[pos++], szSegs[pos++], isAbs);
+                            this.line(szSegs[pos++], szSegs[pos++], lineAbs);
                         } 
                         break;
                     case "A":
@@ -155,8 +157,12 @@ package com.sgweb.svg.nodes
                         } while (pos < szSegs.length && !isNaN(Number(szSegs[pos])));
                         break;
                     case "Z":
+                        isAbs = true;
                     case "z":
                         this.closePath();
+                        while (pos < szSegs.length && !isNaN(Number(szSegs[pos]))) {
+                            this.line(szSegs[pos++], szSegs[pos++], isAbs);
+                        }
                         break;            
                                 
                     default:
