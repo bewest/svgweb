@@ -131,8 +131,11 @@ package com.sgweb.svg.core
                         var command:String = String(tranArray[0]);
                         var args:String = String(tranArray[1]);
                         args = args.replace(')','');
-                        args = args.replace(/ /g, '');
-                        var argsArray:Array = args.split(/[, ]/);
+                        args = args.replace(/\s+/sg,","); //Replace spaces with a comma
+                        args = args.replace(/,{2,}/sg,","); // Remove any extra commas
+                        args = args.replace(/^,/, ''); //Remove leading comma
+                        args = args.replace(/,$/, ''); //Remove trailing comma
+                        var argsArray:Array = args.split(',');
 
                         var nodeMatrix:Matrix = new Matrix();
                         switch (command) {
