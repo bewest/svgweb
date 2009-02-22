@@ -34,6 +34,7 @@ package com.sgweb.svg.nodes {
             this._invalidDisplay = false;
             
             this.visible = false;
+            this.svgRoot.renderFinished();
        }
        
        override protected function parse():void {
