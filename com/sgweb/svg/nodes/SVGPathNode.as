@@ -66,33 +66,32 @@ package com.sgweb.svg.nodes
         
         protected override function generateGraphicsCommands():void {
             
-            /*this.attributes['stroke-width'] = this.getAttribute('stroke-width', 1);
-            //this.attributes['stroke'] = this.getColor(this.getAttribute('stroke', 'black'));
-            this.attributes['stroke-dasharray'] = this.getAttribute('stroke-dasharray', 'none');            
-            
-            // Alphas
-            this.attributes['fill-opacity'] = this.getAttribute('fill-opacity', 1);
-            this.attributes['stroke-opacity'] = this.getAttribute('stroke-opacity', 1);
-            this.attributes['opacity'] = this.getAttribute('opacity', 1);*/
-        
             this._graphicsCommands = new  Array();
             
+            var command:String;
+
+            var isAbs:Boolean = false;
             var pathData:String = this.normalizeSVGData(this._xml.@d);            
 
             var szSegs:Array = pathData.split(',');
             
             this._graphicsCommands.push(['SF']);
-                        
+
+            var firstMove:Boolean = true;
             for(var pos:int = 0; pos < szSegs.length; ) {
-                var command:String = szSegs[pos++];                
+                command = szSegs[pos++];                
                                         
-                var isAbs:Boolean = false;
+                isAbs = false;
                         
                 switch(command) {
                     case "M":
                         isAbs = true;
                     case "m":
-                        this.moveTo(szSegs[pos++],szSegs[pos++]); // Move is always absolute                
+                        if (firstMove) { //If first move is 'm' treate as absolute
+                            isAbs = true;
+                            firstMove = false;
+                        }
+                        this.moveTo(szSegs[pos++],szSegs[pos++], isAbs);
                         while (pos < szSegs.length && !isNaN(Number(szSegs[pos]))) {
                             this.line(szSegs[pos++], szSegs[pos++], isAbs);
                         } 
@@ -172,7 +171,12 @@ package com.sgweb.svg.nodes
             this._graphicsCommands.push(['Z']);
         }
         
-        private function moveTo(x:Number, y:Number):void {
+        private function moveTo(x:Number, y:Number, isAbs:Boolean):void {
+            if (!isAbs) {
+                x += this.currentX;
+                y += this.currentY;
+            }
+
             this._graphicsCommands.push(['M', x, y]);
             this.currentX = x;
             this.currentY = y;
