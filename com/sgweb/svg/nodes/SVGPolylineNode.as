@@ -37,25 +37,34 @@ package com.sgweb.svg.nodes
             this._graphicsCommands = new  Array();
             
             var pointsString:String = StringUtil.trim(this.getAttribute('points',''));
-            var points:Array = pointsString.split(' ');
             
-            for (var i:int = 0; i < points.length; i++) {
-                var point:Array = String(points[i]).split(',');
+            pointsString = pointsString.replace(/\s+/sg,","); //Replace spaces with a comma
+            pointsString = pointsString.replace(/,{2,}/sg,","); // Remove any extra commas
+            pointsString = pointsString.replace(/^,/, ''); //Remove leading comma
+            pointsString = pointsString.replace(/,$/, ''); //Remove trailing comma
+            
+            var points:Array = pointsString.split(',');
+            
+            var pX:Number;
+            var pY:Number;
+            
+            for (var i:int = 0; i < points.length; i += 2) {
+                pX = points[i];
+                pY = points[i + 1];    
+                            
                 if (i == 0) {
                     this._graphicsCommands.push(['SF']);
-                    this._graphicsCommands.push(['M', point[0], point[1]]);
+                    this._graphicsCommands.push(['M', pX, pY]);
                 }
-                else if (i == (points.length - 1)) {
-                    this._graphicsCommands.push(['L', point[0], point[1]]);    
-                    this._graphicsCommands.push(['Z']);
+                else if (i == (points.length - 2)) {
+                    this._graphicsCommands.push(['L', pX, pY]);
                     this._graphicsCommands.push(['EF']);
                 }
                 else {
-                    this._graphicsCommands.push(['L', point[0], point[1]]);
-                }                
-            }
-            
-            this._graphicsCommands.push(['R', x, y, width, height]);            
+                    this._graphicsCommands.push(['L', pX, pY]);
+                }   
+                
+            }          
         }
         
     }
