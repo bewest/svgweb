@@ -180,7 +180,14 @@ package com.sgweb.svg.core
                                 break;
                                 
                             case "rotate":
-                                nodeMatrix.rotate(Number(argsArray[0])* Math.PI / 180.0); 
+                                if (argsArray.length == 3) {
+                                        nodeMatrix.translate(-argsArray[1], -argsArray[2]);
+                                        nodeMatrix.rotate(Number(argsArray[0])* Math.PI / 180.0);
+                                        nodeMatrix.translate(argsArray[1], argsArray[2]); 
+                                }
+                                else {
+                                    nodeMatrix.rotate(Number(argsArray[0])* Math.PI / 180.0);
+                                } 
                                 break;
                                 
                             default:
@@ -480,7 +487,14 @@ package com.sgweb.svg.core
                                 break;
                                 
                             case "rotate":
-                                nodeMatrix.rotate(Number(argsArray[0])* Math.PI / 180.0); 
+                                if (argsArray.length == 3) {
+                                        nodeMatrix.translate(-argsArray[1], -argsArray[2]);
+                                        nodeMatrix.rotate(Number(argsArray[0])* Math.PI / 180.0);
+                                        nodeMatrix.translate(argsArray[1], argsArray[2]);
+                                }
+                                else {
+                                    nodeMatrix.rotate(Number(argsArray[0])* Math.PI / 180.0);
+                                }
                                 break;
                                 
                             default:
