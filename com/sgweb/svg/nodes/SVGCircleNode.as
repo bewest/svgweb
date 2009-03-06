@@ -38,7 +38,13 @@ package com.sgweb.svg.nodes
             var cx:Number = this.getAttribute('cx',0);
             var cy:Number = this.getAttribute('cy',0);
             var r:Number = this.getAttribute('r',0);
-            
+
+            //Width/height calculations for gradients
+            this.setXMinMax(cx - r);
+            this.setXMinMax(cx + r);
+            this.setYMinMax(cy - r);
+            this.setYMinMax(cy + r);
+
             this._graphicsCommands.push(['CIRCLE', cx, cy, r]);
         }
         

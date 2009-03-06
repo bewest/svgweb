@@ -34,6 +34,12 @@ package com.sgweb.svg.nodes
         }
 
         override public function beginGradientFill(node:SVGNode):void {
+            var w:Number = node.xMax - node.xMin;
+            var h:Number = node.yMax - node.yMin;
+            if ((w == 0) || (h == 0)) { //We don't fill an object with area == 0
+                return;
+            }
+
             var stopData:Object = this.getStopData();
             var spreadMethod:String = this.getSpreadMethod();
             var matrix = this.getMatrix(node);
@@ -63,23 +69,7 @@ package com.sgweb.svg.nodes
 
         protected function getMatrix(node:SVGNode):Matrix {
             var matrGrTr:Matrix = this.parseTransform(this.xml.@gradientTransform);
-
-            var x1:Number = 0;
-            if (this.xml.@x1 != null) {
-                x1 = Math.round(Number(this.xml.@x1));
-            }
-            var y1:Number = 0;
-            if (this.xml.@y1 != null) {
-                y1 = Math.round(Number(this.xml.@y1));
-            }
-            var x2:Number = 0;
-            if (this.xml.@x2 != null) {
-                x2 = Math.round(Number(this.xml.@x2));
-            }
-            var y2:Number = 0;
-            if (this.xml.@y2 != null) {
-                y2 = Math.round(Number(this.xml.@y2));
-            }
+            var gradientUnits:String = this.getAttribute('gradientUnits', 'objectBoundingBox', false);
 
             var objectX:Number = 0;
             if (node.xml.@x != null) {
@@ -89,6 +79,27 @@ package com.sgweb.svg.nodes
             if (node.xml.@y != null) {
                 objectY = Math.round(Number(node.xml.@y));
             }
+
+            var x1String:String = this.getAttribute('x1', '0%', false);
+            var x2String:String = this.getAttribute('x2', '100%', false);         
+            var y1String:String = this.getAttribute('y1', '0%', false);
+            var y2String:String = this.getAttribute('y2', '0%', false);
+
+            if (gradientUnits == 'userSpaceOnUse') {
+                var x1:Number = Math.round(SVGColors.cleanNumber2(x1String, SVGNode(node.parent).getWidth()));
+                var y1:Number = Math.round(SVGColors.cleanNumber2(y1String, SVGNode(node.parent).getHeight()));
+                var x2:Number = Math.round(SVGColors.cleanNumber2(x2String, SVGNode(node.parent).getWidth()));
+                var y2:Number = Math.round(SVGColors.cleanNumber2(y2String, SVGNode(node.parent).getHeight()));
+            }
+            else {
+                var w:Number = node.xMax - node.xMin;
+                var h:Number = node.yMax - node.yMin;
+                x1 = objectX + node.xMin + Math.round(SVGColors.cleanNumber2(x1String, w));
+                y1 = objectY + node.yMin + Math.round(SVGColors.cleanNumber2(y1String, h));
+                x2 = objectX + node.xMin + Math.round(SVGColors.cleanNumber2(x2String, w));
+                y2 = objectY + node.yMin + Math.round(SVGColors.cleanNumber2(y2String, h));
+            }
+
 
             var gradientWidth:Number = Math.abs(x2 - x1);
             var gradientHeight:Number = Math.abs(y2 - y1);

@@ -63,6 +63,10 @@ package com.sgweb.svg.nodes
                 else {
                     this._graphicsCommands.push(['L', pX, pY]);
                 }                
+
+                //Width/height calculations for gradients
+                this.setXMinMax(pX);
+                this.setYMinMax(pY);
             }
             
         }    

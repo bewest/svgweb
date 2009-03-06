@@ -186,6 +186,9 @@ package com.sgweb.svg.nodes
             this._graphicsCommands.push(['M', x, y]);
             this.currentX = x;
             this.currentY = y;
+
+            this.setXMinMax(x);
+            this.setYMinMax(y);
         }
         
         private function lineHorizontal(x:Number, isAbs:Boolean):void {
@@ -216,6 +219,9 @@ package com.sgweb.svg.nodes
                 this.currentY += y;                
             }            
             this._graphicsCommands.push(['L', this.currentX, this.currentY]);            
+
+            this.setXMinMax(x);
+            this.setYMinMax(y);
         }
         
         private function ellipticalArc(rx:Number, ry:Number, xAxisRotation:Number, largeArcFlag:Number, 
@@ -231,6 +237,10 @@ package com.sgweb.svg.nodes
             this.currentX = x;
             this.currentY = y;
             
+            this.setXMinMax(rx);
+            this.setYMinMax(ry);
+            this.setXMinMax(x);
+            this.setYMinMax(y);
         }
         
                 
@@ -266,6 +276,11 @@ package com.sgweb.svg.nodes
             
             this.lastCurveControlX = x1;
             this.lastCurveControlY = y1;
+
+            this.setXMinMax(x);
+            this.setYMinMax(y);
+            this.setXMinMax(x1);
+            this.setYMinMax(y1);
         }
         
         private function cubicBezierSmooth(x2:Number, y2:Number,
@@ -342,6 +357,27 @@ package com.sgweb.svg.nodes
             
             this.lastCurveControlX = x2;
             this.lastCurveControlY = y2;            
+
+            //Width/height calculations for gradients
+            this.setXMinMax(Pc_1.x);
+            this.setYMinMax(Pc_1.y);
+            this.setXMinMax(Pa_1.x);
+            this.setYMinMax(Pa_1.y);
+
+            this.setXMinMax(Pc_2.x);
+            this.setYMinMax(Pc_2.y);
+            this.setXMinMax(Pa_2.x);
+            this.setYMinMax(Pa_2.y);
+
+            this.setXMinMax(Pc_3.x);
+            this.setYMinMax(Pc_3.y);
+            this.setXMinMax(Pa_3.x);
+            this.setYMinMax(Pa_3.y);
+
+            this.setXMinMax(Pc_4.x);
+            this.setYMinMax(Pc_4.y);
+            this.setXMinMax(P3.x);
+            this.setYMinMax(P3.y);
         }    
         
         private function getMiddle(P0:Object, P1:Object):Object

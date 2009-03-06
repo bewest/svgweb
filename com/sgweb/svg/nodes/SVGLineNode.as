@@ -38,6 +38,13 @@ package com.sgweb.svg.nodes
             var x2:Number = this.getAttribute('x2',0);
             var y2:Number = this.getAttribute('y2',0);
             
+             //Width/height calculations for gradients
+            this.setXMinMax(x1);
+            this.setYMinMax(x2);
+
+            this.setXMinMax(y1);
+            this.setYMinMax(y2);
+           
             this._graphicsCommands.push(['LINE', x1, y1, x2, y2]);
         }        
         

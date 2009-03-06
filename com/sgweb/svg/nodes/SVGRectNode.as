@@ -57,6 +57,12 @@ package com.sgweb.svg.nodes
             else {
                 this._graphicsCommands.push(['RECT', 0, 0, width, height]);
             }
+
+            //Width/height calculations for gradients
+            this.setXMinMax(0);
+            this.setYMinMax(0);
+            this.setXMinMax(width);
+            this.setYMinMax(height);
         }        
     }
 }

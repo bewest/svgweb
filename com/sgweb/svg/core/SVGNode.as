@@ -53,9 +53,14 @@ package com.sgweb.svg.core
          **/
         public var svgRoot:SVGSVGNode = null;
 
-        /**
-         * SVG XML for this node
-         **/
+        //Used for gradients
+        public var xMin:Number;
+        public var xMax:Number;
+        public var yMin:Number;
+        public var yMax:Number;
+        protected var _firstX:Boolean = true;
+        protected var _firstY:Boolean = true;
+
         protected var _xml:XML;
         protected var _id:String = null;
 
@@ -682,6 +687,46 @@ package com.sgweb.svg.core
          **/
         protected function nodeEndFill():void {
             this.graphics.endFill();
+        }
+
+        /**
+         * Check value of x against _minX and _maxX, 
+         * Update values when appropriate
+         **/
+        protected function setXMinMax(value:Number):void {          
+            if (_firstX) {
+                _firstX = false;
+                this.xMax = value;
+                this.xMin = value;
+                return;
+            }
+            
+            if (value < this.xMin) {
+                this.xMin = value;
+            }
+            if (value > this.xMax) {
+                this.xMax = value;
+            }
+        }
+        
+        /**
+         * Check value of y against _minY and _maxY, 
+         * Update values when appropriate
+         **/
+        protected function setYMinMax(value:Number):void {
+            if (_firstY) {
+                _firstY = false;
+                this.yMax = value;
+                this.yMin = value;
+                return;
+            }
+            
+            if (value < this.yMin) {
+                this.yMin = value;
+            }
+            if (value > this.yMax) {
+                this.yMax = value;
+            }
         }
 
         /**

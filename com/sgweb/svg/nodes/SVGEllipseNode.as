@@ -40,6 +40,12 @@ package com.sgweb.svg.nodes
             var rx:Number = this.getAttribute('rx',0);
             var ry:Number = this.getAttribute('ry',0);
             
+            //Width/height calculations for gradients
+            this.setXMinMax(cx - ry);
+            this.setXMinMax(cx + ry);
+            this.setYMinMax(cy - ry);
+            this.setYMinMax(cy + ry);
+
             this._graphicsCommands.push(['ELLIPSE', (cx - rx), (cy - ry), (rx * 2), (ry * 2)]);            
         }                    
     }
