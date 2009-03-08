@@ -536,17 +536,6 @@ package com.sgweb.svg.core
                 this.y = myPos.y;
             }
 
-
-/* blur mask is disabled because it appears it can only be computed
-   reliably for simple svg elements
-            if (this.parent is SVGMask && this.getSVGBlurMaskAncestor() != null) {
-                var blurMask:SVGBlurMaskParent = this.getSVGBlurMaskAncestor();
-                setTimeout(function():void { blurMask.updateBlurMaskTransform() }, 10);
-            }
-*/
-
-
-
         }
 
         /**
@@ -821,35 +810,15 @@ package com.sgweb.svg.core
                         continue;
                     }
 
-                    var filterStr:String = newChildNode.getAttribute('filter');
-
-                    // Objects with a gaussian filter need to be 
-                    // masked by their own shape to mask any gaussian blurs
-                    // that might extend too far beyond the object boundaries.
-                    // SVG clips this blur and so we have to create a mask here
-                    // to mimic that behavior.
-
-                    // A stub object is created as parent of the masking
-                    // object and the masked object. The mask is applied to the parent
-                    // stub object. This is done because if we apply a mask directly to
-                    // an object with a gaussian filter, flash will blur the mask, even
-                    // if the mask is not drawn with a blur.
-                    // SVG does not blur its mask in this scenario so we apply the 
-                    // mask to a stub parent object. 
-
-                    // Note that if the object has a clip-path specified, then 
-                    // the object will create a clip mask parent to hold the clip-path.
-                    if (filterStr
-                        && !(this.parent && this.parent.parent is SVGMask
-                             && this.parent.parent.parent is SVGBlurMaskParent)
-                        && !(this.parent && this.parent is SVGBlurMaskParent) ) {
-                        newChildNode = new SVGBlurMaskParent(this.svgRoot, childXML, filterStr);
-                    }
-                    else {
-                        if (    (childXML.@['clip-path'] != undefined)
-                             || (childXML.@['mask'] != undefined) ) {
-                            newChildNode = new SVGClipMaskParent(this.svgRoot, childXML);
-                        }
+                    // If the object has a gaussian filter, flash will blur the object mask, even
+                    // if the mask is not drawn with a blur. This is not correct rendering.
+                    // So, we use a stub parent object to hold the mask, in order to isolate
+                    // the mask from the filter. A child is created for the original object,
+                    // and the filter is applied to the child.
+                    if ( !(this.parent && this.parent is SVGClipMaskParent)
+                       && (  (childXML.@['clip-path'] != undefined)
+                          || (childXML.@['mask'] != undefined) ) ) {
+                        newChildNode = new SVGClipMaskParent(this.svgRoot, childXML);
                     }
                     this.addChild(newChildNode);
                 }
@@ -1029,8 +998,7 @@ package com.sgweb.svg.core
             
             // If we are rendering a mask, then use a simple black fill.
             if (this.getSVGMaskAncestor() != null
-                 || (this is SVGClipMaskParent)
-                 || (this is SVGBlurMaskParent)) {
+                 || (this is SVGClipMaskParent)) {
 
                 if (  (name == 'opacity')
                     || (name == 'fill-opacity')
@@ -1182,16 +1150,6 @@ package com.sgweb.svg.core
                     this.svgRoot.invalidateReferers(this.xml.@id);
                 }
 
-/*
-                if ((this.getSVGMaskAncestor() == null) && !(this is SVGClipMaskParent)) {
-                    var blurMask:SVGBlurMaskParent = this.getSVGBlurMaskAncestor();
-                    if (blurMask) {
-                        this.dbg("updating self blur mask transform " + describeType(this).@name);
-                        setTimeout(function():void { blurMask.updateBlurMaskTransform() }, 10);
-                    }
-                }
-*/
-
                 //this.dbg("done drawing " + this.xml.@id + " type " + describeType(this).@name);
             }
             if (!this._initialRenderDone && this.parent) {
@@ -1316,19 +1274,6 @@ package com.sgweb.svg.core
             }
             return null;
         }
-
-
-        public function getSVGBlurMaskAncestor():SVGBlurMaskParent {
-            var node:SVGNode = this;
-            while (node && !(node is SVGSVGNode)) {
-                node=SVGNode(node.parent);
-                if (node && (node is SVGBlurMaskParent)) {
-                    return SVGBlurMaskParent(node);
-                }
-            }
-            return null;
-        }
-
 
 
         public function get invalidDisplay():Boolean {
