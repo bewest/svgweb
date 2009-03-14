@@ -22,7 +22,6 @@ package com.sgweb.svg.nodes.mask
     import com.sgweb.svg.core.SVGNode;
     import com.sgweb.svg.nodes.SVGClipPathNode;
     import com.sgweb.svg.nodes.SVGSVGNode;
-    import com.sgweb.svg.nodes.mask.SVGMask;
     import com.sgweb.svg.nodes.SVGFilterNode;
     
     import flash.events.Event;
@@ -33,7 +32,7 @@ package com.sgweb.svg.nodes.mask
     {
 
         protected var _childToMaskXML:XML;
-        protected var _childCopyNode:SVGNode;
+        protected var childTransform:String;
 
         public function SVGClipMaskParent(svgRoot:SVGSVGNode, 
                                           childToMaskXML:XML):void {
@@ -43,9 +42,9 @@ package com.sgweb.svg.nodes.mask
 
 
         override protected function parse():void {
-            var svgMask:SVGMask;
+            var maskChild:SVGNode;
+            var childToMask:SVGNode;
             var clipList:XMLList;
-            var childNode:SVGNode;
             var clipPathXML:XML;
 
             if (this._childToMaskXML.attribute('clip-path').length() > 0) {
@@ -59,30 +58,28 @@ package com.sgweb.svg.nodes.mask
             var clipPathNode:SVGNode = this.svgRoot.getNode(clipPath);
 
             // Create and add the mask node
-            // xxx would need to create random this.xml.@id if necessary.
             this.svgRoot.addReference(this.xml.@id, clipPath);
             if (clipPathNode) {
-                clipPathXML = clipPathNode.xml.copy();
-
-                if (this._childToMaskXML.@['transform'] != undefined) {
-                    clipPathXML.@['transform'] = this._childToMaskXML.@['transform'];
-                }
-                // xxx svgmask should handle this
-                var stubClipPathXML:XML = <svgMask></svgMask>;
-                stubClipPathXML.appendChild(clipPathXML.children());
-
-                svgMask = new SVGMask(this.svgRoot, stubClipPathXML);
-                this.addChild(svgMask);
-                this.mask = svgMask;
-
                 var childNodeXML:XML = this._childToMaskXML.copy();
                 delete childNodeXML.@['clip-path'];
                 delete childNodeXML.@['mask'];
 
-                childNode = this.parseNode(childNodeXML);
-                if (childNode) {
-                    this.addChild(childNode);
+                // Move the transform from the element child to this node, its
+                // parent, so that it applies to the element child, and the 
+                // mask child as well.
+                this.childTransform = childNodeXML.@['transform'];
+                delete childNodeXML.@['transform'];
+
+                childToMask = this.parseNode(childNodeXML);
+                if (childToMask) {
+                    this.addChild(childToMask);
+
+                    maskChild = clipPathNode.clone();
+                    maskChild.isMask = true;
+                    this.addChild(maskChild);
+                    this.mask = maskChild;
                 }
+
             }
             else {
                 //this.svgRoot.debug("Clippath " + clipPath
@@ -95,7 +92,7 @@ package com.sgweb.svg.nodes.mask
         }
 
         override public function transformNode():void {
-            this.transform.matrix = new Matrix();
+            this.transform.matrix = this.parseTransform(this.childTransform);
         }
 
         override protected function generateGraphicsCommands():void {

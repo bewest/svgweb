@@ -22,7 +22,6 @@ package com.sgweb.svg.nodes
     import com.sgweb.svg.core.SVGNode;
     import com.sgweb.svg.nodes.SVGSVGNode;
     import com.sgweb.svg.utils.SVGColors;
-    import com.sgweb.svg.nodes.mask.SVGMask;
     import com.sgweb.svg.nodes.mask.SVGClipMaskParent;
     
     import flash.filters.BlurFilter;
@@ -73,7 +72,7 @@ package com.sgweb.svg.nodes
                 }
                 var blurAmount:Number = SVGColors.cleanNumber(stdDeviation);
                 blurAmount = blurAmount * concatMatrix.a;
-                if (objectToFilter.getSVGMaskAncestor() != null) {
+                if (objectToFilter.getMaskAncestor() != null) {
                     blurAmount = blurAmount * .25;
                 }
                 nodeFilters.push(new BlurFilter(blurAmount*1.4, blurAmount*1.4, 3));

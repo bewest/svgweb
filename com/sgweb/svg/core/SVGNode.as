@@ -87,6 +87,7 @@ package com.sgweb.svg.core
         protected var _isClone:Boolean = false;
         protected var _clones:Array = new Array();
 
+        public var isMask:Boolean = false;
 
         /**
          * Constructor
@@ -997,7 +998,7 @@ package com.sgweb.svg.core
             var value:String;
             
             // If we are rendering a mask, then use a simple black fill.
-            if (this.getSVGMaskAncestor() != null
+            if ( (this.getMaskAncestor() != null)
                  || (this is SVGClipMaskParent)) {
 
                 if (  (name == 'opacity')
@@ -1028,7 +1029,7 @@ package com.sgweb.svg.core
                 }
             }
 
-            if (this.original && (this.parent is SVGNode)) {
+            if (this.original && (this.parent is SVGUseNode)) {
                 //Node is the top level of a clone
                 //Check for an override value from the parent
                 value = SVGNode(this.parent).getAttribute(name, null, false);
@@ -1252,14 +1253,14 @@ package com.sgweb.svg.core
             return false;
         }
 
-        public function getSVGMaskAncestor():SVGMask {
+        public function getMaskAncestor():SVGNode {
             var node:DisplayObject = this;
-            if (node is SVGMask)
-                return SVGMask(node);
+            if ( (node is SVGNode) && SVGNode(node).isMask)
+                return SVGNode(node);
             while (node && !(node is SVGSVGNode)) {
                 node=node.parent;
-                if (node && (node is SVGMask))
-                    return SVGMask(node);
+                if (node && (node is SVGNode) && SVGNode(node).isMask)
+                    return SVGNode(node);
             }
             return null;
         }
@@ -1354,27 +1355,6 @@ package com.sgweb.svg.core
             this._xml.@style = newStyleString;
         }
  
-     
-        public function copyXMLUnique(originalXML:XML):XML {
-            var myXML:XML = originalXML.copy();
-            this.makeUniqueIDs(myXML);
-            return myXML;
-        }
-
-        public function makeUniqueIDs(xmlNode:XML):void {
-
-            if (xmlNode.@id && (xmlNode.@id != undefined)) {
-               xmlNode.@id = xmlNode.@id + ".copy" + Math.random().toString();
-            }
-            else {
-               xmlNode.@id = "copy" + Math.random().toString();
-            }
-            for each (var childXML:XML in xmlNode.children()) {
-                this.makeUniqueIDs(childXML);
-            }
-
-        }
-
         /*
          * Node registration triggered by stage add / remove
          */
@@ -1394,7 +1374,7 @@ package com.sgweb.svg.core
         }
 
         protected function registerID():void {
-            if (this._isClone) {
+            if (this._isClone || (getMaskAncestor() != null)) {
                 return;
             }
 
