@@ -527,7 +527,8 @@ package com.sgweb.svg.core
                 this.mask.transform.matrix = maskMatrix;
             }
 
-            // Our x,y should not be affected by viewbox transform.
+            // The image node x,y should not be affected by the viewbox transform.
+            // The viewbox applies to the child bitmap object.
             // xxx perhaps we should apply the transform to the child
             // bitmap image object so the SVGImageNode coordinates are not affected!
             if (this is SVGImageNode) {
@@ -1068,7 +1069,7 @@ package com.sgweb.svg.core
         public function invalidateDisplay():void {
             if (this._invalidDisplay == false) {
                 this._invalidDisplay = true;
-                this.addEventListener(Event.ENTER_FRAME, redrawNode);                
+                this.addEventListener(Event.ENTER_FRAME, drawNode);                
             }            
         }
 
@@ -1113,19 +1114,15 @@ package com.sgweb.svg.core
         }
 
 
-        public function doRedrawNow():void {
-            this.redrawNode(null);
-        }
-
         /**
          * Triggers on ENTER_FRAME event
          * Redraws node graphics if _invalidDisplay == true
          **/
-        protected function redrawNode(event:Event = null):void {
+        protected function drawNode(event:Event = null):void {
 
             if ( (this.parent != null) && (this._invalidDisplay) ) {
                 this._invalidDisplay = false;
-                //this.dbg("redrawNode: " + this.xml.@id + " type " + describeType(this).@name);
+                //this.dbg("drawNode: " + this.xml.@id + " type " + describeType(this).@name);
                 if (this._xml != null) {
                 
                     this.graphics.clear();
@@ -1145,7 +1142,7 @@ package com.sgweb.svg.core
                     }
                 }
                 
-                this.removeEventListener(Event.ENTER_FRAME, redrawNode);
+                this.removeEventListener(Event.ENTER_FRAME, drawNode);
 
                 if (this.xml.@id)  {
                     this.svgRoot.invalidateReferers(this.xml.@id);

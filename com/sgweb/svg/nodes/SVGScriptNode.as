@@ -28,8 +28,8 @@ package com.sgweb.svg.nodes {
             super(svgRoot, xml, original);
         }
 
-        override protected function redrawNode(event:Event = null):void {
-            this.removeEventListener(Event.ENTER_FRAME, redrawNode);
+        override protected function drawNode(event:Event = null):void {
+            this.removeEventListener(Event.ENTER_FRAME, drawNode);
 
             //Don't reset _invalidDisplay
             //This way drawNode is only called once

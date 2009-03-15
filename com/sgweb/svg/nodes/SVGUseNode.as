@@ -29,8 +29,8 @@ package com.sgweb.svg.nodes
             super(svgRoot, xml, original);
         }
 
-        override protected function redrawNode(event:Event = null):void {
-            this.removeEventListener(Event.ENTER_FRAME, redrawNode);
+        override protected function drawNode(event:Event = null):void {
+            this.removeEventListener(Event.ENTER_FRAME, drawNode);
             this._invalidDisplay = false;
 
             var name:String = this.getAttribute('href');
