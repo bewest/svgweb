@@ -241,13 +241,28 @@ package com.sgweb.svg.core
             return parentHeight;
         }
 
+        // <svg> and <image> nodes get an implicit mask of their height and width
+        public function applyDefaultMask():void {
+            if (   (this.xml.@width != undefined)
+                && (this.xml.@height != undefined) ) {
+                if (this.mask == null) {
+                    var myMask:Shape = new Shape();
+                    this.addChild(myMask);
+                    this.mask = myMask;
+                }
+                if (this.mask is Shape) {
+                    Shape(this.mask).graphics.clear();
+                    Shape(this.mask).graphics.beginFill(0x000000);
+                    Shape(this.mask).graphics.drawRect(0, 0, this.getWidth(), this.getHeight());
+                    Shape(this.mask).graphics.endFill();
+                }
+            }
+        }
+
         /**
          * Perform transformations defined by the transform attribute 
          **/
         public function transformNode():void {
-            var newMatrix:Matrix;
-
-            var undoViewBoxMatrix:Matrix = new Matrix();
 
             this.transform.matrix = new Matrix();
             this.loadAttribute('x');    
@@ -267,25 +282,16 @@ package com.sgweb.svg.core
             
             this.loadAttribute('rotate', 'rotation');
 
-            newMatrix = this.transform.matrix.clone();
-
-            // <svg> and <image> nodes get an implicit mask of their height and width
-            if (this is SVGSVGNode || this is SVGImageNode) {
-                if (   (this.xml.@width != undefined) 
-                    && (this.xml.@height != undefined) ) {
-                    if (this.mask == null) {
-                        var myMask:Shape = new Shape();
-                        this.addChild(myMask);
-                        this.mask = myMask;
-                    }
-                    if (this.mask is Shape) {
-                        Shape(this.mask).graphics.clear();
-                        Shape(this.mask).graphics.beginFill(0x000000);
-                        Shape(this.mask).graphics.drawRect(0, 0, this.getWidth(), this.getHeight());
-                        Shape(this.mask).graphics.endFill();
-                    }
-                }
+            // Apply transform attribute 
+            var trans:String = this.getAttribute('transform');
+            if (trans) {
+                this.transform.matrix = this.parseTransform(trans, this.transform.matrix.clone());
             }
+
+        }
+
+        public function applyViewBox():void {
+            var newMatrix:Matrix = this.transform.matrix.clone();
 
             // Apply viewbox transform
             var viewBox:String = this.getAttribute('viewBox');
@@ -316,14 +322,6 @@ package com.sgweb.svg.core
                     viewY = 0;
                     viewWidth = canvasWidth;
                     viewHeight = canvasHeight;
-                    if (this is SVGImageNode) {
-                        if (SVGImageNode(this).imageWidth > 0) {
-                            viewWidth = SVGImageNode(this).imageWidth;
-                        }
-                        if (SVGImageNode(this).imageHeight > 0) {
-                            viewHeight = SVGImageNode(this).imageHeight;
-                        }
-                    }
                 }
 
 
@@ -383,10 +381,7 @@ package com.sgweb.svg.core
                 var scaleX:Number = cropWidth / viewWidth;
                 var scaleY:Number = cropHeight / viewHeight;
                 newMatrix.translate(-viewX, -viewY);
-                undoViewBoxMatrix.translate(viewX, viewY);
                 newMatrix.scale(scaleX, scaleY);
-                undoViewBoxMatrix.scale(1/scaleX, 1/scaleY);
-
 
                 /**
                  * Handle Alignment
@@ -425,117 +420,20 @@ package com.sgweb.svg.core
                             break;
                     }
                     newMatrix.translate(translateX, translateY);
-                    undoViewBoxMatrix.translate(-translateX/scaleX, -translateY/scaleY);
-                    undoViewBoxMatrix.translate(translateX, translateY);
                 }
             }
 
             this.transform.matrix = newMatrix;
             newMatrix = this.transform.matrix.clone();
 
-
-            // Apply transform attribute 
-            var trans:String = this.getAttribute('transform');
-            var nodeMatrix:Matrix;
-            if (trans != null) {
-                var transArray:Array = trans.match(/\S+\(.*?\)/sg);
-                transArray.reverse();
-                for each(var tran:String in transArray) {
-                    var tranArray:Array = tran.split('(',2);
-                    if (tranArray.length == 2)
-                    {
-                        var command:String = String(tranArray[0]);
-                        var args:String = String(tranArray[1]);
-                        args = args.replace(')','');
-                        args = args.replace(/ /g, '');
-                        var argsArray:Array = args.split(/[, ]/);
-
-                        nodeMatrix = new Matrix();
-                        switch (command) {
-                            case "matrix":
-                                if (argsArray.length == 6) {
-                                    nodeMatrix.a = argsArray[0];
-                                    nodeMatrix.b = argsArray[1];
-                                    nodeMatrix.c = argsArray[2];
-                                    nodeMatrix.d = argsArray[3];
-                                    nodeMatrix.tx = argsArray[4];
-                                    nodeMatrix.ty = argsArray[5];
-                                }
-                                break;
-
-                            case "translate":
-                                if (argsArray.length == 1) {
-                                    nodeMatrix.tx = argsArray[0]; 
-                                }
-                                else if (argsArray.length == 2) {
-                                    nodeMatrix.tx = argsArray[0]; 
-                                    nodeMatrix.ty = argsArray[1]; 
-                                }
-                                break;
-
-                            case "scale":
-                                if (argsArray.length == 1) {
-                                    nodeMatrix.a = argsArray[0];
-                                    nodeMatrix.d = argsArray[0];
-                                }
-                                else if (argsArray.length == 2) {
-                                    nodeMatrix.a = argsArray[0];
-                                    nodeMatrix.d = argsArray[1];
-                                }
-                                break;
-                                
-                            case "skewX":
-                                nodeMatrix.c = Math.tan(argsArray[0] * Math.PI / 180.0);
-                                break;
-                                
-                            case "skewY":
-                                nodeMatrix.b = Math.tan(argsArray[0] * Math.PI / 180.0);
-                                break;
-                                
-                            case "rotate":
-                                if (argsArray.length == 3) {
-                                        nodeMatrix.translate(-argsArray[1], -argsArray[2]);
-                                        nodeMatrix.rotate(Number(argsArray[0])* Math.PI / 180.0);
-                                        nodeMatrix.translate(argsArray[1], argsArray[2]);
-                                }
-                                else {
-                                    nodeMatrix.rotate(Number(argsArray[0])* Math.PI / 180.0);
-                                }
-                                break;
-                                
-                            default:
-                                this.dbg('Unknown Transformation: ' + command);
-                        }
-                        newMatrix.concat(nodeMatrix);
-                        this.transform.matrix = newMatrix;
-                        newMatrix = this.transform.matrix.clone();
-                    }
-                }
-            }
             // Reverse all tranforms against the mask because the viewbox coordinates are
             // in the parent coordinate space. Since the mask is a child of this node,
             // the resulting coordinate mismatch is unfortunate.
             if (this.mask is Shape) {
                 var maskMatrix:Matrix = new Matrix();
-                if (this is SVGImageNode) {
-                    maskMatrix.concat(undoViewBoxMatrix);
-                }
-                else {
-                    newMatrix.invert();
-                    maskMatrix.concat(newMatrix);
-                }
+                newMatrix.invert();
+                maskMatrix.concat(newMatrix);
                 this.mask.transform.matrix = maskMatrix;
-            }
-
-            // The image node x,y should not be affected by the viewbox transform.
-            // The viewbox applies to the child bitmap object.
-            // xxx perhaps we should apply the transform to the child
-            // bitmap image object so the SVGImageNode coordinates are not affected!
-            if (this is SVGImageNode) {
-                var myPos:Point = new Point(this.x, this.y);
-                myPos = undoViewBoxMatrix.transformPoint(myPos);
-                this.x = myPos.x;
-                this.y = myPos.y;
             }
 
         }
@@ -1099,6 +997,7 @@ package com.sgweb.svg.core
                 case 'y':
                 case 'rotation':
                     this.transformNode();
+                    this.applyViewBox();
                     break;
 
                 default:
@@ -1135,9 +1034,15 @@ package com.sgweb.svg.core
                     this.setAttributes();
 
                     if (!this.isChildOfDef() && !this.isDisplayNone()) {
+                        // <svg> nodes get an implicit mask of their height and width
+                        if (this is SVGSVGNode) {
+                            this.applyDefaultMask();
+                        }
                         this.generateGraphicsCommands();
                         this.transformNode();
                         this.draw();
+
+                        this.applyViewBox();
                         this.setupFilters();
                     }
                 }
