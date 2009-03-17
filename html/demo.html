@@ -3,9 +3,13 @@
 <head>
 </head>
 <body><h1 style="margin:2px">Welcome to the SVGViewer Demo!
+         <span style="font-size: 10pt">
           <a href='http://code.google.com/p/sgweb'
-             style="font-size: 10pt"
-           >SVG rendering for common web browsers using flash.</a></h1>
+           >SVG rendering for common web browsers using flash.</a>
+          [<a href='http://code.google.com/p/sgweb/source/browse/trunk/docs/FAQ.html'
+           >FAQ</a>]
+          [<a href='http://code.google.com/p/sgweb/source/browse/trunk/docs/UserManual.html'
+           > Manual </a>]</span></h1>
     <label>Select SVG:
     </label>
     <select id="selectSVG" onClick="showSVG();" >
@@ -24,6 +28,26 @@
         <option value="acar">antique car
         <option value="blocks_game">blocks game
         <option value="photos">photos
+        <option value="webstats">web stats
+        <option value="circles1">circles1
+        <option value="gaussian 1">gaussian collage
+        <option value="gaussian 2">gaussian simple
+        <option value="image">image
+        <option value="lingrad1">linear grad 1
+        <option value="lingrad2">linear grad 2
+        <option value="lingrad3">linear grad: userSpace
+        <option value="linear grad %">linear grad: bounding
+        <option value="mouseEvents">mouseEvents
+        <option value="pencil">pencil
+        <option value="preserve">preserveAspectRatio
+        <option value="radial">radialGradient
+        <option value="smile">smile
+        <option value="paths8">paths-data-08-t
+        <option value="paths9">paths-data-09-t
+        <option value="maskpath">masking-path-04-b
+        <option value="polygon">shapes-polygon-01-t
+        <option value="polyline">shapes-polyline-01-t
+        <option value="clippath">clip-path
     </select>
     <p id='selectModeP'><span>Select Display Mode:</span>
     <select id="selectMode" onClick="setMode(this.selectedIndex);">
@@ -70,7 +94,27 @@
                     { svgURL: "rg1024_Ufo_in_metalic_style.svg", width:729,height:379 },
                     { svgURL: "tommek_Car.svg", width:1052,height:744 },
                     { svgURL: "blocks_game.svg", width:345,height:407 },
-                    { svgURL: "photos.svg", width:800,height:600 }
+                    { svgURL: "photos.svg", width:800,height:600 },
+                    { svgURL: "displayWebStats.svg", width:800,height:600 },
+                    { svgURL: "circles1.svg" },
+                    { svgURL: "gaussian1.svg" },
+                    { svgURL: "gaussian2.svg" },
+                    { svgURL: "image.svg" },
+                    { svgURL: "lineargradient1.svg" },
+                    { svgURL: "lineargradient2.svg" },
+                    { svgURL: "lineargradient3.svg" },
+                    { svgURL: "lineargradient4.svg" },
+                    { svgURL: "mouseEvents.svg" },
+                    { svgURL: "pencil.svg" },
+                    { svgURL: "preserveAspectRatio.svg" },
+                    { svgURL: "radialgradient1.svg" },
+                    { svgURL: "smile.svg" },
+                    { svgURL: "paths-data-08-t.svg" },
+                    { svgURL: "paths-data-09-t.svg" },
+                    { svgURL: "masking-path-04-b.svg" },
+                    { svgURL: "shapes-polygon-01-t.svg" },
+                    { svgURL: "shapes-polyline-01-t.svg" },
+                    { svgURL: "clippath.svg" }
                   ];
     function setMode(mode) {
         if (mode == 0) {
