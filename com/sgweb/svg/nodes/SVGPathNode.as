@@ -36,10 +36,6 @@ package com.sgweb.svg.nodes
             super(svgRoot, xml, original);
         }
         
-        protected override function draw():void {
-            this.runGraphicsCommands();            
-        }
-        
         /**
          * Normalize SVG Path Data:
          * Place a comma between each element and number
