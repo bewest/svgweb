@@ -273,9 +273,13 @@ package com.sgweb.svg.core
                         this._parsedChildren = true;
                     }
 
+                    // sets x, y, rotate, and opacity
                     this.setAttributes();
 
-                    if (!this.isDisplayNone()) {
+                    if (this.getAttribute('display') == 'none') {
+                        this.visible = false;
+                    }
+                    else {
                         // <svg> nodes get an implicit mask of their height and width
                         if (this is SVGSVGNode) {
                             this.applyDefaultMask();
@@ -1249,23 +1253,6 @@ package com.sgweb.svg.core
 
             // defaults to 100%
             return parentHeight;
-        }
-
-        /**
-         * Has style 'display: none' or child of parent with same? they are not drawn.
-         **/ 
-        public function isDisplayNone():Boolean {
-            var node:DisplayObject = this;
-            if (this.getAttribute('display') == 'none') {
-                return true;
-            }
-            while (node && !(node is SVGSVGNode)) {
-                node=node.parent;
-                if (node && node is SVGNode && SVGNode(node).getAttribute('display') == 'none') {
-                    return true;
-                }
-            }
-            return false;
         }
 
         public function getMaskAncestor():SVGNode {
