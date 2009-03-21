@@ -28,10 +28,10 @@ package com.sgweb.svg.nodes
         }
         
         override protected function draw():void {
-        	//Node should not be visible
-        	//Only acts as a data holder
-        	
-        	this.visible = false;
+            //Node should not be visible
+            //Only acts as a data holder
+            
+            this.visible = false;
         }
         
     }

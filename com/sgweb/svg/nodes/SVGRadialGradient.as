@@ -56,36 +56,29 @@ package com.sgweb.svg.nodes
         }
 
         public function getMatrix(node:SVGNode):Matrix {
-            var matrGrTr:Matrix = this.parseTransform(this.xml.@gradientTransform);
+            var matrGrTr:Matrix = this.parseTransform(this.getAttribute('gradientTransform'));
+            var gradientUnits:String = this.getAttribute('gradientUnits', 'objectBoundingBox', false);
 
-            var cx:Number = 0;
-            if (this.xml.@cx != null) {
-                cx = Number(this.xml.@cx);
-            }
-            var cy:Number = 0;
-            if (this.xml.@cy != null) {
-                cy = Number(this.xml.@cy);
-            }
-            var fx:Number = 0;
-            if (this.xml.@fx != null) {
-                fx = Number(this.xml.@fx);
-            }
-            var fy:Number = 0;
-            if (this.xml.@fy != null) {
-                fy = Number(this.xml.@fy);
-            }
-            var r:Number = 0;
-            if (this.xml.@r != null) {
-                r = Number(this.xml.@r);
-            }
+            var xString:Number = node.getAttribute('x', '0', false);
+            var objectX:Number = Math.round(SVGColors.cleanNumber2(xString, SVGNode(node.parent).getWidth()));
+            var yString:Number = node.getAttribute('y', '0', false);
+            var objectY:Number = Math.round(SVGColors.cleanNumber2(yString, SVGNode(node.parent).getHeight()));
 
-            var objectX:Number = 0;
-            if (node.xml.@x != null) {
-                objectX = Math.round(Number(node.xml.@x));
+            var cxString:String = this.getAttribute('cx', '50%', false);
+            var cyString:String = this.getAttribute('cy', '50%', false);
+            var rString:String = this.getAttribute('r', '50%', false);
+
+            if (gradientUnits == 'userSpaceOnUse') {
+                var cx:Number = Math.round(SVGColors.cleanNumber2(cxString, SVGNode(node.parent).getWidth()));
+                var cy:Number = Math.round(SVGColors.cleanNumber2(cyString, SVGNode(node.parent).getHeight()));
+                var r:Number  = Math.round(SVGColors.cleanNumber2(rString, SVGNode(node.parent).getWidth()));
             }
-            var objectY:Number = 0;
-            if (node.xml.@y != null) {
-                objectY = Math.round(Number(node.xml.@y));
+            else {
+                var w:Number = node.xMax - node.xMin;
+                var h:Number = node.yMax - node.yMin;
+                cx = objectX + node.xMin + Math.round(SVGColors.cleanNumber2(cxString, w));
+                cy = objectY + node.yMin + Math.round(SVGColors.cleanNumber2(cyString, h));
+                r = Math.round(SVGColors.cleanNumber2(rString, w));
             }
 
             var tx:Number = cx;

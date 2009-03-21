@@ -68,17 +68,13 @@ package com.sgweb.svg.nodes
         }
 
         protected function getMatrix(node:SVGNode):Matrix {
-            var matrGrTr:Matrix = this.parseTransform(this.xml.@gradientTransform);
+            var matrGrTr:Matrix = this.parseTransform(this.getAttribute('gradientTransform'));
             var gradientUnits:String = this.getAttribute('gradientUnits', 'objectBoundingBox', false);
 
-            var objectX:Number = 0;
-            if (node.xml.@x != null) {
-                objectX = Math.round(Number(node.xml.@x));
-            }
-            var objectY:Number = 0;
-            if (node.xml.@y != null) {
-                objectY = Math.round(Number(node.xml.@y));
-            }
+            var xString:Number = node.getAttribute('x', '0', false);
+            var objectX:Number = Math.round(SVGColors.cleanNumber2(xString, SVGNode(node.parent).getWidth()));
+            var yString:Number = node.getAttribute('y', '0', false);
+            var objectY:Number = Math.round(SVGColors.cleanNumber2(yString, SVGNode(node.parent).getHeight()));
 
             var x1String:String = this.getAttribute('x1', '0%', false);
             var x2String:String = this.getAttribute('x2', '100%', false);         

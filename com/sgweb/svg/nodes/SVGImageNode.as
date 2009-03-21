@@ -85,7 +85,7 @@ package com.sgweb.svg.nodes
             }
 
             // must have width and height to create bitmap
-            if (this._xml.@width && this._xml.@height) {
+            if ( (this.getAttribute('width') != null) && (this.getAttribute('height') != null) ) {
                 urlLoader = new URLLoader();
                 urlLoader.dataFormat = URLLoaderDataFormat.BINARY;
 

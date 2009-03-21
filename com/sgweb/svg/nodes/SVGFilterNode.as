@@ -52,8 +52,8 @@ package com.sgweb.svg.nodes
             var oldMatrix:Matrix;
 
             while (svgNode) {
-                if (svgNode.xml.@transform != undefined) {
-                    oldMatrix = this.parseTransform(svgNode.xml.@transform);
+                if (svgNode.getAttribute('transform') != null) {
+                    oldMatrix = this.parseTransform(svgNode.getAttribute('transform'));
                     oldMatrix.concat(concatMatrix);
                     concatMatrix = oldMatrix;
                 }

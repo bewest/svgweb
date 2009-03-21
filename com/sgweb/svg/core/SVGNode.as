@@ -337,8 +337,8 @@ package com.sgweb.svg.core
 
         // <svg> and <image> nodes get an implicit mask of their height and width
         public function applyDefaultMask():void {
-            if (   (this.xml.@width != undefined)
-                && (this.xml.@height != undefined) ) {
+            if (   (this.getAttribute('width') != null)
+                && (this.getAttribute('height') != null) ) {
                 if (this.mask == null) {
                     var myMask:Shape = new Shape();
                     this.parent.addChild(myMask);
@@ -456,13 +456,13 @@ package com.sgweb.svg.core
                                 
                             case "rotate":
                                 if (argsArray.length == 3) {
-                                        nodeMatrix.translate(-argsArray[1], -argsArray[2]);
-                                        nodeMatrix.rotate(Number(argsArray[0])* Math.PI / 180.0);
-                                        nodeMatrix.translate(argsArray[1], argsArray[2]); 
+                                    nodeMatrix.translate(-argsArray[1], -argsArray[2]);
+                                    nodeMatrix.rotate(Number(argsArray[0])* Math.PI / 180.0);
+                                    nodeMatrix.translate(argsArray[1], argsArray[2]); 
                                 }
                                 else {
                                     nodeMatrix.rotate(Number(argsArray[0])* Math.PI / 180.0);
-                                } 
+                                }
                                 break;
                                 
                             default:
@@ -493,7 +493,6 @@ package com.sgweb.svg.core
                         break;
                     case "M":
                         this.graphics.moveTo(command[1], command[2]);
-                        //this.nodeBeginFill();
                         firstX = command[1];
                         firstY = command[2];
                         break;
@@ -505,7 +504,6 @@ package com.sgweb.svg.core
                         break;
                     case "Z":
                         this.graphics.lineTo(firstX, firstY);
-                        //this.nodeEndFill();
                         break;
                     case "LINE":
                         this.nodeBeginFill();
@@ -689,8 +687,14 @@ package com.sgweb.svg.core
 
             // Apply viewbox transform
             var viewBox:String = this.getAttribute('viewBox');
-            if (viewBox != null ||
-                   (this._xml.@preserveAspectRatio != undefined) ) {
+            var preserveAspectRatio:String = this.getAttribute('preserveAspectRatio');
+
+            if ( (viewBox != null) || (preserveAspectRatio != null) ) {
+
+                if (preserveAspectRatio == null) {
+                    preserveAspectRatio = 'xMidYMid meet';
+                }
+
                 /**
                  * Canvas, the viewport
                  **/
@@ -724,10 +728,6 @@ package com.sgweb.svg.core
                 var cropWidth:Number;
                 var cropHeight:Number;
 
-                var preserveAspectRatio:String = 'xMidYMid meet';
-                if (this.xml.@preserveAspectRatio != undefined) {
-                    preserveAspectRatio = this.xml.@preserveAspectRatio.toString();
-                }
                 var alignMode:String = preserveAspectRatio.substr(0,8);
                 var meetOrSlice:String = 'meet';
                 if (preserveAspectRatio.indexOf('slice') != -1) {
@@ -1227,8 +1227,8 @@ package com.sgweb.svg.core
             if (this.parent is SVGNode) {
                 parentWidth=SVGNode(this.parent).getWidth();
             }
-            if (this.xml.@width != undefined) {
-                return SVGColors.cleanNumber2(this.xml.@width, parentWidth);
+            if (this.getAttribute('width') != null) {
+                return SVGColors.cleanNumber2(this.getAttribute('width'), parentWidth);
             }
 
             // defaults to 100%
@@ -1243,8 +1243,8 @@ package com.sgweb.svg.core
             if (this.parent is SVGNode) {
                 parentHeight=SVGNode(this.parent).getHeight();
             }
-            if (this.xml.@height != undefined) {
-                return SVGColors.cleanNumber2(this.xml.@height, parentHeight);
+            if (this.getAttribute('height') != null) {
+                return SVGColors.cleanNumber2(this.getAttribute('height'), parentHeight);
             }
 
             // defaults to 100%
