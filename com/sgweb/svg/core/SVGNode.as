@@ -247,13 +247,13 @@ package com.sgweb.svg.core
                 && (this.xml.@height != undefined) ) {
                 if (this.mask == null) {
                     var myMask:Shape = new Shape();
-                    this.addChild(myMask);
+                    this.parent.addChild(myMask);
                     this.mask = myMask;
                 }
                 if (this.mask is Shape) {
                     Shape(this.mask).graphics.clear();
                     Shape(this.mask).graphics.beginFill(0x000000);
-                    Shape(this.mask).graphics.drawRect(0, 0, this.getWidth(), this.getHeight());
+                    Shape(this.mask).graphics.drawRect(this.x, this.y, this.getWidth(), this.getHeight());
                     Shape(this.mask).graphics.endFill();
                 }
             }
@@ -424,17 +424,6 @@ package com.sgweb.svg.core
             }
 
             this.transform.matrix = newMatrix;
-            newMatrix = this.transform.matrix.clone();
-
-            // Reverse all tranforms against the mask because the viewbox coordinates are
-            // in the parent coordinate space. Since the mask is a child of this node,
-            // the resulting coordinate mismatch is unfortunate.
-            if (this.mask is Shape) {
-                var maskMatrix:Matrix = new Matrix();
-                newMatrix.invert();
-                maskMatrix.concat(newMatrix);
-                this.mask.transform.matrix = maskMatrix;
-            }
 
         }
 
@@ -693,7 +682,7 @@ package com.sgweb.svg.core
 
                     // This handle strange gradient bugs with negative transforms
                     // by separating the transform from every object
-                    if (childXML.@['transform'] != undefined) {
+                    if (String(childXML.@['transform']) != "") {
                         var newChildXML:XML = childXML.copy();
                         var stubGroupXML:XML = <g></g>;
                         stubGroupXML.@['transform'] = newChildXML.@['transform'];
@@ -703,22 +692,27 @@ package com.sgweb.svg.core
                         this.addChild(newChildNode);
                         continue;
                     }
-                    var newChildNode:SVGNode = this.parseNode(childXML);
-
-                    if (!newChildNode) {
-                        this.dbg("did not add object!:" + childXML.localName());
-                        continue;
-                    }
 
                     // If the object has a gaussian filter, flash will blur the object mask, even
                     // if the mask is not drawn with a blur. This is not correct rendering.
                     // So, we use a stub parent object to hold the mask, in order to isolate
                     // the mask from the filter. A child is created for the original object,
                     // and the filter is applied to the child.
-                    if ( !(this.parent && this.parent is SVGClipMaskParent)
-                       && (  (childXML.@['clip-path'] != undefined)
-                          || (childXML.@['mask'] != undefined) ) ) {
-                        newChildNode = new SVGClipMaskParent(this.svgRoot, childXML);
+                    if (String(childXML.@['clip-path']) != "") {
+                        var newChildXML:XML = childXML.copy();
+                        var stubGroupXML:XML = <g></g>;
+                        stubGroupXML.@['clip-path'] = newChildXML.@['clip-path'];
+                        delete newChildXML.@['clip-path'];
+                        stubGroupXML.appendChild(newChildXML.toXMLString());
+                        newChildNode = new SVGGroupNode(this.svgRoot, stubGroupXML);
+                        this.addChild(newChildNode);
+                        continue;
+                    }
+
+                    var newChildNode:SVGNode = this.parseNode(childXML);
+                    if (!newChildNode) {
+                        this.dbg("did not add object!:" + childXML.localName());
+                        continue;
                     }
                     this.addChild(newChildNode);
                 }
@@ -897,8 +891,7 @@ package com.sgweb.svg.core
             var value:String;
             
             // If we are rendering a mask, then use a simple black fill.
-            if ( (this.getMaskAncestor() != null)
-                 || (this is SVGClipMaskParent)) {
+            if (this.getMaskAncestor() != null) {
 
                 if (  (name == 'opacity')
                     || (name == 'fill-opacity')
@@ -1042,6 +1035,7 @@ package com.sgweb.svg.core
                         this.transformNode();
                         this.draw();
 
+                        this.applyClipPathMask();
                         this.applyViewBox();
                         this.setupFilters();
                     }
@@ -1089,6 +1083,50 @@ package com.sgweb.svg.core
             if (action)
                 this.svgRoot.addActionListener(MouseEvent.MOUSE_OUT, this);
 
+        }
+
+        protected function applyClipPathMask():void {
+            var attr:String;
+            var match:Array;
+            var node:SVGNode;
+            var matrix:Matrix;
+            var isMask:Boolean = true;
+
+            attr = this.getAttribute('mask');
+            if (!attr) {
+                attr = this.getAttribute('clip-path');
+            }
+
+            if (attr) {
+               match = attr.match(/url\(\s*#(.*?)\s*\)/si);
+               if (match.length == 2) {
+                   attr = match[1];
+                   node = this.svgRoot.getNode(attr);
+                   if (node) {
+                       if (this.parent is SVGNode) {
+
+                           this.removeMask();
+
+                           var newMask:SVGNode = node.clone();
+                           this.parent.addChild(newMask);
+
+                           this.mask = newMask;
+
+                           newMask.visible = true;
+                           this.cacheAsBitmap = true;
+                           newMask.cacheAsBitmap = true;
+
+                       }
+                   }
+               }
+            }
+        }
+
+        protected function removeMask():void {
+            if (this.mask) {
+                this.mask.parent.removeChild(this.mask);
+                this.mask = null;
+            }
         }
 
         /**
@@ -1166,18 +1204,6 @@ package com.sgweb.svg.core
             }
             return null;
         }
-
-        public function getSVGClipMaskAncestor():SVGClipMaskParent {
-            var node:DisplayObject = this;
-            while (node && !(node is SVGSVGNode)) {
-                node=node.parent;
-                if (node && (node is SVGClipMaskParent)) {
-                    return SVGClipMaskParent(node);
-                }
-            }
-            return null;
-        }
-
 
         public function get invalidDisplay():Boolean {
             return this._invalidDisplay;

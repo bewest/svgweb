@@ -22,7 +22,6 @@ package com.sgweb.svg.nodes
     import com.sgweb.svg.core.SVGNode;
     import com.sgweb.svg.nodes.SVGSVGNode;
     import com.sgweb.svg.utils.SVGColors;
-    import com.sgweb.svg.nodes.mask.SVGClipMaskParent;
     
     import flash.filters.BlurFilter;
     import flash.geom.Matrix;
@@ -53,8 +52,7 @@ package com.sgweb.svg.nodes
             var oldMatrix:Matrix;
 
             while (svgNode) {
-                if (  !(svgNode is SVGClipMaskParent)
-                   && (svgNode.xml.@transform != undefined) ) {
+                if (svgNode.xml.@transform != undefined) {
                     oldMatrix = this.parseTransform(svgNode.xml.@transform);
                     oldMatrix.concat(concatMatrix);
                     concatMatrix = oldMatrix;
