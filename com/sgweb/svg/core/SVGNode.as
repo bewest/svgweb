@@ -23,7 +23,6 @@ package com.sgweb.svg.core
     import com.sgweb.svg.utils.SVGColors;
     import com.sgweb.svg.utils.SVGUnits;
     import com.sgweb.svg.nodes.*;
-    import com.sgweb.svg.nodes.mask.*;
     
     import flash.display.CapsStyle;
     import flash.display.DisplayObject;
