@@ -60,9 +60,6 @@ package com.sgweb.svg.nodes
         }
         
         override protected function draw():void {        
-            if (isChildOfDef())
-                return;
-                        
             this._field = this.getAttribute('attributeName');
                         
             this._fromValString = this.getAttribute('from');

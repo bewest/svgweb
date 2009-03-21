@@ -275,7 +275,7 @@ package com.sgweb.svg.core
 
                     this.setAttributes();
 
-                    if (!this.isChildOfDef() && !this.isDisplayNone()) {
+                    if (!this.isDisplayNone()) {
                         // <svg> nodes get an implicit mask of their height and width
                         if (this is SVGSVGNode) {
                             this.applyDefaultMask();
@@ -1251,18 +1251,6 @@ package com.sgweb.svg.core
             return parentHeight;
         }
 
-        /**
-         * @return is child of definition? they are not drawn.
-         **/ 
-        public function isChildOfDef():Boolean {
-            var node:SVGNode = this;
-            while (node && !(node is SVGSVGNode)) {
-                node=SVGNode(node.parent);
-                if (node is SVGDefsNode)
-                    return true;
-            }
-            return false;
-        }
         /**
          * Has style 'display: none' or child of parent with same? they are not drawn.
          **/ 

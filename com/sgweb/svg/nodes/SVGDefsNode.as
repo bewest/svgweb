@@ -20,7 +20,9 @@
 package com.sgweb.svg.nodes
 {
     import com.sgweb.svg.core.SVGNode;
-    
+
+    import flash.events.Event;
+
     /** 
      * Contains drawing instructions used by SVGUseNode
      * It is not rendered directly
@@ -32,15 +34,27 @@ package com.sgweb.svg.nodes
             super(svgRoot, xml, original);
         }
                 
-        override protected function draw():void {
-            //Do Nothing
+        override protected function drawNode(event:Event = null):void {
+            this.visible = false;
+            if ( (this.parent != null) && (this._invalidDisplay) ) {
+                this._invalidDisplay = false;
+
+                if (this._xml != null) {
+                    if (!this._parsedChildren) {
+                        this.parse();
+                        this._parsedChildren = true;
+                    }
+                }
+
+                this.removeEventListener(Event.ENTER_FRAME, drawNode);
+            }
+
+            if (!this._initialRenderDone && this.parent) {
+                this._initialRenderDone = true;
+                this.svgRoot.renderFinished();
+            }
+
         }
-        
-        override protected function generateGraphicsCommands():void {
-            this._graphicsCommands = new Array();
-            //Do Nothing
-        }
-        
 
     }
 }
