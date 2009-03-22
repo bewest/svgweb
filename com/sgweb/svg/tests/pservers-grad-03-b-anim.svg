@@ -48,31 +48,39 @@
 		<!-- ====================================================================== -->
 		<pattern id="Pat3a" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
 			<rect x="0" y="0" width="10" height="10" fill="red" >
-                <animate id="an1.1" attributeName="width" calcMode="discrete" additive="replace" accumulate="none"
-                         repeatCount="10" from="10" to="0" begin="0s" dur="1s" fill="freeze"/>
-                <animate id="an1.2" attributeName="height" calcMode="discrete" additive="replace" accumulate="none"
-                         repeatCount="10" from="10" to="0" begin="0s" dur="1s" fill="freeze"/>
-            </rect>
+				<animate id="an1.1" attributeName="width" calcMode="discrete" additive="replace"
+					accumulate="none" repeatCount="10" from="10" to="0"
+					begin="0s" dur="1s" fill="freeze"/>
+				<animate id="an1.2" attributeName="height" calcMode="discrete" additive="replace" accumulate="none"
+					repeatCount="10" from="10" to="0" begin="0s" dur="1s" fill="freeze"/>
+			</rect>
 			<rect x="10" y="0" width="10" height="10" fill="green" >
-                <animate id="an2.1" attributeName="x" calcMode="discrete" additive="replace" accumulate="none"
-                         repeatCount="10" from="10" to="20" begin="0s" dur="1s" fill="freeze"/>
-                <animate id="an2.2" attributeName="width" calcMode="discrete" additive="replace" accumulate="none"
-                         repeatCount="10" from="10" to="0" begin="0s" dur="1s" fill="freeze"/>
-                <animate id="an2.3" attributeName="height" calcMode="discrete" additive="replace" accumulate="none"
-                         repeatCount="10" from="10" to="0" begin="0s" dur="1s" fill="freeze"/>
-            </rect>
+				<animate id="an2.1" attributeName="x" calcMode="discrete" additive="replace" accumulate="none"
+					repeatCount="10" from="10" to="20" begin="0s" dur="1s" fill="freeze"/>
+				<animate id="an2.2" attributeName="width" calcMode="discrete" additive="replace" accumulate="none"
+					repeatCount="10" from="10" to="0" begin="0s" dur="1s" fill="freeze"/>
+				<animate id="an2.3" attributeName="height" calcMode="discrete" additive="replace" accumulate="none"
+					repeatCount="10" from="10" to="0" begin="0s" dur="1s" fill="freeze"/>
+			</rect>
 			<rect x="0" y="10" width="10" height="10" fill="blue" >
-                <animate id="an3.1" attributeName="height" calcMode="discrete" additive="replace" accumulate="none"
-                         repeatCount="10" from="10" to="0" begin="0s" dur="1s" fill="freeze"/>
-                <animate id="an3.2" attributeName="y" calcMode="discrete" additive="replace" accumulate="none"
-                         repeatCount="10" from="10" to="20" begin="0s" dur="1s" fill="freeze"/>
-            </rect>
+				<animate id="an3.1" attributeName="width" calcMode="discrete" additive="replace"
+					accumulate="none" repeatCount="10" from="10" to="0"
+					begin="0s" dur="1s" fill="freeze"/>
+				<animate id="an3.2" attributeName="height" calcMode="discrete" additive="replace" accumulate="none"
+					repeatCount="10" from="10" to="0" begin="0s" dur="1s" fill="freeze"/>
+				<animate id="an3.3" attributeName="y" calcMode="discrete" additive="replace" accumulate="none"
+					repeatCount="10" from="10" to="20" begin="0s" dur="1s" fill="freeze"/>
+			</rect>
 			<rect x="10" y="10" width="10" height="10" fill="yellow" >
-                <animate id="an4.1" attributeName="height" calcMode="discrete" additive="replace" accumulate="none"
-                         repeatCount="10" from="10" to="0" begin="0s" dur="1s" fill="freeze"/>
-                <animate id="an4.2" attributeName="y" calcMode="discrete" additive="replace" accumulate="none"
-                         repeatCount="10" from="10" to="20" begin="0s" dur="1s" fill="freeze"/>
-            </rect>
+				<animate id="an4.1" attributeName="x" calcMode="discrete" additive="replace" accumulate="none"
+					repeatCount="10" from="10" to="20" begin="0s" dur="1s" fill="freeze"/>
+				<animate id="an4.2" attributeName="y" calcMode="discrete" additive="replace" accumulate="none"
+					repeatCount="10" from="10" to="20" begin="0s" dur="1s" fill="freeze"/>
+				<animate id="an4.3" attributeName="width" calcMode="discrete" additive="replace" accumulate="none"
+					repeatCount="10" from="10" to="0" begin="0s" dur="1s" fill="freeze"/>
+				<animate id="an4.4" attributeName="height" calcMode="discrete" additive="replace" accumulate="none"
+					repeatCount="10" from="10" to="0" begin="0s" dur="1s" fill="freeze"/>
+			</rect>
 		</pattern>
 		<pattern id="Pat3b" xlink:href="#Pat3a" width="20" height="20"/>
 		<rect id="rect1" x="20" y="20" width="440" height="80" fill="url(#Pat3a)" />
