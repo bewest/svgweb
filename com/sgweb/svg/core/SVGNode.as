@@ -1113,6 +1113,10 @@ package com.sgweb.svg.core
                     break;
             }
             this.updateClones();
+            if (getPatternAncestor() != null) {
+                this.svgRoot.invalidateReferers(getPatternAncestor().id);
+            }
+
         }
 
         private function parseStyle():void {

@@ -49,10 +49,12 @@
         <option value="polyline">shapes-polyline-01-t
         <option value="clippath">clip-path
         <option value="pattern1">pservers-grad-03-b.svg
+        <option value="pattern1-anim">pservers-grad-03-b-anim.svg
         <option value="pattern2">pservers-grad-06-b.svg
         <option value="w3cgradient1">pservers-grad-07-b.svg
         <option value="w3cgradient2">pservers-grad-09-b.svg
         <option value="w3cgradient3">pservers-grad-10-b.svg
+        <option value="animate1">animate-elem-02-t.svg
     </select>
     <p id='selectModeP'><span>Select Display Mode:</span>
     <select id="selectMode" onClick="setMode(this.selectedIndex);">
@@ -121,10 +123,12 @@
                     { svgURL: "shapes-polyline-01-t.svg" },
                     { svgURL: "clippath.svg" },
                     { svgURL: "pservers-grad-03-b.svg" },
+                    { svgURL: "pservers-grad-03-b-anim.svg" },
                     { svgURL: "pservers-grad-06-b.svg" },
                     { svgURL: "pservers-grad-07-b.svg" },
                     { svgURL: "pservers-grad-09-b.svg" },
-                    { svgURL: "pservers-grad-10-b.svg" }
+                    { svgURL: "pservers-grad-10-b.svg" },
+                    { svgURL: "animate-elem-02-t.svg" }
                   ];
     function setMode(mode) {
         if (mode == 0) {
