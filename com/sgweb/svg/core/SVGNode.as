@@ -555,7 +555,7 @@ package com.sgweb.svg.core
                 var matches:Array = fill.match(/url\(#([^\)]+)\)/si);
                 if (matches != null && matches.length > 0) {
                     var fillName:String = matches[1];
-                    this.svgRoot.addReference(this.xml.@id, fillName);
+                    this.svgRoot.addReference(this, fillName);
                     var fillNode:SVGNode = this.svgRoot.getNode(fillName);
                     if (!fillNode) {
                          // this happens normally
@@ -625,7 +625,7 @@ package com.sgweb.svg.core
                 var strokeMatches:Array = stroke.match(/url\(#([^\)]+)\)/si);
                 if (strokeMatches != null && strokeMatches.length > 0) {
                     var strokeName:String = strokeMatches[1];
-                    this.svgRoot.addReference(this.xml.@id, strokeName);
+                    this.svgRoot.addReference(this, strokeName);
                     var strokeNode:SVGNode = this.svgRoot.getNode(strokeName);
                     if (!strokeNode) {
                          // this happens normally

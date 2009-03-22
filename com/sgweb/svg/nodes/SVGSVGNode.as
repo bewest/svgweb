@@ -153,13 +153,18 @@ package com.sgweb.svg.nodes
          * register our interest in being invalidated when the
          * dependency object is redrawn.
          * 
+         * The node references referenceId. 
+         * An array of nodes that reference the referenceId is created.
+         * 
          **/
-        public function addReference(refererId:String, referencedId:String):void {
+        public function addReference(node:SVGNode, referencedId:String):void {
 
             if (!this._referersById[referencedId]) {
                  this._referersById[referencedId]= new Array();
             }
-            this._referersById[referencedId][refererId] = '';
+            if (this._referersById[referencedId].lastIndexOf(node) == -1) {
+                this._referersById[referencedId].push(node);
+            }
         }
 
         
@@ -167,10 +172,8 @@ package com.sgweb.svg.nodes
             //this.svgRoot.debug("Invalidating referers to "  + id);
             if (this._referersById[id]) {
                 var referers:Array = this._referersById[id];
-                for (var referer:String in referers) {
-                    if (this.getNode(referer)) {
-                        this.getNode(referer).invalidateDisplay();
-                    }
+                for (var refererIdx:String in referers) {
+                    referers[refererIdx].invalidateDisplay();
                 }
             }
         }
