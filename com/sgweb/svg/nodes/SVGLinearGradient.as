@@ -90,10 +90,30 @@ package com.sgweb.svg.nodes
             else {
                 var w:Number = node.xMax - node.xMin;
                 var h:Number = node.yMax - node.yMin;
-                x1 = objectX + node.xMin + Math.round(SVGColors.cleanNumber2(x1String, w));
-                y1 = objectY + node.yMin + Math.round(SVGColors.cleanNumber2(y1String, h));
-                x2 = objectX + node.xMin + Math.round(SVGColors.cleanNumber2(x2String, w));
-                y2 = objectY + node.yMin + Math.round(SVGColors.cleanNumber2(y2String, h));
+                if (x1String.search('%') > -1) {
+                    x1 = objectX + node.xMin + Math.round(SVGColors.cleanNumber2(x1String, w));
+                }
+                else {
+                    x1 = objectX + node.xMin + w * SVGColors.cleanNumber(x1String);
+                }
+                if (y1String.search('%') > -1) {
+                    y1 = objectY + node.yMin + Math.round(SVGColors.cleanNumber2(y1String, h));
+                }
+                else {
+                    y1 = objectY + node.yMin + h * SVGColors.cleanNumber(y1String);
+                }
+                if (x2String.search('%') > -1) {
+                    x2 = objectX + node.xMin + Math.round(SVGColors.cleanNumber2(x2String, w));
+                }
+                else {
+                    x2 = objectX + node.xMin + w * SVGColors.cleanNumber(x2String);
+                }
+                if (y2String.search('%') > -1) {
+                    y2 = objectY + node.yMin + Math.round(SVGColors.cleanNumber2(y2String, h));
+                }
+                else {
+                    y2 = objectY + node.yMin + h * SVGColors.cleanNumber(y2String);
+                }
             }
 
 
