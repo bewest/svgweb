@@ -203,7 +203,10 @@ package com.sgweb.svg.core
                     break;
                 case "namedview":
                     //Add Handling 
-                    break;                            
+                    break;
+                case "pattern":
+                    childNode = new SVGPatternNode(this.svgRoot, childXML);
+                    break;
                 case "polygon":
                     childNode = new SVGPolygonNode(this.svgRoot, childXML);
                     break;
@@ -298,6 +301,10 @@ package com.sgweb.svg.core
 
                 if (this.xml.@id)  {
                     this.svgRoot.invalidateReferers(this.xml.@id);
+                }
+
+                if (getPatternAncestor() != null) {
+                    this.svgRoot.invalidateReferers(getPatternAncestor().id);
                 }
 
             }
@@ -562,7 +569,10 @@ package com.sgweb.svg.core
                          //this.dbg("Gradient " + fillName + " not (yet?) available for " + this.xml.@id);
                     }
                     if (fillNode is SVGGradient) {
-                         SVGGradient(fillNode).beginGradientFill(this);
+                        SVGGradient(fillNode).beginGradientFill(this);
+                    }
+                    else if (fillNode is SVGPatternNode) {
+                        SVGPatternNode(fillNode).beginPatternFill(this);
                     }
                 }
                 else {
@@ -1267,6 +1277,15 @@ package com.sgweb.svg.core
             return null;
         }
 
+        public function getPatternAncestor():SVGPatternNode {
+            var node:SVGNode = this;
+            while (node && !(node is SVGSVGNode)) {
+                node=SVGNode(node.parent);
+                if (node is SVGPatternNode)
+                    return SVGPatternNode(node);
+            }
+            return null;
+        }
 
         /**
          * Getters / Setters

@@ -48,6 +48,8 @@
         <option value="polygon">shapes-polygon-01-t
         <option value="polyline">shapes-polyline-01-t
         <option value="clippath">clip-path
+        <option value="pattern1">pattern 1
+        <option value="pattern2">pattern 2
     </select>
     <p id='selectModeP'><span>Select Display Mode:</span>
     <select id="selectMode" onClick="setMode(this.selectedIndex);">
@@ -114,7 +116,9 @@
                     { svgURL: "masking-path-04-b.svg" },
                     { svgURL: "shapes-polygon-01-t.svg" },
                     { svgURL: "shapes-polyline-01-t.svg" },
-                    { svgURL: "clippath.svg" }
+                    { svgURL: "clippath.svg" },
+                    { svgURL: "pservers-grad-03-b.svg" },
+                    { svgURL: "pservers-grad-06-b.svg" }
                   ];
     function setMode(mode) {
         if (mode == 0) {
