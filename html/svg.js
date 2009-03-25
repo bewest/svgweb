@@ -403,9 +403,12 @@ SVGFlashHandler.prototype.onEvent = function(flashMsg) {
 }
 
 SVGFlashHandler.prototype.onMouseEvent = function(flashMsg) {
-    var element = this.getElementById(flashMsg.elementId);
+    var target = this.getElementById(flashMsg.targetId);
+    var currentTarget = this.getElementById(flashMsg.currentTargetId);
+
     // xxx need to compute proper coordinates
-    var myEvent = { target: element, 
+    var myEvent = { target: target,
+                    currentTarget: currentTarget, 
                     clientX: flashMsg.screenX,
                     clientY: flashMsg.screenY,
                     screenX: flashMsg.screenX,
@@ -413,14 +416,9 @@ SVGFlashHandler.prototype.onMouseEvent = function(flashMsg) {
                     preventDefault: function() { this.returnValue=false; }
                   };
 
-    var handlers;
-    if (flashMsg.parentId) {
-        var parentElem = this.getElementById(flashMsg.parentId);
-        handlers = parentElem.eventHandlers[flashMsg.eventType];
-    }
-    else {
-        handlers = element.eventHandlers[flashMsg.eventType];
-    }
+    var handerElement = this.getElementById(flashMsg.currentTargetId);
+    var handlers = handerElement.eventHandlers[flashMsg.eventType];
+
     for (var i in handlers) {
         var handler = handlers[i];
         handler(myEvent);

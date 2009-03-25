@@ -20,7 +20,7 @@
 /*
 
  SVGViewer is a flash sprite which is the parent for a tree of SVGNodes
- which are sprites initialized from XML. The top most SVGNode is an SVGRoot.
+ which are sprites initialized from XML. The top most SVGNode is an SVGSVGNode.
  
  The xml is parsed and xml children are walked when the object is rendered.
  Child SVGNodes are added and when they are rendered, their xml is walked
@@ -474,26 +474,6 @@ package com.sgweb.svg
         }
 
         protected function handleAction(event:Event):void {
-            var target:SVGNode;
-            // This following code gets the appropriate SVG target.
-            // By figuring out the right target in the handler, we can use one
-            // handler. 
-            // The previous implementation of mouse events recorded the target in
-            // a custom function closure which was assigned as the event handler.
-            // This made for a direct targeting method, bypassing the targeting logic
-            // that flash utilizes. This remains a viable alternative should any
-            // shortcomings be revealed in the flash targeting below.
-            if (event.currentTarget is SVGNode) {
-                target = SVGNode(event.currentTarget);
-            }
-            else {
-                if (event.target is SVGNode) {
-                    target = SVGNode(event.target);
-                }
-                else {
-                    return;
-                }
-            }
 
             switch(event.type) {
                 case MouseEvent.CLICK:
@@ -502,7 +482,7 @@ package com.sgweb.svg
                 case MouseEvent.MOUSE_OUT:
                 case MouseEvent.MOUSE_OVER:
                 case MouseEvent.MOUSE_UP:
-                    js_dispatchMouseEvent(target, MouseEvent(event));
+                    js_sendMouseEvent(MouseEvent(event));
                     break;
 
                 default:
@@ -510,49 +490,22 @@ package com.sgweb.svg
             }
         }
 
-        public function js_dispatchMouseEvent(element:SVGNode, event:MouseEvent):void {
-            var i:int;
-            if (element is SVGGroupNode) {
-                for(i=0; i < element.numChildren; i++) {
-                    this.js_sendChildMouseEvent(element, SVGNode(element.getChildAt(i)), event);
+        // xxx requires id on targets
+        public function js_sendMouseEvent(event:MouseEvent):void {
+            try {
+                if (event.target is SVGNode && event.currentTarget is SVGNode) {
+                    ExternalInterface.call("receiveFromFlash",
+                                             { type: 'event',
+                                               uniqueId: this.js_uniqueId,
+                                               targetId: SVGNode(event.target).id,
+                                               currentTargetId: SVGNode(event.currentTarget).id,
+                                               eventType: event.type.toLowerCase(),
+                                               clientX: event.localX,
+                                               clientY: event.localY,
+                                               screenX: event.stageX,
+                                               screenY: event.stageY
+                                             } );
                 }
-            }
-            else {
-                this.js_sendMouseEvent(element, event);
-            }
-        }
-
-        public function js_sendMouseEvent(element:SVGNode, event:MouseEvent):void {
-            try {
-                ExternalInterface.call("receiveFromFlash",
-                                         { type: 'event',
-                                           uniqueId: this.js_uniqueId,
-                                           elementId: element.id,
-                                           eventType: event.type.toLowerCase(),
-                                           clientX: event.localX,
-                                           clientY: event.localY,
-                                           screenX: event.stageX,
-                                           screenY: event.stageY
-                                         } );
-            }
-            catch(error:SecurityError) {
-            }
-        }
-
-        public function js_sendChildMouseEvent(parentNode:SVGNode, childNode:SVGNode,
-                                                      event:MouseEvent):void {
-            try {
-                ExternalInterface.call("receiveFromFlash",
-                                         { type: 'event',
-                                           uniqueId: this.js_uniqueId,
-                                           parentId: parentNode.xml.@id.toString(),
-                                           elementId: childNode.xml.@id.toString(),
-                                           eventType: event.type.toLowerCase(),
-                                           clientX: event.localX,
-                                           clientY: event.localY,
-                                           screenX: event.stageX,
-                                           screenY: event.stageY
-                                         } );
             }
             catch(error:SecurityError) {
             }
