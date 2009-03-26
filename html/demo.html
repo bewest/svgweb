@@ -13,6 +13,7 @@
     <label>Select SVG:
     </label>
     <select id="selectSVG" onClick="showSVG();" >
+        <option value="scim-anim">scimitar-anim
         <option value="scim">scimitar
         <option value="tiger">tiger
         <option value="spcar">sporty car - nice
@@ -29,6 +30,9 @@
         <option value="blocks_game">blocks game
         <option value="photos">photos
         <option value="webstats">web stats
+        <option value="us">us states
+        <option value="snakes">snakes
+        <option value="steps">steps
         <option value="circles1">circles1
         <option value="gaussian 1">gaussian collage
         <option value="gaussian 2">gaussian simple
@@ -87,6 +91,7 @@
     var currentSVGIndex = -1;
     var currentSVGHandler;
     var SVGFiles= [
+                    { svgURL: "scimitar-anim.svg", width:466,height:265 },
                     { svgURL: "scimitar.svg", width:466,height:265 },
                     { svgURL: "tiger.svg", width:800,height:800 },
                     { svgURL: "car.svg", width:900,height:600 },
@@ -103,6 +108,9 @@
                     { svgURL: "blocks_game.svg", width:345,height:407 },
                     { svgURL: "photos.svg", width:800,height:600 },
                     { svgURL: "displayWebStats.svg", width:800,height:600 },
+                    { svgURL: "USStates.svg" },
+                    { svgURL: "snake.svg" },
+                    { svgURL: "Steps.svg" },
                     { svgURL: "circles1.svg" },
                     { svgURL: "gaussian1.svg" },
                     { svgURL: "gaussian2.svg" },
