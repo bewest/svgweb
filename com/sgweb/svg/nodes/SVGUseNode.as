@@ -40,6 +40,10 @@ package com.sgweb.svg.nodes
                 if (node) {
                     node = node.clone();
                     this.addChild(node);
+                    this.svgRoot.deleteReference(this, name);
+                }
+                else {
+                    this.svgRoot.addReference(this, name);
                 }
             }
             if (!this._initialRenderDone && this.parent) {

@@ -167,6 +167,13 @@ package com.sgweb.svg.nodes
             }
         }
 
+        public function deleteReference(node:SVGNode, referencedId:String):void {
+            if (this._referersById[referencedId]) {
+                if (this._referersById[referencedId].lastIndexOf(node) != -1) {
+                    delete this._referersById[referencedId][this._referersById[referencedId].lastIndexOf(node)];
+                }
+            }
+        }
         
         public function invalidateReferers(id:String):void {
             //this.svgRoot.debug("Invalidating referers to "  + id);
