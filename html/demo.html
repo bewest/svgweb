@@ -178,7 +178,7 @@
         if (currentSVGIndex != svgIndex || force) {
             var newSVG = SVGFiles[svgIndex];
             var params = { uniqueId: 'foo' + Math.floor(1000000*Math.random()), bgcolor:'#ffffff',
-                           parentId: 'mySVGDiv', sourceType: "url_svg", debug:true, onLoad:svgOnLoad } 
+                           parentId: 'mySVGDiv', sourceType: "url_svg", debug:false, onLoad:svgOnLoad } 
             for (var prop in newSVG) {
                 params[prop]=newSVG[prop];
             }

@@ -188,7 +188,6 @@ function receiveFromFlash(flashMsg) {
  */
 
 function SVGFlashHandler(params) {
-    console.log('SVGFlashHandler, params='+params);
     this.svgScript = '';
     this.parentId = params.parentId;
     this.sourceType = params.sourceType;
@@ -435,7 +434,6 @@ SVGFlashHandler.prototype.onMouseEvent = function(flashMsg) {
  */
 
 SVGFlashHandler.prototype.onStartup = function(flashMsg) {
-    console.log('SVGFlashHandler, flashMsg='+flashMsg);
     // Recording the flash object was deferred until it actually exists!
     this.flashObj = this.getFlashObject();
 
@@ -464,7 +462,7 @@ SVGFlashHandler.prototype.onLoad = function(flashMsg) {
     this.rootElement = this.documentElement;
 
     // resize to the <svg> width
-    console.log("svg w,h=" + flashMsg.width + "," + flashMsg.height);
+    //console.log("svg w,h=" + flashMsg.width + "," + flashMsg.height);
     if (this.sizeToSVG) {
         if (   (this.flashObj.width != flashMsg.width)
             || (this.flashObj.height != flashMsg.height) ) {
