@@ -183,6 +183,9 @@ package com.sgweb.svg.nodes
             this.currentX = x;
             this.currentY = y;
 
+            this.lastCurveControlX = this.currentX;
+            this.lastCurveControlY = this.currentY;
+
             this.setXMinMax(x);
             this.setYMinMax(y);
         }
@@ -216,6 +219,9 @@ package com.sgweb.svg.nodes
             }            
             this._graphicsCommands.push(['L', this.currentX, this.currentY]);            
 
+            this.lastCurveControlX = this.currentX;
+            this.lastCurveControlY = this.currentY;
+
             this.setXMinMax(x);
             this.setYMinMax(y);
         }
@@ -233,6 +239,9 @@ package com.sgweb.svg.nodes
             this.currentX = x;
             this.currentY = y;
             
+            this.lastCurveControlX = this.currentX;
+            this.lastCurveControlY = this.currentY;
+
             this.setXMinMax(rx);
             this.setYMinMax(ry);
             this.setXMinMax(x);
