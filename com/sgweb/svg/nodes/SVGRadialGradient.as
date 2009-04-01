@@ -76,9 +76,25 @@ package com.sgweb.svg.nodes
             else {
                 var w:Number = node.xMax - node.xMin;
                 var h:Number = node.yMax - node.yMin;
-                cx = objectX + node.xMin + Math.round(SVGColors.cleanNumber2(cxString, w));
-                cy = objectY + node.yMin + Math.round(SVGColors.cleanNumber2(cyString, h));
-                r = Math.round(SVGColors.cleanNumber2(rString, w));
+                if (cxString.search('%') > -1) {
+                    cx = objectX + node.xMin + Math.round(SVGColors.cleanNumber2(cxString, w));
+                }
+                else {
+                    cx = objectX + node.xMin + Math.round(w * SVGColors.cleanNumber(cxString));
+                }
+                if (cyString.search('%') > -1) {
+                    cy = objectY + node.yMin + Math.round(SVGColors.cleanNumber2(cyString, h));
+                }
+                else {
+                    cy = objectY + node.yMin + Math.round(h * SVGColors.cleanNumber(cyString));
+                }
+
+                if (rString.search('%') > -1) {
+                    r = Math.round(SVGColors.cleanNumber2(rString, w));
+                }
+                else {
+                    r = Math.round(w * SVGColors.cleanNumber(rString));
+                }
             }
 
             var tx:Number = cx;
