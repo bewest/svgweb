@@ -30,6 +30,8 @@ package com.sgweb.svg.nodes
     
     public class SVGRadialGradient extends SVGGradient
     {                
+        var focalLen:Number=0;
+
         public function SVGRadialGradient(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
             super(svgRoot, xml, original);
         }
@@ -40,7 +42,7 @@ package com.sgweb.svg.nodes
             var matrix:Matrix = this.getMatrix(node);
 
             if (stopData.colors.length > 0) { //Don't fill if there are no stops
-                node.graphics.beginGradientFill(GradientType.RADIAL, stopData.colors, stopData.alphas, stopData.ratios, matrix, spreadMethod, InterpolationMethod.RGB);
+                node.graphics.beginGradientFill(GradientType.RADIAL, stopData.colors, stopData.alphas, stopData.ratios, matrix, spreadMethod, InterpolationMethod.RGB, this.focalLen);
             }
 
         }
@@ -66,7 +68,10 @@ package com.sgweb.svg.nodes
 
             var cxString:String = this.getAttribute('cx', '50%', false);
             var cyString:String = this.getAttribute('cy', '50%', false);
+            var fxString:String = this.getAttribute('fx', cxString, false);
+            var fyString:String = this.getAttribute('fy', cyString, false);
             var rString:String = this.getAttribute('r', '50%', false);
+
 
             /*
                See the comment in SVGLinearGradient.getMatrix() for an 
@@ -111,6 +116,18 @@ package com.sgweb.svg.nodes
                 else {
                     cy = SVGColors.cleanNumber(cyString);
                 }
+                if (fxString.search('%') > -1) {
+                    var fx:Number = SVGColors.cleanNumber(fxString) / 100;
+                }
+                else {
+                    fx = SVGColors.cleanNumber(fxString);
+                }
+                if (fyString.search('%') > -1) {
+                    var fy:Number = SVGColors.cleanNumber(fyString) / 100;
+                }
+                else {
+                    fy = SVGColors.cleanNumber(fyString);
+                }
                 if (rString.search('%') > -1) {
                     r =  SVGColors.cleanNumber(rString) / 100;
                 }
@@ -120,6 +137,13 @@ package com.sgweb.svg.nodes
 
                 // Scale from flash gradient size (819.2) to bounding box size (.5)
                 matr.scale(.5/819.2, .5/819.2);
+
+                // Rotate to the angle of the SVG vector in boundingBox units
+                var dx:Number = fx - cx;
+                var dy:Number = fy - cy;
+                var angle:Number = Math.atan2(dy, dx);
+                matr.rotate(angle);
+                this.focalLen = Math.sqrt(dx*dx + dy*dy) / r;
 
                 // Move to the center of the bounding box
                 matr.translate(.5, .5);
