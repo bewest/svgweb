@@ -68,49 +68,79 @@ package com.sgweb.svg.nodes
             var cyString:String = this.getAttribute('cy', '50%', false);
             var rString:String = this.getAttribute('r', '50%', false);
 
+            /*
+               See the comment in SVGLinearGradient.getMatrix() for an 
+               explanation of the matrix calculations.
+            */
+            var matr:Matrix= new Matrix();
+
             if (gradientUnits == 'userSpaceOnUse') {
                 var cx:Number = Math.round(SVGColors.cleanNumber2(cxString, SVGNode(node.parent).getWidth()));
                 var cy:Number = Math.round(SVGColors.cleanNumber2(cyString, SVGNode(node.parent).getHeight()));
                 var r:Number  = Math.round(SVGColors.cleanNumber2(rString, SVGNode(node.parent).getWidth()));
+
+                var sx:Number = r*2 / 1638.4;
+                var sy:Number = r*2 / 1638.4;
+
+                matr.scale(sx, sy);
+                matr.translate(cx, cy);
+                if (matrGrTr != null) {
+                    matr.concat(matrGrTr);
+                }
+                matr.translate(-objectX, -objectY);
+
+                return matr;
             }
             else {
+                // objectBoundingBox units
+
+                // Get node height and width in user space
                 var w:Number = node.xMax - node.xMin;
                 var h:Number = node.yMax - node.yMin;
+
+                // Get the gradient position and area
                 if (cxString.search('%') > -1) {
-                    cx = objectX + node.xMin + Math.round(SVGColors.cleanNumber2(cxString, w));
+                    cx = SVGColors.cleanNumber(cxString) / 100;
                 }
                 else {
-                    cx = objectX + node.xMin + Math.round(w * SVGColors.cleanNumber(cxString));
+                    cx = SVGColors.cleanNumber(cxString);
                 }
                 if (cyString.search('%') > -1) {
-                    cy = objectY + node.yMin + Math.round(SVGColors.cleanNumber2(cyString, h));
+                    cy = SVGColors.cleanNumber(cyString) / 100;
                 }
                 else {
-                    cy = objectY + node.yMin + Math.round(h * SVGColors.cleanNumber(cyString));
+                    cy = SVGColors.cleanNumber(cyString);
                 }
-
                 if (rString.search('%') > -1) {
-                    r = Math.round(SVGColors.cleanNumber2(rString, w));
+                    r =  SVGColors.cleanNumber(rString) / 100;
                 }
                 else {
-                    r = Math.round(w * SVGColors.cleanNumber(rString));
+                    r = SVGColors.cleanNumber(rString);
                 }
+
+                // Scale from flash gradient size (819.2) to bounding box size (.5)
+                matr.scale(.5/819.2, .5/819.2);
+
+                // Move to the center of the bounding box
+                matr.translate(.5, .5);
+
+                // Scale the size of flash vector (.5) to the size of the SVG vector in boundingBox units (r)
+                matr.scale(r/.5, r/.5);
+
+                // Scale from objectBoundingBox units to user space
+                matr.scale(w, h);
+
+                // Move to the starting gradient position in user space
+                matr.translate(w*(cx-r), h*(cy-r));
+
+                // Now apply the gradientMatrix, if specified
+                // xxx needs testing
+                if (matrGrTr != null)
+                    matr.concat(matrGrTr);
+
+                return matr;
             }
 
-            var tx:Number = cx;
-            var ty:Number = cy;
-
-            var sx:Number = r*2 / 1638.4;
-            var sy:Number = r*2 / 1638.4;
-
-            var matr:Matrix= new Matrix();
-            matr.scale(sx, sy);
-            matr.translate(tx, ty);
-            if (matrGrTr != null) {
-                matr.concat(matrGrTr);
-            }
-            matr.translate(-objectX, -objectY);
-            return matr;
         }
 
     }

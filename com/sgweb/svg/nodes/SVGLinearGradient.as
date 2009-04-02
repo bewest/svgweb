@@ -70,82 +70,163 @@ package com.sgweb.svg.nodes
         protected function getMatrix(node:SVGNode):Matrix {
             var matrGrTr:Matrix = this.parseTransform(this.getAttribute('gradientTransform'));
             var gradientUnits:String = this.getAttribute('gradientUnits', 'objectBoundingBox', false);
-
             var xString:Number = node.getAttribute('x', '0', false);
-            var objectX:Number = Math.round(SVGColors.cleanNumber2(xString, SVGNode(node.parent).getWidth()));
             var yString:Number = node.getAttribute('y', '0', false);
-            var objectY:Number = Math.round(SVGColors.cleanNumber2(yString, SVGNode(node.parent).getHeight()));
-
             var x1String:String = this.getAttribute('x1', '0%', false);
             var x2String:String = this.getAttribute('x2', '100%', false);         
             var y1String:String = this.getAttribute('y1', '0%', false);
             var y2String:String = this.getAttribute('y2', '0%', false);
+            var objectX:Number = Math.round(SVGColors.cleanNumber2(xString, SVGNode(node.parent).getWidth()));
+            var objectY:Number = Math.round(SVGColors.cleanNumber2(yString, SVGNode(node.parent).getHeight()));
+
+            /*
+               Flash requires us to pass it a matrix that converts from virtual flash gradient
+               area into the display gradient area. 
+
+               Flash provides a utility function createGradientBox that takes an object
+               width and height and produces an appropriate matrix for typical usage.
+               It also takes an angle parameter. Since SVG does not specify an angle, you
+               have to calculate it from the x1,y1,x2,y2 attributes. However, if you pass
+               that angle to createGradientBox, it performs the rotation before scaling when
+               calculating its matrix. If the scaling is non uniform, it skews the resulting
+               gradient from the desired angle.  Therefore, we have to calculate the gradient
+               matrix manually.  Now we have entered undocumented black magic.
+             
+               Credit for some understanding of this started here:
+               http://www.half-serious.com/swf/format/gradients/index.html
+               
+               Actually, the virtual flash gradient is represented by an area in 2D coordinate
+               space spanning -819.2 to 819.2 on both axis, where -819.2 represents a stop
+               value of 0 and 819.2 represents a stop value of 1.0. These values were determined
+               from experimentation. The starting gradient orientation goes from the left side of
+               this box to the right side. If you think of the flash gradient as a vector that
+               goes from stop value 0 to 1, then its origin is -819.2, 0 and its end point
+               is 819.2, 0 in the standard flash gradient area.
+  
+               For gradientUnits userSpaceOnUse:
+                   To produce a matrix that converts from flash space to SVG space, we will imagine
+               a vector going from the center of the flash space to the maximum x value
+               (from 0,0 to 819.2,0). This represents a vector perpendicular to the gradient stripes
+               and going from stop value .5 to 1. We will imagine the equivalent SVG vector in SVG space,
+               which starts at the halfway point between x1,y1 and x2,y2 and goes to x2,y2.
+
+               So, if we create a matrix that converts from that flash vector
+               to the SVG gradient vector, then we will have the appropriate gradient matrix
+               that flash wants.
+
+              For gradientUnits objectBoundingBox:
+                   To produce a matrix that converts from flash space to SVG space, we will imagine
+               a vector going from the center of the flash space to the maximum x value
+               (from 0,0 to 819.2,0). We will imagine the equivalent SVG vector in objectBoundingBox
+               units where the units span from 0,0 to 1,1. Then the vector is
+               converted from objectBoundingBox units to user space units.
+
+
+            */
+
+            var matr:Matrix= new Matrix();
 
             if (gradientUnits == 'userSpaceOnUse') {
                 var x1:Number = Math.round(SVGColors.cleanNumber2(x1String, SVGNode(node.parent).getWidth()));
                 var y1:Number = Math.round(SVGColors.cleanNumber2(y1String, SVGNode(node.parent).getHeight()));
                 var x2:Number = Math.round(SVGColors.cleanNumber2(x2String, SVGNode(node.parent).getWidth()));
                 var y2:Number = Math.round(SVGColors.cleanNumber2(y2String, SVGNode(node.parent).getHeight()));
+
+                var gradientWidth:Number = Math.abs(x2 - x1);
+                var gradientHeight:Number = Math.abs(y2 - y1);
+
+                // The length of the flash vector (819.2) is scaled to the length of the equivalent SVG vector
+                var sx:Number = (Math.sqrt(gradientWidth*gradientWidth+gradientHeight*gradientHeight) / 2) / 819.2;
+                var sy:Number = 1;
+                matr.scale(sx, sy);
+
+                // Now compute the angle of the SVG vector and rotate to that angle
+                var dx:Number = x2 - x1;
+                var dy:Number = y2 - y1;
+                var angle:Number = Math.atan2(dy, dx);
+                matr.rotate(angle);
+
+                // Now we have the correct length and orientation, now move the
+                // vector to the center of the svg gradient box
+                var tx:Number = (x1 + x2) / 2;
+                var ty:Number = (y1 + y2) / 2;
+                matr.translate(tx, ty);
+
+                // Now apply the gradientMatrix, if specified
+                // xxx needs testing
+                if (matrGrTr != null)
+                    matr.concat(matrGrTr);
+
+                // Finally, we need to move the matrix to the right screen location.
+                // The flash gradient was positioned relative to the object.
+                // SVG has specified its vector in user space. Now that we
+                // are in SVG user space, we can make this adjustment.
+                matr.translate(-objectX, -objectY);
+                return matr;
+
             }
             else {
+                // objectBoundingBox units
+
+                // Get node height and width in user space
                 var w:Number = node.xMax - node.xMin;
                 var h:Number = node.yMax - node.yMin;
+
+                // Get gradient coordinates in objectBoundingBox units
                 if (x1String.search('%') > -1) {
-                    x1 = objectX + node.xMin + Math.round(SVGColors.cleanNumber2(x1String, w));
+                    x1 = SVGColors.cleanNumber(x1String) / 100;
                 }
                 else {
-                    x1 = objectX + node.xMin + w * SVGColors.cleanNumber(x1String);
+                    x1 = SVGColors.cleanNumber(x1String);
                 }
                 if (y1String.search('%') > -1) {
-                    y1 = objectY + node.yMin + Math.round(SVGColors.cleanNumber2(y1String, h));
+                    y1 = SVGColors.cleanNumber(y1String) / 100;
                 }
                 else {
-                    y1 = objectY + node.yMin + h * SVGColors.cleanNumber(y1String);
+                    y1 = SVGColors.cleanNumber(y1String);
                 }
                 if (x2String.search('%') > -1) {
-                    x2 = objectX + node.xMin + Math.round(SVGColors.cleanNumber2(x2String, w));
+                    x2 =  SVGColors.cleanNumber(x2String) / 100;
                 }
                 else {
-                    x2 = objectX + node.xMin + w * SVGColors.cleanNumber(x2String);
+                    x2 = SVGColors.cleanNumber(x2String);
                 }
                 if (y2String.search('%') > -1) {
-                    y2 = objectY + node.yMin + Math.round(SVGColors.cleanNumber2(y2String, h));
+                    y2 =  SVGColors.cleanNumber(y2String) / 100;
                 }
                 else {
-                    y2 = objectY + node.yMin + h * SVGColors.cleanNumber(y2String);
+                    y2 = SVGColors.cleanNumber(y2String);
                 }
+
+                // Scale from flash gradient area to bounding box
+                matr.scale(1/1638.4, 1/1638.4);
+
+                // Move to the center of the bounding box
+                matr.translate(.5, .5);
+
+                // Scale the vector to the size of the SVG vector in boundingBox units
+                var dx:Number = x2 - x1;
+                var dy:Number = y2 - y1;
+                matr.scale(Math.sqrt(dx*dx + dy*dy), 1);
+
+                // Rotate to the angle of the SVG vector in boundingBox units
+                var angle:Number = Math.atan2(dy, dx);
+                matr.rotate(angle);
+
+                // Scale from objectBoundingBox units to user space
+                matr.scale(w, h);
+
+                // Move to the starting gradient position in user space
+                matr.translate(x1 * w, y1 * h);
+
+                // Now apply the gradientMatrix, if specified
+                // xxx needs testing
+                if (matrGrTr != null)
+                    matr.concat(matrGrTr);
+
+                return matr;
             }
 
-
-            var gradientWidth:Number = Math.abs(x2 - x1);
-            var gradientHeight:Number = Math.abs(y2 - y1);
-
-            var dx:Number = x2 - x1;
-            var dy:Number = y2 - y1;
-            var angle:Number = Math.atan2(dy, dx);
-
-            // Disabled because i am currently doing the object adjustment at the
-            // end, which seems to be necessary for radial gradients, but it is not
-            // clear what the difference is. I will do it the same as radials to
-            // be consistent, and on the hunch that it is correct.
-            //var tx:Number = (x1 + x2) / 2 - objectX;
-            //var ty:Number = (y1 + y2) / 2 - objectY;
-            var tx:Number = (x1 + x2) / 2;
-            var ty:Number = (y1 + y2) / 2;
-
-            var sx:Number = Math.sqrt(gradientWidth*gradientWidth+gradientHeight*gradientHeight) / 1638.4;
-            var sy:Number = 1;
-
-            var matr:Matrix= new Matrix();
-            matr.scale(sx, sy);
-            matr.rotate(angle);
-            matr.translate(tx, ty);
-
-            if (matrGrTr != null)
-                matr.concat(matrGrTr);
-
-            matr.translate(-objectX, -objectY);
-            return matr;
         }
 
         
