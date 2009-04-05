@@ -35,6 +35,7 @@ package com.sgweb.svg.nodes {
         
         public function SVGANode(svgRoot:SVGSVGNode, xml:XML = null, original:SVGNode = null):void {
             super(svgRoot, xml, original);
+            drawSprite.buttonMode = true;
         }
         
         override protected function generateGraphicsCommands():void {
@@ -45,13 +46,12 @@ package com.sgweb.svg.nodes {
             }
         }
         
-        override protected function draw():void {
-            if (this.getSVGParent() != null) {
-                SVGNode(this.getSVGParent()).addEventListener(MouseEvent.CLICK, onParentMouseClick);
-            }
+        override protected function attachEventListeners():void {
+            super.attachEventListeners();
+            drawSprite.addEventListener(MouseEvent.CLICK, onMouseClick);
         }
         
-        private function onParentMouseClick(event:MouseEvent):void {
+        private function onMouseClick(event:MouseEvent):void {
             var urlRequest:URLRequest = new URLRequest(url);
             flash.net.navigateToURL(urlRequest, target);
         }
