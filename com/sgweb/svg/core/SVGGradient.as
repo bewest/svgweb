@@ -85,8 +85,8 @@ package com.sgweb.svg.core
             var child:DisplayObject;
             var currentRatio:Number;
 
-            for (var i:uint = 0; i < this.numChildren; i++) {
-                child = this.getChildAt(i);
+            for (var i:uint = 0; i < drawSprite.numChildren; i++) {
+                child = drawSprite.getChildAt(i);
                 if (child is SVGStopNode) {
                     color = SVGStopNode(child).getAttribute('stop-color', 'black');
                     ratio = SVGStopNode(child).getAttribute('offset', '0');

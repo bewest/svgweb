@@ -35,7 +35,7 @@ package com.sgweb.svg.nodes
             super(svgRoot, xml, original);
         }
         
-        override protected function parse():void {
+        override protected function parseChildren():void {
                 
         }
         
@@ -60,7 +60,7 @@ package com.sgweb.svg.nodes
                 if (svgNode is SVGSVGNode) {
                     break;
                 }
-                svgNode = SVGNode(svgNode.parent);
+                svgNode = SVGNode(svgNode.getSVGParent());
             }
 
             if (list.length()) {

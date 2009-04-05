@@ -57,7 +57,7 @@ package com.sgweb.svg.nodes
          * If this node has any text create a TextField at this._textField
          * Call SVGNode.parse()
          **/
-        override protected function parse():void {
+        override protected function parseChildren():void {
             this._text = '';
             
             for each(var childXML:XML in this._xml.children()) {
@@ -71,7 +71,7 @@ package com.sgweb.svg.nodes
                 this._textField.autoSize = TextFieldAutoSize.LEFT;
             }
             
-            super.parse();
+            super.parseChildren();
         }
         
         /**
@@ -124,8 +124,8 @@ package com.sgweb.svg.nodes
                 // only bold/no bold supported for now (SVG has many levels of bold)
                 var currentNode:SVGNode = this;
                 while (fontWeight == 'inherit') {                    
-                    if (currentNode.parent is SVGNode) {
-                        currentNode = SVGNode(currentNode.parent);
+                    if (currentNode.getSVGParent() != null) {
+                        currentNode = currentNode.getSVGParent();
                         fontWeight = currentNode.getAttribute('font-weight');
                     }
                     else {
@@ -142,8 +142,8 @@ package com.sgweb.svg.nodes
                 
                 currentNode = this;
                 while (textAnchor == 'inherit') {                    
-                    if (currentNode.parent is SVGNode) {
-                        currentNode = SVGNode(currentNode.parent);
+                    if (currentNode.getSVGParent() != null) {
+                        currentNode = currentNode.getSVGParent();
                         textAnchor = currentNode.getAttribute('text-anchor');
                     }
                     else {
@@ -177,7 +177,7 @@ package com.sgweb.svg.nodes
             super.draw();
 
             if (this._textField != null) {
-                this.addChild(this._textField);            
+                drawSprite.addChild(this._textField);            
             }            
         }             
     }

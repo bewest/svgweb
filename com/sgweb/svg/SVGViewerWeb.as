@@ -37,6 +37,7 @@ package com.sgweb.svg
     import com.sgweb.svg.nodes.SVGSVGNode;
     import com.sgweb.svg.nodes.SVGGroupNode;
     
+    import flash.display.DisplayObject;
     import flash.display.Sprite;
     import flash.display.StageScaleMode;
     import flash.display.StageAlign;
@@ -414,7 +415,7 @@ package com.sgweb.svg
                         childNode = this.svgRoot.getNode(jsMsg.childId);
                     }
                     if (element && childNode)  {
-                        element.addChild(childNode);
+                        SVGNode.addSVGChild(element.drawSprite, childNode);
                     }
                 }
             }
@@ -465,11 +466,11 @@ package com.sgweb.svg
             return jsMsg;
         }
 
-        override public function addActionListener(eventType:String, target:SVGNode):void {
+        override public function addActionListener(eventType:String, target:Sprite):void {
             target.addEventListener(eventType, handleAction);
         } 
 
-        override public function removeActionListener(eventType:String, target:SVGNode):void {
+        override public function removeActionListener(eventType:String, target:Sprite):void {
             target.removeEventListener(eventType, handleAction);
         }
 
@@ -493,18 +494,21 @@ package com.sgweb.svg
         // xxx requires id on targets
         public function js_sendMouseEvent(event:MouseEvent):void {
             try {
-                if (event.target is SVGNode && event.currentTarget is SVGNode) {
+                if (   ( event.target is DisplayObject ) 
+                    && ( event.currentTarget is DisplayObject ) 
+                    && ( SVGNode.targetToSVGNode(DisplayObject(event.target)) != null)
+                    && ( SVGNode.targetToSVGNode(DisplayObject(event.currentTarget)) != null) ) {
                     ExternalInterface.call("receiveFromFlash",
-                                             { type: 'event',
-                                               uniqueId: this.js_uniqueId,
-                                               targetId: SVGNode(event.target).id,
-                                               currentTargetId: SVGNode(event.currentTarget).id,
-                                               eventType: event.type.toLowerCase(),
-                                               clientX: event.localX,
-                                               clientY: event.localY,
-                                               screenX: event.stageX,
-                                               screenY: event.stageY
-                                             } );
+                       { type: 'event',
+                         uniqueId: this.js_uniqueId,
+                         targetId: SVGNode.targetToSVGNode(DisplayObject(event.target)).id,
+                         currentTargetId: SVGNode.targetToSVGNode(DisplayObject(event.currentTarget)).id,
+                         eventType: event.type.toLowerCase(),
+                         clientX: event.localX,
+                         clientY: event.localY,
+                         screenX: event.stageX,
+                         screenY: event.stageY
+                       } );
                 }
             }
             catch(error:SecurityError) {

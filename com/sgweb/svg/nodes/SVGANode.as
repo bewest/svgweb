@@ -46,8 +46,8 @@ package com.sgweb.svg.nodes {
         }
         
         override protected function draw():void {
-            if (this.parent is SVGNode) {
-                SVGNode(this.parent).addEventListener(MouseEvent.CLICK, onParentMouseClick);
+            if (this.getSVGParent() != null) {
+                SVGNode(this.getSVGParent()).addEventListener(MouseEvent.CLICK, onParentMouseClick);
             }
         }
         

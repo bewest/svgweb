@@ -40,7 +40,7 @@ package com.sgweb.svg.nodes {
 
                 if (this._xml != null) {
                     if (!this._parsedChildren) {
-                        this.parse();
+                        this.parseChildren();
                         this._parsedChildren = true;
                     }
                 }
@@ -80,9 +80,9 @@ package com.sgweb.svg.nodes {
                 matrix = new Matrix();
             }
 
-            matrix.concat(this.transform.concatenatedMatrix);
+            matrix.concat(drawSprite.transform.concatenatedMatrix);
 
-            var nodeMatrix:Matrix = node.transform.concatenatedMatrix;
+            var nodeMatrix:Matrix = node.drawSprite.transform.concatenatedMatrix;
             nodeMatrix.invert();
 
             matrix.concat(nodeMatrix);
@@ -92,7 +92,7 @@ package com.sgweb.svg.nodes {
             if ( (patternWidth > 0) && (patternHeight > 0) ) {
                 var bitmapData:BitmapData = new BitmapData(patternWidth, patternHeight);
                 bitmapData.draw(this.targetPattern());
-                node.graphics.beginBitmapFill(bitmapData, matrix); 
+                node.drawSprite.graphics.beginBitmapFill(bitmapData, matrix); 
             }
 
             this.svgRoot.addReference(node, this.targetPattern().id);

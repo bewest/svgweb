@@ -39,7 +39,8 @@ package com.sgweb.svg.nodes
                 var node:SVGNode = this.svgRoot.getNode(name);
                 if (node) {
                     node = node.clone();
-                    this.addChild(node);
+                    drawSprite.addChild(node);
+                    this.svgRoot.renderPending();
                     this.svgRoot.deleteReference(this, name);
                 }
                 else {

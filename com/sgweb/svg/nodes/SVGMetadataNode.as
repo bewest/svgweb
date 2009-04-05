@@ -37,7 +37,7 @@ package com.sgweb.svg.nodes {
             this.svgRoot.renderFinished();
        }
        
-       override protected function parse():void {
+       override protected function parseChildren():void {
             //Do not parse child XML
        }
         

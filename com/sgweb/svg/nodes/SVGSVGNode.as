@@ -22,6 +22,7 @@ package com.sgweb.svg.nodes
     import com.sgweb.svg.core.SVGNode;
     import com.sgweb.svg.core.SVGViewer;
     import flash.geom.Matrix;
+    import flash.display.Sprite;
 
     public class SVGSVGNode extends SVGNode
     {
@@ -64,8 +65,8 @@ package com.sgweb.svg.nodes
                 return defaultValue;
             }
 
-            if (inherit && (this.parent is SVGNode)) {
-                return SVGNode(this.parent).getAttribute(name, defaultValue, inherit);
+            if (inherit && (this.getSVGParent() != null))  {
+                return SVGNode(this.getSVGParent()).getAttribute(name, defaultValue, inherit);
             }
 
             if ((name == 'opacity') 
@@ -210,7 +211,7 @@ package com.sgweb.svg.nodes
             }
         }
 
-        public function addActionListener(eventType:String, target:SVGNode):void {
+        public function addActionListener(eventType:String, target:Sprite):void {
             if (this.parentSVGRoot) {
                 this.parentSVGRoot.addActionListener(eventType, target);
             }
@@ -219,7 +220,7 @@ package com.sgweb.svg.nodes
             }
         }
 
-        public function removeActionListener(eventType:String, target:SVGNode):void {
+        public function removeActionListener(eventType:String, target:Sprite):void {
             if (this.parentSVGRoot) {
                 this.parentSVGRoot.removeActionListener(eventType, target);
             }

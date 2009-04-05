@@ -33,7 +33,7 @@ package com.sgweb.svg.nodes
             super(svgRoot, xml, original);
         }
         
-        override protected function parse():void {
+        override protected function parseChildren():void {
             this._title = '';
             
             for each(var childXML:XML in this._xml.children()) {

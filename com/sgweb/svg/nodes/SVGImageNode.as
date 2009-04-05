@@ -57,6 +57,7 @@ package com.sgweb.svg.nodes
         }
 
         private function finishDrawNode():void {
+            this.applyClipPathMask();
             this.applyViewBox();
             this.applyDefaultMask();
 
@@ -239,7 +240,7 @@ package com.sgweb.svg.nodes
 
             bitmap = new Bitmap( bitmapData );
             bitmap.opaqueBackground = null;
-            this.addChild(bitmap);
+            drawSprite.addChild(bitmap);
 
             this.finishDrawNode();
             

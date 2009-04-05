@@ -42,7 +42,8 @@ package com.sgweb.svg.nodes
             var matrix:Matrix = this.getMatrix(node);
 
             if (stopData.colors.length > 0) { //Don't fill if there are no stops
-                node.graphics.beginGradientFill(GradientType.RADIAL, stopData.colors, stopData.alphas, stopData.ratios, matrix, spreadMethod, InterpolationMethod.RGB, this.focalLen);
+                node.drawSprite.graphics.beginGradientFill(GradientType.RADIAL, stopData.colors, stopData.alphas, stopData.ratios,
+                                                           matrix, spreadMethod, InterpolationMethod.RGB, this.focalLen);
             }
 
         }
@@ -53,7 +54,8 @@ package com.sgweb.svg.nodes
             var matrix:Matrix = this.getMatrix(node);
 
             if (stopData.colors.length > 0) { //Don't fill if there are no stops
-                node.graphics.lineGradientStyle(GradientType.RADIAL, stopData.colors, stopData.alphas, stopData.ratios, matrix, spreadMethod, InterpolationMethod.RGB);
+                node.drawSprite.graphics.lineGradientStyle(GradientType.RADIAL, stopData.colors, stopData.alphas, stopData.ratios,
+                                                matrix, spreadMethod, InterpolationMethod.RGB);
             }
         }
 
@@ -62,9 +64,9 @@ package com.sgweb.svg.nodes
             var gradientUnits:String = this.getAttribute('gradientUnits', 'objectBoundingBox', false);
 
             var xString:Number = node.getAttribute('x', '0', false);
-            var objectX:Number = Math.round(SVGColors.cleanNumber2(xString, SVGNode(node.parent).getWidth()));
+            var objectX:Number = Math.round(SVGColors.cleanNumber2(xString, SVGNode(node.getSVGParent()).getWidth()));
             var yString:Number = node.getAttribute('y', '0', false);
-            var objectY:Number = Math.round(SVGColors.cleanNumber2(yString, SVGNode(node.parent).getHeight()));
+            var objectY:Number = Math.round(SVGColors.cleanNumber2(yString, SVGNode(node.getSVGParent()).getHeight()));
 
             var cxString:String = this.getAttribute('cx', '50%', false);
             var cyString:String = this.getAttribute('cy', '50%', false);
@@ -80,9 +82,9 @@ package com.sgweb.svg.nodes
             var matr:Matrix= new Matrix();
 
             if (gradientUnits == 'userSpaceOnUse') {
-                var cx:Number = Math.round(SVGColors.cleanNumber2(cxString, SVGNode(node.parent).getWidth()));
-                var cy:Number = Math.round(SVGColors.cleanNumber2(cyString, SVGNode(node.parent).getHeight()));
-                var r:Number  = Math.round(SVGColors.cleanNumber2(rString, SVGNode(node.parent).getWidth()));
+                var cx:Number = Math.round(SVGColors.cleanNumber2(cxString, SVGNode(node.getSVGParent()).getWidth()));
+                var cy:Number = Math.round(SVGColors.cleanNumber2(cyString, SVGNode(node.getSVGParent()).getHeight()));
+                var r:Number  = Math.round(SVGColors.cleanNumber2(rString, SVGNode(node.getSVGParent()).getWidth()));
 
                 var sx:Number = r*2 / 1638.4;
                 var sy:Number = r*2 / 1638.4;

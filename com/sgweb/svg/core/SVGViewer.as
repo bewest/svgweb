@@ -72,11 +72,11 @@ package com.sgweb.svg.core
 
         }
 
-        public function addActionListener(eventType:String, target:SVGNode):void {
+        public function addActionListener(eventType:String, target:Sprite):void {
 
         }
 
-        public function removeActionListener(eventType:String, target:SVGNode):void {
+        public function removeActionListener(eventType:String, target:Sprite):void {
 
         }
 
