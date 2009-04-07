@@ -84,13 +84,22 @@ package com.sgweb.svg.nodes
             if (gradientUnits == 'userSpaceOnUse') {
                 var cx:Number = Math.round(SVGColors.cleanNumber2(cxString, SVGNode(node.getSVGParent()).getWidth()));
                 var cy:Number = Math.round(SVGColors.cleanNumber2(cyString, SVGNode(node.getSVGParent()).getHeight()));
+                var fx:Number = Math.round(SVGColors.cleanNumber2(fxString, SVGNode(node.getSVGParent()).getWidth()));
+                var fy:Number = Math.round(SVGColors.cleanNumber2(fyString, SVGNode(node.getSVGParent()).getHeight()));
                 var r:Number  = Math.round(SVGColors.cleanNumber2(rString, SVGNode(node.getSVGParent()).getWidth()));
 
                 var sx:Number = r*2 / 1638.4;
                 var sy:Number = r*2 / 1638.4;
 
+                var dx:Number = fx - cx;
+                var dy:Number = fy - cy;
+                var angle:Number = Math.atan2(dy, dx);
+
+                this.focalLen = Math.sqrt(dx*dx + dy*dy) / r;
+
                 matr.scale(sx, sy);
                 matr.translate(cx, cy);
+                matr.rotate(angle);
                 if (matrGrTr != null) {
                     matr.concat(matrGrTr);
                 }
@@ -119,13 +128,13 @@ package com.sgweb.svg.nodes
                     cy = SVGColors.cleanNumber(cyString);
                 }
                 if (fxString.search('%') > -1) {
-                    var fx:Number = SVGColors.cleanNumber(fxString) / 100;
+                    fx = SVGColors.cleanNumber(fxString) / 100;
                 }
                 else {
                     fx = SVGColors.cleanNumber(fxString);
                 }
                 if (fyString.search('%') > -1) {
-                    var fy:Number = SVGColors.cleanNumber(fyString) / 100;
+                    fy = SVGColors.cleanNumber(fyString) / 100;
                 }
                 else {
                     fy = SVGColors.cleanNumber(fyString);
