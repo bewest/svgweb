@@ -29,5 +29,18 @@ package com.sgweb.svg.nodes
         public function SVGGroupNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
             super(svgRoot, xml, original);
         }
+
+        // The <g> node does not use the x and y attributes.  (However, it does honor the transform attribute.)
+        // However, if the <g> node is being referenced by a <use> node, then x and y are transferred to <g> as
+        // an equivalent transform.
+        override protected function loadAttribute(name:String, field:String = null):void {
+            if ( (name == 'x' || name == 'y') && !(this.getSVGParent() is SVGUseNode) ) {
+                return;
+            }
+            else {
+                super.loadAttribute(name, field);
+            }
+        }
+
     }
 }
