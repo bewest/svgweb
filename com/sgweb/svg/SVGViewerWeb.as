@@ -36,6 +36,7 @@ package com.sgweb.svg
     import com.sgweb.svg.core.SVGViewer;
     import com.sgweb.svg.nodes.SVGSVGNode;
     import com.sgweb.svg.nodes.SVGGroupNode;
+    import com.sgweb.svg.events.SVGEvent;
     
     import flash.display.DisplayObject;
     import flash.display.Sprite;
@@ -220,6 +221,7 @@ package com.sgweb.svg
                 this.removeChildAt(0);
             }
             svgRoot = new SVGSVGNode(null, dataXML);
+            this.addActionListener(SVGEvent.SVGLoad, svgRoot);
             this.addChild(svgRoot);
         }
 
@@ -288,7 +290,7 @@ package com.sgweb.svg
         /**
          * Event handlers from SVG Nodes
          **/
-        override public function handleOnLoad():void {
+        protected function handleRootSVGLoad():void {
             this.debug("render time: " + ( (new Date()).valueOf()  - this.renderStartTime) + "ms");
             var onLoadHandler:String = '';
             if (this.svgRoot.xml.@onload) {
@@ -477,6 +479,10 @@ package com.sgweb.svg
         protected function handleAction(event:Event):void {
 
             switch(event.type) {
+                case SVGEvent.SVGLoad:
+                    handleRootSVGLoad();
+                    break;
+
                 case MouseEvent.CLICK:
                 case MouseEvent.MOUSE_DOWN:
                 case MouseEvent.MOUSE_MOVE:

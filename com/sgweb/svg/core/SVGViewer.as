@@ -68,10 +68,6 @@ package com.sgweb.svg.core
 
         }
 
-        public function handleOnLoad():void {
-
-        }
-
         public function addActionListener(eventType:String, target:Sprite):void {
 
         }

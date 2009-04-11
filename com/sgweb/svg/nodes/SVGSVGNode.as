@@ -21,6 +21,7 @@ package com.sgweb.svg.nodes
 {
     import com.sgweb.svg.core.SVGNode;
     import com.sgweb.svg.core.SVGViewer;
+    import com.sgweb.svg.events.SVGEvent;
     import flash.geom.Matrix;
     import flash.display.Sprite;
 
@@ -206,8 +207,9 @@ package com.sgweb.svg.nodes
             if (this.parentSVGRoot) {
                 this.parentSVGRoot.handleOnLoad();
             }
-            else if (this.parent is SVGViewer) {
-                SVGViewer(this.parent).handleOnLoad();
+            else {
+                var svgEvent:SVGEvent = new SVGEvent(SVGEvent.SVGLoad);
+                this.dispatchEvent(svgEvent);
             }
         }
 
