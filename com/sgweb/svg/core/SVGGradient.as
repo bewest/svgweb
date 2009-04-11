@@ -89,6 +89,9 @@ package com.sgweb.svg.core
                 child = drawSprite.getChildAt(i);
                 if (child is SVGStopNode) {
                     color = SVGStopNode(child).getAttribute('stop-color', 'black');
+                    if (color == 'currentColor') {
+                        color = this.getAttribute('color');
+                    }
                     ratio = SVGStopNode(child).getAttribute('offset', '0');
                     alpha = SVGStopNode(child).getAttribute('stop-opacity', 1);
 

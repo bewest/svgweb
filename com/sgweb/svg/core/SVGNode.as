@@ -608,6 +608,9 @@ package com.sgweb.svg.core
                     }
                 }
                 else {
+                    if (fill == 'currentColor') {
+                        fill = this.getAttribute('color');
+                    }
                     color_and_alpha = SVGColors.getColorAndAlpha(fill);
                     color_core = color_and_alpha[0];
                     color_alpha = color_and_alpha[1];
@@ -628,6 +631,9 @@ package com.sgweb.svg.core
                 line_width = 0;
             }
             else {
+                if (stroke == 'currentColor') {
+                    stroke = this.getAttribute('color');
+                }
                 line_color = SVGColors.cleanNumber(SVGColors.getColor(stroke));
                 line_alpha = SVGColors.cleanNumber(this.getAttribute('stroke-opacity'));
                 line_width = SVGColors.cleanNumber(this.getAttribute('stroke-width'));

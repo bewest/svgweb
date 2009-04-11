@@ -87,6 +87,9 @@ package com.sgweb.svg.nodes
                 var fontFamily:String = this.getAttribute('font-family');                
                 var fontSize:String = this.getAttribute('font-size');
                 var fill:String = this.getAttribute('fill');
+                if (fill == 'currentColor') {
+                    fill = this.getAttribute('color');
+                }
                 var fontWeight:String = this.getAttribute('font-weight');
                 var textAnchor:String = this.getAttribute('text-anchor');
                 
