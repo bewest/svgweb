@@ -207,8 +207,17 @@ package com.sgweb.svg.core
                 case "filter":
                     childNode = new SVGFilterNode(this.svgRoot, childXML);
                     break;
+                case "font":
+                    childNode = new SVGFontNode(this.svgRoot, childXML);
+                    break;
+                case "font-face":
+                    childNode = new SVGFontFaceNode(this.svgRoot, childXML);
+                    break;
                 case "g":                        
                     childNode = new SVGGroupNode(this.svgRoot, childXML);
+                    break;
+                case "glyph":                        
+                    childNode = new SVGGlyphNode(this.svgRoot, childXML);
                     break;
                 case "image":                        
                     childNode = new SVGImageNode(this.svgRoot, childXML);
@@ -224,6 +233,9 @@ package com.sgweb.svg.core
                     break;                        
                 case "metadata":
                     childNode = new SVGMetadataNode(this.svgRoot, childXML);
+                    break;
+                case "missing-glyph":                        
+                    childNode = new SVGMissingGlyphNode(this.svgRoot, childXML);
                     break;
                 case "namedview":
                     //Add Handling 

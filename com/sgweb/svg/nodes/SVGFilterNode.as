@@ -46,24 +46,23 @@ package com.sgweb.svg.nodes
             var nodeFilters:Array = new Array();
             var list:XMLList =     this._xml.svg::feGaussianBlur;
 
-
-            var svgNode:SVGNode = objectToFilter;
-            var concatMatrix:Matrix = new Matrix();
-            var oldMatrix:Matrix;
-
-            while (svgNode) {
-                if (svgNode.getAttribute('transform') != null) {
-                    oldMatrix = this.parseTransform(svgNode.getAttribute('transform'));
-                    oldMatrix.concat(concatMatrix);
-                    concatMatrix = oldMatrix;
-                }
-                if (svgNode is SVGSVGNode) {
-                    break;
-                }
-                svgNode = SVGNode(svgNode.getSVGParent());
-            }
-
             if (list.length()) {
+                var svgNode:SVGNode = objectToFilter;
+                var concatMatrix:Matrix = new Matrix();
+                var oldMatrix:Matrix;
+
+                while (svgNode) {
+                    if (svgNode.getAttribute('transform') != null) {
+                        oldMatrix = this.parseTransform(svgNode.getAttribute('transform'));
+                        oldMatrix.concat(concatMatrix);
+                        concatMatrix = oldMatrix;
+                    }
+                    if (svgNode is SVGSVGNode) {
+                        break;
+                    }
+                    svgNode = SVGNode(svgNode.getSVGParent());
+                }
+
                 var stdDeviation:String = this._xml.svg::feGaussianBlur.@stdDeviation.toString();
                 var stdDeviationX:String;
                 var stdDeviationY:String;
@@ -85,6 +84,7 @@ package com.sgweb.svg.nodes
                 var blurAmountY:Number = SVGColors.cleanNumber(stdDeviationY);
                 blurAmountX = blurAmountX * concatMatrix.a;
                 blurAmountY = blurAmountY * concatMatrix.a;
+
                 nodeFilters.push(new BlurFilter(blurAmountX*1.5, blurAmountY*1.5, 8));
             }    
             

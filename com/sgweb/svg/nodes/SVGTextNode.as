@@ -47,6 +47,7 @@ package com.sgweb.svg.nodes
          * TextField to render nodes text
          **/
         private var _textField:TextField;
+        private var _svgFont:SVGFontNode;
         
         public function SVGTextNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
             super(svgRoot, xml, original);
@@ -65,13 +66,52 @@ package com.sgweb.svg.nodes
                     this._text += childXML.toString();
                 }
             }
+
+            if (this._text == '') {
+                return;
+            }
             
-            if (this._text != '') {
+            //Check for SVGFont
+            var fontFamily:String = this.getAttribute('font-family');
+            this._svgFont = this.svgRoot.getFont(fontFamily);
+            if (this._svgFont != null) {
+                var fontSize:String = this.getAttribute('font-size');
+                var fontSizeNum:Number = SVGUnits.cleanNumber(fontSize);
+
+                //Add a glyph for each character in the text
+                var glyphX:Number = 0;
+                for (var i:uint = 0; i < this._text.length; i++) {
+                    var glyphChar:String = this._text.charAt(i);
+                    var glyph:SVGGlyphNode = this._svgFont.getGlyph(glyphChar);
+                    var glyphClone:SVGNode = glyph.clone();
+                    glyphClone.setAttribute('transform',
+                              'scale(' + (fontSizeNum / 2048) + ') scale(1,-1)');
+                    glyphClone.setAttribute('x', String(glyphX));
+                    var offsetX:Number = SVGUnits.cleanNumber(glyph.getAttribute('horiz-adv-x'));
+                    glyphX = glyphX + offsetX;
+                    SVGNode.addSVGChild(this, glyphClone);
+                }
+            }
+            else {
+                //If this is not an SVGFont, use a TextField
                 this._textField = new TextField();
                 this._textField.autoSize = TextFieldAutoSize.LEFT;
             }
-            
-            super.parseChildren();
+
+        }
+
+        override public function getAttribute(name:String, defaultValue:* = null, inherit:Boolean = true):* {
+            if (name == 'stroke-width') {
+                var fontSize:String = this.getAttribute('font-size');
+                var fontSizeNum:Number = SVGUnits.cleanNumber(fontSize);
+                var strokeWidthStr:String = super.getAttribute(name, defaultValue, inherit);
+                var strokeWidth:Number = SVGUnits.cleanNumber(strokeWidthStr);
+                strokeWidth = strokeWidth * (2048 / fontSizeNum);
+                return String(strokeWidth);
+            }
+            else {
+                return super.getAttribute(name, defaultValue, inherit);
+            }
         }
         
         /**

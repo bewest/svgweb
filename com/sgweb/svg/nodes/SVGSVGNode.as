@@ -34,6 +34,7 @@ package com.sgweb.svg.nodes
 
         private var _nodeLookup:Object;
         protected var _referersById:Object;
+        protected var _fonts:Object;
 
         public var title:String;
 
@@ -47,6 +48,7 @@ package com.sgweb.svg.nodes
         public override function set xml(value:XML):void {        
             this._nodeLookup = new Object();
             this._referersById = new Object();    
+            this._fonts = new Object();    
             super.xml = value;
 
             // If this is the top SVG element, then start the render tracking process.
@@ -148,6 +150,24 @@ package com.sgweb.svg.nodes
                 parentSVGRoot = null;
             }
         }
+
+        /**
+         * 
+         * Fonts
+         *
+         **/
+        public function registerFont(font:SVGFontNode):void {
+            _fonts[font.getFontFaceName()] = font;
+        }
+
+        public function unregisterFont(font:SVGFontNode):void {
+            delete _fonts[font.getFontFaceName()];
+        }
+
+        public function getFont(fontFace:String):SVGFontNode {
+            return _fonts[fontFace];
+        }
+
 
         /**
          * 
