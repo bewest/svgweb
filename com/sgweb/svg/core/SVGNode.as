@@ -918,8 +918,7 @@ package com.sgweb.svg.core
          **/
         protected function setupFilters():void {
             var filterName:String = this.getAttribute('filter');
-            if ((filterName != null)
-                && (filterName != '')) {
+            if ( (filterName != null) && (filterName != '') && (filterName != 'none') ) {
                 var matches:Array = filterName.match(/url\(#([^\)]+)\)/si);
                 if (matches.length > 0) {
                     filterName = matches[1];
@@ -1074,7 +1073,7 @@ package com.sgweb.svg.core
                 }
 
                 if (name == 'filter') {
-                    return null;
+                    return 'none';
                 }
             }
            
@@ -1314,8 +1313,8 @@ package com.sgweb.svg.core
         }
 
         public function getSVGParent():SVGNode {
-            var node:DisplayObject = this.parent;
-            while (node && !(node is SVGSVGNode)) {
+            var node:DisplayObject = this;
+            while (node) {
                 node=node.parent;
                 if (node is SVGNode)
                     return SVGNode(node);
