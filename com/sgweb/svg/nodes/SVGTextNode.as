@@ -95,7 +95,6 @@ package com.sgweb.svg.nodes
             else {
                 //If this is not an SVGFont, use a TextField
                 this._textField = new TextField();
-                this._textField.autoSize = TextFieldAutoSize.LEFT;
             }
 
         }
@@ -197,12 +196,16 @@ package com.sgweb.svg.nodes
                 // Handle text-anchor attribute
                 switch (textAnchor) {                    
                     case 'middle':
-                        this._textField.x = textLineMetrics.x - Math.floor(textLineMetrics.width / 2);
+                        this._textField.autoSize = TextFieldAutoSize.CENTER;
+                        this._textField.x = -textLineMetrics.x - Math.floor(textLineMetrics.width / 2);
                         break;
                     case 'end':
-                        this._textField.x = textLineMetrics.x - textLineMetrics.width;
+                        this._textField.autoSize = TextFieldAutoSize.RIGHT;
+                        this._textField.x = -textLineMetrics.x - textLineMetrics.width;
                         break;
                     default: //'start'
+                        this._textField.autoSize = TextFieldAutoSize.LEFT;
+                        this._textField.x = -textLineMetrics.x;
                         break;
                 }
                 
