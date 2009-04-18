@@ -36,12 +36,22 @@
        height="25" />
     </clipPath>
 
+    <clipPath
+         id="clipPath2" >
+    <rect
+       id="clipPath2rect1"
+       x="200"
+       y="200"
+       width="25"
+       height="25" />
+    </clipPath>
 
   </defs>
 
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
+     transform="scale(2.0,2.0)"
      id="layer1">
     <rect
        style="fill:red;filter:url(#filter1);"
@@ -59,6 +69,17 @@
        x="100"
        y="100" />
 
+    <svg x="100" y="100" width="300" height="300" viewBox="0 0 600 600">
+    <rect
+       style="fill:blue;filter:url(#filter1);"
+       clip-path="url(#clipPath2)"
+       id="rect2"
+       width="50"
+       height="50"
+       x="200"
+       y="200"
+       transform="scale(.5,.5)"/>
+    </svg>
 
   </g>
 </svg>
