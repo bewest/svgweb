@@ -773,7 +773,8 @@ package com.sgweb.svg.core
                 var viewWidth:Number;
                 var viewHeight:Number;
                 if (viewBox != null) {
-                    var points:Array = viewBox.split(/\s+/);
+                    viewBox = viewBox.replace(/,/sg," "); //Replace commas with spaces
+                    var points:Array = viewBox.split(/\s+/);//Split by white space
                     viewX = SVGColors.cleanNumber(points[0]);
                     viewY = SVGColors.cleanNumber(points[1]);
                     viewWidth = SVGColors.cleanNumber(points[2]);
