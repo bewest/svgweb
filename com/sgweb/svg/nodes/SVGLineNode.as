@@ -20,6 +20,8 @@
 package com.sgweb.svg.nodes
 {
     import com.sgweb.svg.core.SVGNode;
+    import com.sgweb.svg.utils.SVGColors;
+
     public class SVGLineNode extends SVGNode
     {        
         public function SVGLineNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
@@ -33,10 +35,17 @@ package com.sgweb.svg.nodes
             
             this._graphicsCommands = new  Array();
             
-            var x1:Number = this.getAttribute('x1',0);
-            var y1:Number = this.getAttribute('y1',0);
-            var x2:Number = this.getAttribute('x2',0);
-            var y2:Number = this.getAttribute('y2',0);
+            var x1String:String = this.getAttribute('x1', '0');
+            var x1:Number = SVGColors.cleanNumber2(x1String, SVGNode(this.getSVGParent()).getWidth());
+
+            var y1String:String = this.getAttribute('y1', '0');
+            var y1:Number = SVGColors.cleanNumber2(y1String, SVGNode(this.getSVGParent()).getHeight());
+
+            var x2String:String = this.getAttribute('x2', '0');
+            var x2:Number = SVGColors.cleanNumber2(x2String, SVGNode(this.getSVGParent()).getWidth());
+
+            var y2String:String = this.getAttribute('y2', '0');
+            var y2:Number = SVGColors.cleanNumber2(y2String, SVGNode(this.getSVGParent()).getHeight());
             
              //Width/height calculations for gradients
             this.setXMinMax(x1);
