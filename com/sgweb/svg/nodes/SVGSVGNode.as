@@ -127,29 +127,23 @@ package com.sgweb.svg.nodes
         }
        
         public function registerNode(node:SVGNode):void {
-            _nodeLookup[node.id] = node;
+            if (this.parentSVGRoot) {
+                this.parentSVGRoot.registerNode(node);
+            }
+            else {
+                _nodeLookup[node.id] = node;
+            }
         }
 
         public function unregisterNode(node:SVGNode):void {
-            delete _nodeLookup[node.id];
+            if (this.parentSVGRoot) {
+                this.parentSVGRoot.unregisterNode(node);
+            }  
+            else {
+                delete _nodeLookup[node.id];
+            }  
         }
 
-        override protected function registerID():void {
-            super.registerID();
-
-            if (parentSVGRoot) {
-                parentSVGRoot.registerNode(this);
-            }
-        }
-
-        override protected function unregisterID():void {
-            super.unregisterID();
-
-            if (parentSVGRoot) {
-                parentSVGRoot.unregisterNode(this);
-                parentSVGRoot = null;
-            }
-        }
 
         /**
          * 
@@ -180,38 +174,58 @@ package com.sgweb.svg.nodes
          * 
          **/
         public function addReference(node:SVGNode, referencedId:String):void {
-
-            if (!this._referersById[referencedId]) {
-                 this._referersById[referencedId]= new Array();
+            if (this.parentSVGRoot) {
+                this.parentSVGRoot.addReference(node, referencedId);
             }
-            if (this._referersById[referencedId].lastIndexOf(node) == -1) {
-                this._referersById[referencedId].push(node);
+            else {
+
+                if (!this._referersById[referencedId]) {
+                     this._referersById[referencedId]= new Array();
+                }
+                if (this._referersById[referencedId].lastIndexOf(node) == -1) {
+                    this._referersById[referencedId].push(node);
+                }
             }
         }
 
         public function deleteReference(node:SVGNode, referencedId:String):void {
-            if (this._referersById[referencedId]) {
-                if (this._referersById[referencedId].lastIndexOf(node) != -1) {
-                    delete this._referersById[referencedId][this._referersById[referencedId].lastIndexOf(node)];
+            if (this.parentSVGRoot) {
+                this.parentSVGRoot.deleteReference(node, referencedId);
+            }
+            else {
+                if (this._referersById[referencedId]) {
+                    if (this._referersById[referencedId].lastIndexOf(node) != -1) {
+                        delete this._referersById[referencedId][this._referersById[referencedId].lastIndexOf(node)];
+                    }
                 }
             }
         }
         
         public function invalidateReferers(id:String):void {
-            //this.svgRoot.debug("Invalidating referers to "  + id);
-            if (this._referersById[id]) {
-                var referers:Array = this._referersById[id];
-                for (var refererIdx:String in referers) {
-                    referers[refererIdx].invalidateDisplay();
+            if (this.parentSVGRoot) {
+                this.parentSVGRoot.invalidateReferers(id);
+            }
+            else {
+                //this.svgRoot.debug("Invalidating referers to "  + id);
+                if (this._referersById[id]) {
+                    var referers:Array = this._referersById[id];
+                    for (var refererIdx:String in referers) {
+                        referers[refererIdx].invalidateDisplay();
+                    }
                 }
             }
         }
 
         public function getNode(name:String):SVGNode {
-            if (_nodeLookup.hasOwnProperty(name)) {
-                return _nodeLookup[name];
+            if (this.parentSVGRoot) {
+                return this.parentSVGRoot.getNode(name);
             }
-            return null;
+            else {
+                if (_nodeLookup.hasOwnProperty(name)) {
+                    return _nodeLookup[name];
+                }
+                return null;
+            }
         }
 
         public function handleScript(script:String):void {
