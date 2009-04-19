@@ -76,6 +76,10 @@ package com.sgweb.svg.nodes
             if (!imageHref) {
                 return;
             }
+            var xmlBase:String = this.getAttribute('base');
+            if (xmlBase && xmlBase != '') {
+                imageHref = xmlBase + imageHref;
+            }
 
             // For data: href, decode the base 64 image and load it
             if (imageHref.match(/^data:[a-z\/]*;base64,/)) {

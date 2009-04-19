@@ -46,6 +46,7 @@ package com.sgweb.svg.core
 
         public namespace xlink = 'http://www.w3.org/1999/xlink';
         public namespace svg = 'http://www.w3.org/2000/svg';
+        public namespace aaa = 'http://www.w3.org/XML/1998/namespace';
         
         public var svgRoot:SVGSVGNode = null;
         public var isMask:Boolean = false;
@@ -1107,6 +1108,12 @@ package com.sgweb.svg.core
             if (name == "href") {
                 //this._xml@href handled normally
                 value = this._xml.@xlink::href;                             
+                if (value && (value != "")) {
+                    return value;
+                }
+            }
+            if (name == "base") {
+                value = this._xml.@aaa::base;                             
                 if (value && (value != "")) {
                     return value;
                 }
