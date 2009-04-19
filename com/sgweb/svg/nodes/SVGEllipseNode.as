@@ -46,7 +46,9 @@ package com.sgweb.svg.nodes
             this.setYMinMax(cy - ry);
             this.setYMinMax(cy + ry);
 
-            this._graphicsCommands.push(['ELLIPSE', (cx - rx), (cy - ry), (rx * 2), (ry * 2)]);            
+            if (rx != 0 && ry != 0) {
+                this._graphicsCommands.push(['ELLIPSE', (cx - rx), (cy - ry), (rx * 2), (ry * 2)]);            
+            }
         }                    
     }
 }

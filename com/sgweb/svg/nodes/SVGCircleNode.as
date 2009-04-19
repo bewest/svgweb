@@ -45,7 +45,9 @@ package com.sgweb.svg.nodes
             this.setYMinMax(cy - r);
             this.setYMinMax(cy + r);
 
-            this._graphicsCommands.push(['CIRCLE', cx, cy, r]);
+            if (r != 0) {
+                this._graphicsCommands.push(['CIRCLE', cx, cy, r]);
+            }
         }
         
     }

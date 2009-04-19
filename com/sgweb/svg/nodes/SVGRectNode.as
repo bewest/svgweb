@@ -51,11 +51,14 @@ package com.sgweb.svg.nodes
             }
             
             //x & y loaded in setAttributes()
-            if (rx != null) {
-                this._graphicsCommands.push(['RECT', 0, 0, width, height, (SVGColors.cleanNumber(rx) * 2), SVGColors.cleanNumber(ry) * 2]);                
-            }
-            else {
-                this._graphicsCommands.push(['RECT', 0, 0, width, height]);
+
+            if (width != 0 && height != 0) {
+                if (rx != null) {
+                    this._graphicsCommands.push(['RECT', 0, 0, width, height, (SVGColors.cleanNumber(rx) * 2), SVGColors.cleanNumber(ry) * 2]);                
+                }
+                else {
+                    this._graphicsCommands.push(['RECT', 0, 0, width, height]);
+                }
             }
 
             //Width/height calculations for gradients
