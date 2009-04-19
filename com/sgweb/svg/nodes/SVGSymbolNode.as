@@ -19,6 +19,7 @@
 
 package com.sgweb.svg.nodes
 {
+    import flash.events.Event;
     import com.sgweb.svg.core.SVGNode;
 
     /** 
@@ -31,15 +32,37 @@ package com.sgweb.svg.nodes
             super(svgRoot, xml, original);
         }
         
-        override protected function draw():void {
-            //Do Nothing
+        override protected function drawNode(event:Event = null):void {
+
+            // If this symbol has a reference to an original definition,
+            // then it is being used and should be drawn.
+            if (this.original) {
+                super.drawNode(event);
+                return;
+            }
+            else {
+                // If the symbol is just a definition, then it should not be drawn.
+                this.visible = false;
+                if ( (this.parent != null) && (this._invalidDisplay) ) {
+                    this._invalidDisplay = false;
+    
+                    if (this._xml != null) {
+                        if (!this._parsedChildren) {
+                            this.parseChildren();
+                            this._parsedChildren = true;
+                        }
+                    }
+    
+                    this.removeEventListener(Event.ENTER_FRAME, drawNode);
+                }
+    
+                if (!this._initialRenderDone && this.parent) {
+                    this._initialRenderDone = true;
+                    this.svgRoot.renderFinished();
+                }
+            }
+
         }
-        
-        override protected function generateGraphicsCommands():void {
-            this._graphicsCommands = new Array();
-            //Do Nothing
-        }
-        
         
     }
 }
