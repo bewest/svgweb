@@ -417,7 +417,7 @@ package com.sgweb.svg
                         childNode = this.svgRoot.getNode(jsMsg.childId);
                     }
                     if (element && childNode)  {
-                        SVGNode.addSVGChild(element.drawSprite, childNode);
+                        SVGNode.addSVGChild(element.viewBoxSprite, childNode);
                     }
                 }
             }

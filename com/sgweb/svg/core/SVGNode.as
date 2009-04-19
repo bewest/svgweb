@@ -75,7 +75,7 @@ package com.sgweb.svg.core
         /**
          *
          * To handle certain flash quirks, and to support certain SVG features,
-         * the implementation of one SVG node is split into one to three
+         * the implementation of one SVG node is split into one to four
          * Sprites which perform the functions of transforming, clipping, and drawing.
          * Here are the specific functions performed by each sprite:
          *
@@ -93,12 +93,16 @@ package com.sgweb.svg.core
          *      * handles x,y,rotate,opacity attributes
          *      * eventListeners added here
          *      * filters added here
+         *
+         * viewBoxSprite:
+         *      * handles viewBox transform
          *      * parent of SVG children
          *
          */
         public var transformSprite:Sprite;
         public var clipSprite:Sprite;
         public var drawSprite:Sprite;
+        public var viewBoxSprite:Sprite;
 
         /**
          * Constructor
@@ -135,6 +139,16 @@ package com.sgweb.svg.core
                 drawSprite = clipSprite;
             }
 
+            // If the object has a viewBox, the resulting transform should only apply
+            // to the children of the object, so create a child sprite to hold the transform.
+            if (xml && xml.@['viewBox'] != "") {
+                viewBoxSprite = new Sprite();
+                drawSprite.addChild(viewBoxSprite);
+            }
+            else {
+                viewBoxSprite = drawSprite;
+            }
+
             this.xml = xml;
             if (original) {
                 this.original = original;
@@ -161,7 +175,7 @@ package com.sgweb.svg.core
                         this.dbg("did not add object!:" + childXML.localName());
                         continue;
                     }
-                    SVGNode.addSVGChild(drawSprite, newChildNode);
+                    SVGNode.addSVGChild(viewBoxSprite, newChildNode);
                 }
             }
         }
@@ -747,13 +761,13 @@ package com.sgweb.svg.core
         }
 
         public function applyViewBox():void {
-            var newMatrix:Matrix = transformSprite.transform.matrix.clone();
 
             // Apply viewbox transform
             var viewBox:String = this.getAttribute('viewBox');
             var preserveAspectRatio:String = this.getAttribute('preserveAspectRatio');
 
             if ( (viewBox != null) || (preserveAspectRatio != null) ) {
+                var newMatrix:Matrix = new Matrix();
 
                 if (preserveAspectRatio == null) {
                     preserveAspectRatio = 'xMidYMid meet';
@@ -880,8 +894,8 @@ package com.sgweb.svg.core
                     }
                     newMatrix.translate(translateX, translateY);
                 }
+                viewBoxSprite.transform.matrix = newMatrix;
             }
-            transformSprite.transform.matrix = newMatrix;
 
         }
 
@@ -1211,8 +1225,8 @@ package com.sgweb.svg.core
 
         public function invalidateChildren():void {
             var child:DisplayObject;
-            for (var i:uint = 0; i < drawSprite.numChildren; i++) {
-                child = drawSprite.getChildAt(i);
+            for (var i:uint = 0; i < viewBoxSprite.numChildren; i++) {
+                child = viewBoxSprite.getChildAt(i);
                 if (child is SVGNode) {
                     SVGNode(child).invalidateDisplay();
                     SVGNode(child).invalidateChildren();
@@ -1265,8 +1279,8 @@ package com.sgweb.svg.core
          * Remove all child nodes
          **/        
         protected function clearSVGChildren():void {
-            while(drawSprite.numChildren) {
-                drawSprite.removeChildAt(0);
+            while(viewBoxSprite.numChildren) {
+                viewBoxSprite.removeChildAt(0);
             }
         }
         
