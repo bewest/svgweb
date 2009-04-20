@@ -204,6 +204,9 @@ package com.sgweb.svg.core
                 case "animatetransform":
                     childNode = new SVGAnimateTransformNode(this.svgRoot, childXML);
                     break;    
+                case "audio":
+                    childNode = new SVGAudioNode(this.svgRoot, childXML);
+                    break;
                 case "circle":
                     childNode = new SVGCircleNode(this.svgRoot, childXML);
                     break;        
