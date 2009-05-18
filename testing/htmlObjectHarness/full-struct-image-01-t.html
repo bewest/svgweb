@@ -25,10 +25,19 @@ SVG 1.1 test:struct-image-01-t </title>
  -->
  </style>
  
-    <script src="../../html/svgviewer.js" type="text/javascript"></script>
+    <script src="../../html/svg.js" type="text/javascript"></script>
+    <script type="text/javascript">
+    function bodyOnLoad() {
+        svgviewer.createSVG({ uniqueId: 'svg01', bgcolor:'#ffffff', parentId: 'svgParent',
+        sourceType: "url_svg", svgURL:"../svggen/struct-image-01-t.svg",
+        width:480, height:360 });
+    }
+    </script>
+
 </head>
+
 			
- <body class="bodytext">
+ <body class="bodytext" onLoad="bodyOnLoad();">
 
 	<div class="linkbar"> 
 <p>
@@ -58,19 +67,8 @@ SVG 1.1 test:struct-image-01-t </title>
 						</td>
 					</tr>
 					<tr>
-						<td align="right">
-   	    		  			
-<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
-            codebase="" id="mySVGViewerObj" width=480 height=360>
-    <param name=movie value="../SvgViewer.swf">
-    <param name="FlashVars" value="sourceType=url_svg&svgURL=../svggen/struct-image-01-t.svg">
-    <param name="wmode" value="transparent">
-    <embed play=false name="mySVGViewerObj" 
-	    src="../SvgViewer.swf" quality=high wmode="transparent"
-	    width=480 height=360 type="application/x-shockwave-flash"
-	    FlashVars="sourceType=url_svg&svgURL=../svggen/struct-image-01-t.svg">
-    </embed >
-</object>
+						<td align="right" id="svgParent">
+
 						</td>
 						<td align="left">
 							<img alt="raster image of struct-image-01-t" src="../png/full-struct-image-01-t.png" width="480" height="360"/>
