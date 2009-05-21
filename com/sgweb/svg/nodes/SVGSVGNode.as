@@ -24,17 +24,21 @@ package com.sgweb.svg.nodes
     import com.sgweb.svg.events.SVGEvent;
     import flash.geom.Matrix;
     import flash.display.Sprite;
+    import flash.events.Event;
+    import flash.utils.getTimer;
 
     public class SVGSVGNode extends SVGNode
     {
         protected var parentSVGRoot:SVGSVGNode = null;
         private var _pendingRenderCount:int;
         protected var firedOnLoad:Boolean = false;
+        protected var loadTime:int = -1; // milliseconds
         protected var scaleModeParam:String = 'svg_all';
 
         private var _nodeLookup:Object;
         protected var _referersById:Object;
         protected var _fonts:Object;
+        protected var fontListeners:Array = new Array();
 
         public var title:String;
 
@@ -57,9 +61,57 @@ package com.sgweb.svg.nodes
             }
         }
 
-        override public function getAttribute(name:String, defaultValue:* = null, inherit:Boolean = true):* {
+        protected override function onAddedToStage(event:Event):void {
+            super.onAddedToStage(event);
+            addEventListener(Event.ENTER_FRAME, updateAnimations);
+        }
 
-            var value:String = this._getAttribute(name);
+        protected override function onRemovedFromStage(event:Event):void {
+            removeEventListener(Event.ENTER_FRAME, updateAnimations);
+            super.onRemovedFromStage(event);
+        }
+
+        public function getDocTime():Number {
+            if (this.parentSVGRoot) {
+                return this.parentSVGRoot.getDocTime();
+            }
+            else {
+                return (getTimer() - this.loadTime) / 1000.0;
+            }
+        }
+
+        protected function updateAnimations(event:Event):void {
+            if (this.parentSVGRoot) {
+                this.parentSVGRoot.updateAnimations(event);
+            }
+            else {
+                // Nothing to do while the document is loading
+                if (this.loadTime == -1) {
+                    return;
+                }
+                var svgEvent:SVGEvent = new SVGEvent(SVGEvent._SVGDocTimeUpdate);
+                svgEvent.setDocTime( (getTimer() - this.loadTime) / 1000.0 );
+                this.dispatchEvent(svgEvent);
+            }
+        }
+
+        public function seekToDocTime(docTime:Number):void {
+            if (this.parentSVGRoot) {
+                this.parentSVGRoot.seekToDocTime(docTime);
+            }
+            else {
+                this.loadTime = getTimer() - docTime*1000.0;
+                var svgEvent:SVGEvent = new SVGEvent(SVGEvent._SVGDocTimeSeek);
+                svgEvent.setDocTime(docTime);
+                this.dispatchEvent(svgEvent);
+            }
+        }
+
+        override public function getAttribute(name:String, defaultValue:* = null,
+                                              inherit:Boolean = true,
+                                              applyAnimations:Boolean = true):* {
+
+            var value:String = this._getAttribute(name, defaultValue, inherit, applyAnimations);
             if (value) {
                 return value;
             }
@@ -69,7 +121,7 @@ package com.sgweb.svg.nodes
             }
 
             if (inherit && (this.getSVGParent() != null))  {
-                return SVGNode(this.getSVGParent()).getAttribute(name, defaultValue, inherit);
+                return SVGNode(this.getSVGParent()).getAttribute(name, defaultValue, inherit, applyAnimations);
             }
 
             if ((name == 'opacity') 
@@ -151,16 +203,56 @@ package com.sgweb.svg.nodes
          *
          **/
         public function registerFont(font:SVGFontNode):void {
-            _fonts[font.getFontFaceName()] = font;
+            if (this.parentSVGRoot) {
+                this.parentSVGRoot.registerFont(font);
+            }
+            else {
+                _fonts[font.getFontFaceName()] = font;
+            }
+
+            for each(var node:SVGNode in fontListeners) {
+                node.onRegisterFont(font.getFontFaceName());
+            }
         }
 
         public function unregisterFont(font:SVGFontNode):void {
-            delete _fonts[font.getFontFaceName()];
+            if (this.parentSVGRoot) {
+                this.parentSVGRoot.unregisterFont(font);
+            }
+            else {
+                delete _fonts[font.getFontFaceName()];
+            }
         }
 
         public function getFont(fontFace:String):SVGFontNode {
-            return _fonts[fontFace];
+            if (this.parentSVGRoot) {
+                return this.parentSVGRoot.getFont(fontFace);
+            }
+            else {
+                return _fonts[fontFace];
+            }
         }
+
+        public function registerFontListener(node:SVGNode):void {
+            if (this.parentSVGRoot) {
+                this.parentSVGRoot.registerFontListener(node);
+            }
+            else {
+                fontListeners.push(node);
+            }
+        }
+
+        public function unregisterFontListener(node:SVGNode):void {
+            if (this.parentSVGRoot) {
+                this.parentSVGRoot.unregisterFontListener(node);
+            }
+            else {
+                if (fontListeners.lastIndexOf(node) != -1) {
+                    delete fontListeners[fontListeners.lastIndexOf(node)];
+                }
+            }
+        }
+
 
 
         /**
@@ -242,6 +334,7 @@ package com.sgweb.svg.nodes
                 this.parentSVGRoot.handleOnLoad();
             }
             else {
+                this.loadTime = getTimer();
                 var svgEvent:SVGEvent = new SVGEvent(SVGEvent.SVGLoad);
                 this.dispatchEvent(svgEvent);
             }

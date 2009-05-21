@@ -20,6 +20,7 @@
 package com.sgweb.svg.nodes
 {
     import com.sgweb.svg.core.SVGNode;
+    import flash.display.BlendMode;
 
     /**
      * Acts as a container for other nodes
@@ -28,6 +29,7 @@ package com.sgweb.svg.nodes
     {
         public function SVGGroupNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
             super(svgRoot, xml, original);
+            this.blendMode = BlendMode.LAYER;
         }
 
         // The <g> node does not use the x and y attributes.  (However, it does honor the transform attribute.)

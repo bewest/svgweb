@@ -25,7 +25,7 @@ package com.sgweb.svg.nodes {
     import flash.display.DisplayObject;
     
     public class SVGGlyphNode extends SVGPathNode {
-        
+
         public function SVGGlyphNode(svgRoot:SVGSVGNode, xml:XML = null, original:SVGNode = null) {
             super(svgRoot, xml, original);
         }
@@ -38,6 +38,15 @@ package com.sgweb.svg.nodes {
         override protected function onRemovedFromStage(event:Event):void {
             this.getParentFont().unregisterGlyph(this);
             super.onRemovedFromStage(event);
+        }
+
+        override protected function drawNode(event:Event = null):void {
+            super.drawNode(event);
+            // If this is a instantiated glyph, then notify the text node parent
+            // that we have rendered (and are ready to be displayed).
+            if (original) {
+                SVGTextNode(getSVGParent()).onDrawGlyph(this);
+            }
         }
 
         public function getUnicode():String {

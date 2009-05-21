@@ -73,6 +73,7 @@ package com.sgweb.svg.core
         protected var _isClone:Boolean = false;
         protected var _clones:Array = new Array();
 
+        protected var animations:Array = new Array();
         /**
          *
          * To handle certain flash quirks, and to support certain SVG features,
@@ -303,6 +304,9 @@ package com.sgweb.svg.core
                 case "use":
                     childNode = new SVGUseNode(this.svgRoot, childXML);
                     break;
+                case "video":
+                    childNode = new SVGVideoNode(this.svgRoot, childXML);
+                    break;
                 case "null":
                     break;
                     
@@ -462,6 +466,13 @@ package com.sgweb.svg.core
                                                             transformSprite.transform.matrix.clone());
             }
 
+            var animMatrix:Matrix = this.getAllAnimsTransform();
+            if (animMatrix != null) {
+                var newMatrix = transformSprite.transform.matrix.clone();
+                newMatrix.concat(animMatrix);
+                transformSprite.transform.matrix = newMatrix;
+            }
+
         }
 
         public function parseTransform(trans:String, baseMatrix:Matrix = null):Matrix {
@@ -551,8 +562,6 @@ package com.sgweb.svg.core
 
         
         protected function draw():void {
-            drawSprite.graphics.clear();            
-
             var firstX:Number = 0;
             var firstY:Number = 0;
 
@@ -1054,8 +1063,11 @@ package com.sgweb.svg.core
          * 
          * @return Returns the value of defaultValue
          **/
-        public function getAttribute(name:String, defaultValue:* = null, inherit:Boolean = true):* {            
-            var value:String = this._getAttribute(name);
+        public function getAttribute(name:String, defaultValue:* = null,
+                                     inherit:Boolean = true,
+                                     applyAnimations:Boolean = true):* {
+            var value:String = this._getAttribute(name, defaultValue,
+                                                  inherit, applyAnimations);
             
             if (value == "inherit") {
                 value = null;
@@ -1070,7 +1082,7 @@ package com.sgweb.svg.core
             }
             
             if (inherit && (this.getSVGParent() != null)) {
-                return SVGNode(this.getSVGParent()).getAttribute(name, defaultValue);
+                return SVGNode(this.getSVGParent()).getAttribute(name, defaultValue, true, applyAnimations);
             }
             
             return defaultValue;            
@@ -1082,7 +1094,9 @@ package com.sgweb.svg.core
          * used as a helper for getAttribute, which has css parent inheritance logic.
          *
          **/
-        protected function _getAttribute(name:String):String {
+        protected function _getAttribute(name:String, defaultValue:* = null,
+                                         inherit:Boolean = true,
+                                         applyAnimations:Boolean = true):* {
             var value:String;
             
             // If we are rendering a mask, then use a simple black fill.
@@ -1107,6 +1121,13 @@ package com.sgweb.svg.core
                     return 'none';
                 }
             }
+
+            if (applyAnimations) {
+                value = getAnimAttribute(name, defaultValue, inherit);
+                if (value) {
+                    return value;
+                }
+            }
            
             if (name == "href") {
                 //this._xml@href handled normally
@@ -1122,15 +1143,6 @@ package com.sgweb.svg.core
                 }
             }
 
-            if (this.original && (this.getSVGParent() is SVGUseNode)) {
-                //Node is the top level of a clone
-                //Check for an override value from the parent
-                value = SVGNode(this.getSVGParent()).getAttribute(name, null, false);
-                if (value) {
-                    return value;
-                }
-            }
-           
             var xmlList:XMLList = this._xml.attribute(name);
             
             if (xmlList.length() > 0) {
@@ -1144,6 +1156,122 @@ package com.sgweb.svg.core
             return null;
         }
 
+        // process all animations
+        public function getAnimAttribute(name:String, defaultValue:* = null,
+                                         inherit:Boolean = true):String {
+            // transform is handled by getAllAnimTransforms
+            if (name == "transform")
+                return null;
+
+            var foundAnimation:Boolean = false;
+            for each(var animation:SVGAnimateNode in animations) {
+                if (animation.getAttributeName() == name) {
+                    foundAnimation = true;
+                }
+            }
+            if (!foundAnimation)
+                return null;
+
+            var isAdditive:Boolean = true;
+
+            // Start with base value
+            var baseVal:String = getAttribute(name, defaultValue, inherit, false);
+
+            var animVal:Number;
+            if (baseVal) {
+                animVal = SVGUnits.cleanNumber(baseVal);
+            }
+            else {
+                animVal= 0;
+            }
+             
+            // Handle discrete string values
+            var discreteStringVal:String;
+            // XXX This should sort by priority (activation order) 
+            // Add or replace with animations
+            for each(var animation:SVGAnimateNode in animations) {
+                if (   animation.getAttributeName() == name
+                    && animation.isEffective() ) {
+                    if (animation.isAdditive()) {
+                        animVal = animVal + SVGUnits.cleanNumber(animation.getAnimValue());
+                    }
+                    else {
+                        animVal = SVGUnits.cleanNumber(animation.getAnimValue());
+                        discreteStringVal = animation.getAnimValue();
+                    }
+                }
+            }
+            return String(animVal);
+        }
+
+        // process all transform animations
+        // xxx not fully implemented
+        public function getAllAnimsTransform():Matrix {
+
+            var rotateTransform:Matrix= new Matrix();
+            var scaleTransform:Matrix= new Matrix();
+            var skewXTransform:Matrix= new Matrix();
+            var skewYTransform:Matrix= new Matrix();
+            var translateTransform:Matrix= new Matrix();
+
+            // XXX This should sort by priority (activation order) 
+            for each(var animation:SVGAnimateNode in animations) {
+                if (animation is SVGAnimateTransformNode
+                    && animation.isEffective()) {
+
+                    if (animation.isAdditive()) {
+                        switch (SVGAnimateTransformNode(animation).getTransformType() ) {
+                            case "rotate":
+                                rotateTransform.concat(SVGAnimateTransformNode(animation).getAnimTransform());
+                                break;
+                            case "scale":
+                                scaleTransform.concat(SVGAnimateTransformNode(animation).getAnimTransform());
+                                break;
+                            case "skewX":
+                                skewXTransform.concat(SVGAnimateTransformNode(animation).getAnimTransform());
+                                break;
+                            case "skewY":
+                                skewYTransform.concat(SVGAnimateTransformNode(animation).getAnimTransform());
+                                break;
+                            case "translate":
+                                translateTransform.concat(SVGAnimateTransformNode(animation).getAnimTransform());
+                                break;
+                        }
+                    }
+                    else {
+                        rotateTransform = new Matrix();
+                        scaleTransform = new Matrix();
+                        skewXTransform = new Matrix();
+                        skewYTransform = new Matrix();
+                        translateTransform = new Matrix();
+                        switch (SVGAnimateTransformNode(animation).getTransformType() ) {
+                            case "rotate":
+                                rotateTransform = SVGAnimateTransformNode(animation).getAnimTransform();
+                                break;
+                            case "scale":
+                                scaleTransform = SVGAnimateTransformNode(animation).getAnimTransform();
+                                break;
+                            case "skewX":
+                                skewXTransform = SVGAnimateTransformNode(animation).getAnimTransform();
+                                break;
+                            case "skewY":
+                                skewYTransform = SVGAnimateTransformNode(animation).getAnimTransform();
+                                break;
+                            case "translate":
+                                translateTransform = SVGAnimateTransformNode(animation).getAnimTransform();
+                                break;
+                        }
+                    }
+                }
+            }
+            var animTransform:Matrix= new Matrix();
+            animTransform.concat(rotateTransform);
+            animTransform.concat(scaleTransform);
+            animTransform.concat(skewXTransform);
+            animTransform.concat(skewYTransform);
+            animTransform.concat(translateTransform);
+            return animTransform;
+        }
 
 
         public function setAttribute(name:String, value:String):void {
@@ -1223,6 +1351,9 @@ package com.sgweb.svg.core
             this._xml.@style = newStyleString;
         }
 
+        public function onRegisterFont(fontFamily:String) {
+        }
+
         /**
          * Force a redraw of a node
          **/
@@ -1278,6 +1409,22 @@ package com.sgweb.svg.core
 
         public function get isClone():Boolean {
             return this._isClone;
+        }
+
+        /*
+         * Animations
+         */
+
+        public function addAnimation(animation:SVGAnimateNode):void {
+            if (animations.indexOf(animation) == -1) {
+                animations.push(animation);
+            }
+        }
+
+        public function removeAnimation(animation:SVGAnimateNode):void {
+            if (animations.indexOf(animation) != -1) {
+                animations.splice(animations.indexOf(animation), 1);
+            }
         }
 
         /*

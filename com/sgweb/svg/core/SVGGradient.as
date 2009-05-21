@@ -121,9 +121,12 @@ package com.sgweb.svg.core
          * This method supports href inheritence of attributes from base nodes of the same type.
          *
          **/
-        override protected function _getAttribute(name:String):String {
+        override protected function _getAttribute(name:String, defaultValue:* = null,
+                                                  inherit:Boolean = true,
+                                                  applyAnimations:Boolean = true):* {
 
-            var value:String = super._getAttribute(name);
+            var value:String = super._getAttribute(name, defaultValue,
+                                                   inherit, applyAnimations);
             if (value) {
                 return value;
             }
@@ -140,7 +143,7 @@ package com.sgweb.svg.core
                 if (baseNode) {
                     // Return value from href base node, perhaps recursively.
                     // XXX possible circular reference problem.
-                    return baseNode.getAttribute(name, null, false);
+                    return baseNode.getAttribute(name, null, false, applyAnimations);
                 }
                 else {
                     // Href is not (yet) parsed, just return value for this node

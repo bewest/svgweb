@@ -50,13 +50,11 @@ package com.sgweb.svg
     import flash.external.ExternalInterface;
     import flash.net.URLLoader;
     import flash.net.URLRequest;
+    import flash.utils.setTimeout;
     import flash.xml.XMLNode;
     import flash.xml.XMLNodeType;
 
-    import mx.core.Singleton;
-    import flash.system.ApplicationDomain;
-
-    [SWF(frameRate="24", width="2048", height="1024")]
+    [SWF(frameRate="40", width="2048", height="1024")]
     /**
      * Flex container for the SVG Renderer
      **/
@@ -221,6 +219,10 @@ package com.sgweb.svg
                 this.removeChildAt(0);
             }
             svgRoot = new SVGSVGNode(null, dataXML);
+            if (   (xmlString.indexOf("<animate") != -1)
+                || (xmlString.indexOf("<set") != -1) ) {
+                svgRoot.visible = false;
+            }
             this.addActionListener(SVGEvent.SVGLoad, svgRoot);
             this.addChild(svgRoot);
         }
@@ -292,6 +294,25 @@ package com.sgweb.svg
          **/
         protected function handleRootSVGLoad():void {
             this.debug("render time: " + ( (new Date()).valueOf()  - this.renderStartTime) + "ms");
+
+            // XXX Hack. If we are hidden due to the presence of animations,
+            // then we do not unhide until 200ms into the document time. This
+            // provides enough time for the first frame of rendering caused
+            // by animations to occur. Currently, the entire tree is first
+            // parsed and progressively rendered, without animation effects,
+            // because animations may not be parsed yet. Once animations are
+            // parsed, they cause new frames to be rendered. These frames
+            // should be rendered before anything is visible. Since it is
+            // difficult to determine exactly when these  frames have rendered,
+            // we just wait a "long time".
+            // A better solution than the 200ms delay is to figure out all the
+            // elements that should be rendered with animation effects at frame
+            // zero, and unhide exactly when all of these elements have
+            // completed rendering initially with animation effects.
+            // We would start that tracking here, because the SVGLoad event
+            // signals the end of parsing.
+            setTimeout(function () { svgRoot.visible = true }, 200); 
+
             var onLoadHandler:String = '';
             if (this.svgRoot.xml.@onload) {
                 onLoadHandler = this.svgRoot.xml.@onload;

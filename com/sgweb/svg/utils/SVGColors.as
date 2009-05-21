@@ -237,6 +237,9 @@ package com.sgweb.svg.utils
                 else if (colors.hasOwnProperty(color)) {
                     return colors[color];
                 }
+                else {
+                    return Number(color);
+                }
             }            
             return 0x000000;
         }
@@ -330,6 +333,9 @@ package com.sgweb.svg.utils
                 else if (colors.hasOwnProperty(color)) {
                     return [ colors[color], 1.0 ];
                 }
+                else {
+                    return [ Number(color), 1.0 ];
+                }
             }            
             return [ 0x000000, 0.0 ];
         }
@@ -343,8 +349,22 @@ package com.sgweb.svg.utils
          **/
         static public function cleanNumber(num:*):Number {
             var numString:String = String(num);
+            if (isColor(numString)) {
+                return SVGColors.getColor(numString);
+            }
             numString = numString.replace(/[^0-9\.-]+/sig,'');
             return Number(numString);
+        }
+
+        static public function isColor(colorString:String) {
+            if (  colorString.match(/^#/)
+                || (colorString.indexOf("rgb") != -1)
+                || (colors.hasOwnProperty(colorString)) ) {
+                return true;
+            }
+            else {
+                return false;
+            }
         }
 
         // the second parameter is the maximum value to be used for percent values

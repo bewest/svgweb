@@ -48,12 +48,22 @@ package com.sgweb.svg.nodes
         }
 
         override protected function drawNode(event:Event=null):void {
-            this.removeEventListener(Event.ENTER_FRAME, drawNode);
+            if ( (this.parent != null) && (this._invalidDisplay) ) {
+                this._invalidDisplay = false;
 
-            this.setAttributes();
-            this.transformNode();
-            this.generateGraphicsCommands();
-            this.draw();
+                this.removeEventListener(Event.ENTER_FRAME, drawNode);
+                if (!this._parsedChildren) {
+                    this.parseChildren();
+                    this._parsedChildren = true;
+                }
+    
+                this.setAttributes();
+                this.transformNode();
+                //this.generateGraphicsCommands();
+                if (this.bitmap == null && urlLoader == null) {
+                    this.loadImage();
+                }
+            }
         }
 
         private function finishDrawNode():void {
@@ -70,7 +80,7 @@ package com.sgweb.svg.nodes
 
         }
 
-        protected override function draw():void {
+        protected function loadImage():void {
             var imageHref:String = this.getAttribute('href');
 
             if (!imageHref) {

@@ -11,15 +11,15 @@ all: com/sgweb/svg/build/svg.swf com/sgweb/svg/build/svg.js com/sgweb/svg/build/
 	cp samples/*.svg com/sgweb/svg/build/
 	cp com/sgweb/svg/tests/*.svg com/sgweb/svg/build/
 
-com/sgweb/svg/build/svg.swf: com/sgweb/svg/SVGViewerWeb.as com/sgweb/svg/core/*.as com/sgweb/svg/nodes/*.as com/sgweb/svg/utils/*.as
+com/sgweb/svg/build/svg.swf: com/sgweb/svg/SVGViewerWeb.as com/sgweb/svg/core/*.as com/sgweb/svg/nodes/*.as com/sgweb/svg/utils/*.as com/sgweb/svg/smil/*.as
 	@echo Building svg.swf file...
 	(cd com/sgweb/svg;mxmlc -output build/svg.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- SVGViewerWeb.as)
 
-com/sgweb/svg/build/svgflash.swf: com/sgweb/svg/SVGViewerFlash.as com/sgweb/svg/core/*.as com/sgweb/svg/nodes/*.as com/sgweb/svg/utils/*.as
+com/sgweb/svg/build/svgflash.swf: com/sgweb/svg/SVGViewerFlash.as com/sgweb/svg/core/*.as com/sgweb/svg/nodes/*.as com/sgweb/svg/utils/*.as com/sgweb/svg/smil/*.as
 	@echo Building svgflash.swf file...
 	(cd com/sgweb/svg;mxmlc -output build/svgflash.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- SVGViewerFlash.as)
 
-com/sgweb/svg/build/svgflex.swf: com/sgweb/svg/SVGViewerFlex.as com/sgweb/svg/core/*.as com/sgweb/svg/nodes/*.as com/sgweb/svg/utils/*.as
+com/sgweb/svg/build/svgflex.swf: com/sgweb/svg/SVGViewerFlex.as com/sgweb/svg/core/*.as com/sgweb/svg/nodes/*.as com/sgweb/svg/utils/*.as com/sgweb/svg/smil/*.as
 	@echo Building svgflex.swf file...
 	(cd com/sgweb/svg;mxmlc -output build/svgflex.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- SVGViewerFlex.as)
 

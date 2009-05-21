@@ -55,8 +55,8 @@ package com.sgweb.svg.nodes {
         }
 
         public function beginPatternFill(node:SVGNode):void {
-            var patternWidth:Number = this.width;
-            var patternHeight:Number = this.height;
+            var patternWidth:int = this.width;
+            var patternHeight:int = this.height;
 
             var tmp:String = this.getAttribute('width');
             if (tmp) {

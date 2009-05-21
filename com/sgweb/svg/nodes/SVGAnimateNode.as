@@ -20,139 +20,506 @@
 package com.sgweb.svg.nodes
 {
     
+    import com.sgweb.svg.utils.SVGUnits;
     import com.sgweb.svg.utils.SVGColors;
     import com.sgweb.svg.core.SVGNode;
+    import com.sgweb.svg.core.SVGTimedNode;
+    import com.sgweb.svg.smil.TimeInterval;
+    import com.sgweb.svg.smil.TimeSpec;
+    import com.sgweb.svg.smil.SplineInterpolator;
+    import com.sgweb.svg.events.SVGEvent;
     
     import flash.events.Event;
-    import flash.utils.getTimer;
     
-    public class SVGAnimateNode extends SVGNode
+    public class SVGAnimateNode extends SVGTimedNode
     {
-        private const REPEAT_INFINITE:int = -1;
-        
-        private const STATE_BEGIN:int = 0;
-        private const STATE_RUN:int = 1;
-        private const STATE_END:int = 2;
-        
-        private var _state:int;
-        
-        private var _field:String;
-        
-        private var _fromValString:String;
-        private var _toValString:String;
-        private var _byValString:String;    
-        
-        private var _fromVal:Number;
-        private var _toVal:Number;    
-        private var _valSpan:Number
-        
-        private var _startTime:int;
-        
-        private var _begin:int;
-        private var _duration:int;
-        private var _end:int;
-                
-        private var _repeat:int;
-        
-        
+
+        protected var targetNode:SVGNode;
+        protected var attributeName:String;
+
+        protected var calcModeParameter:String;
+        protected var fromParameter:String;
+        protected var toParameter:String;
+        protected var byParameter:String;
+        protected var valuesParameter:String;
+        protected var keyTimesParameter:String;
+        protected var keySplinesParameter:String;
+        protected var fillParameter:String;
+        protected var accumulateParameter:String;
+        protected var additiveParameter:String;
+
+        protected var keyTimes:Array;
+        protected var keySplines:Array;
+        protected var numKeyTimes:uint;
+
+        protected var _isAdditive:Boolean = false;
+        protected var isAccumulative:Boolean = false;
+
         public function SVGAnimateNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
             super(svgRoot, xml, original);
         }
-        
-        override protected function draw():void {        
-            this._field = this.getAttribute('attributeName');
-                        
-            this._fromValString = this.getAttribute('from');
-            this._toValString = this.getAttribute('to');
-            this._byValString = this.getAttribute('by');
-                        
-            var begin:String = this.getAttribute('begin');    
-            this._begin = timeToMilliseconds(begin);
-                    
-            var duration:String = this.getAttribute('dur');
-            this._duration =  timeToMilliseconds(duration);
-            
-            var end:String = this.getAttribute('end');
-            this._end = this._begin + this._duration;
-            if (end) {
-                this._end = timeToMilliseconds(end);
-            }            
-            if (this._end < (this._begin + this._duration)) {
-                this._end = this._begin + this._duration;
+
+
+        override protected function onSVGDocTimeUpdate(event:Event):void {
+            super.onSVGDocTimeUpdate(event);
+
+            // Depending on the type of animation, trigger a redraw
+            // or just a transform update
+            if (targetNode && this.isActive()) {
+                switch (attributeName) {
+                    case 'transform':
+                    case 'viewBox':
+                    case 'x':
+                    case 'y':
+                    case 'rotation':
+                        targetNode.transformNode();
+                        targetNode.applyViewBox();
+                        break;
+                    default:
+                        targetNode.invalidateDisplay();
+                        targetNode.invalidateChildren();
+                        break;
+                }
+
             }
-            
-            var repeat:String = this.getAttribute('repeatCount');
-            var repeatInt:int;
-            
-            if (repeat == 'indefinite') {
-                repeatInt = REPEAT_INFINITE;
+        }
+
+        override protected function onSVGLoad(evt:Event):void {
+            super.onSVGLoad(evt);
+            if (targetNode) {
+                targetNode.addAnimation(this);
             }
             else {
-                repeatInt = SVGColors.cleanNumber(repeat);
+                this.dbg("No target for animation " + id);
             }
-            
-            this._repeat = repeatInt;
-            
-            this._state = this.STATE_BEGIN;
-            this.addEventListener(Event.ENTER_FRAME, renderTween);
-            
+        }
+
+        override protected function onRemovedFromStage(event:Event):void {
+            if (targetNode) {
+                targetNode.removeAnimation(this);
+            }
+            super.onRemovedFromStage(event);
         }
         
-        private function timeToMilliseconds(value:String):Number {
-            return (SVGColors.cleanNumber(value) * 1000);
-        }        
-        
-        private function renderTween(event:Event):void {
-            var time:int = getTimer();
-            
-            var timeElapsed:int = time - this._startTime;
-            
-            
-            if (timeElapsed < this._begin) {
-                return;
-            }
+
+        public function getAnimValue():String {
+            var interval:TimeInterval = getEffectiveInterval();
+            if (interval) {
+                var repeatFraction:Number = interval.getRepeatIntervalFraction(lastDocTime, this);
+
+                var fromString:String;
+                var toString:String;
+                var fromVal:Number;
+                var toVal:Number;
+
+                var keyTimeIndex:Number = getKeyTimeIndex(repeatFraction);
+                var keyTimeSpline:String = getKeyTimeSpline(keyTimeIndex);
+                if (valuesParameter != null) {
+                    var keyTimeFraction:Number = getKeyTimeFraction(repeatFraction);
+                    if (calcModeParameter == "discrete") {
+                        if (keyTimeFraction >= 1.0) {
+                            return getKeyTimeValue(keyTimeIndex + 1);
+                        }
+                        else {
+                            return getKeyTimeValue(keyTimeIndex);
+                        }
+                    }
+                    fromString = getKeyTimeValue(keyTimeIndex);
+                    toString = getKeyTimeValue(keyTimeIndex + 1);
+                }
+                else {
+                    keyTimeFraction = repeatFraction;
+                    if (calcModeParameter == "discrete") {
+                        if (accumulateParameter == "sum") {
+                            fromVal = SVGColors.cleanNumber(fromParameter);
+                            toVal = SVGColors.cleanNumber(toParameter);
+                            var previousCount:int =  interval.getRepeatIndex(lastDocTime, this);
+                            if (previousCount > 0) {
+                                fromVal += toVal * previousCount;
+                                toVal   += toVal * previousCount;
+                            }
+                            if (keyTimeFraction >= 0.5) {
+                                return String(toVal);
+                            }
+                            else {
+                                return String(fromVal);
+                            }
+ 
+                        }
+                        else {
+                            if (keyTimeFraction >= 0.5) {
+                                return toParameter;
+                            }
+                            else {
+                                return fromParameter;
+                            }
+                        }
+                    }
+                    fromString = fromParameter;
+                    toString = toParameter;
+                }
+                fromVal = SVGColors.cleanNumber(fromString);
+                toVal = SVGColors.cleanNumber(toString);
+                var isColor:Boolean = false;
+                if (SVGColors.isColor(fromString)
+                    && SVGColors.isColor(toString) ) {
+                    isColor = true;
+                }
+
+                if (accumulateParameter == "sum") {
+
+                    var previousCount:int =  interval.getRepeatIndex(lastDocTime, this);
+                    if (previousCount > 0) {
+                        // XXX For "values", should use the last value, not to
+                        fromVal += toVal * previousCount;
+                        toVal   += toVal * previousCount;
+                    }
+
+                    return String(interpolate(fromVal, toVal,
+                                              keyTimeFraction, keyTimeSpline,
+                                              isColor));
                         
-            if (this._state == this.STATE_BEGIN) {        
-                                
-                this._fromVal = (this._fromValString) ? SVGColors.cleanNumber(this._fromValString)
-                                                : SVGColors.cleanNumber(SVGNode(this.getSVGParent()).getAttribute(this._field));
-                this._toVal = (this._byValString) ? this._fromVal + SVGColors.cleanNumber(this._byValString)
-                                                : this._toVal = SVGColors.cleanNumber(this._toValString);
-                this._valSpan = this._toVal - this._fromVal;
-                
-                this._state = this.STATE_RUN;
+                }
+                else {
+                    return String(interpolate(fromVal, toVal,
+                                              keyTimeFraction, keyTimeSpline,
+                                              isColor));
+                }
             }
-            
-            var runTime:int = timeElapsed - this._begin;
-            var newVal:Number;
-                
-            if (runTime < this._duration) {
-                var factor:Number = runTime / this._duration;
-                newVal = this._fromVal + (factor * this._valSpan);
-                SVGNode(this.getSVGParent()).setAttribute(this._field, newVal.toString());
+            return null;
+        }
+
+        // Which key time does the repeatFraction fall at?
+        public function getKeyTimeIndex(repeatFraction:Number):uint {
+            var i:uint;
+            for (i=1; i < keyTimes.length; i++) {
+                if (repeatFraction < SVGUnits.cleanNumber(keyTimes[i])) {
+                    return i-1;
+                }
+            }
+            return keyTimes.length - 2;
+        }
+
+        public function getKeyTimeSpline(keyTimeIndex:uint):String {
+        try{
+            if (keySplines[keyTimeIndex] is String) {
+                return keySplines[keyTimeIndex];
             }
             else {
-                newVal = this._toVal;
-                if (this._state == this.STATE_RUN) {
-                    SVGNode(this.getSVGParent()).setAttribute(this._field, newVal.toString());                    
-                }
-                this._state = this.STATE_END;
-                if (timeElapsed > this._end) {
-                    if (this._repeat == 0) {
-                        this.removeEventListener(Event.ENTER_FRAME, renderTween);                        
+                return "0 0 1 1";
+            }
+        } catch (e:Error) { }
+        return "0 0 1 1";
+        }
+
+        // At what fraction of the key time duration does the repeatFraction fall at?
+        public function getKeyTimeFraction(repeatFraction:Number):Number {
+            var keyIndex:uint = getKeyTimeIndex(repeatFraction);
+            var startVal:Number = keyTimes[keyIndex];
+            var endVal:Number = keyTimes[keyIndex+1];
+            if (endVal == startVal) 
+                return 0;
+            return (repeatFraction - startVal) / (endVal - startVal);
+        }
+
+        public function getKeyTimeValue(keyTimeIndex:uint):String {
+            var parts:Array = valuesParameter.split(/;/);
+            return SVGColors.trim(parts[keyTimeIndex]);
+        }
+
+        // We should only trigger a redraw when something is actively
+        // changing.
+        public function isActive():Boolean {
+            // Walk though timing intervals and find ones that are within their
+            // active interval duration. Frozen animations do not count.
+            var interval:TimeInterval = getActiveInterval(lastDocTime);
+            if (interval) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+
+        public function isEffective():Boolean {
+            // Walk though animations and find ones that still have an effect
+            // because they are active or frozen (fill="freeze")
+
+            for each(var timeSpec:TimeSpec in beginTimeSpecs) {
+                var intervals:Array = timeSpec.getIntervals();
+                for each (var interval:TimeInterval in intervals) {
+                    if ( interval.hasTime(lastDocTime, this) ) {
+                        return true;
                     }
-                    else {
-                        if (this._repeat > 0) {
-                            this._repeat--;
-                        }
-                        
-                        this._startTime += this._end;
-                        this._state = this.STATE_BEGIN;
+                    if ( fillParameter == "freeze" && interval.endsBeforeTime(lastDocTime, this) ) {
+                        return true;
                     }
                 }
             }
-             
-        }        
-        
+            return false;
+
+        }
+
+        public function getEffectiveInterval():TimeInterval {
+
+            var effectiveIntervals:Array= new Array();
+
+            // Walk though animations and find ones that still have an effect
+            // because they are active or frozen (fill="freeze"),
+            // gathers the effective intervals into an array,
+            // sort by begin time and picks the last one
+            for each(var timeSpec:TimeSpec in beginTimeSpecs) {
+                var intervals:Array = timeSpec.getIntervals();
+                for each (var interval:TimeInterval in intervals) {
+                    if ( interval.hasTime(lastDocTime, this) ) {
+                        effectiveIntervals.push(interval);
+                    }
+                    else if ( fillParameter == "freeze"
+                        && interval.endsBeforeTime(lastDocTime, this) ) {
+                        effectiveIntervals.push(interval);
+                    }
+                }
+            }
+            if (effectiveIntervals.length > 0) {
+                //try {
+                //effectiveIntervals.sortOn('currentBeginStartTime', Array.NUMERIC);
+                //} catch(e:Error) {}
+                return effectiveIntervals[effectiveIntervals.length - 1];
+            }
+            else {
+                return null;
+            }
+
+        }
+
+        override protected function timeIntervalStarted():void {
+            super.timeIntervalStarted();
+            targetNode.invalidateDisplay();
+            // transform changes do not require a redraw
+            if (attributeName != "transform") {
+                targetNode.invalidateChildren();
+            }
+        }
+
+        override protected function timeIntervalEnded():void {
+            super.timeIntervalEnded();
+            targetNode.invalidateDisplay();
+            // transform changes do not require a redraw
+            if (attributeName != "transform") {
+                targetNode.invalidateChildren();
+            }
+        }
+
+        protected function interpolate(fromVal:Number, toVal:Number,
+                                       fraction:Number, keySpline:String,
+                                       isColor:Boolean = false):Number {
+            if (isColor) {
+                var fromR : Number = uint(fromVal) >> 16;
+                var fromG : Number = ( uint(fromVal) >> 8 ) & 0xff;
+                var fromB : Number = uint(fromVal) & 0xff;
+
+                var toR : Number = uint(toVal) >> 16;
+                var toG : Number = ( uint(toVal) >> 8 ) & 0xff;
+                var toB : Number = uint(toVal) & 0xff;
+
+                var animR:Number = fromR + (toR - fromR) * fraction;
+                var animG:Number = fromG + (toG - fromG) * fraction;
+                var animB:Number = fromB + (toB - fromB) * fraction;
+
+                return ( (uint(animR) << 16) + (uint(animG) << 8) + uint(animB));
+            }
+            else {
+                if (calcModeParameter == "linear"
+                    || (calcModeParameter == "spline" && keySpline == "0 0 1 1")) {
+                    return fromVal + (toVal - fromVal) * fraction;
+                }
+                if (calcModeParameter == "spline") {
+                    var splinedFraction:Number = splineInterpolate(fraction, keySpline);
+                    return fromVal + (toVal - fromVal) * splinedFraction;
+                }
+                if (calcModeParameter == "paced") {
+                    return fromVal + (toVal - fromVal) * fraction;
+                }
+            }
+            return fromVal + (toVal - fromVal) * fraction;
+        }
+
+        protected function splineInterpolate(fraction:Number, keySpline:String):Number {
+
+            var interpolator= SplineInterpolator.getSplineInterpolator(keySpline, this);
+            return interpolator.interpolate(fraction, this);
+        }
+
+        public function getAttributeName():String {
+            return attributeName;
+        }
+
+        override protected function parseParameters():void {
+            super.parseParameters();
+
+            parseAttributeNameParameter();
+            parseHrefParameter();
+            parseCalcModeParameter();
+            parseValuesParameter();
+            parseFromParameter();
+            parseToParameter();
+            parseByParameter();
+            parseKeyTimesParameter();
+            parseKeySplinesParameter();
+            parseFillParameter();
+            parseAccumulateParameter();
+            parseAdditiveParameter();
+        }
+
+        protected function parseHrefParameter():void {
+            var targetID:String = this._xml.@xlink::href;
+            if (targetID) {
+                if (targetID.match(/^#/)) {
+                    targetID = targetID.substr(1);
+                    targetNode = this.svgRoot.getNode(targetID);
+                }
+            }
+            else {
+                targetID = this._xml.@targetElement;
+                if (targetID) {
+                    targetNode = this.svgRoot.getNode(targetID);
+                }
+                else {
+                    targetNode = this.getSVGParent();
+                }
+            }
+        }
+
+        protected function parseFromParameter():void {
+            fromParameter = this.getAttribute('from', null);
+            if (fromParameter == null) {
+                if (attributeName != null) {
+                    fromParameter = targetNode.getAttribute(attributeName);
+                }
+            }
+        }
+
+        protected function parseToParameter():void {
+            toParameter = this.getAttribute('to', null);
+        }
+
+        protected function parseByParameter():void {
+            byParameter = this.getAttribute('by', null);
+
+            // Do we still need a "to" parameter?
+            if (toParameter == null
+                && (byParameter != null)
+                && (fromParameter != null) ) {
+                toParameter = String(SVGUnits.cleanNumber(fromParameter) +
+                                     SVGUnits.cleanNumber(byParameter));
+            }
+
+            // If these are not numeric values, they are discrete
+            if ( valuesParameter != null) {
+                var values:Array = valuesParameter.split(";");
+                for each (var strValue:String in values) {
+                    if (SVGColors.isColor(strValue)) {
+                        continue;
+                    }
+                    var keyVal:Number = parseInt(strValue);
+                    if (isNaN(keyVal) || keyVal > int.MAX_VALUE || keyVal < int.MIN_VALUE) {
+                        calcModeParameter = "discrete";
+                    }
+                }
+            }
+            else {
+                // If the values are not colors
+                if  ( !(SVGColors.isColor(fromParameter) && SVGColors.isColor(toParameter)) ) {
+                    // and the values are not numberic, then they are disrete strings
+                    var fromVal:Number = parseInt(fromParameter);
+                    var toVal:Number = parseInt(toParameter);
+                    if ( isNaN(fromVal) || fromVal > int.MAX_VALUE || fromVal < int.MIN_VALUE
+                            ||  isNaN(toVal) || toVal > int.MAX_VALUE || toVal < int.MIN_VALUE ) {
+                        calcModeParameter = "discrete";
+                    }
+                }
+            }
+
+        }
+
+        protected function parseValuesParameter():void {
+            valuesParameter = this.getAttribute('values', null);
+        }
+
+        protected function parseKeyTimesParameter():void {
+            keyTimesParameter = this.getAttribute('keyTimes', null);
+
+            var numValues:uint;
+            if (valuesParameter != null) {
+                var values:Array = valuesParameter.split(";");
+                numValues = values.length;
+            }
+            else {
+                numValues = 2;
+            }
+
+            // XXX for calcMode="paced", key times should be computed
+            // such that the distance between key times is proportional
+            // to the distance between their corresponding values.
+
+            // If there is a values parameter, then we should
+            // make sure there are key times for every value
+            if (keyTimesParameter == null) {
+                keyTimes = new Array();
+                keyTimes.push("0");
+            }
+            else {
+                keyTimes = keyTimesParameter.split(/;/);
+            }
+            if (keyTimes.length < numValues) {
+                var numTimesToAdd:uint = numValues - keyTimes.length;
+                var lastValueAdded:Number = SVGUnits.cleanNumber(keyTimes[keyTimes.length-1]);
+                var span:Number = 1.0 - lastValueAdded;
+                for (var i:uint=1; i <= numTimesToAdd; i++) {
+                    keyTimes.push(String(lastValueAdded + span/numTimesToAdd));
+                    lastValueAdded += span/numTimesToAdd;
+                }
+            }
+        }
+
+        protected function parseKeySplinesParameter():void {
+            keySplinesParameter = this.getAttribute('keySplines', null);
+
+            if (keySplinesParameter == null) {
+                keySplines = new Array();
+            }
+            else {
+                keySplines = keySplinesParameter.split(/;/);
+            }
+        }
+
+        protected function parseAttributeNameParameter():void {
+            attributeName = this.getAttribute('attributeName', null);
+        }
+
+        protected function parseFillParameter():void {
+            fillParameter = this.getAttribute('fill', 'remove');
+        }
+
+        protected function parseAdditiveParameter():void {
+            additiveParameter = this.getAttribute('additive', 'replace');
+            if (additiveParameter == "sum") {
+                _isAdditive = true;
+            }
+        }
+        public function isAdditive():Boolean {
+            return _isAdditive;
+        }
+
+        protected function parseAccumulateParameter():void {
+            accumulateParameter = this.getAttribute('accumulate', 'none');
+        }
+
+        protected function parseCalcModeParameter():void {
+            calcModeParameter = this.getAttribute('calcMode', 'linear');
+        }
+
+
     }
 }
