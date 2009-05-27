@@ -7,9 +7,9 @@
  onload="doload()">
 
   <script type="text/javascript"><![CDATA[
-      const SVG = "http://www.w3.org/2000/svg";
-      const XLINK = "http://www.w3.org/1999/xlink";
-      const hotspot = "rgba(0,200,200,0.3)";
+      var SVG = "http://www.w3.org/2000/svg";
+      var XLINK = "http://www.w3.org/1999/xlink";
+      var hotspot = "rgba(0,200,200,0.3)";
 
       var currentTransform = null;
 

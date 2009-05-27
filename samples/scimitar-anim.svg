@@ -9,6 +9,10 @@
    width="466.11172"
    height="265.35126"
    id="svg11242">
+
+  <audio xlink:href="sounds/poker_music.mp3" type="audio/mpeg"
+         begin="3s" dur="5s" repeatCount="2" end="10s" />
+
   <defs
      id="defs3">
     <linearGradient
@@ -1025,17 +1029,17 @@
        transform="matrix(2.0763665,0,0,1.9761102,-632.94152,-409.35299)"
        style="color:#000000;fill:url(#radialGradient4423);fill-opacity:1;fill-rule:nonzero;stroke:url(#linearGradient4425);stroke-width:3.25200009;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
        id="path2502" />
+   <g>
+       <animateTransform id="g3269.an1" attributeName="transform" type="translate" calcMode="spline" additive="replace"
+                accumulate="none" repeatCount="1" from="-1000 0" to="700 0" keySplines=".5 0 .5 1"
+                begin="2s" dur="5s" fill="remove"/>
+       <animateTransform id="g3269.an2" attributeName="transform" type="translate" calcMode="spline" additive="replace"
+                accumulate="none" repeatCount="1" from="-300 0" to="0 0" keySplines=".5 0 .5 1"
+                begin="7s" dur="3s" fill="freeze"/>
     <g
        transform="translate(-365.75716,195.63755)"
        style="opacity:0.67777776;filter:url(#filter4333)"
-       x="0"
        id="g3269">
-       <animate id="g3269.an1" attributeName="x" calcMode="discrete" additive="replace"
-                accumulate="none" repeatCount="1" from="-1000" to="700"
-                begin="2s" dur="5s" fill="freeze"/>
-       <animate id="g3269.an2" attributeName="x" calcMode="discrete" additive="replace"
-                accumulate="none" repeatCount="1" from="-300" to="20"
-                begin="7s" dur="5s" fill="freeze"/>
       <path
          d="M 171.59375,-167.8125 L 153.4375,-131.09375 C 153.4375,-131.09375 240.05975,-44.592207 260.53125,61.53125 C 263.78902,59.713413 267.53809,58.6875 271.53125,58.6875 C 283.99674,58.687502 294.11733,68.78455 294.15625,81.25 L 294.15625,81.3125 C 294.15624,93.802829 284.02158,103.9375 271.53125,103.9375 C 269.20004,103.9375 266.9604,103.59314 264.84375,102.9375 C 265.00283,118.53432 263.43644,134.33614 259.71875,150.1875 C 279.93177,155.71176 336.35552,161.63753 367.0625,234.84375 C 388.95186,159.67792 354.15709,-29.134107 171.59375,-167.8125 z "
          transform="matrix(0.6175309,-0.8204903,0.8204903,0.6175309,170.59642,106.27468)"
@@ -1189,16 +1193,17 @@
          style="opacity:0.43129769;fill:#000000;fill-opacity:1;stroke:none;stroke-width:5;stroke-miterlimit:4;stroke-opacity:1"
          id="path2770" />
     </g>
+    </g>
+    <g>
+       <animateTransform id="layer1.an1" attributeName="transform" type="translate" calcMode="spline" additive="replace"
+                accumulate="none" repeatCount="1" from="-1000" to="700" keySplines=".5 0 .5 1"
+                begin="2s" dur="5s" fill="freeze"/>
+       <animateTransform id="layer1.an2" attributeName="transform" type="translate" calcMode="spline" additive="replace"
+                accumulate="none" repeatCount="1" from="-300" to="0" keySplines=".5 0 .5 1"
+                begin="7s" dur="3s" fill="freeze"/>
     <g
        transform="matrix(0.8057349,-1.0705499,1.0705499,0.8057349,-463.13727,65.232307)"
-       x="0"
        id="layer1">
-       <animate id="layer1.an1" attributeName="x" calcMode="discrete" additive="replace"
-                accumulate="none" repeatCount="1" from="-1000" to="700"
-                begin="2s" dur="5s" fill="freeze"/>
-       <animate id="layer1.an2" attributeName="x" calcMode="discrete" additive="replace"
-                accumulate="none" repeatCount="1" from="-300" to="20"
-                begin="7s" dur="5s" fill="freeze"/>
       <g
          transform="matrix(0.7664195,0,0,0.7664195,-4.7078914,247.90097)"
          id="g11138">
@@ -1320,37 +1325,42 @@
              d="M 277.13608,-296.67423 C 273.11538,-301.74503 271.50547,-307.48054 273.54252,-309.47669 C 275.5795,-311.4728 280.49591,-308.97749 284.5166,-303.90669 C 288.40684,-299.00042 294.56823,-303.9138 287.72634,-296.72165 C 282.12028,-290.82858 280.68004,-291.05567 276.66101,-296.11011"
              style="color:#000000;fill:url(#radialGradient4481);fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.76499999;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
              id="path8389" />
+          <g>
+              <animateTransform id="path2309.an1" attributeName="transform" type="rotate" calcMode="spline" additive="replace"
+                       accumulate="none" repeatCount="10" values="0 300 -325;360 300 -325;0 300 -325" keySplines=".5 0 .5 1;.5 0 .5 1"
+                       begin="2s" dur="5s" fill="remove"/>
           <path
              d="M 142.36876,165.39221 L 130.68164,163.08268 L 141.15363,231.4999 L 121.92367,164.90725 L 112.13114,171.69172 L 114.44068,160.0046 L 45.393496,171.10654 L 112.6161,151.24663 L 105.83164,141.4541 L 117.51875,143.76364 L 107.67672,77.866207 L 126.27672,141.93906 L 136.06925,135.1546 L 133.75972,146.84171 L 201.54699,140.14944 L 135.58429,155.59968 L 142.36876,165.39221 z "
              transform="matrix(9.3071682e-2,0.1478694,-0.1614763,0.1016361,314.51783,-359.54764)"
              style="color:#000000;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:8.30000019;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;filter:url(#filter3321);enable-background:accumulate"
              id="path2309" >
-              <animate id="path2309.an1" attributeName="x" calcMode="discrete" additive="replace"
-                       accumulate="none" repeatCount="1" from="150" to="0"
-                       begin="2s" dur="5s" fill="freeze"/>
-              <animate id="path2309.an2" attributeName="y" calcMode="discrete" additive="replace"
-                       accumulate="none" repeatCount="1" from="0" to="100"
-                       begin="2s" dur="5s" fill="freeze"/>
            </path>
+          </g>
         </g>
+        <g>
+              <animateTransform id="path3325.an1" attributeName="transform" type="rotate" calcMode="spline" additive="replace"
+                       accumulate="none" repeatCount="10" values="0 252 -55;360 252 -55;0 252 -55" keySplines=".5 0 .5 1;.5 0 .5 1"
+                       begin="2s" dur="5s" fill="freeze"/>
         <path
            d="M 142.36876,165.39221 L 130.68164,163.08268 L 141.15363,231.4999 L 121.92367,164.90725 L 112.13114,171.69172 L 114.44068,160.0046 L 45.393496,171.10654 L 112.6161,151.24663 L 105.83164,141.4541 L 117.51875,143.76364 L 107.67672,77.866207 L 126.27672,141.93906 L 136.06925,135.1546 L 133.75972,146.84171 L 201.54699,140.14944 L 135.58429,155.59968 L 142.36876,165.39221 z "
            transform="matrix(-2.885017e-3,0.2786991,-0.23703,-2.453618e-3,290.22251,-88.975938)"
            style="color:#000000;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:8.30000019;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;filter:url(#filter3321);enable-background:accumulate"
            id="path3325" >
-              <animate id="path3325.an1" attributeName="x" calcMode="discrete" additive="replace"
-                       accumulate="none" repeatCount="1" from="250" to="0"
-                       begin="2s" dur="5s" fill="freeze"/>
         </path>
+        </g>
+        <g>
+              <animateTransform id="path3325.an1" attributeName="transform" type="rotate" calcMode="spline" additive="replace"
+                       accumulate="none" repeatCount="10" values="0 372 170;360 372 170;0 372 170" keySplines=".5 0 .5 1;.5 0 .5 1"
+                       begin="2s" dur="5s" fill="freeze"/>
+        <g transform="scale(1.2,1.2) translate(-25,-40)">
         <path
            d="M 142.36876,165.39221 L 130.68164,163.08268 L 141.15363,231.4999 L 121.92367,164.90725 L 112.13114,171.69172 L 114.44068,160.0046 L 45.393496,171.10654 L 112.6161,151.24663 L 105.83164,141.4541 L 117.51875,143.76364 L 107.67672,77.866207 L 126.27672,141.93906 L 136.06925,135.1546 L 133.75972,146.84171 L 201.54699,140.14944 L 135.58429,155.59968 L 142.36876,165.39221 z "
            transform="matrix(6.560587e-2,0.2237996,-0.240149,7.0398612e-2,363.15139,143.20596)"
            style="color:#000000;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:8.30000019;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;filter:url(#filter3321);enable-background:accumulate"
            id="path3327" >
-              <animate id="path3327.an1" attributeName="x" calcMode="discrete" additive="replace"
-                       accumulate="none" repeatCount="1" from="150" to="-250"
-                       begin="2s" dur="5s" fill="freeze"/>
         </path>
+        </g>
+        </g>
         <path
            d="M 156.4375,-131.46875 C 197.18892,-87.703743 231.23776,-36.668482 251.6875,19.78125 C 256.4587,32.246745 259.53507,46.286377 262.9375,58.46875 C 276.84393,52.284397 294.65398,62.371408 296.4375,77.5625 C 299.43536,92.931099 284.72996,108.21273 269.25,105.78125 C 264.77658,104.92217 268.75163,114.00106 267.11252,116.77843 C 266.47246,127.54375 265.05148,138.23267 262.65625,148.75 C 287.29105,153.84372 311.55694,162.26122 330.78125,179.03125 C 325.00155,97.134804 301.39682,13.658657 252.60628,-51.595014 C 228.19138,-84.778685 199.35331,-118.61499 168.44667,-144.72792 C 168.01959,-143.88417 156.86458,-132.3125 156.4375,-131.46875 z "
            style="opacity:0.37222224;color:#000000;fill:#c3c3c3;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:5.31668139;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
@@ -1409,6 +1419,7 @@
              id="path11123" />
         </g>
       </g>
+    </g>
     </g>
   </g>
 </svg>
