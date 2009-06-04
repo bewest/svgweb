@@ -571,6 +571,8 @@ package com.sgweb.svg.core
                         this.nodeBeginFill();
                         break;
                     case "EF":
+                        drawSprite.graphics.lineStyle(0, 0, 0);
+                        drawSprite.graphics.lineTo(firstX, firstY);
                         this.nodeEndFill();
                         break;
                     case "M":
