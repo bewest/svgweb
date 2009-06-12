@@ -33,4 +33,6 @@ Third-Party Licenses, Versions, and Build Information:
 
 * samples/photos.svg - Vladimir Vukićević (http://blog.vlad1.com/) - Permission given by email to freely use code under any license needed.
 
+* samples/Droid*.svg - Droid fonts from the Android project - http://android.git.kernel.org/?p=platform/frameworks/base.git;a=tree;f=data/fonts - made available under Apache 2 license.
+
 TODO: If you borrowed any code while creating your Flash ActionScript document it here, where it came from, version, etc. This is good open source hygiene :)
