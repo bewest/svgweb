@@ -1485,6 +1485,11 @@ function parseXML(xml, preserveWhiteSpace) {
       // we add the following two flags
       xmlDoc.resolveExternals = false;
       xmlDoc.validateOnParse = false;
+      
+      // MSXML 6 breaking change:
+      // http://code.google.com/p/sgweb/issues/detail?id=138
+      xmlDoc.setProperty('ProhibitDTD', false);
+      
       xmlDoc.async = 'false';
       var successful = xmlDoc.loadXML(xml);
       
