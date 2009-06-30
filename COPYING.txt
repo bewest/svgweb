@@ -2,7 +2,7 @@ Copyright 2009 by contributors:
 
 * James Hight (http://labs.zavoo.com/)
 * Rick Masters 
-* Brad Neuberg (http://codinginparadise.org)
+* Google Inc. - (Brad Neuberg -- http://codinginparadise.org)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,20 +19,36 @@ limitations under the License.
 
 Third-Party Licenses, Versions, and Build Information:
 
-* utils/yuicompressor-2.4.1.jar - This is the YUI Compressor, version 2.4.1 - http://developer.yahoo.com/yui/compressor/ - BSD License (http://developer.yahoo.com/yui/license.html)
+* tests/js-tests/balloon.jpg is in the public domain and from
+  http://flickr.com/photos/pingnews/461040378/
+  Public domain details:
+    Berlin Balloon Race from the Bain Collection, 1908 (LOC)
+    Public Domain. Suggested credit: Library of Congress via pingnews.
 
-* html/svg.js - Browser detection code at top of file adapted from Dojo 1.1 browser detection code - http://dojotoolkit.org - available under either modified 'new' BSD license or Academic Free License 2.1 (http://trac.dojotoolkit.org/browser/dojo/trunk/LICENSE)
+* src/build-utils/yuicompressor-2.4.1.jar - This is the YUI Compressor, version 2.4.1 - http://developer.yahoo.com/yui/compressor/ - BSD License (http://developer.yahoo.com/yui/license.html)
 
-* html/svg.js - Code to embed SVG into normal HTML for browsers that natively support SVG adapted from Sam Ruby's code - http://intertwingly.net/blog/2006/12/05/HOWTO-Embed-MathML-and-SVG-into-HTML4 - currently under the MIT license - contacting author about relicensing to Apache 2
+* src/svg.js - Browser detection code at top of file adapted from Dojo 1.1 browser detection code - http://dojotoolkit.org - available under either modified 'new' BSD license or Academic Free License 2.1 (http://trac.dojotoolkit.org/browser/dojo/trunk/LICENSE)
 
-* html/svg.js - DOMContentLoaded code adapted from Dean Edwards blog article (http://dean.edwards.name/weblog/2005/09/busted/)
+* src/svg.js - Code to embed SVG into normal HTML for browsers that natively support SVG adapted from Sam Ruby's code - http://intertwingly.net/blog/2006/12/05/HOWTO-Embed-MathML-and-SVG-into-HTML4 - currently under the MIT license - contacting author about relicensing to Apache 2
 
-* html/svg.htc - Flash embedding code adapted from Dojo Flash (Dojo 1.1.0); Brad Neuberg created Dojo Flash and owns the copyright so can freely relicense it (it's under the standard Dojo license anyway)
+* src/svg.js - DOMContentLoaded code adapted from Dean Edwards blog article (http://dean.edwards.name/weblog/2005/09/busted/)
 
-* samples/blocks_game.svg - Alex Fritze (http://www.croczilla.com/) - Permission given by email to freely use code under any license needed.
+* src/svg.js - GUID generation code in guid() adapted from blog post at http://note19.com/2007/05/27/javascript-guid-generator/
 
-* samples/photos.svg - Vladimir Vukićević (http://blog.vlad1.com/) - Permission given by email to freely use code under any license needed.
+* src/svg.htc - Flash embedding code adapted from Dojo Flash (Dojo 1.1.0); Brad Neuberg created Dojo Flash and owns the copyright so can freely relicense it (it's under the standard Dojo license anyway)
 
-* samples/Droid*.svg - Droid fonts from the Android project - http://android.git.kernel.org/?p=platform/frameworks/base.git;a=tree;f=data/fonts - made available under Apache 2 license.
+* org/svgweb/smil/SplineInterpolator.as, org/svgweb/smil/LengthItem.as - Taken from Batik project and ported from Java to ActionScript by Rick Masters, Copyright 2006 Sun Microsystems - CLA needed!
+
+* samples/svg-files/blocks_game.svg - Alex Fritze (http://www.croczilla.com/) - Permission given by email to freely use code under any license needed.
+
+* samples/svg-files/photos.svg - Vladimir Vukićević (http://blog.vlad1.com/) - Permission given by email to freely use code under any license needed.
+
+* samples/svg-files/Droid*.svg - Droid fonts from the Android project - http://android.git.kernel.org/?p=platform/frameworks/base.git;a=tree;f=data/fonts - made available under Apache 2 license.
+
+TODO: There are alot of third party SVG files in samples/svg-files. Document where these came from, who the copyright holder is, and ensure we have a CLA on file for them.
+
+TODO: Figure out copyright information on the *.flv and *.mp3 files that we use in our samples in samples/svg-files
+
+TODO: Review the Flash code and identify any code that was either taken from other Flash libraries, blog posts, or tutorials. Document this and ensure we have appropriate CLAs from third-party code contributors.
 
 TODO: If you borrowed any code while creating your Flash ActionScript document it here, where it came from, version, etc. This is good open source hygiene :)

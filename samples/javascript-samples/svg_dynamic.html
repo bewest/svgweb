@@ -1,0 +1,112 @@
+<html>
+  <!-- 
+    Tests dynamically creating an SVG root, adding many circles to it,
+    and animating them to bounce using JavaScript
+  -->
+  
+  <head>
+    <script src="../../src/svg.js" data-path="../../src/" data-debug="true">
+    </script>
+  
+    <script type='text/javascript'>
+      var svgns = 'http://www.w3.org/2000/svg';
+      var root = null;
+      var width = 320, height = 200;
+      var particles = [];
+      var NUM_PARTICLES = 25;
+    
+      function Particle() {
+        this.X = 0;
+        this.Y = 0;
+      
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+
+        this.xvel = Math.random() * 5 - 2.5;
+        this.yvel = Math.random() * 5 - 2.5;
+      
+        this.el = document.createElementNS(svgns, 'circle');
+        this.el.setAttribute('cx', this.x);
+        this.el.setAttribute('cy', this.y);
+        this.el.setAttribute('r', 5);
+        this.el.setAttribute('fill', '#223FA3');
+        this.el.setAttribute('stroke-width', '1px');
+        this.el.setAttribute('stroke', 'black');
+      
+        root.appendChild(this.el);
+      }
+
+      Particle.prototype.update = function() {
+        this.x += this.xvel;
+        this.y += this.yvel;
+
+        this.yvel += 0.5;
+
+        if (this.x > width || this.x < 0) { 
+          this.xvel = -this.xvel;
+        }
+
+        if (this.y > height || this.y < 0) { 
+          this.yvel = -this.yvel;
+        }
+      
+        if (this.y < 0) {
+          this.y = 0;
+        }
+      }
+
+      function loop() {
+        // TODO: Add suspendRedraw/unsuspendRedraw when those are supported
+        // by Flash viewer
+        for (var i = 0; i < NUM_PARTICLES; i++) {
+          var p = particles[i];
+          var x = p.x;
+          var y = p.y;
+          p.update();
+          p.X += p.x - x;
+          p.Y += p.y - y;
+          p.el.setAttribute('transform', 'translate(' + p.X + ',' + p.Y + ')');
+        }
+      }
+
+      svgweb.addOnLoad(function() {
+        console.log('developers window.onload called');
+        root = document.createElementNS(svgns, 'svg');
+        root.setAttribute('width', width);
+        root.setAttribute('height', height);
+        root.addEventListener('SVGLoad', function(evt) {
+          console.log('SVG onload called');
+          for (var i = 0; i < NUM_PARTICLES; i++) {
+            particles[i] = new Particle();
+          }
+
+          setInterval(loop, 10);
+        }, false);
+        document.body.appendChild(root);
+      });
+    </script>
+  
+    <style>
+      @namespace svg url("http://www.w3.org/2000/svg");
+    
+      body {
+        margin: 50px;
+        background-color: black;
+      }
+    
+      .debug-message {
+        color: white;
+      }
+
+      svg\:svg,
+      svg|svg {
+        background-color: white;
+      }
+    </style>
+  </head>
+  
+  <body>
+    <h1>Tests dynamically creating an SVG root, adding many circles to it,
+        and animating them to bounce using JavaScript</h1>
+  </body>
+</html>

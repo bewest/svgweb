@@ -1,40 +1,53 @@
 # To use the examples, copy the html, swf, and svg files to your web server directory.
 
 # Location to rsync entire package to
-SVGSRV='codinginparadise.org:~/codinginparadise.org/html/projects/svg-web/'
+SVGSRV='codinginparadise.org:~/codinginparadise.org/html/projects/svgweb/'
 
 # Whether to compress JavaScript
 COMPRESS=1
 
-all: com/sgweb/svg/build/svg.swf com/sgweb/svg/build/svg.js com/sgweb/svg/build/svg.htc
-	cp html/*.html com/sgweb/svg/build/
-	cp samples/*.svg com/sgweb/svg/build/
-	cp com/sgweb/svg/tests/*.svg com/sgweb/svg/build/
+# Whether to copy over tests to our build
+COPY_TESTS=0
 
-com/sgweb/svg/build/svg.swf: com/sgweb/svg/SVGViewerWeb.as com/sgweb/svg/core/*.as com/sgweb/svg/nodes/*.as com/sgweb/svg/utils/*.as com/sgweb/svg/smil/*.as
+ifeq ($(COPY_TESTS), 1)
+all: build/ build/src/svg.swf build/src/svg.js build/src/svg.htc
+	svn --force export samples/ build/samples/
+	svn --force export tests/ build/tests/
+else
+all: build/src/svg.swf build/src/svg.js build/src/svg.htc
+	svn --force export samples/ build/samples/
+endif
+
+build/:
+	mkdir -p build/ build/samples build/tests build/src
+
+build/src/svg.swf: src/org/svgweb/SVGViewerWeb.as src/org/svgweb/core/*.as src/org/svgweb/nodes/*.as src/org/svgweb/utils/*.as src/org/svgweb/smil/*.as
 	@echo Building svg.swf file...
-	(cd com/sgweb/svg;mxmlc -output build/svg.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- SVGViewerWeb.as)
+	(cd src/org/svgweb;mxmlc -output ../../../build/src/svg.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../ -- SVGViewerWeb.as)
+	cp build/src/svg.swf src/
 
-com/sgweb/svg/build/svgflash.swf: com/sgweb/svg/SVGViewerFlash.as com/sgweb/svg/core/*.as com/sgweb/svg/nodes/*.as com/sgweb/svg/utils/*.as com/sgweb/svg/smil/*.as
+build/src/svgflash.swf: src/org/svgweb/SVGViewerFlash.as src/org/svgweb/core/*.as src/org/svgweb/nodes/*.as src/org/svgweb/utils/*.as src/org/svgweb/smil/*.as
 	@echo Building svgflash.swf file...
-	(cd com/sgweb/svg;mxmlc -output build/svgflash.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- SVGViewerFlash.as)
+	(cd src/org/svgweb;mxmlc -output ../../../build/src/svgflash.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../ -- SVGViewerFlash.as)
+	cp build/src/svgflash.swf src/
 
-com/sgweb/svg/build/svgflex.swf: com/sgweb/svg/SVGViewerFlex.as com/sgweb/svg/core/*.as com/sgweb/svg/nodes/*.as com/sgweb/svg/utils/*.as com/sgweb/svg/smil/*.as
+build/src/svgflex.swf: src/org/svgweb/SVGViewerFlex.as src/org/svgweb/core/*.as src/org/svgweb/nodes/*.as src/org/svgweb/utils/*.as src/org/svgweb/smil/*.as
 	@echo Building svgflex.swf file...
-	(cd com/sgweb/svg;mxmlc -output build/svgflex.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- SVGViewerFlex.as)
+	(cd src/org/svgweb;mxmlc -output ../../../build/svgflex.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../ -- SVGViewerFlex.as)
+	cp build/svgflex.swf src/
 
 ifeq ($(COMPRESS), 1)
-com/sgweb/svg/build/svg.js: html/svg.js
+build/src/svg.js: src/svg.js
 	@echo Compressing svg.js file...
-	java -jar utils/yuicompressor-2.4.1.jar --type js --nomunge --preserve-semi -o com/sgweb/svg/build/svg.js html/svg.js 2>&1
-	@echo Final size: svg.js \(`ls -lrt com/sgweb/svg/build/svg.js | awk '{print $$5}'` bytes\)
+	java -jar src/build-utils/yuicompressor-2.4.1.jar --type js --nomunge --preserve-semi -o build/src/svg.js src/svg.js 2>&1
+	@echo Final size: svg.js \(`ls -lrt build/src/svg.js | awk '{print $$5}'` bytes\)
 else
-com/sgweb/svg/build/svg.js: html/svg.js
-	cp html/svg.js com/sgweb/svg/build/
+build/src/svg.js: src/svg.js
+	cp src/svg.js build/src/svg.js
 endif
 
 ifeq ($(COMPRESS), 1)
-com/sgweb/svg/build/svg.htc: html/svg.htc
+build/src/svg.htc: src/svg.htc
 	@echo Compressing svg.htc file...
 	# compress the Microsoft Behavior HTC file and strip out XML style comments.
 	# we can't directly compress the HTC file; we have to extract the SCRIPT
@@ -42,24 +55,24 @@ com/sgweb/svg/build/svg.htc: html/svg.htc
 	# we use sed to do the bulk of the work. We store the intermediate results into
 	# shell variables then paste them all together at the end to produce the final
 	# result.
-	(compressed_js=`sed -n -e '/script/, /\/script/ p' -e 's/script//' <html/svg.htc | grep -v 'script>' | grep -v '<script' | java -jar utils/yuicompressor-2.4.1.jar --type js --nomunge --preserve-semi 2>&1`; \
-   top_of_htc=`sed -e '/script/,/<\/html>/ s/^.*$$//' <html/svg.htc | sed '/\<\!\-\-/,/\-\-\>/ s/.*//' | cat -s`; \
-   echo $$top_of_htc '<script type="text/javascript">' $$compressed_js '</script></body></html>' >com/sgweb/svg/build/svg.htc;)
-	@echo Final size: svg.htc \(`ls -lrt com/sgweb/svg/build/svg.htc | awk '{print $$5}'` bytes\)
+	(compressed_js=`sed -n -e '/script/, /\/script/ p' -e 's/script//' <src/svg.htc | sed -e '/\/script/, /\/script/d' | grep -v 'script>' | grep -v '<script' | java -jar src/build-utils/yuicompressor-2.4.1.jar --type js --nomunge --preserve-semi 2>&1`; \
+   top_of_htc=`sed -e '/script/,/<\/html>/ s/.*//' <src/svg.htc | sed 's/[ ]*<\!\-\-[^>]*>[ ]*//g;' | sed '/\<\!\-\-/,/\-\-\>/ s/.*//' | cat -s`; \
+   echo $$top_of_htc '<script type="text/javascript">' $$compressed_js '</script><script type="text/vbscript"></script>' >build/src/svg.htc;)
+	@echo Final size: svg.htc \(`ls -lrt build/src/svg.htc | awk '{print $$5}'` bytes\)
 else
-com/sgweb/svg/build/svg.htc: html/svg.htc
-	cp html/svg.htc com/sgweb/svg/build/
+build/src/svg.htc: src/svg.htc
+	cp src/svg.htc build/src/svg.htc
 endif
 
-size: com/sgweb/svg/build/svg.swf com/sgweb/svg/build/svg.js com/sgweb/svg/build/svg.htc
+size: build/src/svg.swf build/src/svg.js build/src/svg.htc
 	# Determines file sizes to help with size optimization
-	@swf_after=`ls -lrt com/sgweb/svg/build/svg.swf | awk '{print $$5}'`; \
-      js_after=`ls -lrt com/sgweb/svg/build/svg.js | awk '{print $$5}'`; \
-      htc_after=`ls -lrt com/sgweb/svg/build/svg.htc | awk '{print $$5}'`; \
+	@swf_after=`ls -lrt build/src/svg.swf | awk '{print $$5}'`; \
+      js_after=`ls -lrt build/src/svg.js | awk '{print $$5}'`; \
+      htc_after=`ls -lrt build/src/svg.htc | awk '{print $$5}'`; \
       \
-      swf_before=`ls -lrt html/svg.swf | awk '{print $$5}'`; \
-      js_before=`ls -lrt html/svg.js | awk '{print $$5}'`; \
-      htc_before=`ls -lrt html/svg.htc | awk '{print $$5}'`; \
+      swf_before=`ls -lrt src/svg.swf | awk '{print $$5}'`; \
+      js_before=`ls -lrt src/svg.js | awk '{print $$5}'`; \
+      htc_before=`ls -lrt src/svg.htc | awk '{print $$5}'`; \
       \
       total_after=$$(expr $$swf_after + $$js_after + $$htc_after); \
       total_before=$$(expr $$swf_before + $$js_before + $$htc_before); \
@@ -67,15 +80,15 @@ size: com/sgweb/svg/build/svg.swf com/sgweb/svg/build/svg.js com/sgweb/svg/build
       echo Total non-optimized size: $$total_before bytes; \
       echo Total optimized size: $$total_after bytes; \
       \
-      gzip --quiet --to-stdout com/sgweb/svg/build/svg.swf > com/sgweb/svg/build/svg.swf.gz; \
-      swf_gzip=`ls -lrt com/sgweb/svg/build/svg.swf.gz | awk '{print $$5}'`; \
-      rm com/sgweb/svg/build/svg.swf.gz; \
-      gzip --quiet --to-stdout com/sgweb/svg/build/svg.js > com/sgweb/svg/build/svg.js.gz; \
-      js_gzip=`ls -lrt com/sgweb/svg/build/svg.js.gz | awk '{print $$5}'`; \
-      rm com/sgweb/svg/build/svg.js.gz; \
-      gzip --quiet --to-stdout com/sgweb/svg/build/svg.htc > com/sgweb/svg/build/svg.htc.gz; \
-      htc_gzip=`ls -lrt com/sgweb/svg/build/svg.htc.gz | awk '{print $$5}'`; \
-      rm com/sgweb/svg/build/svg.htc.gz; \
+      gzip --quiet --to-stdout build/src/svg.swf > build/src/svg.swf.gz; \
+      swf_gzip=`ls -lrt build/src/svg.swf.gz | awk '{print $$5}'`; \
+      rm build/src/svg.swf.gz; \
+      gzip --quiet --to-stdout build/src/svg.js > build/src/svg.js.gz; \
+      js_gzip=`ls -lrt build/src/svg.js.gz | awk '{print $$5}'`; \
+      rm build/src/svg.js.gz; \
+      gzip --quiet --to-stdout build/src/svg.htc > build/src/svg.htc.gz; \
+      htc_gzip=`ls -lrt build/src/svg.htc.gz | awk '{print $$5}'`; \
+      rm build/src/svg.htc.gz; \
       total_gzip=$$(expr $$swf_gzip + $$js_gzip + $$htc_gzip); \
       echo Total size if gzip compression is turned on: $$total_gzip; \
       \
@@ -83,14 +96,14 @@ size: com/sgweb/svg/build/svg.swf com/sgweb/svg/build/svg.js com/sgweb/svg/build
       echo '    ' svg.swf \($$swf_after bytes\) / svg.js \($$js_after bytes\) / svg.htc \($$htc_after bytes\);
 
 release: clean all
-	tar cvzpf svgviewer-src-`date +'%F'`.tgz --exclude="*svn*" --exclude="*.tgz" *
-	tar cvzpf svgviewer-`date +'%F'`.tgz --exclude="*svn*" --exclude="*.tgz" --exclude="com*" --exclude="Makefile" --exclude="utils" --exclude="w3c-tests" *
+	tar cvzpf svgweb-src-`date +'%F'`.tgz --exclude="*svn*" --exclude="*.tgz" *
+	tar cvzpf svgweb-`date +'%F'`.tgz --exclude="*svn*" --exclude="*.tgz" --exclude="com*" --exclude="Makefile" --exclude="utils" --exclude="w3c-tests" *
 
 install:
 	# Set SVGSRV to the server and directory target for the rsync.
-	# Example: make SVGSRV='codinginparadise.org:~/codinginparadise.org/html/projects/svg-web/' install
-	rsync --recursive --delete --exclude=*svn* com/sgweb/svg/build/* $(SVGSRV)
+	# Example: make SVGSRV='codinginparadise.org:~/codinginparadise.org/html/projects/svgweb/' install
+	rsync --recursive --delete --exclude=*svn* build/* $(SVGSRV)
 
 clean:
-	rm -f com/sgweb/svg/build/*
+	rm -fr build/
 

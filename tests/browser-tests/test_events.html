@@ -1,0 +1,123 @@
+<html>
+
+  <!-- Runs a suite of unit tests against our JavaScript to ensure SVG
+       events work correctly. -->
+
+  <head>
+    <meta name="svg.render.forceflash" content="true" />
+    
+    <script src="../../src/svg.js" data-path="../../src/" data-debug="true">
+    </script>
+    <script src="testUtil.js"></script>
+    
+    <script>
+      // if true, we print out each assertion as we run them; helps with
+      // identifying where an assertion failed by printing the ones before it
+      var printAsserts = false;
+      
+      // used to record whether a Flash error has occurred asynchronously
+      // so we can halt testing and report the failure
+      var flashError = false;
+    
+      svgweb.addOnLoad(function() {
+        var startTime = new Date().getTime();
+        
+        // TODO: Get these into a separate test page with JSUnit testing
+        // to assert correct results
+        
+        // override svgweb._fireFlashError so we can know when errors
+        // have occurred
+        svgweb._fireFlashError = function(logMessage) {
+          flashError = true;
+          assertFailed(logMessage);
+        }
+        
+        // test mouse and click events
+        
+        // add mouse events dynamically using addEventListener() for
+        // circle, image, g, svg, text, and USE
+        
+        // remove mouse events using removeEventListener()
+        
+        // add mouse events dynamically using on* form
+        //  * have code where we assign a function pointer:
+        //      myCircle.onmouseup = someFunc
+        //  * have code where we assign a string; make sure you use both
+        //    'evt' and 'this' keywords: 
+        //      myCircle.onmouseup = "someFunc(evt, this)"
+        //  * have code where we assign a string but don't run a final
+        //    function, such as alert('foobar')
+        // do this for circle, image, g, svg, and text
+        // on the MouseEvent, test the following values for correctness:
+        // screenX, screenY, clientX, clientY, ctrlKey, shiftKey, metaKey,
+        // button, relatedTarget, detail
+        
+        // remove mouse and click events dynamically using on* form
+        
+        // Make sure mouse events in the markup work (i.e. onmouseup):
+        //  * Make sure they show up externally when we call myCircle.onmouseup
+        //  * In the markup, assign a string handler that uses 'evt' and 'this'.
+        //  * In the markup, have code where we assign a string but don't run 
+        //    a final function, such as alert('foobar')
+        // do this for circle, image, g, svg, text, and USE
+        
+        // ensure event listeners + adding nodes works while unattached.
+        // create an element, addEventListener while unattached, then add
+        // to DOM. Make sure event listener works. Repeat for event listeners
+        // being added with on* form.
+        
+        // ensure event listeners + removing nodes works.
+        // dynamically create an element, add an event listener using
+        // addEventListener, then remove it; make sure events don't 
+        // propagate. Repeat for event listeners being added with on* form.
+        
+        // remove an element from the DOM that has an event listener,
+        // remove event while unattached from DOM, then reattach node to DOM.
+        // make sure event doesn't show up anymore. Repeat for event listeners
+        // add with both addEventListener() and on* forms.
+        
+        // test keyboard events
+        
+        var endTime = new Date().getTime();
+        
+        console.log('total test time='+(endTime - startTime) + 'ms');
+        
+        // set a slight timeout before reporting success in case a flash
+        // error occurred
+        window.setTimeout(function() {
+          if (!flashError) {
+            console.log('All tests passed');
+          }
+        }, 200);
+      });
+    </script>
+  </head>
+  
+  <body>
+    <script type="image/svg+xml">
+      <svg id="testSVG" width="1024" height="768" border="1px solid black;">
+        <text id="instructions" y="1em" text-anchor="middle" style="font-size: 18pt; font-weight: bold;">
+          Run your mouse over all the objects in each square and click each
+          object as well. Type the words "foobar" on your keyboard.
+          Click DONE when finished.
+        </text>
+        
+        <g id="myGroup">
+          <rect
+             id="myRect"
+             width="36.416"
+             height="36.416"
+             x="30"
+             y="30"
+             fill="red"/>
+          <text id="myText" 
+                x="80" 
+                y="80" 
+                font-family="Verdana" 
+                font-size="24" 
+                fill="blue">hello world</text>
+        </g>
+      </svg>
+    </script>
+  </body>
+</html>
