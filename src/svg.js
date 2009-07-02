@@ -1277,7 +1277,6 @@ var debug = doDebugging();
 if (typeof console == 'undefined' || !console.log) {
   var queue = [];
   console = {};
-  
   if (!debug) {
     console.log = function() {};
   } else {
@@ -3383,7 +3382,7 @@ extend(FlashHandler, {
   },
   
   onMessage: function(msg) {
-    //console.log('onMessage, msg='+this.debugMsg(msg));
+    console.log('onMessage, msg='+this.debugMsg(msg));
     if (msg.type == 'event') {
       this._onEvent(msg);
       return;
@@ -6225,19 +6224,7 @@ extend(_SVGObject, {
     //console.log('_SVGObject, onFlashLoaded, msg='+this._handler.debugMsg(msg));
     
     // store a reference to our Flash object
-    // for IE we unfortunately have to do a workaround for an issue related 
-    // to the ID of our SVG OBJECT and the ID of our Flash object not colliding; 
-    // see FlashHandler._insertFlashIE() for details
-    if (isIE) {
-      // change the ID of the Flash object from having the string Workaround
-      // attached to the end to our correct flashID
-      this._handler.flash = 
-                  document.getElementById(this._handler.flashID + 'Workaround');
-      this._handler.flash.id = this._handler.flashID;
-      this._handler.flash.name = this._handler.flashID;
-    } else {
-      this._handler.flash = document.getElementById(this._handler.flashID);
-    }
+    this._handler.flash = document.getElementById(this._handler.flashID);
 
     // copy any custom developer PARAM tags on the original SVG OBJECT 
     // over to the Flash element so that SVG scripts can programmatically 
@@ -6786,20 +6773,6 @@ extend(FlashInserter, {
   _insertFlashIE: function(flash, size, background, style, className, htcNode,
                            htcDoc) {
     if (this._embedType == 'object') {
-      // IE has an unusual bug; for the first SVG OBJECT on a page, if the
-      // ID of that OBJECT is the same as the ID of the Flash object being
-      // inserted into the page then the OBJECT will not display and an
-      // exception is thrown! The workaround is to temporarily change the ID
-      // of our Flash object away from the ID of the OBJECT tag before we
-      // write our HTML into the page; after the Flash is loaded we change
-      // the ID back to its correct value
-      if (isIE) {
-        flash = flash.replace('id="' + this._handler.flashID + '"',
-                              'id="' + this._handler.flashID + 'Workaround"');
-        flash = flash.replace('name="' + this._handler.flashID + '"',
-                              'name="' + this._handler.flashID + 'Workaround"');
-      }
-      
       // Note: as _soon_ as we make this call the Flash will load, even
       // before the rest of this method has finished. The Flash can
       // therefore finish loading before anything after the next statement
