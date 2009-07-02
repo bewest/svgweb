@@ -1213,7 +1213,12 @@ function report() {
  
 // expose namespaces globally to ease developer authoring
 window.svgns = 'http://www.w3.org/2000/svg';
-window.xlinkns = 'http://www.w3.org/1999/xlink'; 
+window.xlinkns = 'http://www.w3.org/1999/xlink';
+
+// Firefox and Safari will incorrectly turn our internal parsed XML
+// for the Flash Handler into actual SVG nodes, causing issues. This is
+// a workaround to prevent this problem.
+svgnsFake = 'urn:__fake__internal__namespace'; 
  
 // browser detection adapted from Dojo
 var isOpera = false, isSafari = false, isMoz = false, isIE = false, 
@@ -1445,7 +1450,6 @@ function parseXML(xml, preserveWhiteSpace) {
   }
   
   var xmlDoc;
-  
   if (typeof DOMParser != 'undefined') { // non-IE browsers
     // parse the SVG using an XML parser
     var parser = new DOMParser();
@@ -2287,10 +2291,18 @@ extend(SVGWeb, {
     // earlier we turned nested <svg> elements into a temporary token; restore
     // them
     svg = svg.replace(/<(svg:)?NESTEDSVG/g, '<$1svg');
-                
-    // handle Flash encoding issues
+                 
     if (this.renderer == FlashHandler) {
+      // handle Flash encoding issues
       svg = FlashHandler._encodeFlashData(svg);
+      
+      // Firefox and Safari will parse any nodes in the SVG namespace into 'real'
+      // SVG nodes when using the Flash handler, which we don't want 
+      // (they take up more memory, and can mess up our return results in some 
+      // cases). To get around this, we change the SVG namespace in our XML into
+      // a temporary different one to prevent this from happening.
+      svg = svg.replace(/xmlns(\:[^=]*)?=['"]http\:\/\/www\.w3\.org\/2000\/svg['"]/g, 
+                        "xmlns$1='" + svgnsFake + "'");
     }
         
     // add guids and IDs to all elements and get the root SVG elements ID
@@ -2397,7 +2409,7 @@ extend(SVGWeb, {
       
       @returns Parsed DOM XML Document of the SVG with all elements having 
       an ID and a GUID. */
-  _addTracking: function(svg) {
+  _addTracking: function(svg) {                   
     // parse the SVG
     var xmlDoc = parseXML(svg);
     var root = xmlDoc.documentElement;
@@ -3124,12 +3136,20 @@ FlashHandler._getElementsByTagNameNS = function(ns, localName) {
     scope, so 'this' will not refer to our object instance but rather
     the window object. */
 FlashHandler._createElementNS = function(ns, qname) {
+  //console.log('createElementNS, ns='+ns+', qname='+qname);
   if (ns === null || ns == 'http://www.w3.org/1999/xhtml') {
     if (isIE) {
       return document.createElement(qname);
     } else {
       return document._createElementNS(ns, qname);
     }
+  }
+  
+  // Firefox and Safari will incorrectly turn our internal parsed XML
+  // for the Flash Handler into actual SVG nodes, causing issues. This is
+  // a workaround to prevent this problem.
+  if (ns == svgns) {
+    ns = svgnsFake;
   }
   
   // someone might be using this library on an XHTML page;
@@ -3244,7 +3264,7 @@ FlashHandler._createTextNode = function(data, forSVG) {
     if (isIE) {
       nodeXML = doc.createElement('__text');
     } else {
-      nodeXML = doc.createElementNS(svgns, '__text');
+      nodeXML = doc.createElementNS(svgnsFake, '__text');
     }
     nodeXML.appendChild(doc.createTextNode(data));
     var textNode = new _Node('#text', _Node.TEXT_NODE, null, null, nodeXML);
@@ -3973,6 +3993,13 @@ function _Node(nodeName, nodeType, prefix, namespaceURI, nodeXML, handler,
   this._detachedListeners = [];
   this.fake = true;
   
+  // Firefox and Safari will incorrectly turn our internal parsed XML
+  // for the Flash Handler into actual SVG nodes, causing issues. This is
+  // a workaround to prevent this problem.
+  if (namespaceURI == svgnsFake) {
+    namespaceURI = svgns;
+  }
+  
   // determine whether we are attached
   this._attached = true;
   if (!this._handler) {
@@ -3985,7 +4012,9 @@ function _Node(nodeName, nodeType, prefix, namespaceURI, nodeXML, handler,
     // build up an empty XML node for this element
     var xml = '<?xml version="1.0"?>\n';
     if (namespaceURI == svgns && !prefix) {
-      xml += '<' + nodeName + ' xmlns="' + svgns + '"/>';
+      // we use a fake namespace for SVG to prevent Firefox and Safari
+      // from incorrectly making these XML nodes real SVG objects!
+      xml += '<' + nodeName + ' xmlns="' + svgnsFake + '"/>';
     } else {
       xml += '<' + nodeName + ' xmlns:' + prefix + '="' + namespaceURI + '"/>';
     }
@@ -4312,8 +4341,7 @@ extend(_Node, {
       document.createTextNode. We return either a _Node or an HTC reference
       depending on the browser. */
   appendChild: function(child /* _Node or DOM Node */) {
-    //console.log('appendChild, child='+child.nodeName+', this.nodeName='+this.nodeName);
-    
+    // console.log('appendChild, child='+child.nodeName+', this.nodeName='+this.nodeName);
     if (this.nodeType != _Node.ELEMENT_NODE) {
       throw new _DOMException(_DOMException.NOT_SUPPORTED_ERR);
     }
@@ -5000,6 +5028,11 @@ extend(_Node, {
     } else {
       xml = nodeXML.xml;
     }
+    
+    // Firefox and Safari will incorrectly turn our internal parsed XML
+    // for the Flash Handler into actual SVG nodes, causing issues. This is
+    // a workaround to prevent this problem.
+    xml = xml.replace(/urn\:__fake__internal__namespace/g, svgns);
     
     // add our namespace declarations; having repeats is ok if some are
     // already there
@@ -7345,7 +7378,7 @@ extend(_Document, {
     if (isIE) { // no createElementNS available
       nodeXML = doc.createElement('__text');
     } else {
-      nodeXML = doc.createElementNS(svgns, '__text');
+      nodeXML = doc.createElementNS(svgnsFake, '__text');
     }
     nodeXML.appendChild(doc.createTextNode(data));
     var textNode = new _Node('#text', _Node.TEXT_NODE, null, null, nodeXML,
@@ -7392,6 +7425,12 @@ extend(_Document, {
     // if localName is '*', match all tags in the given namespace
     if (ns == '') {
       ns = null;
+    }
+    
+    // we internally have to mess with the SVG namespace a bit to avoid
+    // an issue with Firefox and Safari
+    if (ns == svgns) {
+      ns = svgnsFake;
     }
 
     // get DOM nodes with the given tag name
