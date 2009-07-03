@@ -32,8 +32,7 @@
           videos = [ 
             "http://codinginparadise.org/temp/trailer1.flv",
             "http://codinginparadise.org/temp/trailer2.flv",
-            "http://codinginparadise.org/temp/trailer3.flv",
-            "http://svgweb.googlecode.com/svn/trunk/samples/svg-files/20051210-w50s.flv"
+            "http://codinginparadise.org/temp/trailer3.flv"
            ];
 
           for (var k = 0; k < videos.length; k++) {
