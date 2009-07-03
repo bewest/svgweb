@@ -46,16 +46,19 @@ build/src/svgflex.swf: src/org/svgweb/SVGViewerFlex.as src/org/svgweb/core/*.as 
 
 ifeq ($(COMPRESS), 1)
 build/src/svg.js: src/svg.js
+	cp src/svg.js build/src/svg-uncompressed.js
 	@echo Compressing svg.js file...
 	java -jar src/build-utils/yuicompressor-2.4.1.jar --type js --nomunge --preserve-semi -o build/src/svg.js src/svg.js 2>&1
 	@echo Final size: svg.js \(`ls -lrt build/src/svg.js | awk '{print $$5}'` bytes\)
 else
 build/src/svg.js: src/svg.js
+	cp src/svg.js build/src/svg-uncompressed.js
 	cp src/svg.js build/src/svg.js
 endif
 
 ifeq ($(COMPRESS), 1)
 build/src/svg.htc: src/svg.htc
+	cp src/svg.htc build/src/svg-uncompressed.htc
 	@echo Compressing svg.htc file...
 	# compress the Microsoft Behavior HTC file and strip out XML style comments.
 	# we can't directly compress the HTC file; we have to extract the SCRIPT
@@ -69,6 +72,7 @@ build/src/svg.htc: src/svg.htc
 	@echo Final size: svg.htc \(`ls -lrt build/src/svg.htc | awk '{print $$5}'` bytes\)
 else
 build/src/svg.htc: src/svg.htc
+	cp src/svg.htc build/src/svg-uncompressed.htc
 	cp src/svg.htc build/src/svg.htc
 endif
 
