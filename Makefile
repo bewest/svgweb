@@ -10,16 +10,24 @@ COMPRESS=1
 COPY_TESTS=0
 
 ifeq ($(COPY_TESTS), 1)
-all: build/ build/src/svg.swf build/src/svg.js build/src/svg.htc
+all: build/ build/src/svg.swf build/src/svg.js build/src/svg.htc build/README.html build/COPYING.txt
 	svn --force export samples/ build/samples/
 	svn --force export tests/ build/tests/
+	svn --force export docs/ build/docs
 else
-all: build/src/svg.swf build/src/svg.js build/src/svg.htc
+all: build/src/svg.swf build/src/svg.js build/src/svg.htc build/README.html build/COPYING.txt
 	svn --force export samples/ build/samples/
+	svn --force export docs/ build/docs
 endif
 
 build/:
-	mkdir -p build/ build/samples build/tests build/src
+	mkdir -p build/ build/samples build/tests build/src build/docs build/docs
+
+build/README.html:
+	cp README.html build/README.html
+  
+build/COPYING.txt:
+	cp COPYING.txt build/COPYING.txt
 
 build/src/svg.swf: src/org/svgweb/SVGViewerWeb.as src/org/svgweb/core/*.as src/org/svgweb/nodes/*.as src/org/svgweb/utils/*.as src/org/svgweb/smil/*.as
 	@echo Building svg.swf file...
