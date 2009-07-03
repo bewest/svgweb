@@ -3382,7 +3382,7 @@ extend(FlashHandler, {
   },
   
   onMessage: function(msg) {
-    console.log('onMessage, msg='+this.debugMsg(msg));
+    //console.log('onMessage, msg='+this.debugMsg(msg));
     if (msg.type == 'event') {
       this._onEvent(msg);
       return;
@@ -4505,6 +4505,17 @@ extend(_Node, {
     // TODO: Implement
   },
   
+  toString: function() {
+    if (this.namespaceURI == svgns) {
+      return '[_SVG' + this.localName.charAt(0).toUpperCase()
+             + this.localName.substring(1) + ']';
+    } else if (this.prefix) {
+      return '[' + this.prefix + ':' + this.localName + ']';
+    } else {
+      return '[' + this.localName + ']';
+    }
+  },
+  
   /** Adds an event cross platform. 
   
       @param obj Obj to add event to.
@@ -5029,16 +5040,23 @@ extend(_Node, {
     }
     
     // Firefox and Safari will incorrectly turn our internal parsed XML
-    // for the Flash Handler into actual SVG nodes, causing issues. This is
-    // a workaround to prevent this problem.
+    // for the Flash Handler into actual SVG nodes, causing issues. We added
+    // a fake SVG namespace earlier to prevent this from happening; remove that
+    // now
     xml = xml.replace(/urn\:__fake__internal__namespace/g, svgns);
     
     // add our namespace declarations; having repeats is ok if some are
     // already there
-    var nsString = '';
+    var nsString = 'xmlns="' + svgns + '" ';
     for (var i = 0; i < this._handler.document._namespaces.length; i++) {
       var uri = this._handler.document._namespaces[i];
       var prefix = this._handler.document._namespaces['_' + uri];
+      
+      // ignore our fake SVG namespace string
+      if (uri == 'urn:__fake__internal__namespace') {
+        uri = svgns;
+      }
+      
       if (prefix != 'xmlns') {
         nsString += 'xmlns:' + prefix + '="' + uri + '" ';
       } else {

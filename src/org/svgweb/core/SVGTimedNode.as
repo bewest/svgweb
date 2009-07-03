@@ -390,6 +390,17 @@ package org.svgweb.core
                 this.maxIntervalDuration = SVGUnits.parseTimeVal(maxString);
             }
         }
+        
+        /**
+         * Called when a node is created after page load with XML content
+         * added as a child. Forces a parse.
+         */
+        override public function forceParse():void {
+            if (this._xml != null) {
+                this.parseParameters();
+                super.forceParse();
+            } 
+        }
 
 
     }

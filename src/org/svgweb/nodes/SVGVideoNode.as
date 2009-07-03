@@ -54,7 +54,6 @@ package org.svgweb.nodes
        
             netStream.addEventListener(NetStatusEvent.NET_STATUS, handleNetEvent);
             netStream.client = this;
-
         }
 
         protected function handleNetEvent(status:NetStatusEvent):void {
@@ -91,13 +90,14 @@ package org.svgweb.nodes
                 videoHref = xmlBase + videoHref;
             } else if (this.svgRoot.pageURL 
                         && videoHref.length > 0
-                        && videoHref.charAt(0) != '/') {
+                        && videoHref.charAt(0) != '/'
+                        && new RegExp("^[^:]+:/").test(videoHref) == false) {
                 // If no xml:base, expand the URL relative to the location of
                 // the containing HTML page; NetStream resolves everything
                 // relative to the SWF file itself
                 videoHref = this.svgRoot.pageURL + this.svgRoot.objectURL + videoHref;
             }
-            
+
             if (netStream) {
                 netStream.play(videoHref);
             }

@@ -364,12 +364,7 @@ package org.svgweb
                     this.objectHeight = SVGUnits.cleanNumber(jsMsg.objectHeight);
                 }
                 
-                // Flash has a bug over the Flash/JS boundry where ampersands
-                // get corrupted, such as in entities like &quot; 
-                // As a workaround we turned ampersands into the temporary
-                // token __SVG__AMPERSAND before sending it over to Flash
-                var svgString:String = jsMsg.svgString;
-                svgString = svgString.replace(/__SVG__AMPERSAND/g, '&');
+                var svgString:String = this.decodeFlashData(jsMsg.svgString);
                 
                 this.setSVGString(svgString, jsMsg.objectURL, jsMsg.pageURL);
             }
@@ -420,7 +415,7 @@ package org.svgweb
                     
                     // parse the newly appended element into an SVGNode and 
                     // all of its children as well
-                    element = parent.parseNode(new XML(jsMsg.childXML));
+                    element = parent.parseNode(new XML(decodeFlashData(jsMsg.childXML)));
                     element.forceParse();
                     
                     // now actually append the element to our display
@@ -437,7 +432,7 @@ package org.svgweb
                     
                     // parse the newly appended element into an SVGNode and 
                     // all of its children as well
-                    element = parent.parseNode(new XML(jsMsg.childXML));
+                    element = parent.parseNode(new XML(decodeFlashData(jsMsg.childXML)));
                     element.forceParse();
                     
                     // append things now
@@ -489,7 +484,7 @@ package org.svgweb
                     }
                     
                     var attrName = jsMsg.attrName;
-                    var attrValue = jsMsg.attrValue;
+                    var attrValue = decodeFlashData(jsMsg.attrValue);
                     
                     if (attrName == 'id') {
                         this.svgRoot.unregisterID(element);
@@ -542,7 +537,7 @@ package org.svgweb
                     
                     // parse the newly appended element into an SVGNode and 
                     // all of its children as well
-                    element = parent.parseNode(new XML(jsMsg.childXML));
+                    element = parent.parseNode(new XML(decodeFlashData(jsMsg.childXML)));
                     element.forceParse();
 
                     // now insert the element
@@ -562,11 +557,11 @@ package org.svgweb
                     }
                     
                     var textNode:SVGDOMTextNode = element as SVGDOMTextNode;
-                    textNode.nodeValue = jsMsg.text;
+                    textNode.nodeValue = decodeFlashData(jsMsg.text);
                     
                     // Tell its parent that its text value has changed
                     if (parent.hasText()) {
-                        parent.setText(jsMsg.text);
+                        parent.setText(decodeFlashData(jsMsg.text));
                         parent.invalidateDisplay();
                     }
                 }
@@ -707,6 +702,18 @@ package org.svgweb
             } else {
                 return null;
             }
+        }
+        
+        /** Flash has a bug over the Flash/JS boundry where ampersands
+            get corrupted, such as in entities like &quot; 
+            As a workaround we turned ampersands into the temporary
+            token __SVG__AMPERSAND before sending it over to Flash. */
+        protected function decodeFlashData(str:String):String {
+            if (str === null || str === undefined) {
+                return str;
+            }
+            
+            return str.replace(/__SVG__AMPERSAND/g, '&');
         }
     }
 }
