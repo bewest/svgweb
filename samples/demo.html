@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta name="svg.render.forceflash" content="true" />
-  <script src="../src/svg.js" data-path="../src" data-debug="false"></script>
+  <script src="../src/svg.js" data-path="../src" data-debug="true"></script>
 </head>
 <body><h1 style="margin:2px">Welcome to the SVG Web Demo!
          <span style="font-size: 10pt">
@@ -1075,7 +1075,7 @@
         document.getElementById('myXMLp').style.display='';
     }
     
-    function svgOnLoad(msg) {
+    function svgOnLoad() {
         if (SVGFiles[currentSVGIndex].viewBox) {
             currentSVGObject.contentDocument.documentElement.setAttribute('viewBox', SVGFiles[currentSVGIndex].viewBox);
             document.getElementById('inputViewBox').value = SVGFiles[currentSVGIndex].viewBox;

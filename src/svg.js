@@ -582,15 +582,18 @@ extend(SVGWeb, {
       @parent An HTML DOM parent to attach our SVG OBJECT or SVG root to.
       This DOM parent must already be attached to the visible DOM. */
   appendChild: function(node, parent) {
-    if (this.getHandlerType() == 'native') {
-      parent.appendChild(node); // just pass through
-    } else { // Flash handler
-      if (node.nodeName.toLowerCase() == 'object'
-          && node.getAttribute('type') == 'image/svg+xml') {
-        // dynamically created OBJECT tag for an SVG file
-        this.totalSVG++;
-        this._svgObjects.push(node);
-        
+    if (node.nodeName.toLowerCase() == 'object'
+        && node.getAttribute('type') == 'image/svg+xml') {
+      // dynamically created OBJECT tag for an SVG file
+      this.totalSVG++;
+      this._svgObjects.push(node);
+      
+      if (this.getHandlerType() == 'native') {
+        parent.appendChild(node);
+      }
+      
+      var placeHolder = node;
+      if (this.getHandlerType() == 'flash') {
         // register onloads
         if (node.onload) {
           node.addEventListener('load', node.onload, false);
@@ -605,19 +608,21 @@ extend(SVGWeb, {
           div.setAttribute(attr.nodeName, attr.nodeValue);
         } 
         parent.appendChild(div);
-        
+      
         // copy over internal event listener info
         div._listeners = node._listeners;
-                
-        // now handle this SVG OBJECT
-        var objID = this._processSVGObject(div);
         
-        // add the ID to our original SVG OBJECT node as a private member;
-        // we will later use this if svgweb.removeChild is called to remove
-        // the node in order to remove the SVG OBJECT from our
-        // handler._svgObjects array
-        node._objID = objID;
+        placeHolder = div;
       }
+              
+      // now handle this SVG OBJECT
+      var objID = this._processSVGObject(placeHolder);
+      
+      // add the ID to our original SVG OBJECT node as a private member;
+      // we will later use this if svgweb.removeChild is called to remove
+      // the node in order to remove the SVG OBJECT from our
+      // handler._svgObjects array
+      node._objID = objID;
     }
   },
   
@@ -629,28 +634,25 @@ extend(SVGWeb, {
       @node OBJECT or EMBED tag for the SVG OBJECT to remove.
       @parent The parent of the node to remove. */
   removeChild: function(node, parent) {
-    if (this.getHandlerType() == 'native') {
-      return parent.removeChild(node); // just pass through
-    } else { // Flash handler
-      if ( (node.nodeName.toLowerCase() == 'object' 
-            || node.nodeName.toLowerCase() == 'embed') 
-              && node.className.indexOf('embedssvg') != -1) {
-        this.totalSVG--;
-        this.totalLoaded--;
-        
-        // remove from our list of handlers
-        var objID = node.getAttribute('id');
-        var objHandler = this.handlers[objID];
-        var newHandlers = [];
-        for (var i = 0; i < this.handlers.length; i++) {
-          var currentHandler = this.handlers[i];
-          if (currentHandler != objHandler) {
-            newHandlers[currentHandler.id] = currentHandler;
-            newHandlers.push(currentHandler);
-          } 
-        }
-        this.handlers = newHandlers;
-        
+    if (node.nodeName.toLowerCase() == 'object' 
+        || node.nodeName.toLowerCase() == 'embed') {
+      this.totalSVG--;
+      this.totalLoaded--;
+      
+      // remove from our list of handlers
+      var objID = node.getAttribute('id');
+      var objHandler = this.handlers[objID];
+      var newHandlers = [];
+      for (var i = 0; i < this.handlers.length; i++) {
+        var currentHandler = this.handlers[i];
+        if (currentHandler != objHandler) {
+          newHandlers[currentHandler.id] = currentHandler;
+          newHandlers.push(currentHandler);
+        } 
+      }
+      this.handlers = newHandlers;
+      
+      if (this.getHandlerType() == 'flash') {
         // remove any setTimeout or setInterval functions that might have
         // been registered inside this object; see _SVGWindow.setTimeout
         // for details
@@ -661,7 +663,7 @@ extend(SVGWeb, {
         for (var i = 0; i < iframeWin._timeoutIDs.length; i++) {
           iframeWin.clearTimeout(iframeWin._timeoutIDs[i]);
         }
-        
+      
         // remove keyboard event handlers; we added a record of these for
         // exactly this reason in _Node.addEventListener()
         for (var i = 0; i < objHandler._keyboardListeners.length; i++) {
@@ -675,19 +677,21 @@ extend(SVGWeb, {
             document.removeEventListener('keydown', l, false);
           }
         }
-        
-        // remove the original SVG OBJECT node from our handlers._svgObjects
-        // array
-        for (var i = 0; i < svgweb._svgObjects.length; i++) {
-          if (svgweb._svgObjects[i]._objID === objID) {
-            svgweb._svgObjects.splice(i, 1);
-            break;
-          }
+      }
+      
+      // remove the original SVG OBJECT node from our handlers._svgObjects
+      // array
+      for (var i = 0; i < svgweb._svgObjects.length; i++) {
+        if (svgweb._svgObjects[i]._objID === objID) {
+          svgweb._svgObjects.splice(i, 1);
+          break;
         }
-                
-        // remove from the page
-        node.parentNode.removeChild(node);
-        
+      }
+              
+      // remove from the page
+      node.parentNode.removeChild(node);
+      
+      if (this.getHandlerType() == 'flash') {
         // delete the HTC container and all HTC nodes that belong to this
         // SVG OBJECT
         var container = document.getElementById('__htc_container');
@@ -705,7 +709,7 @@ extend(SVGWeb, {
             }
           }
         }
-        
+      
         // clear out the guidLookup table for nodes that belong to this
         // SVG OBJECT
         for (var guid in svgweb._guidLookup) {
@@ -714,7 +718,7 @@ extend(SVGWeb, {
             delete svgweb._guidLookup[guid];
           }
         }
-        
+      
         // remove various properties to prevent IE memory leaks
         objHandler._finishedCallback = null;
         objHandler.flash.contentDocument = null;
@@ -722,7 +726,7 @@ extend(SVGWeb, {
         objHandler._xml = null;
         objHandler.window._scope = null;
         objHandler.window = null;
-        
+      
         var svgObj = objHandler._svgObject;
         var svgDoc = svgObj.document;
         svgDoc._nodeById = null;
@@ -734,18 +738,18 @@ extend(SVGWeb, {
         svgDoc = null;  
         svgObj._svgNode = null;
         svgObj._handler = null;
-        
+      
         iframeWin._setTimeout = null;
         iframeWin.setTimeout = null;
         iframeWin._setInterval = null;
         iframeWin.setInterval = null;
-        
+      
         objHandler._svgObject = null;
         svgObj = null;
         objHandler = null;
         iframeWin = null;
-      }
-    }
+      } // end if (this.getHandlerType() == 'flash')
+    } // SVG OBJECT handling
   },
   
   /** Sets up an onContentLoaded listener */
@@ -1016,8 +1020,9 @@ extend(SVGWeb, {
     
     // report total startup time
     this._endTime = new Date().getTime();
-    console.log('Total JS plus Flash startup time: ' 
-                    + (this._endTime - this._startTime) + 'ms');
+    // FIXME: Get these times to be more accurate; I think they are off
+    //console.log('Total JS plus Flash startup time: ' 
+    //                + (this._endTime - this._startTime) + 'ms');
     
     // we do a slight timeout so that if exceptions get thrown inside the
     // developers onload methods they will correctly show up and get reported
@@ -1244,6 +1249,7 @@ extend(SVGWeb, {
       @returns The ID for the object, either what was specified or what was
       autogenerated. */
   _processSVGObject: function(obj) {
+    //console.log('processSVGObject');
     var objID = obj.getAttribute('id');
     // extract an ID from the OBJECT tag; generate a random ID if needed
     if (!objID) {
@@ -1907,14 +1913,10 @@ FlashHandler._getNode = function(nodeXML, handler) {
   }
   
   if (!node && !fakeTextNode && nodeXML.nodeType == _Node.ELEMENT_NODE) {
-    //console.log('Creating element node on demand');
-    
     // never seen before -- we'll have to create a new _Element now
     node = new _Element(nodeXML.nodeName, nodeXML.prefix, 
                         nodeXML.namespaceURI, nodeXML, handler, true);
   } else if (!node && (nodeXML.nodeType == _Node.TEXT_NODE || fakeTextNode)) {
-    //console.log('Creating text node on demand');
-    
     node = new _Node('#text', _Node.TEXT_NODE, null, null, nodeXML,
                      handler, false);
   } else if (!node) {
@@ -5081,6 +5083,7 @@ function _SVGObject(svgNode, handler) {
       var inserter = new FlashInserter('object', document, 
                                        this._xml.documentElement,
                                        this._svgNode, this._handler);
+
       // wait for Flash to finish loading; see _onFlashLoaded() in this class
       // for further execution after the Flash asynchronous process is done
     }),

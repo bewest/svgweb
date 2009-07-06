@@ -3,7 +3,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" 
  xmlns:xlink="http://www.w3.org/1999/xlink"
  xmlns:svg="http://www.w3.org/2000/svg"
- id="canvas"
+ id="root"
  onload="loaded()">
 
   <script type="text/javascript"><![CDATA[
@@ -14,6 +14,7 @@
       var currentTransform = null;
 
       function loaded() {
+top.console.log('loaded');
           // change onloadFunc to point to your real onload function that you
           // want called when the page is truly ready
           var onloadFunc = doload;
@@ -26,6 +27,7 @@
       }   
 
       function doload() {
+top.console.log('doload');
           var videos;
 
           // load a few videos
@@ -48,8 +50,8 @@
             rampOpacityUp(g);
           }
 
-          document.getElementById("canvas").addEventListener("mousemove", onMouseMove, false);
-          document.getElementById("canvas").addEventListener("mouseup", onMouseUp, false);
+          document.getElementById("root").addEventListener("mousemove", onMouseMove, false);
+          document.getElementById("root").addEventListener("mouseup", onMouseUp, false);
           document.getElementById("background-rect").addEventListener("mousemove", onMouseMove, false);
           document.getElementById("background-rect").addEventListener("mouseup", onMouseUp, false);
       }
@@ -141,7 +143,7 @@
           */
 
           g.appendChild(g2);
-          document.getElementById("canvas").appendChild(g);
+          document.getElementById("root").appendChild(g);
           return g;
       }
 
@@ -150,7 +152,7 @@
 
           // commented out because it causes the video to restart
           //el.parentNode.removeChild(el);
-          //document.getElementById("canvas").appendChild(el);
+          //document.getElementById("root").appendChild(el);
       }
 
       // take the transforms saved on the element and turn them into

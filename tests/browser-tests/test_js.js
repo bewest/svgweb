@@ -5058,14 +5058,9 @@ function testCreateSVGObject() {
       obj3 = matches[2];
     }
     assertExists('SVG OBJECT should exist', obj3);
-    
-    if (svgweb.getHandlerType() == 'flash') {
-      assertExists('SVG OBJECT should have an id', obj3.id);
-      assertTrue('SVG OBJECT should have a random id',
-                 (obj3.id.indexOf('random') != -1));
-    } else {
-      assertEquals('SVG OBJECT should have no id', '', obj3.id);
-    }
+    assertExists('SVG OBJECT should have an id', obj3.id);
+    assertTrue('SVG OBJECT should have a random id',
+               (obj3.id.indexOf('random') != -1));
     
     // make sure 'this' points to the right thing
     assertEquals('this == SVG OBJECT', obj3, this);
