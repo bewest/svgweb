@@ -4,6 +4,7 @@
  xmlns:xlink="http://www.w3.org/1999/xlink"
  xmlns:svg="http://www.w3.org/2000/svg"
  id="canvas"
+ style="background-color: green;"
  onload="loaded()">
 
   <script type="text/javascript"><![CDATA[
@@ -56,27 +57,9 @@
           }
 
           // Load the images in the background, and only add them once they're
-          // loaded (and, presumably, cached by the broser)
+          // loaded (and, presumably, cached by the browser)
           for (var k = 0; k < images.length; k++) {
-              var img = new Image();
-
-              // do some hackyness here to get the correct variables
-              // to the function
-              img.onload = function(k, url) { return function() {
-                      var g = addImage(url, 1.0);
-                      g.style.opacity = 1.0;
-                      g.vTranslate = [100 + Math.random() * 300 + (k%3) * 250,
-                                      100 + Math.random() * 300 + (k/3) * 280];
-                      var c = 0.25 + (Math.random() * .25);
-                      g.vScale = c; // 0.25; // 0.001;
-                      g.vRotate = (Math.random() * 40) - 20;
-              
-                      setupTransform(g.id);
-                      rampOpacityUp(g);
-                  }
-              } (k, images[k]);
-
-              img.src = images[k];
+              loadImage(k, images[k]);
           }
 
           document.getElementById("canvas").addEventListener("mousemove", onMouseMove, false);
@@ -84,6 +67,24 @@
           document.getElementById("background-rect").addEventListener("mousemove", onMouseMove, false);
           document.getElementById("background-rect").addEventListener("mouseup", onMouseUp, false);
       }
+
+			function loadImage(k, url) {
+				var img = new Image();
+
+        img.onload = function() {
+                var g = addImage(url, 1.0);
+                g.style.opacity = 1.0;
+                g.vTranslate = [100 + Math.random() * 300 + (k%3) * 250,
+                                100 + Math.random() * 300 + (k/3) * 280];
+                var c = 0.25 + (Math.random() * .25);
+                g.vScale = c; // 0.25; // 0.001;
+                g.vRotate = (Math.random() * 40) - 20;
+                setupTransform(g.id);
+                rampOpacityUp(g);
+        }
+
+        img.src = url;
+			}
 
       // convenience function to set X, Y, width, and height attributes
       function svgSetXYWH(el, x, y, w, h) {
