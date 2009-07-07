@@ -14,7 +14,7 @@ all: build/ build/src/svg.swf build/src/svg.js build/src/svg.htc build/README.ht
 	svn --force export samples/ build/samples/
 	svn --force export tests/ build/tests/
 	svn --force export docs/ build/docs
-	rm build/tests/non-licensed/
+	rm -fr build/tests/non-licensed/
 else
 all: build/src/svg.swf build/src/svg.js build/src/svg.htc build/README.html build/COPYING.txt
 	svn --force export samples/ build/samples/
