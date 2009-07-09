@@ -1,0 +1,20 @@
+<!DOCTYPE HTML>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+	
+		<title>Sample Test Page for SVG Web</title>
+		<script src="test-svgweb-1_files/svg.js" data-debug="true"></script>
+	</head><body>
+		<p>This is a sample SVG file that should display in all reasonable browsers:</p>
+		
+		<!--[if IE]>
+		<object id="testSVG" src="simple.svg" classid="image/svg+xml" width="300" height="300">
+		<![endif]--><!--[if !IE]>-->
+		<object style="visibility: visible;" id="testSVG" data="test-svgweb-1_files/simple.svg" type="image/svg+xml" height="300" width="300">
+		<!--<![endif]-->
+  			<p>Sorry, things did not work out.  Anyone for tennis?</p>
+		</object>
+		
+		<p>The End.</p>
+	</body></html>
