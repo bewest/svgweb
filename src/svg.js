@@ -1203,6 +1203,12 @@ extend(SVGWeb, {
       svg = xml.xml;
     }
     
+    // remove the fake SVG namespace we added as a workaround right above now 
+    // that we are parsed
+    if (this.renderer == FlashHandler) {
+      svg = svg.replace(new RegExp(svgnsFake, 'g'), svgns);
+    }
+    
     end('cleanSVG');
     return {svg: svg, xml: xml};
   },
