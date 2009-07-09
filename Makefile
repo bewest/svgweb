@@ -3,18 +3,28 @@
 # Location to rsync entire package to
 SVGSRV='codinginparadise.org:~/codinginparadise.org/html/projects/svgweb/'
 
+# Location to rsync package to a staging, testing server
+SVGSTAGE='codinginparadise.org:~/codinginparadise.org/html/projects/svgweb-staging/'
+
 # Whether to compress JavaScript
 COMPRESS=1
 
 # Whether to copy over tests to our build
 COPY_TESTS=0
 
+# Whether to copy over non-licensed content suitable for testing. This should
+# not be on for released builds, only for staging builds for testing
+# purposes only.
+ALL_TESTS=0
+
 ifeq ($(COPY_TESTS), 1)
 all: build/ build/src/svg.swf build/src/svg.js build/src/svg.htc build/README.html build/COPYING.txt
 	svn --force export samples/ build/samples/
 	svn --force export tests/ build/tests/
 	svn --force export docs/ build/docs
+ifeq ($(ALL_TESTS), 0)
 	rm -fr build/tests/non-licensed/
+endif
 else
 all: build/src/svg.swf build/src/svg.js build/src/svg.htc build/README.html build/COPYING.txt
 	svn --force export samples/ build/samples/
@@ -116,6 +126,12 @@ install:
 	# Set SVGSRV to the server and directory target for the rsync.
 	# Example: make SVGSRV='codinginparadise.org:~/codinginparadise.org/html/projects/svgweb/' install
 	rsync --recursive --delete --exclude=*svn* build/* $(SVGSRV)
+
+staging:
+	# Set SVGSTAGE to the server and directory target for the rsync for a
+	# non-release, staging testing server.
+	# Example: make SVGSTAGE='codinginparadise.org:~/codinginparadise.org/html/projects/svgweb-staging/' staging
+	rsync --recursive --delete --exclude=*svn* build/* $(SVGSTAGE)
 
 clean:
 	rm -fr build/
