@@ -1099,3 +1099,11 @@ when using the Flash handler.</p>
 
 <p>* If you have nested SVG elements (i.e. having an &lt;svg&gt; element nested in 
 your document), these don't currently show up in the DOM correctly.</p>
+
+<p>* On some installations of Internet Explorer depending on what patches might
+be present, if you have "Disable Script Debugging" unchecked, you might see
+the Eolas "Click to activate" box around your Flash movies before users can
+interact with them. This will only happen once. It is rare for computers to
+have this box unchecked plus not having the right patches (this issue was fixed
+in later patches by Microsoft). The issue is documented here:
+http://code.google.com/p/svgweb/issues/detail?id=153</p>
