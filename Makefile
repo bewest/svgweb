@@ -50,6 +50,11 @@ build/src/svgflash.swf: src/org/svgweb/SVGViewerFlash.as src/org/svgweb/core/*.a
 	(cd src/org/svgweb;mxmlc -output ../../../build/src/svgflash.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../ -- SVGViewerFlash.as)
 	cp build/src/svgflash.swf src/
 
+build/src/svgflashtest.swf: src/org/svgweb/tests/SVGViewerFlashTest.as src/org/svgweb/core/*.as src/org/svgweb/nodes/*.as src/org/svgweb/utils/*.as src/org/svgweb/smil/*.as
+	@echo Building svgflashtest.swf file...
+	(cd src/org/svgweb/tests;mxmlc -output ../../../../build/src/svgflashtest.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- SVGViewerFlashTest.as)
+	cp build/src/svgflashtest.swf src/
+
 build/src/svgflex.swf: src/org/svgweb/SVGViewerFlex.as src/org/svgweb/core/*.as src/org/svgweb/nodes/*.as src/org/svgweb/utils/*.as src/org/svgweb/smil/*.as
 	@echo Building svgflex.swf file...
 	(cd src/org/svgweb;mxmlc -output ../../../build/svgflex.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../ -- SVGViewerFlex.as)

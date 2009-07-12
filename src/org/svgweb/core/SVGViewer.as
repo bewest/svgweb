@@ -27,8 +27,6 @@ package org.svgweb.core
             XML.ignoreProcessingInstructions = false;
             XML.ignoreComments = false;
             super();
-            svgRoot = new SVGSVGNode();
-            this.addChild(svgRoot);
         }
 
         public function loadURL(url:String):void {
@@ -40,7 +38,7 @@ package org.svgweb.core
         }
 
         protected function onComplete(event:Event):void {
-            svgRoot.xml = new XML(urlLoader.data);
+            xml = new XML(urlLoader.data);
             urlLoader = null;
         }
 
@@ -63,7 +61,11 @@ package org.svgweb.core
         }
 
         public function set xml(value:XML):void {
-            this.svgRoot.xml = value;
+            if (svgRoot != null) {
+                this.removeChild(svgRoot);
+            }
+            svgRoot = new SVGSVGNode(null, value);
+            this.addChild(svgRoot);
         }
 
         public function get xml():XML {
@@ -94,10 +96,10 @@ package org.svgweb.core
             this.contextMenu.customItems.push(itemBug);
 
             function aboutSVGWeb():void {
-                navigateToURL(new URLRequest("http://code.google.com/p/sgweb/"));
+                navigateToURL(new URLRequest("http://code.google.com/p/svgweb/"));
             }
             function reportBug():void {
-                navigateToURL(new URLRequest("http://code.google.com/p/sgweb/issues/list"));
+                navigateToURL(new URLRequest("http://code.google.com/p/svgweb/issues/list"));
             }
         }
 
