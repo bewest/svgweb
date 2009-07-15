@@ -18,7 +18,7 @@ COPY_TESTS=0
 ALL_TESTS=0
 
 ifeq ($(COPY_TESTS), 1)
-all: build/ build/src/svg.swf build/src/svg.js build/src/svg.htc build/README.html build/COPYING.txt
+all: build/ build/src/svg.swf build/src/svg.js build/src/svg.htc build/src/svg-htc.php build/src/svg-htc.jsp build/src/svg-htc.asp build/README.html build/COPYING.txt
 	svn --force export samples/ build/samples/
 	svn --force export tests/ build/tests/
 	svn --force export docs/ build/docs
@@ -26,7 +26,7 @@ ifeq ($(ALL_TESTS), 0)
 	rm -fr build/tests/non-licensed/
 endif
 else
-all: build/src/svg.swf build/src/svg.js build/src/svg.htc build/README.html build/COPYING.txt
+all: build/src/svg.swf build/src/svg.js build/src/svg.htc build/src/svg-htc.php build/src/svg-htc.jsp build/src/svg-htc.asp build/README.html build/COPYING.txt
 	svn --force export samples/ build/samples/
 	svn --force export docs/ build/docs
 endif
@@ -64,7 +64,7 @@ ifeq ($(COMPRESS), 1)
 build/src/svg.js: src/svg.js
 	cp src/svg.js build/src/svg-uncompressed.js
 	@echo Compressing svg.js file...
-	java -jar src/build-utils/yuicompressor-2.4.1.jar --type js --nomunge --preserve-semi -o build/src/svg.js src/svg.js 2>&1
+	java -jar src/tools/yuicompressor-2.4.1.jar --type js --nomunge --preserve-semi -o build/src/svg.js src/svg.js 2>&1
 	@echo Final size: svg.js \(`ls -lrt build/src/svg.js | awk '{print $$5}'` bytes\)
 else
 build/src/svg.js: src/svg.js
@@ -82,7 +82,7 @@ build/src/svg.htc: src/svg.htc
 	# we use sed to do the bulk of the work. We store the intermediate results into
 	# shell variables then paste them all together at the end to produce the final
 	# result.
-	(compressed_js=`sed -n -e '/script/, /\/script/ p' -e 's/script//' <src/svg.htc | sed -e '/\/script/, /\/script/d' | grep -v 'script>' | grep -v '<script' | java -jar src/build-utils/yuicompressor-2.4.1.jar --type js --nomunge --preserve-semi 2>&1`; \
+	(compressed_js=`sed -n -e '/script/, /\/script/ p' -e 's/script//' <src/svg.htc | sed -e '/\/script/, /\/script/d' | grep -v 'script>' | grep -v '<script' | java -jar src/tools/yuicompressor-2.4.1.jar --type js --nomunge --preserve-semi 2>&1`; \
    top_of_htc=`sed -e '/script/,/<\/html>/ s/.*//' <src/svg.htc | sed 's/[ ]*<\!\-\-[^>]*>[ ]*//g;' | sed '/\<\!\-\-/,/\-\-\>/ s/.*//' | cat -s`; \
    echo $$top_of_htc '<script type="text/javascript">' $$compressed_js '</script><script type="text/vbscript"></script>' >build/src/svg.htc;)
 	@echo Final size: svg.htc \(`ls -lrt build/src/svg.htc | awk '{print $$5}'` bytes\)
@@ -91,6 +91,15 @@ build/src/svg.htc: src/svg.htc
 	cp src/svg.htc build/src/svg-uncompressed.htc
 	cp src/svg.htc build/src/svg.htc
 endif
+
+build/src/svg-htc.php: src/tools/svg-htc.php
+	cp src/tools/svg-htc.php build/src/svg-htc.php
+
+build/src/svg-htc.jsp: src/tools/svg-htc.jsp
+	cp src/tools/svg-htc.jsp build/src/svg-htc.jsp
+
+build/src/svg-htc.asp: src/tools/svg-htc.asp
+	cp src/tools/svg-htc.asp build/src/svg-htc.asp
 
 size: build/src/svg.swf build/src/svg.js build/src/svg.htc
 	# Determines file sizes to help with size optimization

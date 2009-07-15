@@ -163,7 +163,38 @@ prefixed with data- are:</p>
 <p>It does not matter whether you have a trailing slash or not, such as .. versus
 ../</p>
 
-<p>You must all add the HTC MIME type (text/x-component) to your web server so that svg.htc gets served up correctly (see <a href="http://support.microsoft.com/kb/306231">for details</a>). Note that before release we will provide simple PHP, ASP, and JSP drop-in files that will do this automatically for various server environments without having to fiddle with the server-side configuration.</p>
+<p>SVG Web has what is called an HTC file (svg.htc). For this to work you
+must make sure that your web server is configured to send the correct MIME
+type for HTC files (text/x-component). The page at 
+http://support.microsoft.com/kb/306231 provides some details on configuring
+Apache correctly for this.</p>
+
+<p>If you don't have the ability or background to add MIME types to your web 
+server, three easy files have been provided that will do the work for you based
+on what you can run on your server (PHP, JSP, or ASP). Based on what you can
+run on your server, choose one of the following files:</p>
+
+<ul>
+  <li><code>svg-htc.php</code> - Will do the MIME work for you if you can run
+  PHP on your web server.</li>
+  <li><code>svg-htc.jsp</code> - Will do the MIME work for you if you can run
+  JSP on your web server.</li>
+  <li><code>svg-htc.asp</code> - Will do the MIME work for you if you can run
+  ASP on your web server.</li>
+</ul>
+
+<p>If you choose one of these, you must indicate so using the optional 
+<code>data-htc-filename</code> attribute:</p>
+
+<pre><code>&lt;script src="../svg.js" data-path=".." <b>data-htc-filename="svg-htc.php"</b>&gt;&lt;/script&gt;</code></pre> 
+
+<p>Only give the filename, such as <code>svg-htc.jsp</code>, rather than a full
+path, such as <code>../../svg-htc.jsp</code></p>. Note that if you use
+one of these files in order to automatically force the MIME type, when you run
+any of the bundled demos or samples you will have to append the following 
+query string to tell them to use your different HTC file:</p>
+
+<pre><code>http://example.com/svgweb/samples/demo.html?<b>svg.htcFilename=svg-htc.php</b></code></pre>
 
 <h1>Flash SVG Renderer Versus Native SVG Rendering</h1>
 

@@ -483,10 +483,15 @@ function SVGWeb() {
   // are
   this.libraryPath = this._getLibraryPath();
   
+  // see if there is an optional HTC filename being used, such as svg-htc.php;
+  // these are used to have the server automatically send the correct MIME
+  // type for HTC files without having to fiddle with MIME type settings
+  this.htcFilename = this._getHTCFilename();
+  
   // prepare IE by inserting special markup into the page to have the HTC
   // be available
   if (isIE) {
-    FlashHandler._prepareBehavior(this.libraryPath);
+    FlashHandler._prepareBehavior(this.libraryPath, this.htcFilename);
   }
   
   // make sure we can intercept onload listener registration to delay onload 
@@ -820,6 +825,40 @@ extend(SVGWeb, {
     }
     
     return libraryPath;
+  },
+  
+  /** Gets an optional data-htc-filename value that might exist on the SCRIPT
+      tag. If present, this holds a different filename for where to grab the
+      HTC file from, such as svg-htc.php or svg-htc.asp. This is a trick to
+      help support those in environments where they can't manually add new
+      MIME types, so we have an ASP, JSP, or PHP file set the MIME type for the
+      HTC file automatically. */
+  _getHTCFilename: function() {
+    var htcFilename = 'svg.htc';
+    
+    // see if one of our three predefined file names is given in the query
+    // string as the query parameter 'svg.htcFilename'; we do whitelisting 
+    // rather than directly copying this value in to prevent XSS attacks
+    var loc = window.location.toString();
+    if (loc.indexOf('svg.htcFilename=svg-htc.php') != -1) {
+      return 'svg-htc.php';
+    } else if (loc.indexOf('svg.htcFilename=svg-htc.jsp') != -1) {
+      return 'svg-htc.jsp';
+    } else if (loc.indexOf('svg.htcFilename=svg-htc.asp') != -1) {
+      return 'svg-htc.asp';
+    }
+    
+    var scripts = document.getElementsByTagName('script');
+    for (var i = 0; i < scripts.length; i++) {
+      if (scripts[i].src.indexOf('svg.js') != -1 
+          && scripts[i].getAttribute('data-htc-filename')) {
+        htcFilename = scripts[i].getAttribute('data-htc-filename');
+        break;
+      }
+    }
+    
+    return htcFilename;
+    
   },
   
   /** Fires when the DOM content of the page is ready to be worked with. */
@@ -1873,7 +1912,7 @@ FlashHandler._unattachedDoc = parseXML('<?xml version="1.0"?>\n'
                                        false);
 
 /** Prepares the svg.htc behavior for IE. */
-FlashHandler._prepareBehavior = function(libraryPath) {
+FlashHandler._prepareBehavior = function(libraryPath, htcFilename) {
   // Adapted from Mark Finkle's SVG using VML project
 
   // add the SVG namespace to the page in a way IE can use
@@ -1890,7 +1929,7 @@ FlashHandler._prepareBehavior = function(libraryPath) {
   }
   
   // attach SVG behavior to the page
-  ns.doImport(libraryPath + 'svg.htc');
+  ns.doImport(libraryPath + htcFilename);
 };
 
 /** Fetches an _Element or _Node or creates a new one on demand.
