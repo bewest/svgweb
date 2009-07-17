@@ -25,7 +25,11 @@ Third-Party Licenses, Versions, and Build Information:
     Berlin Balloon Race from the Bain Collection, 1908 (LOC)
     Public Domain. Suggested credit: Library of Congress via pingnews.
 
-* src/build-utils/yuicompressor-2.4.1.jar - This is the YUI Compressor, version 2.4.1 - http://developer.yahoo.com/yui/compressor/ - BSD License (http://developer.yahoo.com/yui/license.html)
+* src/tools/lib/yuicompressor-2.4.1.jar - This is the YUI Compressor, version 2.4.1 - http://developer.yahoo.com/yui/compressor/ - BSD License (http://developer.yahoo.com/yui/license.html)
+
+* src/tools/lib/jetty-*.jar - This is Jetty 6.1.19, a small embedded Java web server - http://jetty.mortbay.org/jetty/ - released under the Apache License - bundled to make local development faster and easier
+
+* src/tools/lib/servlet-api-*.jar - This is the javax.servlet package used by Jetty - copyright Sun Microsystems, Inc and Apache Software Foundation - released under the Common Development and Distribution License (CDDL) -  https://glassfish.dev.java.net/public/CDDLv1.0.html
 
 * src/svg.js - Browser detection code at top of file adapted from Dojo 1.1 browser detection code - http://dojotoolkit.org - available under either modified 'new' BSD license or Academic Free License 2.1 (http://trac.dojotoolkit.org/browser/dojo/trunk/LICENSE)
 

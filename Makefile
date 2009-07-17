@@ -18,7 +18,7 @@ COPY_TESTS=0
 ALL_TESTS=0
 
 ifeq ($(COPY_TESTS), 1)
-all: build/ build/src/svg.swf build/src/svg.js build/src/svg.htc build/src/svg-htc.php build/src/svg-htc.jsp build/src/svg-htc.asp build/README.html build/COPYING.txt
+all: build/ build/src/svg.swf build/src/svg.js build/src/svg.htc build/src/svg-htc.php build/src/svg-htc.jsp build/src/svg-htc.asp build/README.html build/COPYING.txt build/src/tools/webserver.jar
 	svn --force export samples/ build/samples/
 	svn --force export tests/ build/tests/
 	svn --force export docs/ build/docs
@@ -26,13 +26,13 @@ ifeq ($(ALL_TESTS), 0)
 	rm -fr build/tests/non-licensed/
 endif
 else
-all: build/src/svg.swf build/src/svg.js build/src/svg.htc build/src/svg-htc.php build/src/svg-htc.jsp build/src/svg-htc.asp build/README.html build/COPYING.txt
+all: build/ build/src/svg.swf build/src/svg.js build/src/svg.htc build/src/svg-htc.php build/src/svg-htc.jsp build/src/svg-htc.asp build/README.html build/COPYING.txt build/src/tools/webserver.jar
 	svn --force export samples/ build/samples/
 	svn --force export docs/ build/docs
 endif
 
 build/:
-	mkdir -p build/ build/samples build/tests build/src build/docs build/docs
+	mkdir -p build/ build/samples build/tests build/src build/docs build/docs build/src/tools
 
 build/README.html:
 	cp README.html build/README.html
@@ -64,7 +64,7 @@ ifeq ($(COMPRESS), 1)
 build/src/svg.js: src/svg.js
 	cp src/svg.js build/src/svg-uncompressed.js
 	@echo Compressing svg.js file...
-	java -jar src/tools/yuicompressor-2.4.1.jar --type js --nomunge --preserve-semi -o build/src/svg.js src/svg.js 2>&1
+	java -jar src/tools/lib/yuicompressor-2.4.1.jar --type js --nomunge --preserve-semi -o build/src/svg.js src/svg.js 2>&1
 	@echo Final size: svg.js \(`ls -lrt build/src/svg.js | awk '{print $$5}'` bytes\)
 else
 build/src/svg.js: src/svg.js
@@ -82,7 +82,7 @@ build/src/svg.htc: src/svg.htc
 	# we use sed to do the bulk of the work. We store the intermediate results into
 	# shell variables then paste them all together at the end to produce the final
 	# result.
-	(compressed_js=`sed -n -e '/script/, /\/script/ p' -e 's/script//' <src/svg.htc | sed -e '/\/script/, /\/script/d' | grep -v 'script>' | grep -v '<script' | java -jar src/tools/yuicompressor-2.4.1.jar --type js --nomunge --preserve-semi 2>&1`; \
+	(compressed_js=`sed -n -e '/script/, /\/script/ p' -e 's/script//' <src/svg.htc | sed -e '/\/script/, /\/script/d' | grep -v 'script>' | grep -v '<script' | java -jar src/tools/lib/yuicompressor-2.4.1.jar --type js --nomunge --preserve-semi 2>&1`; \
    top_of_htc=`sed -e '/script/,/<\/html>/ s/.*//' <src/svg.htc | sed 's/[ ]*<\!\-\-[^>]*>[ ]*//g;' | sed '/\<\!\-\-/,/\-\-\>/ s/.*//' | cat -s`; \
    echo $$top_of_htc '<script type="text/javascript">' $$compressed_js '</script><script type="text/vbscript"></script>' >build/src/svg.htc;)
 	@echo Final size: svg.htc \(`ls -lrt build/src/svg.htc | awk '{print $$5}'` bytes\)
@@ -100,6 +100,15 @@ build/src/svg-htc.jsp: src/tools/svg-htc.jsp
 
 build/src/svg-htc.asp: src/tools/svg-htc.asp
 	cp src/tools/svg-htc.asp build/src/svg-htc.asp
+
+build/src/tools/webserver.jar: src/tools/webserver-src/WebServer.java src/tools/webserver-src/MANIFEST.MF
+	@echo Building webserver.jar file...
+	mkdir -p build/src/tools/lib/
+	cp src/tools/lib/jetty-*.jar build/src/tools/lib/
+	cp src/tools/lib/servlet-*.jar build/src/tools/lib/
+	javac -Xlint:unchecked -classpath src/tools/lib/jetty-6.1.19.jar:src/tools/lib/jetty-util-6.1.19.jar:src/tools/lib/servlet-api-2.5-20081211.jar:src/tools/webserver-src/ -d build/src/tools/ src/tools/webserver-src/WebServer.java
+	jar -cvfm build/src/tools/webserver.jar src/tools/webserver-src/MANIFEST.MF -C build/src/tools/ WebServer.class
+	rm -f build/src/tools/*.class
 
 size: build/src/svg.swf build/src/svg.js build/src/svg.htc
 	# Determines file sizes to help with size optimization
@@ -149,4 +158,5 @@ staging:
 
 clean:
 	rm -fr build/
+	rm -f src/tools/webserver-src/*.class
 
