@@ -2713,6 +2713,12 @@ extend(NativeHandler, {
   
   /** Handles SVG embedded into the page with an OBJECT tag. */
   _handleObject: function() {
+    // needed so that Firefox doesn't display scroll bars on SVG content
+    // (Issue 164: http://code.google.com/p/svgweb/issues/detail?id=164)
+    // FIXME: Will this cause issues if someone wants to override default
+    // overflow behavior?
+    this._objNode.style.overflow = 'hidden';
+        
     // make the object visible again
     this._objNode.style.visibility = 'visible';
     
