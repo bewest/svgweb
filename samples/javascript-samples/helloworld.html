@@ -1,0 +1,61 @@
+<!doctype html>
+<!-- This file provides a simple example of directly embedding SVG into a page
+     as well as pulling SVG in from an external file. -->
+<html>
+  <head>
+    <!-- The svg.js file must be the first JavaScript file you pull into your
+         page; provide the optional data-path attribute if the 
+         svg.js/svg.swf/svg.htc files are stored in a different directory from
+         where your HTML page is. -->
+    <script src="../../src/svg.js" data-path="../../src"></script>
+    
+    <!-- By default Flash is used for rendering on IE and the native SVG support
+         is used on other browsers. You can override this and force Flash to
+         do all the rendering on all browsers in two ways; either provide
+         a META tag as follows:
+         
+         <meta name="svg.render.forceflash" content="true" />
+         
+         Or change the URL of your page to have the following query variable:
+         
+         helloworld.html?svg.render.forceflash=true
+    -->
+  </head>
+  
+  <body>
+    
+      <!-- Directly embed SVG into your page by using a SCRIPT tag and
+           setting the type attribute to "image/svg+xml". -->
+           
+      <script type="image/svg+xml">
+        <svg width="170" height="120"
+             style="background-color: #D2B48C;">
+          <rect x="10" y="10" 
+                width="150" height="100"
+                fill="darkturquoise"
+                stroke="firebrick"
+                stroke-width="3" />
+        </svg>
+      </script>
+      <noscript>
+        <h1>Optional fallback content goes here!</h1>
+      </noscript>
+      
+      
+      <!-- Embed an external SVG file using the following syntax; it must
+           be done exactly as given, rather than using the EMBED tag. Change
+           the data and src attributes to point to where your SVG file is
+           relative to the HTML page. -->
+           
+      <!--[if IE]>
+      <object src="../svg-files/helloworld.svg" classid="image/svg+xml"
+              width="170" height="120">
+      <![endif]-->
+      <!--[if !IE]>-->
+      <object data="../svg-files/helloworld.svg" type="image/svg+xml" 
+              width="170" height="120">
+      <!--<![endif]-->
+      </object>
+    
+  </body>
+</html>
