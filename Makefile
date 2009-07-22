@@ -18,7 +18,7 @@ COPY_TESTS=0
 ALL_TESTS=0
 
 ifeq ($(COPY_TESTS), 1)
-all: build/ build/src/svg.swf build/src/svg.js build/src/svg.htc build/src/svg-htc.php build/src/svg-htc.jsp build/src/svg-htc.asp build/README.html build/COPYING.txt build/src/tools/webserver.jar
+all: build/ build/src/svg.swf build/src/svg.js build/src/svg.htc build/src/svg-htc.php build/src/svg-htc.jsp build/src/svg-htc.asp build/README.html build/COPYING.txt build/src/tools/webserver.jar build/src/tools/config.html
 	svn --force export samples/ build/samples/
 	svn --force export tests/ build/tests/
 	svn --force export docs/ build/docs
@@ -26,7 +26,7 @@ ifeq ($(ALL_TESTS), 0)
 	rm -fr build/tests/non-licensed/
 endif
 else
-all: build/ build/src/svg.swf build/src/svg.js build/src/svg.htc build/src/svg-htc.php build/src/svg-htc.jsp build/src/svg-htc.asp build/README.html build/COPYING.txt build/src/tools/webserver.jar
+all: build/ build/src/svg.swf build/src/svg.js build/src/svg.htc build/src/svg-htc.php build/src/svg-htc.jsp build/src/svg-htc.asp build/README.html build/COPYING.txt build/src/tools/webserver.jar build/src/tools/config.html
 	svn --force export samples/ build/samples/
 	svn --force export docs/ build/docs
 endif
@@ -109,6 +109,9 @@ build/src/tools/webserver.jar: src/tools/webserver-src/WebServer.java src/tools/
 	javac -Xlint:unchecked -classpath src/tools/lib/jetty-6.1.19.jar:src/tools/lib/jetty-util-6.1.19.jar:src/tools/lib/servlet-api-2.5-20081211.jar:src/tools/webserver-src/ -d build/src/tools/ src/tools/webserver-src/WebServer.java
 	jar -cvfm build/src/tools/webserver.jar src/tools/webserver-src/MANIFEST.MF -C build/src/tools/ WebServer.class
 	rm -f build/src/tools/*.class
+
+build/src/tools/config.html: src/tools/config.html
+	cp src/tools/config.html build/src/tools/config.html
 
 size: build/src/svg.swf build/src/svg.js build/src/svg.htc
 	# Determines file sizes to help with size optimization
