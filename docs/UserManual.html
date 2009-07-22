@@ -1,6 +1,4 @@
-<b>TODO: Document on how to use SVG Web for static SVG files in Flash and Flex applications as well; create a shorter, quicker Getting Started guide; and document what is and is not implemented in the SVG 1.1 spec.</b>
-
-<h1>Introduction</h1>
+<h1 id="intro">Introduction</h1>
 
 <p>The SVG Web library makes it possible to use SVG across all of the major 
 browsers, including Internet Explorer. Where native SVG support is not 
@@ -28,7 +26,7 @@ not currently supported.</p>
 
 <p>The SVG Web toolkit is currently in alpha</p>
 
-<h1>Browser and Flash Support</h1>
+<h1 id="browser_support">Browser and Flash Support</h1>
 
 <p>The SVG Web library supports using either the Flash or Native SVG renderer 
 for different browsers, including Internet Explorer 6+, Firefox 2+, Safari 3+, 
@@ -43,7 +41,7 @@ base so it is safe to depend on.</p>
 <p>The Adobe SVG Viewer (ASV) is not supported; it is a non-goal of this project to
 have support for the ASV viewer or its proprietary extensions.</p>
 
-<h1>Embedding SVG</h1>
+<h1 id="direct_embed">Embedding SVG</h1>
 
 <p>First, you must bring in the svg.js file into your HTML page as the _first_
 script on your page, before all others:</p>
@@ -144,7 +142,7 @@ domain as the web page and follows the same domain rule (i.e. same protocol,
 port, etc.); cross-domain object insertion is not supported for security 
 reasons. You must also specify a width and height.</p>
 
-<h1>Extra Files</h1>
+<h1 id="extra_files">Extra Files</h1>
 
 <p>You must make sure that the library files svg.htc, svg.swf, and svg.js are 
 located by default in the same directory as your HTML page. They must also be 
@@ -196,20 +194,20 @@ query string to tell them to use your different HTC file:</p>
 
 <pre><code>http://example.com/svgweb/samples/demo.html?<b>svg.htcFilename=svg-htc.php</b></code></pre>
 
-<h1>Flash SVG Renderer Versus Native SVG Rendering</h1>
+<h1 id="renderer">Flash SVG Renderer Versus Native SVG Rendering</h1>
 
 <p>By default, the Flash renderer will be used on Internet Explorer 6+; versions
 of Firefox before Firefox 3 (not yet supported); versions of Safari before Safari 3 (not yet supported); and
 versions of Opera before Opera 9 (not yet supported). The native SVG renderer will be used
 on Firefox 3+; Safari 3+; Chrome; and iPhone version 2.1+ Webkit.</p>
 
-<h1>Overriding Which Renderer is Used</h1>
+<h1 id="override">Overriding Which Renderer is Used</h1>
 
 <p>In general, we will attempt to use native SVG abilities if they are present. 
 To override this and force the Flash renderer to be used you can drop the 
 following META tag into your page:</p>
 
-<pre><code>&lt;meta name="svg.render.forceflash" content="true" /&gt;</code></pre>
+<pre><code>&lt;meta name="svg.render.forceflash" content="true"&gt;</code></pre>
 
 <p>You can also force the Flash renderer through the URL with the following flag:</p>
 
@@ -225,7 +223,7 @@ platform does not support Flash; on the iPhone the Native Renderer will always
 be used (TODO: Confirm that this is true for the iPhone if the Flash renderer
 is being forced).</p>
 
-<h1>SVG Scripting Support</h1>
+<h1 id="scripting">SVG Scripting Support</h1>
 
 <p>SVG has a SCRIPT tag, which allows you to embed JavaScript inside of your
 SVG. SVG files brought in with the OBJECT tag can have SVG SCRIPT blocks that 
@@ -388,7 +386,7 @@ of the SVG root element does not occur (i.e. you can't add an event listener
 for mouse move events onto your HTML BODY tag and see them within the SVG. Just
 add it to the SVG root element itself if you want to intercept all these).</p>
 
-<h1>Knowing When Your SVG Is Loaded</h1>
+<h1 id="onload">Knowing When Your SVG Is Loaded</h1>
 
 <p>If you want to know when your SVG and the entire page is done loading, you 
 can use window.onload, have an onload attribute on the BODY tag, or use
@@ -479,7 +477,7 @@ in the example above. Notice that we pass a reference to the function
 and _don't_ have () at the end -- i.e. it is 'var onloadFunc = doload' NOT
 'var onloadFunc = doload()'.</p>
 
-<h1>Compression</h1>
+<h1 id="compression">Compression</h1>
 
 <p>svgz (compressed SVG files) are not supported. However, it is recommended
 that you turn on GZip compression on your webserver for both SVG files
@@ -487,7 +485,7 @@ and the svg.htc, svg.swf, and svg.js library files to have very significant size
 savings equal to an svgz file as well as to pull down the SVG Web
 library files faster.</p>
 
-<h1>Width and Height</h1>
+<h1 id="sizing">Width and Height</h1>
 
 <p>For the Flash renderer, you should set the width and height of your SVG, 
 either on the root SVG element inside of an SVG SCRIPT block or on an SVG 
@@ -528,7 +526,7 @@ the 'auto' keyword. We do not currently handle a width and height of 0
 the SVG have a visibility of 'none').
 TODO: I think we might support this now; double check.</p>
 
-<h1>CSS Support</h1>
+<h1 id="css">CSS Support</h1>
 
 <p>This section only concerns the Flash renderer. Native SVG support works as
 normal.</p>
@@ -610,7 +608,7 @@ console.log('rect.style.strokeWidth='+rect.style.strokeWidth) // prints 5px</cod
    
 <p>Note that Firefox natively has glitches around using the .style property on SVG objects; the SVG Web toolkit actually patches Firefoxes native implementation and fixes this.</p>
 
-<h1>Root Background Color</h1>
+<h1 id="background_color">Root Background Color</h1>
 
 <p>If no background color for your SVG is specified with a CSS background-color
 attribute, the default is transparent (TODO: Confirm on non-IE browsers). 
@@ -624,7 +622,7 @@ If you specify a color, that will be used for your background:</p>
 <p>Setting the background using the 'background' CSS property is not currently
 supported, only with the 'background-color' property.</p>
 
-<h1>Fallback Content When SVG Not Possible</h1>
+<h1 id="fallback">Fallback Content When SVG Not Possible</h1>
 
 <p>If neither native SVG nor Flash can be used, you can put fallback content
 inside of your OBJECT tag to be displayed; place it before the end &lt;/OBJECT&gt;
@@ -687,7 +685,7 @@ whether SVG is possible either natively or with Flash using the following:</p>
 things so that true will be returned if we can use Flash to do all the SVG
 hard work.</p>
 
-<h1>Text Nodes</h1>
+<h1 id="text_nodes">Text Nodes</h1>
 
 <p>When you create a text node that you know you will append to something within
 your SVG, you need to add an extra parameter to document.createTextNode:</p>
@@ -702,7 +700,7 @@ necessary for some internal machinery to work correctly. If you don't give the
 final argument or set it to false then you will get a normal text node that 
 you can use with HTML content.</p>
 
-<h1>Whitespace Handling</h1>
+<h1 id="whitespace">Whitespace Handling</h1>
 
 <p>In an XML document there can be whitespace, such as spaces and newlines, between
 tags. Example:</p>
@@ -724,7 +722,7 @@ will show up in the DOM on all browsers except for Internet Explorer.</p>
 all whitespace nodes, including on Internet Explorer, to 'mimic' the SVG
 running in an XML environment (which by default retains whitespace nodes).</p>
 
-<h1>Knowing Which Renderer is Being Used and Which Nodes Are Fake</h1>
+<h1 id="break_abstraction">Knowing Which Renderer is Being Used and Which Nodes Are Fake</h1>
 
 <p>If you want to know from your JavaScript which renderer is being used, you
 can call svgweb.getHandlerType(). This will return the string 'flash' if the
@@ -740,7 +738,7 @@ alert(circle.fake); // will alert(true)
 var h1 = document.createElement('h1');
 alert(h1.fake); // will alert(undefined)</code></pre>
 
-<h1>Manipulating SVG Objects on the Page</h1>
+<h1 id="manipulate_objects">Manipulating SVG Objects on the Page</h1>
 
 <p>If you embed SVG objects into your page using the OBJECT element, you can
 navigate into the SVG inside the OBJECT element using contentDocument:</p>
@@ -763,7 +761,7 @@ var myCircle = doc.getElementById('myCircle');</code></pre>
 not currently supported due to technical limitations (it is impossible to
 support on Firefox); you should use contentDocument instead.</p>
 
-<h1>Dynamically Creating and Removing SVG OBJECTs and SVG Roots</h1>
+<h1 id="dynamic">Dynamically Creating and Removing SVG OBJECTs and SVG Roots</h1>
 
 <p>If you want to dynamically create a new SVG OBJECT on your page, you must
 do the following. First, when you create your object, you must pass in the
@@ -851,7 +849,7 @@ will not get cleaned up correctly, and memory will get wasted over time:</p>
 containerDiv.parentNode.removeChild(mySVGObject); // bad!!</code></pre>
 
 
-<h1>Known Issues and Errata</h1>
+<h1 id="known_issues">Known Issues and Errata</h1>
 
 <p>Most of the known issues are pretty minor and tend to affect edge conditions
 you won't run into often, but they are documented here for reference if
