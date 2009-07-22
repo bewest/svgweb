@@ -7,7 +7,7 @@ SVGSRV='codinginparadise.org:~/codinginparadise.org/html/projects/svgweb/'
 SVGSTAGE='codinginparadise.org:~/codinginparadise.org/html/projects/svgweb-staging/'
 
 # Whether to compress JavaScript
-COMPRESS=1
+COMPRESS=0
 
 # Whether to copy over tests to our build
 COPY_TESTS=0
