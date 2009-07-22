@@ -28,13 +28,17 @@
            setting the type attribute to "image/svg+xml". -->
            
       <script type="image/svg+xml">
-        <svg width="170" height="120"
+        <svg width="200" height="200"
              style="background-color: #D2B48C;">
-          <rect x="10" y="10" 
-                width="150" height="100"
-                fill="darkturquoise"
-                stroke="firebrick"
-                stroke-width="3" />
+        	<g id="myGroup1" 
+        		 fill="blue" 
+        		 style="font-size: 18px; text-anchor: middle; font-family: serif;">
+        	  <circle cx="100" cy="75" r="50"
+        		        stroke="firebrick"
+        		        stroke-width="3" />
+        		<text x="100" y="155">Hello World</text>
+        		<text x="100" y="175">From Embedded SVG!</text>
+        	</g>
         </svg>
       </script>
       <noscript>
@@ -49,11 +53,11 @@
            
       <!--[if IE]>
       <object src="../svg-files/helloworld.svg" classid="image/svg+xml"
-              width="170" height="120">
+              width="200" height="200">
       <![endif]-->
       <!--[if !IE]>-->
       <object data="../svg-files/helloworld.svg" type="image/svg+xml" 
-              width="170" height="120">
+              width="200" height="200">
       <!--<![endif]-->
       </object>
     
