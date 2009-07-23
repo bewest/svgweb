@@ -118,38 +118,23 @@ package org.svgweb.core
 
             transformSprite = this;
 
-            // This handle strange gradient bugs with negative transforms
-            // by separating the transform from the drawing object
-            if (xml && xml.@['transform'] != "") {
-                clipSprite = new Sprite();
-                transformSprite.addChild(clipSprite);
-            }
-            else {
-                clipSprite = this;
-            }
+            // This handles strange gradient bugs with negative transforms
+            // by separating the transform from the drawing object.
+            clipSprite = new Sprite();
+            transformSprite.addChild(clipSprite);
 
-            // If the object has a gaussian filter, flash will blur the object mask,
+            // In case the object has a gaussian filter, flash will blur the object mask,
             // even if the mask is not drawn with a blur. This is not correct rendering.
             // So, we use a stub parent object to hold the mask, in order to isolate the
             // mask from the filter. A child is created for drawing and the
             // filter is applied to the child.
-            if (xml && xml.@['clip-path'] != "") {
-                drawSprite = new Sprite();
-                clipSprite.addChild(drawSprite);
-            }
-            else {
-                drawSprite = clipSprite;
-            }
+            drawSprite = new Sprite();
+            clipSprite.addChild(drawSprite);
 
-            // If the object has a viewBox, the resulting transform should only apply
+            // In case the object has a viewBox, the resulting transform should only apply
             // to the children of the object, so create a child sprite to hold the transform.
-            if (xml && xml.@['viewBox'] != "") {
-                viewBoxSprite = new Sprite();
-                drawSprite.addChild(viewBoxSprite);
-            }
-            else {
-                viewBoxSprite = drawSprite;
-            }
+            viewBoxSprite = new Sprite();
+            drawSprite.addChild(viewBoxSprite);
 
             this.xml = xml;
             if (original) {
