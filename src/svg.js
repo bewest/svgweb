@@ -2605,94 +2605,62 @@ NativeHandler._patchDocumentObject = function(doc) {
     return createNodeList();
   };
   
-  // createElementNS
-  
-  // Surprisingly, Firefox doesn't work when setting 
-  // svgElement.style.property! For example, if you set 
-  // myCircle.style.fill = 'red', nothing happens. You have to do
-  // myCircle.style.setProperty('fill', 'red', null). This issue is 
-  // independent of the fact that we are running in a text/html situation,
-  // and happens in self-contained SVG files as well. To fix this, we have
-  // to override createElementNS and patch in the ability to use the
-  // svgElement.style.* syntax
-  if (isFF) {
-    doc._createElementNS = doc.createElementNS;
-    doc.createElementNS = NativeHandler._createElementNS(doc);
+  // see NativeHandler._patchStyleObject() for details on why we must do this
+  if (isFF && !NativeHandler._stylePatched) {
+    NativeHandler._patchStyleObject();
   }
 };
 
-/** A patched version of createElementNS necessary for Firefox. See the
-    documentation inside of patchDocumentObject for the reasons why. 
-    We set this up to be a function that returns a function so that we 
-    can bind it to a dynamic instance of the document object -- this is
-    necessary so that we can apply it either to a top-level document
-    object or to the document object inside of an SVG file in an OBJECT
-    tag. */
-NativeHandler._createElementNS = function(doc) {
-  // Note that the returned function runs in the global scope, so 'this' 
-  // will not refer to our object instance but rather the window object.
-  return function(ns, qname) {
-    var elem = doc._createElementNS(ns, qname);
+// property that flags that we have already patched the style object for
+// FF; see NativeHandler._patchStyleObject() for details
+NativeHandler._stylePatched = false;
+
+/** Surprisingly, Firefox doesn't work when setting svgElement.style.property! 
+    For example, if you set myCircle.style.fill = 'red', nothing happens. You 
+    have to do myCircle.style.setProperty('fill', 'red', null). This issue is 
+    independent of the fact that we are running in a text/html situation,
+    and happens in self-contained SVG files as well. To fix this, we have
+    to patch in the ability to use the svgElement.style.* syntax. Note that
+    Safari, Opera, Chrome, and others all natively support the 
+    svgElement.style.* syntax so we don't have to patch anything there.
+*/
+NativeHandler._patchStyleObject = function() {
+  // Unfortunately, trying to set SVGElement.prototype.style = to our own
+  // custom object that then defines all of our getters and setters doesn't
+  // work; somehow that is a 'magical' prototype that doesn't stick. Instead,
+  // the trick we have to use is to modify the CSSStyleDeclaration prototype.
+  // TODO: Document whether adding extra members to CSSStyleDeclaration has
+  // a memory impact because it also affects HTML elements.
   
-    if (ns != svgns) {
-      return elem;
-    }
+  // define getters and setters for SVG CSS property names
+  for (var i = 0; i < _Style._allStyles.length; i++) {
+    var styleName = _Style._allStyles[i];
   
-    // patch the style object to support style.fill = 'red' type accessing
-    var customStyle = {};
-    var origStyle = elem.style;
+    // convert camel casing (i.e. strokeWidth becomes stroke-width)
+    var stylePropName = styleName.replace(/([A-Z])/g, '-$1').toLowerCase();
   
-    // define getters and setters for SVG CSS property names
-    for (var i = 0; i < _Style._allStyles.length; i++) {
-      var styleName = _Style._allStyles[i];
-    
-      // convert camel casing (i.e. strokeWidth becomes stroke-width)
-      var stylePropName = styleName.replace(/([A-Z])/g, '-$1').toLowerCase();
-    
-      // Do a trick so that we can have a separate closure for each
-      // iteration of the loop and therefore each separate style name; 
-      // closures are function-level, so doing an anonymous inline function 
-      // will force the closure into just being what we pass into it. If we 
-      // don't do this then the closure will actually always simply be the final 
-      // index position when the for loop finishes.
-    
-      (function(origStyle, styleName, stylePropName) {
-        customStyle.__defineSetter__(styleName, function(styleValue) {
-          return origStyle.setProperty(stylePropName, styleValue, null);
-        });
-        customStyle.__defineGetter__(styleName, function() {
-          return origStyle.getPropertyValue(stylePropName);
-        });
-      })(origStyle, styleName, stylePropName); // pass closure values
-    }
-    
-    // define other methods and properties from CSSStyleDeclaration interface
-    customStyle.setProperty = function(styleName, styleValue, priority) {
-      return origStyle.setProperty(styleName, styleValue, priority);
-    };
-    customStyle.getPropertyValue = function(styleName) {
-      return origStyle.getPropertyValue(styleName);
-    };
-    customStyle.removeProperty = function(styleName) {
-      return origStyle.removeProperty(styleName);
-    };
-    customStyle.item = function(index) {
-      return origStyle.item(index);
-    };
-    customStyle.__defineGetter__('cssText', function() {
-      return origStyle.cssText;
-    });
-    customStyle.__defineGetter__('length', function() {
-      return origStyle.length;
-    });
+    // Do a trick so that we can have a separate closure for each
+    // iteration of the loop and therefore each separate style name; 
+    // closures are function-level, so doing an anonymous inline function 
+    // will force the closure into just being what we pass into it. If we 
+    // don't do this then the closure will actually always simply be the final 
+    // index position when the for loop finishes.
+    (function(styleName, stylePropName) {
+      CSSStyleDeclaration.prototype.__defineSetter__(styleName, 
+        function(styleValue) {
+          return this.setProperty(stylePropName, styleValue, null);
+        }
+      );
+      CSSStyleDeclaration.prototype.__defineGetter__(styleName, 
+        function() {
+          return this.getPropertyValue(stylePropName);
+        }
+      );
+    })(styleName, stylePropName); // pass closure values
+  }
   
-    // now override the browser's native style property on our new element
-    elem.__defineGetter__('style', function() {
-      return customStyle; 
-    });
-  
-    return elem;
-  };
+  // indicate that we are done patching so we don't do it more than once
+  NativeHandler._stylePatched = true;
 };
 
 // end of static singleton functions

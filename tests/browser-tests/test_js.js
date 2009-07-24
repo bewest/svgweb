@@ -94,7 +94,7 @@ var myRect, mySVG, rects, sodipodi, rdf, div, dc, bad, root, rect,
     stop, defs, parent, textNode2, renderer,
     origText, exp, html, ns, nextToLast, paths, styleStr,
     image, line, doTests, styleReturned, use, regExp, split, doc,
-    orig, rect1, rect2, obj1, obj2, obj3, handler;
+    orig, rect1, rect2, obj1, obj2, obj3, handler, elem;
     
 var allStyles = [
   'font', 'fontFamily', 'fontSize', 'fontSizeAdjust', 'fontStretch', 'fontStyle',
@@ -592,7 +592,7 @@ function testGetElementsByTagNameNS() {
                  + "should be 7", 7, rects.length);
   } else {
     assertEquals("document.getElementsByTagNameNS(svgns, 'rect').length "
-                + "should be 11", 11, rects.length);
+                + "should be 14", 14, rects.length);
   }
   
   sodipodi = document.getElementsByTagNameNS(sodipodi_ns, '*');
@@ -952,7 +952,7 @@ function testChildNodes() {
   // test the child nodes of an SVG group element
   group = getDoc('mySVG').getElementById('myGroup');
   assertExists("group.childNodes", group.childNodes);
-  assertEquals("group.length == 4", 4, group.childNodes.length);
+  assertEquals("group.length == 6", 6, group.childNodes.length);
   child = group.childNodes[0];
   assertExists("group.childNodes[first element]", child);
   assertEquals("child.childNodes[first element].id", 'myRect', child.id);
@@ -4560,6 +4560,27 @@ function testStyle() {
   desc.style.fill = 'green'; // nothing should display!
   desc.style.border = '1px solid black';
   
+  // change the style of some rectangles that are already in the page
+  rect1 = document.getElementById('anotherRect1');
+  assertExists('anotherRect1 should exist', rect1);
+  rect2 = document.getElementById('anotherRect2');
+  assertExists('anotherRect2 should exist', rect2);
+  assertEqualsAny('anotherRect1.style.fill == blue or #0000FF or rgb(0, 0, 255)',
+                  ['blue', '#0000FF', 'rgb(0, 0, 255)'],
+                  rect1.style.fill);
+  rect1.style.fill = 'green';
+  assertEqualsAny('anotherRect1.style.fill == green or #00FF00 or rgb(0, 255, 0)',
+                  ['green', '#00FF00', 'rgb(0, 255, 0)'],
+                  rect1.style.fill);
+  console.log('FIRST IMAGE: You should see a green rectangle, and _not_ a blue '
+              + 'rectangle');
+  rect2.style.fill = 'yellow';
+  assertEqualsAny('anotherRect2.style.fill == yellow or #0000FF or rgb(0, 0, 255)',
+                  ['yellow', '#FFFF00', 'rgb(255, 255, 0)'],
+                  rect2.style.fill);
+  console.log('FIRST IMAGE: You should see a yellow rectangle, and _not_ a '
+              + 'black rectangle');
+  
   // Test default style values for unattached and attached nodes.
   // FF and Safari for native handling return empty strings or 
   // undefined for all of these, so we mimic this behavior
@@ -5114,6 +5135,60 @@ function testBugFixes() {
   matches = getDoc('svg2').getElementsByTagNameNS(rdf_ns, 'RDF');
   assertEquals('rdf matches.length == 1', 1, matches.length);
   svg.removeChild(metadata);
+  
+  // test fixes for Issue 178: Element.style.* access doesn't work for 
+  // Firefox Native under some conditions:
+  // http://code.google.com/p/svgweb/issues/detail?id=178
+  
+  // make sure svgElement.style.* access works for elements that are in the
+  // page's markup itself
+  rect1 = getDoc('svg2').getElementById('testStyleRect');
+  assertExists('testStyleRect in svg2 should exist', rect1);
+  assertEqualsAny('rect1.style.fill == #ffffff or #FFFFFF '
+                  + 'or rgb(255, 255, 255)', 
+                  ['#ffffff', '#FFFFFF', 'rgb(255, 255, 255)'], 
+                  rect1.style.fill);
+  rect1.style.fill = 'green';
+  assertEqualsAny('rect1.style.fill == green or #008000', 
+                  ['green', '#008000'], rect1.style.fill);
+  console.log('THIRD IMAGE: There should be a rotated green rectangle near the '
+              + 'bottom of the image');
+  
+  // grab a normal HTML element from the page; make sure that 
+  // htmlElement.style.foo still works after our patching
+  elem = document.getElementById('testHTMLH1');
+  assertExists('testHTMLH1 should exist', elem);
+  assertEqualsAny('testHTMLH1.style.border == "3px solid black"',
+                  ['3px solid black'], elem.style.border);
+  elem.style.border = '2px dashed purple';
+  assertEqualsAny('testHTMLH1.style.border == "3px solid black"',
+                  ['2px dashed purple'], elem.style.border);
+  console.log('HTML: There should be a purple dashed box around the HTML '
+              + 'H1 element that says "Test HTML H1"');
+              
+  // on an HTML element, try to do an SVG style property that should not be 
+  // settable, such as htmlElement.style.stroke. Make sure that nothing happens 
+  // and an error doesn't happen
+  elem = document.getElementById('testHTMLH1');
+  assertEqualsAny('testHTMLH1.style.fill == "" or undefined', ["", undefined], 
+                  elem.style.fill);
+  elem.style.fill = 'red';
+  // Safari natively stores the value, even though its an unknown CSS property;
+  // just make sure we are mimicing Safaris behavior on this one; when using
+  // the Flash renderer we allow this to also just be undefined as well
+  assertEqualsAny('testHTMLH1.style.fill == red or #FF0000 '
+                  + 'or rgb(255, 0, 0) or undefined', 
+                  ['red', '#FF0000', 'rgb(255, 0, 0)', undefined], 
+                  elem.style.fill);
+                  
+  // a test where we try to set an HTML style property, such as
+  // style.backgroundColor, on an _SVG_ element. Make sure nothing happens and that an
+  //error is not thrown
+  rect1 = getDoc('svg2').getElementById('testStyleRect');
+  rect1.style.backgroundColor = 'purple';
+  rect1.style.fontSize = '12pt';
+
+  // end of tests for Issue 178
   
   // TODO: Have entities in my SVG source (i.e. &amp;). Also have entities
   // in <text> node values, and fetch them from Flash to ensure that they
