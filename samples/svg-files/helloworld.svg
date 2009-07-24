@@ -4,11 +4,30 @@
 		 xmlns="http://www.w3.org/2000/svg"
      xmlns:xlink="http://www.w3.org/1999/xlink"
 		 width="200" height="200"
-     style="background-color: #D2B48C;">
-	<g id="myGroup1" 
+     style="background-color: #D2B48C;"
+		 onload="loaded()">
+	<script type="text/javascript"><![CDATA[
+      function loaded() {
+        // change onloadFunc to point to your real onload function that you
+        // want called when the page is truly ready
+        var onloadFunc = doload;
+        
+        if (top.svgweb) {
+          top.svgweb.addOnLoad(onloadFunc, true, window);
+        } else {
+          onloadFunc();
+        }
+      }   
+      
+     function doload() {
+        // developers original onload handler
+     }
+  ]]></script>
+	<g id="myGroup" 
 		 fill="blue" 
 		 style="font-size: 18px; text-anchor: middle; font-family: serif;">
-	  <circle cx="100" cy="75" r="50"
+	  <circle id="myCircle"
+		        cx="100" cy="75" r="50"
 		        stroke="firebrick"
 		        stroke-width="3" />
 		<text x="100" y="155">Hello World</text>

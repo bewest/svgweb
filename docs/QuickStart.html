@@ -104,18 +104,23 @@ an <a href="http://code.google.com/p/svgweb/issues/list">Issue</a>.</p>
 
 <pre><code>&lt;h1&gt;This is some HTML here!&lt;/h1&gt;
 &lt;script type="image/svg+xml"&gt;
-  &lt;svg width="200" height="200"
-       style="background-color: #D2B48C;"&gt;
-  	&lt;g id="myGroup1" 
-  		 fill="blue" 
-  		 style="font-size: 18px; text-anchor: middle; font-family: serif;"&gt;
-  	  &lt;circle cx="100" cy="75" r="50"
-  		        stroke="firebrick"
-  		        stroke-width="3" /&gt;
-  		&lt;text x="100" y="155"&gt;Hello World&lt;/text&gt;
-  		&lt;text x="100" y="175"&gt;From Embedded SVG!&lt;/text&gt;
-  	&lt;/g&gt;
-  &lt;/svg&gt;
+   &lt;svg 
+       width="200" height="200"
+       style="background-color: #D2B48C; display: block; margin-bottom: 5px;"
+       id="embeddedSVG"&gt;
+     &lt;g 
+        id="myGroup" 
+        fill="blue" 
+        style="font-size: 18px; text-anchor: middle; font-family: serif;"&gt;
+         &lt;circle
+              id="myCircle" 
+              cx="100" cy="75" r="50"
+              stroke="firebrick"
+              stroke-width="3" /&gt;
+         &lt;text x="100" y="155"&gt;Hello World&lt;/text&gt;
+         &lt;text x="100" y="175"&gt;From Embedded SVG!&lt;/text&gt;
+     &lt;/g&gt;
+   &lt;/svg&gt;
 &lt;/script&gt;</code></pre>
 
 <p>When direct embedding SVG, you should leave off the XML declaration and SVG DOCTYPE, such as <code>&lt;?xml version="1.0"?&gt;</code>. You also don't need to declare the XLink or SVG namespaces as those will be defaulted and assumed.</p>
@@ -128,11 +133,13 @@ an <a href="http://code.google.com/p/svgweb/issues/list">Issue</a>.</p>
 
 <pre><code>&lt;!--[if IE]&gt;
 &lt;object src="../svg-files/helloworld.svg" classid="image/svg+xml"
-        width="200" height="200"&gt;
+        width="200" height="200"
+        id="mySVGObject"&gt;
 &lt;![endif]--&gt;
 &lt;!--[if !IE]&gt;--&gt;
 &lt;object data="../svg-files/helloworld.svg" type="image/svg+xml" 
-        width="200" height="200"&gt;
+        width="200" height="200"
+        id="mySVGObject"&gt;
 &lt;!--&lt;![endif]--&gt;
 &lt;/object&gt;</code></pre>
 
@@ -141,6 +148,7 @@ an <a href="http://code.google.com/p/svgweb/issues/list">Issue</a>.</p>
 <ul>
   <li>Change the <code>src</code> and <code>data</code> attributes to point to where your SVG file is on both OBJECT tags.</li>
   <li>Change the <code>width</code> and <code>height</code> attributes on both OBJECT tags to the desired width and height.</li>
+  <li>If you have an <code>id</code> or <code>class</code> attribute, make sure it is on both OBJECT tags.</li>
 </ul>
 
 <p>Note that your SVG file must be served from the same host as the page is served from.</p>
@@ -156,10 +164,11 @@ an <a href="http://code.google.com/p/svgweb/issues/list">Issue</a>.</p>
      width="200" height="200"
      style="background-color: #D2B48C;"&gt;
    &lt;g 
-      id="myGroup1" 
+      id="myGroup" 
       fill="blue" 
       style="font-size: 18px; text-anchor: middle; font-family: serif;"&gt;
-      &lt;circle 
+      &lt;circle
+         id="myCircle" 
          cx="100" cy="75" r="50"
          stroke="firebrick"
          stroke-width="3" /&gt;
@@ -183,10 +192,11 @@ an <a href="http://code.google.com/p/svgweb/issues/list">Issue</a>.</p>
      width="200" height="200"
      style="background-color: #D2B48C;"&gt;
    &lt;g 
-      id="myGroup1" 
+      id="myGroup" 
       fill="blue" 
       style="font-size: 18px; text-anchor: middle; font-family: serif;"&gt;
-      &lt;circle 
+      &lt;circle
+         id="myCircle" 
          cx="100" cy="75" r="50"
          stroke="firebrick"
          stroke-width="3" /&gt;

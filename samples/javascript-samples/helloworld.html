@@ -20,25 +20,61 @@
          
          helloworld.html?svg.render.forceflash=true
     -->
+    
+    <!-- Example JavaScript block that shows scripting our SVG -->
+    <script type="text/javascript">
+      window.onload = function() {
+        // SVG on the page should only be manipulated after the page is 
+        // finished loading
+        var buttons = document.getElementsByTagName('button');
+        for (var i = 0; i < buttons.length; i++) {
+          buttons[i].disabled = false;
+        }
+      }
+      
+      function changeColors() {
+        // get elements from our embedded SVG first
+        
+        // use getElementById
+        var circle = document.getElementById('myCircle');
+        
+        // can change using setAttribute
+        circle.setAttribute('stroke', 'green');
+        
+        // can also use style property
+        circle.style.fill = '#8A2BE2';
+      }
+      
+      function changeText() {
+        
+      }
+    </script>
   </head>
   
   <body>
+
+      <div style="margin-bottom: 1em; margin-top: 1em;">
+        <button onclick="changeColors()" disabled>Change Colors</button>
+        <button onclick="changeText()" disabled>Change Text</button>
+      </div>
     
       <!-- Directly embed SVG into your page by using a SCRIPT tag and
            setting the type attribute to "image/svg+xml". -->
            
       <script type="image/svg+xml">
         <svg width="200" height="200"
-             style="background-color: #D2B48C;">
-        	<g id="myGroup1" 
-        		 fill="blue" 
-        		 style="font-size: 18px; text-anchor: middle; font-family: serif;">
-        	  <circle cx="100" cy="75" r="50"
-        		        stroke="firebrick"
-        		        stroke-width="3" />
-        		<text x="100" y="155">Hello World</text>
-        		<text x="100" y="175">From Embedded SVG!</text>
-        	</g>
+             style="background-color: #D2B48C; display: block; margin-bottom: 5px;"
+             id="embeddedSVG">
+          <g id="myGroup" 
+             fill="blue" 
+             style="font-size: 18px; text-anchor: middle; font-family: serif;">
+            <circle id="myCircle"
+                    cx="100" cy="75" r="50"
+                    stroke="firebrick"
+                    stroke-width="3" />
+            <text x="100" y="155">Hello World</text>
+            <text x="100" y="175">From Embedded SVG!</text>
+          </g>
         </svg>
       </script>
       <noscript>
@@ -53,11 +89,13 @@
            
       <!--[if IE]>
       <object src="../svg-files/helloworld.svg" classid="image/svg+xml"
-              width="200" height="200">
+              width="200" height="200"
+              id="mySVGObject">
       <![endif]-->
       <!--[if !IE]>-->
       <object data="../svg-files/helloworld.svg" type="image/svg+xml" 
-              width="200" height="200">
+              width="200" height="200"
+              id="mySVGObject">
       <!--<![endif]-->
       </object>
     
