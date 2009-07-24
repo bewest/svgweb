@@ -922,9 +922,9 @@ extend(SVGWeb, {
       this.renderer = NativeHandler;
     }
     
-    // patch the document object with bug fixes for the NativeHandler and
-    // actual implementations for the FlashHandler
-    this.renderer._patchDocumentObject(document);
+    // patch the document and style objects with bug fixes for the 
+    // NativeHandler and actual implementations for the FlashHandler
+    this.renderer._patchBrowserObjects(window, document);
     
     // no SVG - we're done
     if (this.totalSVG === 0) {
@@ -1234,8 +1234,11 @@ extend(SVGWeb, {
                         "xmlns$1='" + svgnsFake + "'");
     }
         
-    // add guids and IDs to all elements and get the root SVG elements ID
-    var xml = this._addTracking(svg);
+    // add guids and IDs to all elements and get the root SVG elements ID;
+    // this also has the side effect of also parsing our SVG into an actual
+    // XML tree we can use later; we do it here so that we don't have to
+    // parse the XML twice for performance reasons
+    var xml = this._addTracking(svg, normalizeWhitespace);
     if (typeof XMLSerializer != 'undefined') { // non-IE browsers
       svg = (new XMLSerializer()).serializeToString(xml);
     } else { // IE
@@ -1343,11 +1346,16 @@ extend(SVGWeb, {
   /** Walks the SVG DOM, adding automatic generated GUIDs to all elements.
       Generates an ID for the SVG root if one is not present.
       
+      @param normalizeWhitespace If true, then when parsing we ignore
+      whitespace, acting more like normal HTML; if false, then we keep
+      whitespace as independent nodes more like XML.
       @returns Parsed DOM XML Document of the SVG with all elements having 
       an ID and a GUID. */
-  _addTracking: function(svg) {                   
+  _addTracking: function(svg, normalizeWhitespace) {
+    var parseWhitespace = !normalizeWhitespace;
+                    
     // parse the SVG
-    var xmlDoc = parseXML(svg);
+    var xmlDoc = parseXML(svg, parseWhitespace);
     var root = xmlDoc.documentElement;
     
     // make sure the root has an ID
@@ -1973,11 +1981,7 @@ FlashHandler._getNode = function(nodeXML, handler) {
 };
 
 /** Patches the document object to also use the Flash backend. */
-FlashHandler._patchDocumentObject = function(doc) {
-  if (!doc) {
-    doc = document;
-  }
-  
+FlashHandler._patchBrowserObjects = function(win, doc) {
   if (doc._getElementById) { // already patched
     return;
   }
@@ -2035,6 +2039,7 @@ FlashHandler._getElementById = function(id) {
     scope, so 'this' will not refer to our object instance but rather
     the window object. */
 FlashHandler._getElementsByTagNameNS = function(ns, localName) {
+  //console.log('getElementsByTagNameNS, ns='+ns+', localName='+localName);
   var results = createNodeList();
   
   // NOTE: can't use Array.concat to combine our arrays below because 
@@ -2470,7 +2475,7 @@ function NativeHandler(args) {
 
 // start of 'static' singleton functions, mostly around patching the 
 // document object with some bug fixes
-NativeHandler._patchDocumentObject = function(doc) {
+NativeHandler._patchBrowserObjects = function(win, doc) {
   if (doc._getElementById) {
     // already defined before
     return;
@@ -2605,15 +2610,12 @@ NativeHandler._patchDocumentObject = function(doc) {
     return createNodeList();
   };
   
-  // see NativeHandler._patchStyleObject() for details on why we must do this
-  if (isFF && !NativeHandler._stylePatched) {
-    NativeHandler._patchStyleObject();
+  // Firefox/Native needs some help around svgElement.style.* access; see
+  // NativeHandler._patchStyleObject for details
+  if (isFF) {
+    NativeHandler._patchStyleObject(win);
   }
 };
-
-// property that flags that we have already patched the style object for
-// FF; see NativeHandler._patchStyleObject() for details
-NativeHandler._stylePatched = false;
 
 /** Surprisingly, Firefox doesn't work when setting svgElement.style.property! 
     For example, if you set myCircle.style.fill = 'red', nothing happens. You 
@@ -2623,14 +2625,19 @@ NativeHandler._stylePatched = false;
     to patch in the ability to use the svgElement.style.* syntax. Note that
     Safari, Opera, Chrome, and others all natively support the 
     svgElement.style.* syntax so we don't have to patch anything there.
+    
+    @param window The owner window to patch.
 */
-NativeHandler._patchStyleObject = function() {
+NativeHandler._patchStyleObject = function(win) {
   // Unfortunately, trying to set SVGElement.prototype.style = to our own
   // custom object that then defines all of our getters and setters doesn't
   // work; somehow that is a 'magical' prototype that doesn't stick. Instead,
   // the trick we have to use is to modify the CSSStyleDeclaration prototype.
   // TODO: Document whether adding extra members to CSSStyleDeclaration has
   // a memory impact because it also affects HTML elements.
+  
+  // prototype definitions are 'window' specific
+  var patchMe = win.CSSStyleDeclaration;
   
   // define getters and setters for SVG CSS property names
   for (var i = 0; i < _Style._allStyles.length; i++) {
@@ -2646,21 +2653,18 @@ NativeHandler._patchStyleObject = function() {
     // don't do this then the closure will actually always simply be the final 
     // index position when the for loop finishes.
     (function(styleName, stylePropName) {
-      CSSStyleDeclaration.prototype.__defineSetter__(styleName, 
+      patchMe.prototype.__defineSetter__(styleName, 
         function(styleValue) {
           return this.setProperty(stylePropName, styleValue, null);
         }
       );
-      CSSStyleDeclaration.prototype.__defineGetter__(styleName, 
+      patchMe.prototype.__defineGetter__(styleName, 
         function() {
           return this.getPropertyValue(stylePropName);
         }
       );
     })(styleName, stylePropName); // pass closure values
   }
-  
-  // indicate that we are done patching so we don't do it more than once
-  NativeHandler._stylePatched = true;
 };
 
 // end of static singleton functions
@@ -2717,13 +2721,14 @@ extend(NativeHandler, {
       file is done loading).
       @param win The Window object inside the SVG OBJECT */
   _onObjectLoad: function(func, win) {
+    //console.log('onObjectLoad');
     // flag that we are loaded
     this._loaded = true;
     
-    // patch the document object to correct some browser bugs and to have
-    // more consistency between the Flash and Native handlers
+    // patch the document and style objects to correct some browser bugs and 
+    // to have more consistency between the Flash and Native handlers
     var doc = win.document;    
-    NativeHandler._patchDocumentObject(doc);
+    NativeHandler._patchBrowserObjects(win, doc);
     
     // expose the svgns and xlinkns variables inside in the SVG files 
     // Window object
@@ -5084,10 +5089,9 @@ function _SVGObject(svgNode, handler) {
     // success function
     hitch(this, function(svgStr) {
       // clean up and parse our SVG
-      svgStr = svgweb._cleanSVG(svgStr, false, false).svg;
-      
-      this._svgString = svgStr;
-      this._xml = parseXML(this._svgString, true);
+      var results = svgweb._cleanSVG(svgStr, false, false);
+      this._svgString = results.svg;
+      this._xml = results.xml;
 
       // create our document objects
       this.document = new _Document(this._xml, this._handler);
@@ -6316,6 +6320,7 @@ extend(_Document, {
       getElementsByTagNameNS(null, 'someTag');
   */
   getElementsByTagNameNS: function(ns, localName) /* _NodeList of _Elements */ {
+    //console.log('document.getElementsByTagNameNS, ns='+ns+', localName='+localName);
     var results = createNodeList();
     var matches;
     // DOM Level 2 spec details:
@@ -6361,7 +6366,7 @@ extend(_Document, {
             query = prefix + ':' + localName;
           }
         }
-        
+
         matches = this._xml.getElementsByTagName(query);
         for (var i = 0; i < matches.length; i++) {
           results.push(matches[i]);

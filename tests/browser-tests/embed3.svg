@@ -1346,6 +1346,13 @@
            d="M 156.4375,-131.46875 C 197.18892,-87.703743 231.23776,-36.668482 251.6875,19.78125 C 256.4587,32.246745 259.53507,46.286377 262.9375,58.46875 C 276.84393,52.284397 294.65398,62.371408 296.4375,77.5625 C 299.43536,92.931099 284.72996,108.21273 269.25,105.78125 C 264.77658,104.92217 268.75163,114.00106 267.11252,116.77843 C 266.47246,127.54375 265.05148,138.23267 262.65625,148.75 C 287.29105,153.84372 311.55694,162.26122 330.78125,179.03125 C 325.00155,97.134804 301.39682,13.658657 252.60628,-51.595014 C 228.19138,-84.778685 199.35331,-118.61499 168.44667,-144.72792 C 168.01959,-143.88417 156.86458,-132.3125 156.4375,-131.46875 z "
            style="opacity:0.37222224;color:#000000;fill:#c3c3c3;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:5.31668139;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
            id="path8980" />
+        <rect
+ style="opacity:1;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:5.80000019;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;display:inline"
+               id="testStyleRect"
+               width="50"
+               height="50"
+               x="30"
+               y="-30" />
         <g
            id="g6545">
           <path

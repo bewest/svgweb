@@ -477,7 +477,6 @@ package org.svgweb
                 }
                 if (jsMsg.method == 'setAttribute') {
                     element = this.svgRoot.getNodeByGUID(jsMsg.elementGUID);
-                    
                     if (!element) {
                         this.error('setAttribute: GUID not found: '
                                    + jsMsg.elementGUID);

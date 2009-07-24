@@ -57,11 +57,11 @@ an <a href="http://code.google.com/p/svgweb/issues/list">Issue</a>.</p>
     
     <p>By default this will start a local webserver on <code>127.0.0.1</code> on port 80.</p>
     
-    <p>You can optionally provide other local IP addresses if you want to listen on multiple IP addresses; this can be useful, for example, if you have a Parallels Virtual Machine instance running Windows XP, and you want to locally access your files while working. By default Parallels installs a loopback IP address on <code>10.37.129.2</code>. You can use the optional <code>-h</code> flag to start on multiple IP addresses with the embedded web server:</p>
+    <p>You can optionally provide other local IP addresses if you want to listen on multiple IP addresses; this can be useful, for example, if you have a Parallels Virtual Machine instance running Windows XP, and you want to locally access your files while working. By default Parallels installs a loopback IP address on <code>10.211.55.2</code>. You can use the optional <code>-h</code> flag to start on multiple IP addresses with the embedded web server:</p>
     
-    <pre><code>java -jar src/tools/webserver.jar -h 127.0.0.1 10.37.129.2</code></pre>
+    <pre><code>java -jar src/tools/webserver.jar -h 127.0.0.1 10.211.55.2</code></pre>
     
-    <p>This would start up the local web server on <code>127.0.0.1:8080</code> and <code>10.37.129.2:8080</code>.</p>
+    <p>This would start up the local web server on <code>127.0.0.1:8080</code> and <code>10.211.55.2:8080</code>.</p>
   </li>
   <li>Ensure that the local web server is running by opening a web browser and going to <code><a href="http://127.0.0.1:8080/samples/javascript-samples/helloworld.html">http://127.0.0.1:8080/samples/javascript-samples/helloworld.html</a></code>. You should see two SVG images side by side, with a blue circle and the text "Hello World From Embedded SVG!" and "Hello World From An SVG File!".</li>
 </ol>

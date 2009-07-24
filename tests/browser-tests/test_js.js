@@ -4561,16 +4561,16 @@ function testStyle() {
   desc.style.border = '1px solid black';
   
   // change the style of some rectangles that are already in the page
-  rect1 = document.getElementById('anotherRect1');
+  rect1 = getDoc('mySVG').getElementById('anotherRect1');
   assertExists('anotherRect1 should exist', rect1);
-  rect2 = document.getElementById('anotherRect2');
+  rect2 = getDoc('mySVG').getElementById('anotherRect2');
   assertExists('anotherRect2 should exist', rect2);
   assertEqualsAny('anotherRect1.style.fill == blue or #0000FF or rgb(0, 0, 255)',
                   ['blue', '#0000FF', 'rgb(0, 0, 255)'],
                   rect1.style.fill);
   rect1.style.fill = 'green';
-  assertEqualsAny('anotherRect1.style.fill == green or #00FF00 or rgb(0, 255, 0)',
-                  ['green', '#00FF00', 'rgb(0, 255, 0)'],
+  assertEqualsAny('anotherRect1.style.fill == green or #008000 or rgb(0, 128, 0)',
+                  ['green', '#008000', 'rgb(0, 128, 0)'],
                   rect1.style.fill);
   console.log('FIRST IMAGE: You should see a green rectangle, and _not_ a blue '
               + 'rectangle');
@@ -5142,7 +5142,7 @@ function testBugFixes() {
   
   // make sure svgElement.style.* access works for elements that are in the
   // page's markup itself
-  rect1 = getDoc('svg2').getElementById('testStyleRect');
+  rect1 = getDoc('svg11242').getElementById('testStyleRect');
   assertExists('testStyleRect in svg2 should exist', rect1);
   assertEqualsAny('rect1.style.fill == #ffffff or #FFFFFF '
                   + 'or rgb(255, 255, 255)', 
@@ -5184,7 +5184,7 @@ function testBugFixes() {
   // a test where we try to set an HTML style property, such as
   // style.backgroundColor, on an _SVG_ element. Make sure nothing happens and that an
   //error is not thrown
-  rect1 = getDoc('svg2').getElementById('testStyleRect');
+  rect1 = getDoc('svg11242').getElementById('testStyleRect');
   rect1.style.backgroundColor = 'purple';
   rect1.style.fontSize = '12pt';
 

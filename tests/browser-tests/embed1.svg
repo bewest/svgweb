@@ -44,7 +44,7 @@
           y="80" 
           font-family="Verdana" 
           font-size="24" 
-          fill="blue">hello world</text><desc>This is a description</desc><title>This is a title</title></g>
+          fill="blue">hello world</text><desc>This is a description</desc><title>This is a title</title><rect id="anotherRect1" x="350" y="150" width="50" height="50" style="fill: blue"/><rect id="anotherRect2" x="350" y="220" width="50" height="50"/></g>
   <g id="removeMe">
     <text x="80" y="150" id="testText5">You should not see this</text>
     <rect x="80" y="190" width="15" height="15" fill="green"/>
