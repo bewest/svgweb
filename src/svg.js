@@ -5897,12 +5897,12 @@ extend(FlashInserter, {
     
     // SVG spec says default display value for SVG root element is 
     // inline
-    if (style.indexOf('display:') == -1) {
+    if (this._embedType == 'script' && style.indexOf('display:') == -1) {
       style += 'display: inline;';
     }
     
     // SVG spec says SVG by default should have overflow: none
-    if (style.indexOf('overflow:') == -1) {
+    if (this._embedType == 'script' && style.indexOf('overflow:') == -1) {
       style += 'overflow: hidden;';
     }
     
