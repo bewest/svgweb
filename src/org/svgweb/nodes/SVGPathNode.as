@@ -57,8 +57,7 @@ package org.svgweb.nodes
             return data;
         }
         
-        protected override function generateGraphicsCommands():void {
-            
+        protected override function generateGraphicsCommands():void {  
             this._graphicsCommands = new  Array();
             
             var command:String;
@@ -245,8 +244,6 @@ package org.svgweb.nodes
             this.setYMinMax(y);
         }
         
-                
-        
         private function quadraticBezierSmooth(x:Number, y:Number, isAbs:Boolean):void {
             var x1:Number = this.currentX + (this.currentX - this.lastCurveControlX);
             var y1:Number = this.currentY + (this.currentY - this.lastCurveControlY);
@@ -393,8 +390,5 @@ package org.svgweb.nodes
             /* A portion of code from Bezier_lib.as by Timothee Groleau */
             return {x: (P0.x + ((P1.x - P0.x) * ratio)), y: (P0.y + ((P1.y - P0.y) * ratio))};
         }                            
-        
-        
-        
     }
 }

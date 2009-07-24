@@ -334,10 +334,12 @@ package org.svgweb.nodes
                 switch (textAnchor) {                    
                     case 'middle':
                         this._textField.autoSize = TextFieldAutoSize.CENTER;
-                        this._textField.x = -textLineMetrics.x - Math.floor(textLineMetrics.width / 2);                        break;
+                        this._textField.x = -textLineMetrics.x - Math.floor(textLineMetrics.width / 2);
+                        break;
                     case 'end':
                         this._textField.autoSize = TextFieldAutoSize.RIGHT;
-                        this._textField.x = -textLineMetrics.x - textLineMetrics.width;                        break;
+                        this._textField.x = -textLineMetrics.x - textLineMetrics.width;
+                        break;
                     default: //'start'
                         this._textField.autoSize = TextFieldAutoSize.LEFT;
                         this._textField.x = -textLineMetrics.x;
@@ -369,9 +371,7 @@ package org.svgweb.nodes
                 this.alpha = 0;
             }
         }
-        /**
-         * 
-         **/
+        
         override protected function draw():void {
             super.draw();
 

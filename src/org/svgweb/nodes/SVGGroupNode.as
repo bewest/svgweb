@@ -45,6 +45,5 @@ package org.svgweb.nodes
                 super.loadAttribute(name, field, useStyle);
             }
         }
-
     }
 }
