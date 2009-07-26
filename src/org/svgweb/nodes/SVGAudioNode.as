@@ -24,6 +24,7 @@ package org.svgweb.nodes
     import org.svgweb.utils.SVGColors;
     import flash.events.Event;
     import flash.events.ProgressEvent;
+    import flash.events.IOErrorEvent;
     import flash.net.URLRequest;
     import flash.media.Sound;
     import flash.media.SoundChannel;
@@ -61,13 +62,17 @@ package org.svgweb.nodes
             var mySoundReq:URLRequest = new URLRequest(audioHref);
             sound = new Sound();
             sound.addEventListener(ProgressEvent.PROGRESS, progressHandler);
+            sound.addEventListener(IOErrorEvent.IO_ERROR, ioErrorHandler);
             sound.load(mySoundReq);
         }
 
-        protected function progressHandler():void {
+        protected function progressHandler(event:ProgressEvent):void {
             if (this.eachRepeatDuration ==  INDEFINITE) {
                 this.eachRepeatDuration = sound.length;
             }
+        }
+
+        protected function ioErrorHandler(event:IOErrorEvent):void {
         }
 
         override protected function repeatIntervalStarted():void {

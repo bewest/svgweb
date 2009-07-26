@@ -460,11 +460,7 @@ package org.svgweb.core
             if (this.getStyleOrAttr('visibility') == null 
                 || recursive == false) {
                 if (visible == 'visible') {
-                    if (getStyleOrAttr('opacity') !== null) {
-                        drawSprite.alpha = SVGColors.cleanNumber(this.getStyleOrAttr('opacity'));
-                    } else {
-                        drawSprite.alpha = 1;
-                    }
+                    drawSprite.alpha = SVGColors.cleanNumber(this.getStyleOrAttr('opacity'));
                 } else {
                     drawSprite.alpha = 0;
                 }
@@ -1168,6 +1164,12 @@ package org.svgweb.core
             }
             
             if (ATTRIBUTES_NOT_INHERITED.indexOf(name) != -1) {            
+                if (defaultValue == null) {
+                    if (name == 'opacity') {
+                        return '1';
+                    }
+                    // default fall through
+                }
                 return defaultValue;        
             }
             

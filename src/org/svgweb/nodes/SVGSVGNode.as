@@ -164,6 +164,12 @@ package org.svgweb.nodes
             }
 
             if (ATTRIBUTES_NOT_INHERITED.indexOf(name) != -1) {
+                if (defaultValue == null) {
+                    if (name == 'opacity') {
+                        return '1';
+                    }
+                    // default fall through
+                }
                 return defaultValue;
             }
 

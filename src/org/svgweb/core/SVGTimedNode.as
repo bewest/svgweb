@@ -187,10 +187,12 @@ package org.svgweb.core
                 // Start new interval
                 currentTimeSpec = nextCurrentTimeSpec;
                 currentTimeInterval = nextCurrentTimeInterval;
-                currentTimeInterval.startInterval();
-                timeIntervalStarted();
-                currentRepeatIndex=0;
-                repeatIntervalStarted();
+                if (currentTimeInterval != null) {
+                    currentTimeInterval.startInterval();
+                    timeIntervalStarted();
+                    currentRepeatIndex=0;
+                    repeatIntervalStarted();
+                }
             }
             else {
                 if (currentTimeInterval != null) {

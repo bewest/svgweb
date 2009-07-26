@@ -384,7 +384,7 @@ package org.svgweb.nodes
             fromParameter = this.getAttribute('from', null);
             if (fromParameter == null) {
                 if (attributeName != null) {
-                    fromParameter = targetNode.getAttribute(attributeName);
+                    fromParameter = targetNode.getAttribute(attributeName, null, true, false);
                 }
             }
         }

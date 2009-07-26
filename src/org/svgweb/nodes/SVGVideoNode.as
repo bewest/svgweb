@@ -44,16 +44,20 @@ package org.svgweb.nodes
             connection.connect(null);
        
             netStream = new NetStream(connection);
+            netStream.addEventListener(NetStatusEvent.NET_STATUS, handleNetEvent);
+
+            // See http://www.adobe.com/devnet/flash/quickstart/metadata_cue_points/
+            function onMetaDataHandler(meta:Object):void {
+                //this.dbg("meta: " + meta);
+            }
+            netStream.client = {onMetaData:onMetaDataHandler};
        
             var _width:Number = SVGUnits.cleanNumber(this.getAttribute('width', '0'));
             var _height:Number = SVGUnits.cleanNumber(this.getAttribute('height', '0'));
             video = new Video(_width, _height);
-            this.viewBoxSprite.addChild(video);
-       
             video.attachNetStream(netStream);
-       
-            netStream.addEventListener(NetStatusEvent.NET_STATUS, handleNetEvent);
-            netStream.client = this;
+
+            this.viewBoxSprite.addChild(video);
         }
 
         protected function handleNetEvent(status:NetStatusEvent):void {
@@ -63,9 +67,6 @@ package org.svgweb.nodes
             }
         }
 
-        protected function onMetaData(meta:Object):void {
-            //this.dbg("meta: " + meta);
-        }
 
         override protected function setAttributes():void {
             super.setAttributes();

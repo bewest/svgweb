@@ -23,18 +23,31 @@ package org.svgweb.nodes {
     import flash.display.DisplayObject;
     
     public class SVGGlyphNode extends SVGPathNode {
+        protected var parentFont:SVGFontNode;
 
         public function SVGGlyphNode(svgRoot:SVGSVGNode, xml:XML = null, original:SVGNode = null) {
             super(svgRoot, xml, original);
         }
 
         override protected function onAddedToStage(event:Event):void {
-            this.getParentFont().registerGlyph(this);
+            if (original) {
+                parentFont = SVGGlyphNode(original).getParentFont();
+            }
+            else {
+                parentFont = this.getParentFont();
+            }
+            // If we are the master glyph (not a clone used by a text node)
+            // then register with the parent font.
+            if (original == null && parentFont) {
+                parentFont.registerGlyph(this);
+            }
             super.onAddedToStage(event);
         }
 
         override protected function onRemovedFromStage(event:Event):void {
-            this.getParentFont().unregisterGlyph(this);
+            if (original == null && parentFont) {
+                parentFont.unregisterGlyph(this);
+            }
             super.onRemovedFromStage(event);
         }
 
@@ -55,7 +68,7 @@ package org.svgweb.nodes {
             var node:DisplayObject = this;
             while (node && !(node is SVGSVGNode)) {
                 node=node.parent;
-                if (node is SVGFontNode)
+                if (node && node is SVGFontNode)
                     return SVGFontNode(node);
             }
             return null;
