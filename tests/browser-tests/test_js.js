@@ -969,9 +969,9 @@ function testChildNodes() {
   assertEquals("child.childNodes.length == 0", 0, 
                child.childNodes.length);
   if (whitespaceAreNodes) {
-    assertUndefined("group.childNodes[9] == undefined", group.childNodes[9]);
+    assertUndefined("group.childNodes[13] == undefined", group.childNodes[13]);
   } else {     
-    assertUndefined("group.childNodes[4] == undefined", group.childNodes[4]);
+    assertUndefined("group.childNodes[6] == undefined", group.childNodes[6]);
   }
   for (var i = 0; i < group.childNodes.length; i++) {
     assertExists('looping through childNodes, i=' + i, 
@@ -1874,8 +1874,7 @@ function testAppendChild() {
       break;
     }
   }
-  assertExists('circle should exist after getElementsByTagNameNS', 
-               circle);
+  assertExists('circle should exist after getElementsByTagNameNS', circle);
   circle.setAttribute('id', 'myCircle');
   
   // create an SVG visual element path and attach it to an
@@ -5158,11 +5157,14 @@ function testBugFixes() {
   // htmlElement.style.foo still works after our patching
   elem = document.getElementById('testHTMLH1');
   assertExists('testHTMLH1 should exist', elem);
-  assertEqualsAny('testHTMLH1.style.border == "3px solid black"',
-                  ['3px solid black'], elem.style.border);
+  // IE gives the border dimensions in a different order
+  assertEqualsAny('testHTMLH1.style.border == '
+                  + '"3px solid black" or "black 3px solid"',
+                  ['3px solid black', 'black 3px solid'], elem.style.border);
   elem.style.border = '2px dashed purple';
-  assertEqualsAny('testHTMLH1.style.border == "3px solid black"',
-                  ['2px dashed purple'], elem.style.border);
+  assertEqualsAny('testHTMLH1.style.border == '
+                  + '"3px solid black" or "purple 2px dashed"',
+                  ['2px dashed purple', 'purple 2px dashed'], elem.style.border);
   console.log('HTML: There should be a purple dashed box around the HTML '
               + 'H1 element that says "Test HTML H1"');
               

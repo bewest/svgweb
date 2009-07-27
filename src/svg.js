@@ -294,15 +294,25 @@ function xpath(doc, context, expr, namespaces) {
     
     if (namespaces) {
       var allNamespaces = '';
+      // IE throws an error if the same namespace is present multiple times,
+      // so remove duplicates
+      var foundNamespace = {};
       for (var i = 0; i < namespaces.length; i++) {
         var namespaceURI = namespaces[i];
         var prefix = namespaces['_' + namespaceURI];
-        if (prefix == 'xmlns') {
-          continue;
+
+        // seen before?
+        if (!foundNamespace['_' + namespaceURI]) {
+          if (prefix == 'xmlns') {
+            allNamespaces += 'xmlns="' + namespaceURI + '" ';
+          } else {
+            allNamespaces += 'xmlns:' + prefix + '="' + namespaceURI + '" ';
+          }
+          
+          foundNamespace['_' + namespaceURI] = namespaceURI;
         }
-        allNamespaces += 'xmlns:' + prefix + '="' + namespaceURI + '" ';
       }
-      doc.setProperty("SelectionNamespaces",  allNamespaces);
+      doc.setProperty('SelectionNamespaces',  allNamespaces);
     }
     
     var found = context.selectNodes(expr);
@@ -333,7 +343,7 @@ function parseXML(xml, preserveWhiteSpace) {
   if (preserveWhiteSpace === undefined) {
     preserveWhiteSpace = false;
   }
-  
+    
   var xmlDoc;
   if (typeof DOMParser != 'undefined') { // non-IE browsers
     // parse the SVG using an XML parser
@@ -375,7 +385,7 @@ function parseXML(xml, preserveWhiteSpace) {
       xmlDoc.resolveExternals = false;
       xmlDoc.validateOnParse = false;
       
-      // MSXML 6 breaking change:
+      // MSXML 6 breaking change (Issue 138):
       // http://code.google.com/p/sgweb/issues/detail?id=138
       xmlDoc.setProperty('ProhibitDTD', false);
       
@@ -2785,9 +2795,12 @@ extend(NativeHandler, {
         var prefix = (m[1] ? m[1] : 'xmlns');
         var namespaceURI = attr.nodeValue;
         
-        results['_' + prefix] = namespaceURI;
-        results['_' + namespaceURI] = prefix;
-        results.push(namespaceURI);
+        // don't add duplicates
+        if (!results['_' + prefix]) {
+          results['_' + prefix] = namespaceURI;
+          results['_' + namespaceURI] = prefix;
+          results.push(namespaceURI);
+        }
       }
     }
     
@@ -2929,7 +2942,7 @@ function _Node(nodeName, nodeType, prefix, namespaceURI, nodeXML, handler,
     } else {
       xml += '<' + nodeName + ' xmlns:' + prefix + '="' + namespaceURI + '"/>';
     }
-    
+        
     this._nodeXML = parseXML(xml).documentElement;
   }
   
@@ -3965,7 +3978,7 @@ extend(_Node, {
       var prefix = this._handler.document._namespaces['_' + uri];
       
       // ignore our fake SVG namespace string
-      if (uri == 'urn:__fake__internal__namespace') {
+      if (uri == svgnsFake) {
         uri = svgns;
       }
       
@@ -6341,33 +6354,46 @@ extend(_Document, {
     if (this._xml.getElementsByTagNameNS) { // non-IE browsers
       results = this._xml.getElementsByTagNameNS(ns, localName);
     } else { // IE
-      if (ns === null) {
-        // we can't just use getElementsByTagName() here, because IE
-        // will incorrectly return tags that are in the default namespace
-        results = xpath(this._xml, null, '//' + localName);
-      } else {
-        // figure out correct query string for IE
-        var query;
-        if (ns == '*' && localName == '*') {
-          query = '*';
-        } else if (ns == '*') { // not supported
+      // we use XPath instead of xml.getElementsByTagName because some versions
+      // of MSXML have namespace glitches with xml.getElementsByTagName
+      // (Issue 183: http://code.google.com/p/svgweb/issues/detail?id=183)
+      
+      // figure out prefix
+      var prefix = 'xmlns';
+      if (ns && ns != '*') {
+        prefix = this._namespaces['_' + ns];
+        
+        if (prefix === undefined) {
           return createNodeList(); // empty []
-        } else {
-          var prefix = this._namespaces['_' + ns];
-          if (prefix === undefined) {
-            return createNodeList(); // empty []
-          }
-          
-          if (prefix === undefined) {
-            results = createNodeList();
-          } else if (prefix == 'xmlns') {
-            query = localName;
-          } else {
-            query = prefix + ':' + localName;
-          }
         }
+      }
+      
+      // determine correct xpath query
+      var query;
+      if (ns == '*' && localName == '*') {
+        query = '//*';
+      } else if (ns == '*') {
+        query = "//*[namespace-uri()='*' and local-name()='" + localName + "']";
+      } else if (localName == '*') {
+        query = "//*[namespace-uri()='" + ns + "']";
+      } else {
+        // Wonderful IE bug: some versions of MSXML don't seem to 'see'
+        // the default XML namespace with XPath, forcing you to pretend like 
+        // an element has no namespace: //circle
+        // _Other_ versions of MSXML won't work like this, and _do_ see the
+        // default namespace, forcing you to fully specify it:
+        // //*[namespace-uri()='http://my-namespace' and local-name()='circle']
+        // To accomodate these we run both and use an XPath Union Operator
+        // to combine the results
+        query = "//" + localName 
+                + " | //*[namespace-uri()='" + ns + "' and local-name()='" 
+                + localName + "']";
+      }
+      
+      //console.log('query='+query);
 
-        matches = this._xml.getElementsByTagName(query);
+      matches = xpath(this._xml, null, query, this._namespaces);
+      if (matches !== null && matches !== undefined && matches.length > 0) {
         for (var i = 0; i < matches.length; i++) {
           results.push(matches[i]);
         }
@@ -6407,10 +6433,13 @@ extend(_Document, {
         var m = attr.nodeName.match(/^xmlns:?(.*)$/);
         var prefix = (m[1] ? m[1] : 'xmlns');
         var namespaceURI = attr.nodeValue;
-        
-        results['_' + prefix] = namespaceURI;
-        results['_' + namespaceURI] = prefix;
-        results.push(namespaceURI);
+                
+        // don't add duplicates
+        if (!results['_' + prefix]) {
+          results['_' + prefix] = namespaceURI;
+          results['_' + namespaceURI] = prefix;
+          results.push(namespaceURI);
+        }
       }
     }
     
