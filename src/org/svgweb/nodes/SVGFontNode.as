@@ -32,7 +32,7 @@ package org.svgweb.nodes
             super(svgRoot, xml, original);
         }
         
-        public function registerGlyph(glyph:SVGGlyphNode) {
+        public function registerGlyph(glyph:SVGGlyphNode):void {
             if (glyph is SVGMissingGlyphNode) {
                 this.missingGlyph = SVGMissingGlyphNode(glyph);
             }
@@ -41,7 +41,7 @@ package org.svgweb.nodes
             }
         }
 
-        public function unregisterGlyph(glyph:SVGGlyphNode) {
+        public function unregisterGlyph(glyph:SVGGlyphNode):void {
             delete this.glyphs[glyph.getUnicode()];
         }
 

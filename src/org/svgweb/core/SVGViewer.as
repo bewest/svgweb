@@ -87,7 +87,7 @@ package org.svgweb.core
         public function customizeContextMenu():void {
             context = new ContextMenu();
             
-            var itemAbout:ContextMenuItem = new ContextMenuItem("About SVG Web", aboutSVGWeb);
+            var itemAbout:ContextMenuItem = new ContextMenuItem("About SVG Web");
             var itemBug:ContextMenuItem = new ContextMenuItem("Report Issue with SVG Web ");
             itemAbout.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, aboutSVGWeb);
             itemBug.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, reportBug);

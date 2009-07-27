@@ -206,7 +206,7 @@ package org.svgweb
             this.setSVGString(svgString);
         }
 
-        protected function setSVGString(xmlString:String, objectURL:String = '', pageURL:String = '') {
+        protected function setSVGString(xmlString:String, objectURL:String = '', pageURL:String = ''):void {
             this.renderStartTime = (new Date()).valueOf();
             var dataXML:XML = new XML(SVGViewerWeb.expandEntities(xmlString));
             while(this.numChildren) {
@@ -305,7 +305,7 @@ package org.svgweb
             // completed rendering initially with animation effects.
             // We would start that tracking here, because the SVGLoad event
             // signals the end of parsing.
-            setTimeout(function () { svgRoot.visible = true }, 200); 
+            setTimeout(function ():void { svgRoot.visible = true }, 200); 
      
             var onLoadHandler:String = '';
             if (this.svgRoot.xml.@onload) {
@@ -376,7 +376,7 @@ package org.svgweb
 
         public function js_handleInvoke(jsMsg:Object):Object {
             //this.debug('js_handleInvoke, jsMsg='+this.debugMsg(jsMsg));
-            var element, parent;
+            var element:SVGNode, parent:SVGNode;
             
             try {
                 if (jsMsg.method == 'addEventListener') {
@@ -452,7 +452,7 @@ package org.svgweb
                         applyAnimations = jsMsg.applyAnimations;
                     }
                     
-                    var attrValue = element.xml.@[jsMsg.attrName]; 
+                    var attrValue:String = element.xml.@[jsMsg.attrName]; 
                     if (typeof(attrValue) != 'undefined' && attrValue != null) {
                         if (jsMsg.getFromStyle) {
                             jsMsg.attrValue = element.getStyle(jsMsg.attrName, null, false);
@@ -482,8 +482,8 @@ package org.svgweb
                                    + jsMsg.elementGUID);
                     }
                     
-                    var attrName = jsMsg.attrName;
-                    var attrValue = decodeFlashData(jsMsg.attrValue);
+                    var attrName:String = jsMsg.attrName;
+                    attrValue = decodeFlashData(jsMsg.attrValue);
                     
                     if (attrName == 'id') {
                         this.svgRoot.unregisterID(element);
@@ -494,7 +494,7 @@ package org.svgweb
                     }
                     else if (jsMsg.attrNamespace != null) {
                         // namespaced attribute, such as xlink:href
-                        var ns = new Namespace(jsMsg.attrNamespace);
+                        var ns:Namespace = new Namespace(jsMsg.attrNamespace);
                         element.xml.@ns::[attrName] = attrValue.toString();
                     } else {
                         element.setAttribute(attrName, attrValue.toString());
@@ -522,7 +522,7 @@ package org.svgweb
                     // TEXT<element>foo</element>TEXT)
                 
                     // get the refChild and the parent
-                    var refChild, parent;
+                    var refChild:SVGNode;
                     
                     refChild = this.svgRoot.getNodeByGUID(jsMsg.refChildGUID);
                     if (!refChild) {
@@ -564,7 +564,7 @@ package org.svgweb
                         parent.invalidateDisplay();
                     }
                 }
-            } catch (err) {
+            } catch (err:Error) {
                 this.error("error:" + err);
                 throw err;
             }
@@ -691,13 +691,11 @@ package org.svgweb
         */
         public function debugMsg(msg:Object):String {
             if (this.debugEnabled) {
-                var result = [];
-                for (var i in msg) {
+                var result:Array = [];
+                for (var i:* in msg) {
                     result.push(i + ': ' + msg[i]);
                 }
-                result = result.join(', ');
-
-                return '{' + result + '}';
+                return '{' + result.join(', ') + '}';
             } else {
                 return null;
             }
@@ -708,7 +706,7 @@ package org.svgweb
             As a workaround we turned ampersands into the temporary
             token __SVG__AMPERSAND before sending it over to Flash. */
         protected function decodeFlashData(str:String):String {
-            if (str === null || str === undefined) {
+            if (str === null) {
                 return str;
             }
             

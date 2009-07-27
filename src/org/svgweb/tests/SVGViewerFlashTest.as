@@ -25,7 +25,7 @@ package org.svgweb.tests
     [SWF(frameRate="40", width="800", height="600")]
     public class SVGViewerFlashTest extends Sprite
     {
-        var svgImage:SVGViewerFlash;
+        private var svgImage:SVGViewerFlash;
 
         public function SVGViewerFlashTest()
         {

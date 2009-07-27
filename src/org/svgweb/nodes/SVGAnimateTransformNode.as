@@ -38,6 +38,19 @@ package org.svgweb.nodes
         }
 
         public function getAnimTransform():Matrix {
+            var parts:Array;
+            var fromX:String;
+            var fromY:String;
+            var fromXVal:Number;
+            var fromYVal:Number;
+            var transformMatrix:Matrix;
+            var toX:String;
+            var toY:String;
+            var toXVal:Number;
+            var toYVal:Number;
+            var animX:Number;
+            var animY:Number;
+
             if (attributeName != "transform") {
                 return null;
             }
@@ -70,30 +83,30 @@ package org.svgweb.nodes
             var keyTimeSpline:String = getKeyTimeSpline(keyTimeIndex);
             if (typeParameter == "translate") {
                 // Parse From
-                var parts:Array = SVGColors.trim(fromString).split(/\s+/);
-                var fromX:String = parts[0];
-                var fromY:String = "0";
+                parts = SVGColors.trim(fromString).split(/\s+/);
+                fromX = parts[0];
+                fromY = "0";
                 if (parts.length == 2) {
                     fromY = parts[1];
                 }
-                var fromXVal:Number = SVGUnits.cleanNumber(fromX);
-                var fromYVal:Number = SVGUnits.cleanNumber(fromY);
+                fromXVal = SVGUnits.cleanNumber(fromX);
+                fromYVal = SVGUnits.cleanNumber(fromY);
 
                 // Parse To
                 parts = SVGColors.trim(toString).split(/\s+/);
-                var toX:String = parts[0];
-                var toY:String = "0";
+                toX = parts[0];
+                toY = "0";
                 if (parts.length == 2) {
                     toY = parts[1];
                 }
-                var toXVal:Number = SVGUnits.cleanNumber(toX);
-                var toYVal:Number = SVGUnits.cleanNumber(toY);
+                toXVal = SVGUnits.cleanNumber(toX);
+                toYVal = SVGUnits.cleanNumber(toY);
 
-                var animX:Number = interpolate(fromXVal, toXVal,
+                animX = interpolate(fromXVal, toXVal,
                                                keyTimeFraction, keyTimeSpline);
-                var animY:Number = interpolate(fromYVal, toYVal,
+                animY = interpolate(fromYVal, toYVal,
                                                keyTimeFraction, keyTimeSpline);
-                var transformMatrix:Matrix = new Matrix();
+                transformMatrix = new Matrix();
                 transformMatrix.translate(animX, animY);
                 return transformMatrix;
                 // XXX create a matrix directly
@@ -103,30 +116,30 @@ package org.svgweb.nodes
             // XXX not implemented
             if (typeParameter == "scale") {
                 // Parse From
-                var parts:Array = SVGColors.trim(fromString).split(/\s+/);
-                var fromX:String = parts[0];
-                var fromY:String = parts[0];
+                parts = SVGColors.trim(fromString).split(/\s+/);
+                fromX = parts[0];
+                fromY = parts[0];
                 if (parts.length == 2) {
                     fromY = parts[1];
                 }
-                var fromXVal:Number = SVGUnits.cleanNumber(fromX);
-                var fromYVal:Number = SVGUnits.cleanNumber(fromY);
+                fromXVal = SVGUnits.cleanNumber(fromX);
+                fromYVal = SVGUnits.cleanNumber(fromY);
 
                 // Parse To
                 parts = SVGColors.trim(toString).split(/\s+/);
-                var toX:String = parts[0];
-                var toY:String = parts[0];
+                toX = parts[0];
+                toY = parts[0];
                 if (parts.length == 2) {
                     toY = parts[1];
                 }
-                var toXVal:Number = SVGUnits.cleanNumber(toX);
-                var toYVal:Number = SVGUnits.cleanNumber(toY);
+                toXVal = SVGUnits.cleanNumber(toX);
+                toYVal = SVGUnits.cleanNumber(toY);
 
-                var animX:Number = interpolate(fromXVal, toXVal,
+                animX = interpolate(fromXVal, toXVal,
                                                keyTimeFraction, keyTimeSpline);
-                var animY:Number = interpolate(fromYVal, toYVal,
+                animY = interpolate(fromYVal, toYVal,
                                                keyTimeFraction, keyTimeSpline);
-                var transformMatrix:Matrix = new Matrix();
+                transformMatrix = new Matrix();
                 transformMatrix.scale(animX, animY);
                 return transformMatrix;
             }
@@ -137,7 +150,7 @@ package org.svgweb.nodes
                 var toCY:String = "0";
 
                 // Parse From
-                var parts:Array = SVGColors.trim(fromString).split(/\s+/);
+                parts = SVGColors.trim(fromString).split(/\s+/);
                 var fromAngleString:String = parts[0];
                 var fromCXString:String = "0";
                 var fromCYString:String = "0";
@@ -152,7 +165,7 @@ package org.svgweb.nodes
                 var fromCYVal:Number = SVGUnits.cleanNumber(fromCYString);
 
                 // Parse To
-                var parts:Array = SVGColors.trim(toString).split(/\s+/);
+                parts = SVGColors.trim(toString).split(/\s+/);
                 var toAngleString:String = parts[0];
                 var toCXString:String = "0";
                 var toCYString:String = "0";
@@ -172,7 +185,7 @@ package org.svgweb.nodes
                                                     keyTimeFraction, keyTimeSpline);
                 var animCY:Number = interpolate(fromCYVal, toCYVal,
                                                     keyTimeFraction, keyTimeSpline);
-                var transformMatrix:Matrix = new Matrix();
+                transformMatrix = new Matrix();
                 transformMatrix.translate(-animCX, -animCY);
                 transformMatrix.rotate(animAngle * Math.PI / 180.0);
                 transformMatrix.translate(animCX, animCY);

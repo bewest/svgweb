@@ -60,9 +60,9 @@ package org.svgweb.smil {
         private var x1:Number, y1:Number, x2:Number, y2:Number;
         private var lengths:Array = new Array();
 
-        static protected var cachedSplines = new Object();
+        static protected var cachedSplines:Object = new Object();
 
-        static public function getSplineInterpolator(keySpline:String, node:SVGNode) {
+        static public function getSplineInterpolator(keySpline:String, node:SVGNode):Object {
             keySpline = keySpline.replace(/,/sg," "); //Replace commas with spaces
             if (cachedSplines[keySpline] is SplineInterpolator) {
                  return cachedSplines[keySpline];
@@ -89,6 +89,8 @@ package org.svgweb.smil {
          */
         public function SplineInterpolator(x1:Number,y1:Number,
                                            x2:Number,y2:Number,node:SVGNode) {
+            var lengthItem:LengthItem;
+
             this.x1 = x1;
             this.y1 = y1;
             this.x2 = x2;
@@ -103,7 +105,7 @@ package org.svgweb.smil {
                 var length:Number = prevLength + 
                         Math.sqrt( (xy.x - prevX) * (xy.x - prevX) + 
                                    (xy.y - prevY) * (xy.y - prevY));
-                var lengthItem:LengthItem = new LengthItem(length, t);
+                lengthItem = new LengthItem(length, t);
                 lengths.push(lengthItem);
                 prevLength = length;
                 prevX = xy.x;
@@ -113,7 +115,7 @@ package org.svgweb.smil {
             // array with values in [0,1].  prevLength now holds the total
             // length of the spline.
             for (var i:Number = 0; i < lengths.length; ++i) {
-                var lengthItem:LengthItem = lengths[i];
+                lengthItem = lengths[i];
                 lengthItem.setFraction(prevLength);
             }
         }

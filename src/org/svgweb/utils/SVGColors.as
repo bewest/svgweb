@@ -349,7 +349,7 @@ package org.svgweb.utils
          **/
         static public function cleanNumber(num:*):Number {
             if (num == null) {
-                return null;
+                return 0;
             }
             var numString:String = String(num);
             if (isColor(numString)) {
@@ -359,7 +359,7 @@ package org.svgweb.utils
             return Number(numString);
         }
 
-        static public function isColor(colorString:String) {
+        static public function isColor(colorString:String):Boolean {
             if (  colorString.match(/^#/)
                 || (colorString.indexOf("rgb") != -1)
                 || (colors.hasOwnProperty(colorString)) ) {

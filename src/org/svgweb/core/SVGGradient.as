@@ -158,8 +158,8 @@ package org.svgweb.core
          * This method supports href inheritence of styles from base nodes of the same type.
          *
          **/
-        override protected function _getStyle(name:String):* {
-            var value = super._getStyle(name);
+        override protected function _getStyle(name:String):String {
+            var value:String = super._getStyle(name);
             if (value != null) {
                 return value;
             }

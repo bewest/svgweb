@@ -101,6 +101,8 @@ package org.svgweb.nodes
 
         public function getAnimValue():String {
             var interval:TimeInterval = getEffectiveInterval();
+            var previousCount:int;
+
             if (interval) {
                 var repeatFraction:Number = interval.getRepeatIntervalFraction(lastDocTime, this);
 
@@ -130,7 +132,7 @@ package org.svgweb.nodes
                         if (accumulateParameter == "sum") {
                             fromVal = SVGColors.cleanNumber(fromParameter);
                             toVal = SVGColors.cleanNumber(toParameter);
-                            var previousCount:int =  interval.getRepeatIndex(lastDocTime, this);
+                            previousCount = interval.getRepeatIndex(lastDocTime, this);
                             if (previousCount > 0) {
                                 fromVal += toVal * previousCount;
                                 toVal   += toVal * previousCount;
@@ -164,7 +166,7 @@ package org.svgweb.nodes
                 }
 
                 if (accumulateParameter == "sum") {
-                    var previousCount:int =  interval.getRepeatIndex(lastDocTime, this);
+                    previousCount = interval.getRepeatIndex(lastDocTime, this);
                     if (previousCount > 0) {
                         // XXX For "values", should use the last value, not to
                         fromVal += toVal * previousCount;
@@ -336,7 +338,7 @@ package org.svgweb.nodes
         }
 
         protected function splineInterpolate(fraction:Number, keySpline:String):Number {
-            var interpolator= SplineInterpolator.getSplineInterpolator(keySpline, this);
+            var interpolator:Object = SplineInterpolator.getSplineInterpolator(keySpline, this);
             return interpolator.interpolate(fraction, this);
         }
         

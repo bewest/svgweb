@@ -37,7 +37,7 @@ package org.svgweb.nodes {
             //This way drawNode is only called once
             //this._invalidDisplay = false;
 
-            var content;
+            var content:String;
             if (this.svgRoot.parent is SVGViewerWeb) {
                 content = this._xml.children()[0].text().toString();
             } else {

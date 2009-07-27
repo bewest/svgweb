@@ -21,9 +21,9 @@
 package org.svgweb.core
 {
     import org.svgweb.core.SVGViewer;
+    import org.svgweb.nodes.*;
     import org.svgweb.utils.SVGColors;
     import org.svgweb.utils.SVGUnits;
-    import org.svgweb.nodes.*;
     
     import flash.display.CapsStyle;
     import flash.display.DisplayObject;
@@ -34,7 +34,6 @@ package org.svgweb.core
     import flash.events.Event;
     import flash.events.MouseEvent;
     import flash.geom.Matrix;
-    import flash.geom.Point;
     import flash.utils.getDefinitionByName;
     import flash.utils.getQualifiedClassName;
 
@@ -327,7 +326,7 @@ package org.svgweb.core
             if (this._xml != null && !this._parsedChildren) {
                 this.parseChildren();
                 for (var i:uint = 0; i < viewBoxSprite.numChildren; i++) {
-                    var child = viewBoxSprite.getChildAt(i);
+                    var child:DisplayObject = viewBoxSprite.getChildAt(i);
                     if (child is SVGNode) {
                         SVGNode(child).forceParse();
                     }
@@ -532,7 +531,7 @@ package org.svgweb.core
             
             var animMatrix:Matrix = this.getAllAnimsTransform();
             if (animMatrix != null) {
-                var newMatrix = transformSprite.transform.matrix.clone();
+                var newMatrix:Matrix = transformSprite.transform.matrix.clone();
                 newMatrix.concat(animMatrix);
                 transformSprite.transform.matrix = newMatrix;
             }
@@ -1261,12 +1260,14 @@ package org.svgweb.core
         public function getAnimAttribute(name:String, defaultValue:* = null,
                                          inherit:Boolean = true,
                                          useStyle:Boolean = false):String {
+            var animation:SVGAnimateNode;
+
             // transform is handled by getAllAnimTransforms
             if (name == "transform")
                 return null;
  
             var foundAnimation:Boolean = false;
-            for each(var animation:SVGAnimateNode in animations) {
+            for each(animation in animations) {
                 if (animation.getAttributeName() == name) {
                     foundAnimation = true;
                 }
@@ -1292,7 +1293,7 @@ package org.svgweb.core
             var discreteStringVal:String;
             // XXX This should sort by priority (activation order) 
             // Add or replace with animations
-            for each(var animation:SVGAnimateNode in animations) {
+            for each(animation in animations) {
                 if (   animation.getAttributeName() == name
                     && animation.isEffective() ) {
                     if (animation.isAdditive()) {
@@ -1450,7 +1451,7 @@ package org.svgweb.core
          **/
         public function getStyle(name:String, defaultValue:* = null, 
                                  inherit:Boolean = true):* {
-            var value = this._getStyle(name);
+            var value:String = this._getStyle(name);
             if (value !== null) {
                 return value;
             }
@@ -1477,7 +1478,7 @@ package org.svgweb.core
         /** This method retrieves the style from the current node only and is
          *  used as a helper for getStyle. 
          **/
-        protected function _getStyle(name:String):* {
+        protected function _getStyle(name:String):String {
             var value:String;
             
             // If we are rendering a mask, then use a simple black fill.
@@ -1537,8 +1538,8 @@ package org.svgweb.core
                 for each(var style:String in styles) {
                     var styleSet:Array = style.split(':');
                     if (styleSet.length == 2) {
-                        var attrName = SVGColors.trim(styleSet[0]);
-                        var attrValue = SVGColors.trim(styleSet[1]);                        
+                        var attrName:String = SVGColors.trim(styleSet[0]);
+                        var attrValue:String = SVGColors.trim(styleSet[1]);                        
                         this._styles[attrName] = attrValue;
                     }
                 }
@@ -1583,7 +1584,7 @@ package org.svgweb.core
             throw new Error("Unimplemented");
         }
         
-        public function onRegisterFont(fontFamily:String) {
+        public function onRegisterFont(fontFamily:String):void {
         }
 
         /**
@@ -1717,7 +1718,8 @@ package org.svgweb.core
         
         public function removeSVGChild(node:SVGNode):SVGNode {
             var child:DisplayObject;
-            for (var i:uint = 0; i < viewBoxSprite.numChildren; i++) {
+            var i:uint;
+            for (i = 0; i < viewBoxSprite.numChildren; i++) {
                 child = viewBoxSprite.getChildAt(i);
                 if (child == node) {
                     viewBoxSprite.removeChild(child);
@@ -1734,7 +1736,7 @@ package org.svgweb.core
             }
             
             // remove from our XML children
-            for (var i = 0; i < this._xml.children().length(); i++) {
+            for (i = 0; i < this._xml.children().length(); i++) {
                 if (this._xml.children()[i].@__guid == node._xml.@__guid) {
                     delete this._xml.children()[i];
                     break;
@@ -1750,7 +1752,7 @@ package org.svgweb.core
          * Adds newChild before refChild. Position is the position of refChild
          * to add newChild before.
          */
-        public function insertSVGBefore(position:int, newChild:SVGNode, refChild:SVGNode) {
+        public function insertSVGBefore(position:int, newChild:SVGNode, refChild:SVGNode):void {
             //this.dbg('insertSVGBefore, position='+position+', newChild='+newChild+', refChild='+refChild);
             // update our XML
             if (position == 0) {
@@ -1809,7 +1811,7 @@ package org.svgweb.core
             return null;
         }
         
-        public static function addSVGChild(parentSprite:Sprite, child:SVGNode) {
+        public static function addSVGChild(parentSprite:Sprite, child:SVGNode):void {
             parentSprite.addChild(child);
             child.svgRoot.renderPending();
         }

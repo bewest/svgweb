@@ -43,9 +43,9 @@ package org.svgweb.smil {
      * 0 to 1.
      */
     public class LengthItem {
-        var length:Number;
-        var t:Number;
-        var fraction:Number;
+        private var length:Number;
+        private var t:Number;
+        private var fraction:Number;
         
         /*
         public function LengthItem(length:Number, t:Number, fraction:Number) {

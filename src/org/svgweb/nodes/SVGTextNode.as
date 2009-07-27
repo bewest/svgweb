@@ -31,7 +31,6 @@ package org.svgweb.nodes
     import flash.text.TextFieldAutoSize;
     import flash.text.TextFormat;
     import flash.text.TextLineMetrics;
-    import flash.utils.describeType;
     
     import flash.filters.GlowFilter;
     
@@ -51,9 +50,9 @@ package org.svgweb.nodes
         
         private var _text:String = '';
 
-        var newGlyphs:Array = null;
+        protected var newGlyphs:Array = null;
         protected var newViewBoxSprite:Sprite = new Sprite();
-        protected var lastGlyph;
+        protected var lastGlyph:SVGNode;
         
         public function SVGTextNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
             super(svgRoot, xml, original);
@@ -69,7 +68,7 @@ package org.svgweb.nodes
             super.onRemovedFromStage(event);
         }
 
-        override public function onRegisterFont(fontFamily:String) {
+        override public function onRegisterFont(fontFamily:String):void {
             if (fontFamily == this.getStyleOrAttr('font-family')) {
                 invalidateDisplay();
             }
@@ -99,6 +98,10 @@ package org.svgweb.nodes
          * Call SVGNode.parse()
          **/
         override protected function parseChildren():void {
+            var i:uint;
+            var textWidth:Number;
+            var glyphChar:String;
+
             super.parseChildren();
             
             //Check for SVGFont
@@ -124,7 +127,6 @@ package org.svgweb.nodes
 
                 var glyphX:Number = 0;
                 var glyphY:Number = 0;
-                var textWidth:Number;
 
                 // Handle text-anchor attribute
                 var textAnchor:String = this.getStyleOrAttr('text-anchor');
@@ -142,17 +144,17 @@ package org.svgweb.nodes
                 switch (textAnchor) {                    
                     case 'middle':
                         textWidth=0;
-                        for (var i:uint = 0; i < this._text.length; i++) {
-                            var glyphChar:String = this._text.charAt(i);
+                        for (i = 0; i < this._text.length; i++) {
+                            glyphChar = this._text.charAt(i);
                             glyph = this._svgFont.getGlyph(glyphChar);
                             textWidth += SVGUnits.cleanNumber(glyph.getAttribute('horiz-adv-x'));
                         }
                         glyphX = -textWidth / 2;
                         break;
                     case 'end':
-                        var textWidth:Number=0;
-                        for (var i:uint = 0; i < this._text.length; i++) {
-                            var glyphChar:String = this._text.charAt(i);
+                        textWidth=0;
+                        for (i = 0; i < this._text.length; i++) {
+                            glyphChar = this._text.charAt(i);
                             glyph = this._svgFont.getGlyph(glyphChar);
                             textWidth += SVGUnits.cleanNumber(glyph.getAttribute('horiz-adv-x'));
                         }
@@ -165,8 +167,8 @@ package org.svgweb.nodes
 
                 newGlyphs = new Array();
                 //Add a glyph for each character in the text
-                for (var i:uint = 0; i < this._text.length; i++) {
-                    var glyphChar:String = this._text.charAt(i);
+                for (i = 0; i < this._text.length; i++) {
+                    glyphChar = this._text.charAt(i);
                     glyph = this._svgFont.getGlyph(glyphChar);
                     var glyphClone:SVGNode = glyph.clone();
                     if (this.getStyleOrAttr('fill')) {
