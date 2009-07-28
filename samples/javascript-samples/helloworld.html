@@ -38,15 +38,43 @@
         // use getElementById
         var circle = document.getElementById('myCircle');
         
-        // can change using setAttribute
+        // change using setAttribute
         circle.setAttribute('stroke', 'green');
         
         // can also use style property
         circle.style.fill = '#8A2BE2';
+        
+        // change the value inside our SVG OBJECT now
+        
+        // use the 'contentDocument' property to navigate into the SVG OBJECT
+        var doc = document.getElementById('mySVGObject').contentDocument;
+        circle = doc.getElementById('myCircle');
+        circle.style.fill = '#8A2BE2';
       }
       
       function changeText() {
+        // use getElementsByTagNameNS to get our text from our embedded SVG
         
+        // 'svgns' is a 'magic' variable that we make available; it is just
+        // the SVG namespace 'http://www.w3.org/2000/svg' so you don't always
+        // have to remember it.  We also make the variable 'xlinkns' available.
+        var textElems = document.getElementsByTagNameNS(svgns, 'text');
+        
+        // change the text Hello World to Goodbye World
+        for (var i = 0; i < textElems.length; i++) {
+          if (textElems[i].childNodes[0].nodeValue == 'Hello World') {
+            textElems[i].childNodes[0].nodeValue = 'Goodbye World';
+          }
+        }
+        
+        // change the text inside our SVG OBJECT as well
+        var doc = document.getElementById('mySVGObject').contentDocument;
+        textElems = doc.getElementsByTagNameNS(svgns, 'text');
+        for (var i = 0; i < textElems.length; i++) {
+          if (textElems[i].childNodes[0].nodeValue == 'Hello World') {
+            textElems[i].childNodes[0].nodeValue = 'Goodbye World';
+          }
+        }
       }
     </script>
   </head>
@@ -56,6 +84,7 @@
       <div style="margin-bottom: 1em; margin-top: 1em;">
         <button onclick="changeColors()" disabled>Change Colors</button>
         <button onclick="changeText()" disabled>Change Text</button>
+        <p>Click on second circle to see message</p>
       </div>
     
       <!-- Directly embed SVG into your page by using a SCRIPT tag and

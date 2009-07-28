@@ -31,8 +31,8 @@ incorporate into an existing web site.</p>
 and Flex applications. This Quick Start guide only details using the SVG Web
 toolkit from HTML and JavaScript web pages rather than from pure Flash or Flex applications.</p>
 
-<p>Please keep in mind that SVG Web is in alpha. If you find something file 
-an <a href="http://code.google.com/p/svgweb/issues/list">Issue</a>.</p>
+<p><b>Please keep in mind that SVG Web is in alpha. If you find something file 
+an <a href="http://code.google.com/p/svgweb/issues/list">Issue</a>.</b> If you are using SVG Web, make sure to tell the community about it on our <a href="http://code.google.com/p/svgweb/wiki/ProjectsUsingSVGWeb">"Projects Using SVG Web"</a> Wiki page!</p>
 
 <h2 id="resources">Resources</h2>
 
@@ -276,4 +276,144 @@ query string to tell them to use your different HTC file or else they will not w
 
 <h2 id="scripting">Scripting SVG</h2>
 
-<h2 id="tips">Tips</h2>
+<p>Let's take a look at scripting your SVG using JavaScript. This section is not meant to be a tutorial on JavaScript plus SVG; rather, it is a very basic overview including some small divergences necessary for SVG Web.</p>
+
+<p>SVG Web includes a large set of the DOM (Document Object Model) when working with SVG. It is fairly complete though there are some omissions or areas which are still being worked on. Your JavaScript, even on Internet Explorer, has the 'illusion' of native SVG support.</p>
+
+<p id="onload">Let's start with scripting SVG that is embedded right into a web page. We will be using the source in <code>helloworld.html</code>. First, before working with the DOM or SVG on your page you must wait for the page's onload handler to fire, just like you would for normal HTML:</p>
+
+<pre><code>window.onload = function() {
+  // do stuff now
+}</code></pre>
+
+<p>On the <code>helloworld.html</code> page you will see two buttons, "Change Colors" and "Change Text." When clicked, they change the color of the circles in both SVG images, as well as change the text. The script for all of this is just a normal <code>&lt;script&gt;</code> tag embedded into the page, in the two functions <code>changeColors</code> and <code>changeText</code>. Let's look at the <code>changeColors</code> method:</p>
+
+<pre><code>function changeColors() {
+  // get elements from our embedded SVG first
+  
+  // use getElementById
+  var circle = document.getElementById('myCircle');
+  
+  // change using setAttribute
+  circle.setAttribute('stroke', 'green');
+  
+  // can also use style property
+  circle.style.fill = '#8A2BE2';
+  
+  // change the value inside our SVG OBJECT now
+  
+  // use the 'contentDocument' property to navigate into the SVG OBJECT
+  var doc = document.getElementById('mySVGObject').contentDocument;
+  circle = doc.getElementById('myCircle');
+  circle.style.fill = '#8A2BE2';
+}</code></pre>
+
+<p>First, you will see that we get our circle from the page using a normal <code>document.getElementById('myCircle')</code> call. This will grab the <code>circle</code> that was directly embedded into the page. Once we have our circle, we can change the color either by using a <code>setAttribute</code> call or by simply changing the <code>circle.style.fill</code> value; either cause the same results. Note that all of this code works even on Internet Explorer; SVG Web does the necessary magic to give the illusion of native support.</p>
+
+<p>In order to change the color of the circle inside our SVG OBJECT (the second SVG image), we have to 'navigate' into it. The key here is to use the <code>contentDocument</code> property. We first fetch the SVG OBJECT from the page by ID, and then grab the <code>contentDocument</code> property. At this point we have a normal <code>document</code> object we can now work with, so we simply grab the circle that is embedded inside this SVG object and change its color as well:</p>
+
+<pre><code>// use the 'contentDocument' property to navigate into the SVG OBJECT
+var doc = document.getElementById('mySVGObject').contentDocument;
+circle = doc.getElementById('myCircle');
+circle.style.fill = '#8A2BE2';</code></pre>
+
+<p>Next, let's look at the <code>changeText</code> function; we've written it a bit differently than necessary to show you some other DOM functions that can be used:</p>
+
+<pre><code>function changeText() {
+  // use getElementsByTagNameNS to get our text from our embedded SVG
+  
+  // 'svgns' is a 'magic' variable that we make available; it is just
+  // the SVG namespace 'http://www.w3.org/2000/svg' so you don't always
+  // have to remember it.  We also make the variable 'xlinkns' available.
+  var textElems = document.getElementsByTagNameNS(svgns, 'text');
+  
+  // change the text Hello World to Goodbye World
+  for (var i = 0; i &lt; textElems.length; i++) {
+    if (textElems[i].childNodes[0].nodeValue == 'Hello World') {
+      textElems[i].childNodes[0].nodeValue = 'Goodbye World';
+    }
+  }
+  
+  // change the text inside our SVG OBJECT as well
+  var doc = document.getElementById('mySVGObject').contentDocument;
+  textElems = doc.getElementsByTagNameNS(svgns, 'text');
+  for (var i = 0; i &lt; textElems.length; i++) {
+    if (textElems[i].childNodes[0].nodeValue == 'Hello World') {
+      textElems[i].childNodes[0].nodeValue = 'Goodbye World';
+    }
+  }
+}
+</code></pre>
+
+<p>First, notice that we can get SVG tags from the page by tag name not just by ID; however, it is very important that you use the namespace-aware method <code>getElementsByTagNameNS</code> instead of <code>getElementsByTagName</code> or else things won't work! You will also notice that we access the global variable <code>svgns</code> that SVG Web makes available to easily work with the SVG namespace (a similar one is available for the XLink namespace, <code>xlinkns</code>, when doing hyperlink code). These combine together to make it easy to work with the namespace-aware functions:</p>
+
+<pre><code>var textElems = document.getElementsByTagNameNS(svgns, 'text');</code></pre>
+
+<p>This will grab all of the SVG <code>text</code> elements that are directly embedded in the page (i.e. it will return two <code>text</code> elements); it will not return anything from SVG OBJECTs, since those are not directly in the page. Once we have our elements, we loop over them and get their text values by calling <code>textElems[i].childNodes[0].nodeValue</code>. The value of an SVG <code>text</code> is held as a DOM Text Node, so we have to grab the first child and get its value. Once we find any nodes that have the value "Hello World" we then change the text value in a similar manner.</p>
+  
+<p>We don't dynamically create any nodes in our <code>helloworld.html</code> sample, but here is a simple example code block showing how we would do this. Most importantly, notice how we use the namespace aware <code>createElementNS</code> method instead of <code>createElement</code>:</p>
+  
+<pre><code>var el = document.createElementNS(svgns, 'circle');
+el.setAttribute('cx', 200);
+el.setAttribute('cy', 200);
+el.setAttribute('r', 5);
+el.setAttribute('fill', '#223FA3');
+el.setAttribute('stroke-width', '1px');
+el.setAttribute('stroke', 'black');
+  
+var group = document.getElementById('myGroup');
+group.appendChild(el);
+</code></pre>
+
+<p>Now let's take a look at doing scripting inside of an SVG file rather than directly embedding into an HTML page. We will use the <code>helloworld.svg</code> file as our sample. I'll show you the full code sample first and then break it apart:</p>
+
+<pre><code>&lt;svg onload="loaded()"&gt;
+  &lt;script type="text/javascript"&gt;&lt;![CDATA[
+      function loaded() {
+        // change onloadFunc to point to your real onload function that you
+        // want called when the page is truly ready
+        var onloadFunc = doload;
+        
+        if (top.svgweb) {
+          top.svgweb.addOnLoad(onloadFunc, true, window);
+        } else {
+          onloadFunc();
+        }
+      }   
+      
+     function doload() {
+        // developers original onload handler
+        
+        // add an event listener to our circle; on* style events added right
+        // to the markup are not yet supported
+        var circle = document.getElementById('myCircle');
+        circle.addEventListener('mousedown', function() {
+          alert('You pressed the mouse button on our circle!');
+        }, false);
+     }
+  ]]&gt;&lt;/script&gt;</code></pre>
+  
+<p>First, notice that we have to do a little bit of trickery around the <code>onload</code> event in order to help SVG Web. If you want to have any script inside your SVG file, you must change the <code>onload</code> attribute to point to a special function, <code>loaded</code> that you should simple cut and paste into your code and change the <code>onloadFunc</code> variable to point to the name of your real function:</p>
+
+<pre><code>function loaded() {
+  <b>// change onloadFunc to point to your real onload function that you
+  // want called when the page is truly ready
+  var onloadFunc = doload;</b>
+  
+  if (top.svgweb) {
+    top.svgweb.addOnLoad(onloadFunc, true, window);
+  } else {
+    onloadFunc();
+  }
+}</code></pre>
+
+<p>For SVG events, we only currently support the <code>addEventListener</code> method:</p>
+
+<pre><code>// add an event listener to our circle; on* style events added right
+// to the markup are not yet supported
+var circle = document.getElementById('myCircle');
+circle.addEventListener('mousedown', function() {
+  alert('You pressed the mouse button on our circle!');
+}, false);</code></pre>
+
+<p>This will cause an alert box to appear when a user presses the mouse button down.</p>
