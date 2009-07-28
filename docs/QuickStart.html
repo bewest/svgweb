@@ -426,4 +426,4 @@ circle.addEventListener('mousedown', function(evt) {
   alert('You pressed the mouse button on our circle: ' + evt.target.id);
 }, false);</code></pre>
 
-<p>This will cause an alert box to appear when a user presses the mouse button down. Notice that the <code>event</code> object is passed into the method (even on Internet Explorer -- on IE if you access <code>window.event</code> it will be incorrect!). You can use the <code>event</code> object to get information, such as the id of the target: <code>evt.target.id</code>.</p>
+<p>This will cause an alert box to appear when a user presses the mouse button down. Notice that the <code>event</code> object is passed into the method (even on Internet Explorer -- use this instead of <code>window.event</code>). You can use the <code>event</code> object to get information, such as the id of the target: <code>evt.target.id</code>.</p>
