@@ -367,6 +367,14 @@ var group = document.getElementById('myGroup');
 group.appendChild(el);
 </code></pre>
 
+<p>One small important thing to keep in mind is when you create DOM text nodes that you are going to use with your SVG, you must add an extra boolean argument to help SVG Web out:</p>
+
+<pre><code>var textNode = document.createTextNode('hello world'<b>, true</b>);
+var svgText = document.createElementNS(svgns, 'text');
+svgText.setAttribute('x', 100);
+svgText.setAttribute('y', 100);
+svgText.appendChild(textNode);</code></pre>
+
 <p>Now let's take a look at doing scripting inside of an SVG file rather than directly embedding into an HTML page. We will use the <code>helloworld.svg</code> file as our sample. I'll show you the full code sample first and then break it apart:</p>
 
 <pre><code>&lt;svg onload="loaded()"&gt;
