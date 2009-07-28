@@ -1,0 +1,1 @@
+This is the staratlas.com web site, ported to work on SVG Web. Here to work out issues with SVG Web and make sure things work over time. The author wasn't able to get it to work with SVG Web; I fixed the source -- the problem was that it was calling createTextNode() without the second needed boolean value necessary for SVG Web.
