@@ -336,15 +336,23 @@ package org.svgweb.nodes
                 switch (textAnchor) {                    
                     case 'middle':
                         this._textField.autoSize = TextFieldAutoSize.CENTER;
-                        this._textField.x = -textLineMetrics.x - Math.floor(textLineMetrics.width / 2);
+                        this._textField.x = Math.floor( - (this._textField.width - textLineMetrics.width)/2
+                                                        - textLineMetrics.width / 2 );
                         break;
                     case 'end':
                         this._textField.autoSize = TextFieldAutoSize.RIGHT;
-                        this._textField.x = -textLineMetrics.x - textLineMetrics.width;
+                        // Technically, the entire difference between text field width and
+                        // the actual text width should be shifted in the following equation,
+                        // assuming the text was actually right justified properly,
+                        // but half seems to replicate native behavior more closely.
+                        this._textField.x =  - Math.floor( (this._textField.width - textLineMetrics.width)/2)
+                                             - textLineMetrics.width;
                         break;
                     default: //'start'
                         this._textField.autoSize = TextFieldAutoSize.LEFT;
-                        this._textField.x = -textLineMetrics.x;
+                        this._textField.x = - Math.floor(this._textField.width - textLineMetrics.width)/2;
+                        //If autosize actually left justified properly, it seems the following would be correct:
+                        //this._textField.x = 0;
                         break;
                 }
                 
