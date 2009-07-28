@@ -3519,7 +3519,7 @@ extend(_Node, {
     }
     
     var node = FlashHandler._getNode(childXML, this._handler);
-    node._passThrough = this._passThrough;
+    this._getFakeNode(node)._passThrough = this._passThrough;
         
     return node;
   },
@@ -3535,7 +3535,7 @@ extend(_Node, {
     }
     
     var node = FlashHandler._getNode(childXML, this._handler);
-    node._passThrough = this._passThrough;
+    this._getFakeNode(node)._passThrough = this._passThrough;
     
     return node;
   },
@@ -3565,7 +3565,7 @@ extend(_Node, {
     }
     
     var node = FlashHandler._getNode(siblingXML, this._handler);
-    node._passThrough = this._passThrough;
+    this._getFakeNode(node)._passThrough = this._passThrough;
     
     return node;
   },
@@ -3593,7 +3593,7 @@ extend(_Node, {
     }
     
     var node = FlashHandler._getNode(siblingXML, this._handler);
-    node._passThrough = this._passThrough;
+    this._getFakeNode(node)._passThrough = this._passThrough;
 
     return node;
   },
