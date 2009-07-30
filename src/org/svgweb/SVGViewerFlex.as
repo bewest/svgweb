@@ -26,14 +26,12 @@ package org.svgweb
 
     public class SVGViewerFlex extends UIComponent
     {
-        var viewer:SVGViewerFlash;
-        var svgRoot:SVGSVGNode;
+        public var viewer:SVGViewerFlash;
         public function SVGViewerFlex()
         {
             super();
             viewer = new SVGViewerFlash();
             this.addChild(viewer);
-            svgRoot = viewer.svgRoot;
         }
         
     }
