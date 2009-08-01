@@ -407,6 +407,14 @@ package org.svgweb.core
             this.loadAttribute('y');
             this.loadAttribute('rotate','rotation');
             this.loadAttribute('opacity', 'alpha', true);
+            if (this.getStyleOrAttr('pointer-events') == 'none') {
+                this.mouseEnabled = false;
+                this.mouseChildren = false;
+            }
+            else {
+                this.mouseEnabled = true;
+                this.mouseChildren = true;
+            }
         }
 
         /**
