@@ -28,5 +28,22 @@ package org.svgweb
             super();
         }
         
+        override public function getWidth():Number {
+            if (parent) {
+                return parent.width;
+            }
+            else {
+                return stage.stageWidth;
+            }
+        }
+
+        override public function getHeight():Number {
+            if (parent) {
+                return parent.height;
+            }
+            else {
+                return stage.stageHeight;
+            }
+        }
     }
 }
