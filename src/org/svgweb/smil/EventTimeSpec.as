@@ -19,6 +19,7 @@
 package org.svgweb.smil
 {
     import flash.events.MouseEvent;
+    import org.svgweb.events.SVGEvent;
 
     public class EventTimeSpec extends TimeSpec
     {
@@ -49,6 +50,9 @@ package org.svgweb.smil
                     break;
                 case "mouseup":
                     this.eventType = MouseEvent.MOUSE_UP;
+                    break;
+                case "begin":
+                    this.eventType = SVGEvent._SVGAnimBegin;
                     break;
             }
         }

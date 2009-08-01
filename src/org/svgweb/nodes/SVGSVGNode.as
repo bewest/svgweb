@@ -193,6 +193,10 @@ package org.svgweb.nodes
                 return 'none';
             }
 
+            if (name == 'visibility') {
+                return 'visible';
+            }
+
             return defaultValue;
         }
 

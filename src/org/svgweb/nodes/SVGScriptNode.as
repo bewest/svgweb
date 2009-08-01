@@ -38,14 +38,11 @@ package org.svgweb.nodes {
             //this._invalidDisplay = false;
 
             var content:String;
-            if (this.svgRoot.parent is SVGViewerWeb) {
+            if (this._xml.children().length() > 0) {
                 content = this._xml.children()[0].text().toString();
-            } else {
-                content = this._xml.toXMLString();
+                this.svgRoot.handleScript(content);
             }
             
-            this.svgRoot.handleScript(content);
-
             this.visible = false;
 
             this.svgRoot.renderFinished();
