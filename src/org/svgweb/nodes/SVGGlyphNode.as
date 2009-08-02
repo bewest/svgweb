@@ -55,7 +55,7 @@ package org.svgweb.nodes {
             super.drawNode(event);
             // If this is a instantiated glyph, then notify the text node parent
             // that we have rendered (and are ready to be displayed).
-            if (original) {
+            if (original && getSVGParent()) {
                 SVGTextNode(getSVGParent()).onDrawGlyph(this);
             }
         }

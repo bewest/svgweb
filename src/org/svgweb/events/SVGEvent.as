@@ -8,6 +8,9 @@ package org.svgweb.events
         public static const SVGLoad:String = "SVGLoad";
         // internal nonstandard events
         public static const _SVGAnimBegin:String = "_SVGAnimBegin";
+        public static const _SVGAnimEnd:String = "_SVGAnimEnd";
+        public static const _SVGAnimRepeat:String = "_SVGAnimRepeat";
+        public static const _SVGAccessKey:String = "_SVGAccessKey";
         public static const _SVGDocTimeUpdate:String = "_SVGDocTimeUpdate";
         public static const _SVGDocTimeSeek:String = "_SVGDocTimeSeek";
         

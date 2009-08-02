@@ -25,12 +25,15 @@ package org.svgweb.smil
     {
         public var nodeID:String;
         public var eventName:String;
+        public var eventParam:String;
         public var eventType:String;
         public var offset:Number;
 
-        public function EventTimeSpec(nodeID:String, eventName:String, offset:Number):void {
+        public function EventTimeSpec(nodeID:String, eventName:String,
+                                      eventParam:String, offset:Number):void {
             this.nodeID = nodeID;
             this.eventName = eventName;
+            this.eventParam = eventParam;
             this.offset = offset;
             switch (eventName) {
                 case "click":
@@ -53,6 +56,15 @@ package org.svgweb.smil
                     break;
                 case "begin":
                     this.eventType = SVGEvent._SVGAnimBegin;
+                    break;
+                case "end":
+                    this.eventType = SVGEvent._SVGAnimEnd;
+                    break;
+                case "repeat":
+                    this.eventType = SVGEvent._SVGAnimRepeat;
+                    break;
+                case "accessKey":
+                    this.eventType = SVGEvent._SVGAccessKey;
                     break;
             }
         }

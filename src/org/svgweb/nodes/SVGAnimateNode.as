@@ -421,12 +421,17 @@ package org.svgweb.nodes
             }
             else {
                 // If the values are not colors
-                if  ( !(SVGColors.isColor(fromParameter) && SVGColors.isColor(toParameter)) ) {
-                    // and the values are not numberic, then they are disrete strings
-                    var fromVal:Number = parseInt(fromParameter);
+                if  ( (fromParameter==null || !SVGColors.isColor(fromParameter))
+                       || !SVGColors.isColor(toParameter) ) {
+                    // and the values are not numeric, then they are disrete strings
+                    if (fromParameter) {
+                        var fromVal:Number = parseInt(fromParameter);
+                        if ( isNaN(fromVal) || fromVal > int.MAX_VALUE || fromVal < int.MIN_VALUE ) {
+                            calcModeParameter = "discrete";
+                        }
+                    }
                     var toVal:Number = parseInt(toParameter);
-                    if ( isNaN(fromVal) || fromVal > int.MAX_VALUE || fromVal < int.MIN_VALUE
-                            ||  isNaN(toVal) || toVal > int.MAX_VALUE || toVal < int.MIN_VALUE ) {
+                    if ( isNaN(toVal) || toVal > int.MAX_VALUE || toVal < int.MIN_VALUE ) {
                         calcModeParameter = "discrete";
                     }
                 }

@@ -27,5 +27,14 @@ package org.svgweb.nodes
             super(svgRoot, xml, original);
         }
 
+        override protected function parseValuesParameter():void {
+        }
+        override protected function parseFromParameter():void {
+        }
+        override protected function parseToParameter():void {
+        }
+        override protected function parseByParameter():void {
+        }
+
     }
 }

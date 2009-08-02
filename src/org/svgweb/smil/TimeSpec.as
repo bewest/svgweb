@@ -21,6 +21,7 @@ package org.svgweb.smil
     import org.svgweb.utils.SVGUnits;
     import org.svgweb.smil.TimeInterval;
     import org.svgweb.core.SVGNode;
+    import mx.utils.StringUtil;
 
     public class TimeSpec
     {
@@ -77,21 +78,31 @@ package org.svgweb.smil
 
                 if (eventSpec.indexOf("+") != -1) {
                     eventParts = eventSpec.split(/\+/);
-                    eventName =  eventParts[0];
+                    eventName =  StringUtil.trim(eventParts[0]);
                     offset=SVGUnits.parseTimeVal(eventParts[1]);
                 }
                 else if (eventSpec.indexOf("-") != -1) {
                     eventParts = eventSpec.split(/-/);
-                    eventName =  eventParts[0];
+                    eventName =  StringUtil.trim(eventParts[0]);
                     offset= -1*SVGUnits.parseTimeVal(eventParts[1]);
                 }
                 else {
-                    eventName =  eventSpec;
+                    eventName =  StringUtil.trim(eventSpec);
                     offset= 0;
+                }
+
+                var eventNameParts:Array;
+                var eventParam:String;
+                if (eventName.indexOf("(") != -1) {
+                    eventNameParts=eventName.split("(");
+                    eventName=eventNameParts[0];
+                    eventParam=eventNameParts[1];
+                    eventParam=eventParam.replace(')','');
                 }
     
                 return new EventTimeSpec(eventTarget, // Id
                                          eventName,   // Event name
+                                         eventParam,  // Optional event parameter
                                          offset);     // Offset
             }
         }
