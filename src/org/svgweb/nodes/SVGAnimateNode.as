@@ -383,16 +383,25 @@ package org.svgweb.nodes
         }
 
         protected function parseFromParameter():void {
-            fromParameter = this.getAttribute('from', null);
-            if (fromParameter == null) {
-                if (attributeName != null) {
-                    fromParameter = targetNode.getAttribute(attributeName, null, true, false);
+            fromParameter = this._getAttribute('from', null, false, false, false);
+            if (fromParameter == 'inherit') {
+                fromParameter = targetNode.getAttribute(attributeName, null, true, false);
+                if (fromParameter == null) {
+                    fromParameter = 'inherit';
                 }
+                return;
             }
+            fromParameter = this.getAttribute('from', null, true, false);
         }
 
         protected function parseToParameter():void {
-            toParameter = this.getAttribute('to', null);
+            // bypass 'inherit' process right now
+            toParameter = this._getAttribute('to', null, false, false, false);
+            if (toParameter == 'inherit') {
+                toParameter = targetNode.getAttribute(attributeName, null, true, false);
+                return;
+            }
+            toParameter = this.getAttribute('to', null, true, false);
         }
 
         protected function parseByParameter():void {
@@ -405,7 +414,6 @@ package org.svgweb.nodes
                 toParameter = String(SVGUnits.cleanNumber(fromParameter) +
                                      SVGUnits.cleanNumber(byParameter));
             }
-
             // If these are not numeric values, they are discrete
             if ( valuesParameter != null) {
                 var values:Array = valuesParameter.split(";");
@@ -421,18 +429,21 @@ package org.svgweb.nodes
             }
             else {
                 // If the values are not colors
-                if  ( (fromParameter==null || !SVGColors.isColor(fromParameter))
-                       || !SVGColors.isColor(toParameter) ) {
-                    // and the values are not numeric, then they are disrete strings
-                    if (fromParameter) {
+                // and the values are not numeric, then they are disrete strings
+                if (fromParameter != null) {
+                    if (!SVGColors.isColor(fromParameter)) {
                         var fromVal:Number = parseInt(fromParameter);
                         if ( isNaN(fromVal) || fromVal > int.MAX_VALUE || fromVal < int.MIN_VALUE ) {
                             calcModeParameter = "discrete";
                         }
                     }
-                    var toVal:Number = parseInt(toParameter);
-                    if ( isNaN(toVal) || toVal > int.MAX_VALUE || toVal < int.MIN_VALUE ) {
-                        calcModeParameter = "discrete";
+                }
+                if (toParameter != null) {
+                    if (!SVGColors.isColor(toParameter)) {
+                        var toVal:Number = parseInt(toParameter);
+                        if ( isNaN(toVal) || toVal > int.MAX_VALUE || toVal < int.MIN_VALUE ) {
+                            calcModeParameter = "discrete";
+                        }
                     }
                 }
             }

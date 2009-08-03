@@ -355,7 +355,7 @@ package org.svgweb.utils
             if (isColor(numString)) {
                 return SVGColors.getColor(numString);
             }
-            numString = numString.replace(/[^0-9\.-]+/sig,'');
+            numString = numString.replace(/[^0-9\.\-eE]+/sig,'');
             return Number(numString);
         }
 

@@ -30,7 +30,9 @@ package org.svgweb.nodes
         }
 
         override protected function onAddedToStage(event:Event):void {
-            this.getParentFont().setFontFaceName(this.getStyleOrAttr('font-family'));
+            if (this.getParentFont()) {
+                this.getParentFont().setFontFaceName(this.getStyleOrAttr('font-family'));
+            }
             super.onAddedToStage(event);
         }
 

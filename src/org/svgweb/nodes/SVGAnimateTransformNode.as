@@ -194,10 +194,12 @@ package org.svgweb.nodes
 
             // XXX not implemented
             if (typeParameter == "skewX") {
+                return new Matrix();
             }
 
             // XXX not implemented
             if (typeParameter == "skewY") {
+                return new Matrix();
             }
 
             return null;

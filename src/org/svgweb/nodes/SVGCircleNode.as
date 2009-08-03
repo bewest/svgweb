@@ -20,6 +20,7 @@
 package org.svgweb.nodes
 {
     import org.svgweb.core.SVGNode;
+    import org.svgweb.utils.SVGColors;
 
     public class SVGCircleNode extends SVGNode
     {
@@ -34,9 +35,14 @@ package org.svgweb.nodes
         protected override function generateGraphicsCommands():void {
             this._graphicsCommands = new  Array();
             
-            var cx:Number = this.getAttribute('cx',0);
-            var cy:Number = this.getAttribute('cy',0);
-            var r:Number = this.getAttribute('r',0);
+            var cxString:String = this.getAttribute('cx', '0');
+            var cx:Number = SVGColors.cleanNumber2(cxString, SVGNode(this.getSVGParent()).getWidth());
+
+            var cyString:String = this.getAttribute('cy', '0');
+            var cy:Number = SVGColors.cleanNumber2(cyString, SVGNode(this.getSVGParent()).getHeight());
+
+            var rString:String = this.getAttribute('r','0');
+            var r:Number = SVGColors.cleanNumber2(rString, SVGNode(this.getSVGParent()).getWidth());
 
             //Width/height calculations for gradients
             this.setXMinMax(cx - r);
