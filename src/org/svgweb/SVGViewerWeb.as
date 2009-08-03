@@ -257,16 +257,17 @@ package org.svgweb
             }
 
             var outerthis:SVGViewerWeb = this;
-            // register interface functions for browser javascript engine
-            function js_receiveFromBrowser(jsMsg:Object):Object {
+            // register interface functions for browser javascript engine;
+            // results are sent back and forth from Flash and JS as strings
+            // instead of objects as strings are faster
+            function js_receiveFromBrowser(msg:String):Object {
+                var jsMsg:Object = outerthis.stringToMsg(msg);
+                
                 if (jsMsg.type == 'load') {
-                    return outerthis.js_handleLoad(jsMsg);
+                    return outerthis.msgToString(outerthis.js_handleLoad(jsMsg));
                 }
                 if (jsMsg.type == 'invoke') {
-                    return outerthis.js_handleInvoke(jsMsg);
-                }
-                if (jsMsg.type == 'getVersion') {
-                    return { type: 'version', version: '0.7.3' };
+                    return outerthis.msgToString(outerthis.js_handleInvoke(jsMsg));
                 }
                 return null;
             }
@@ -281,13 +282,58 @@ package org.svgweb
                 this.debug(debugstr);
             }
         }
+        
+        /**
+         * JavaScript sends us strings instead of Objects, since that was 
+         * found to be faster. This method turns them back into Objects.
+         **/
+        protected function stringToMsg(msg:String):Object {
+            var results:Object = {};
+            
+            // our delimiter is a custom token: __SVG__DELIMIT
+            var tokens:Array = msg.split('__SVG__DELIMIT');
+            for (var i:int = 0; i < tokens.length; i++) {
+                // each token is a propname:propvalue pair
+                var cutAt:int = tokens[i].indexOf(':');
+                var propName:String = tokens[i].substring(0, cutAt);
+                var propValue:Object = tokens[i].substring(cutAt + 1);
+                if (propValue === 'true') {
+                    propValue = true;
+                } else if (propValue === 'false') {
+                    propValue = false;
+                } else if (propValue === 'null') {
+                    propValue = null;
+                } else if (propValue === 'undefined') {
+                    propValue = undefined;
+                }
+                                
+                results[propName] = propValue;
+            }
+            
+            return results;
+        }
+        
+        /**
+         * Stringifies the object we send back and forth between Flash and JavaScript.
+         * Performance testing found that sending strings between Flash and JS is
+         * about twice as fast as sending objects.
+         **/
+        protected function msgToString(msg:Object):String {
+            var result:Array = [];
+            for (var i:String in msg) {
+                result.push(i + ':' + msg[i]);
+            }
 
+            // we use a custom delimiter (__SVG__DELIMIT) instead of commas, since 
+            // the message might have an XML payload or commas already
+            return result.join('__SVG__DELIMIT');
+        }
 
         /**
          * Event handlers from SVG Nodes
          **/
         protected function handleRootSVGLoad():void {
-            this.debug("render time for " + this.js_uniqueId + ": " + ( (new Date()).valueOf()  - this.renderStartTime) + "ms");           
+            //this.debug("render time for " + this.js_uniqueId + ": " + ( (new Date()).valueOf()  - this.renderStartTime) + "ms");           
 
             // FIXME: Hack. If we are hidden due to the presence of animations,
             // then we do not unhide until 200ms into the document time. This
@@ -451,7 +497,7 @@ package org.svgweb
                     if (jsMsg.applyAnimations !== undefined) {
                         applyAnimations = jsMsg.applyAnimations;
                     }
-                    
+
                     var attrValue:String = element.xml.@[jsMsg.attrName]; 
                     if (typeof(attrValue) != 'undefined' && attrValue != null) {
                         if (jsMsg.getFromStyle) {

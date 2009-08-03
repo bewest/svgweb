@@ -2300,25 +2300,72 @@ extend(FlashHandler, {
   _explicitHeight: null,
 
   /**
+    Stringifies the object we send back and forth between Flash and JavaScript.
+    Performance testing found that sending strings between Flash and JS is
+    about twice as fast as sending objects.
+  */
+  _msgToString: function(msg) {
+    var result = [];
+    for (var i in msg) {
+      result.push(i + ':' + msg[i]);
+    }
+    
+    // we use a custom delimiter (__SVG__DELIMIT) instead of commas, since 
+    // the message might have an XML payload or commas already
+    result = result.join('__SVG__DELIMIT');
+    
+    return result;
+  },
+  
+  /** Turns the string results from Flash back into an Object. The HTC
+      still returns an Object, so we detect that and simply return it if so. */
+  _stringToMsg: function(msg) {
+    if (msg == null || typeof msg != 'string') {
+      return msg;
+    }
+    
+    var results = {};
+          
+    // our delimiter is a custom token: __SVG__DELIMIT
+    var tokens = msg.split(/__SVG__DELIMIT/g);
+    for (var i = 0; i < tokens.length; i++) {
+        // each token is a propname:propvalue pair
+        var cutAt = tokens[i].indexOf(':');
+        var propName = tokens[i].substring(0, cutAt);
+        var propValue = tokens[i].substring(cutAt + 1);
+        if (propValue === 'true') {
+            propValue = true;
+        } else if (propValue === 'false') {
+            propValue = false;
+        } else if (propValue === 'null') {
+            propValue = null;
+        } else if (propValue === 'undefined') {
+            propValue = undefined;
+        }
+                        
+        results[propName] = propValue;
+    }
+    
+    return results;
+  },
+  
+  /**
     Stringifies the msg object sent back from the Flash SVG renderer or 
     from the HTC file to help with debugging.
   */
   debugMsg: function(msg) {
-    // TODO: Create a way to disable this if we are not debugging for
-    // performance reasons
-    
     if (msg === undefined) {
       return 'undefined';
     } else if (msg === null) {
       return 'null';
     }
-    
+
     var result = [];
     for (var i in msg) {
-      result.push(i + ': ' + msg[i]);
+      result.push(i + ':' + msg[i]);
     }
     result = result.join(', ');
-    
+
     return '{' + result + '}';
   },
   
@@ -2326,10 +2373,14 @@ extend(FlashHandler, {
   sendToFlash: function(msg) {
     // note that 'this.flash' is set by the FlashInserter class after we 
     // create a Flash object there
-    return this.flash.sendToFlash(msg);
+    return this._stringToMsg(this.flash.sendToFlash(this._msgToString(msg)));
   },
   
+  /** @param msg The HTC sends us an Object populated with various values;
+      for Flash, we send over string values instead since we found that
+      performance is roughly double as strings. */
   onMessage: function(msg) {
+    msg = this._stringToMsg(msg);
     //console.log('onMessage, msg='+this.debugMsg(msg));
     if (msg.type == 'event') {
       this._onEvent(msg);
@@ -4321,7 +4372,8 @@ _Element.prototype = new _Node;
 
 extend(_Element, {
   getAttribute: function(attrName) /* String */ {
-    //console.log('getAttribute, attrName='+attrName+', this.nodeName='+this.nodeName);  
+    //console.log('getAttribute, attrName='+attrName+', this.nodeName='+this.nodeName);
+
     var value;
     
     // ignore internal __guid property
@@ -5249,6 +5301,7 @@ extend(_SVGObject, {
   _onRenderingFinished: function(msg) {
     //console.log('_SVGObject, onRenderingFinished, id='+this._handler.id
     //            + ', msg='+this._handler.debugMsg(msg));
+
     // we made the SVG hidden before to avoid scrollbars on IE; make visible
     // now
     this._handler.flash.style.visibility = 'visible';
@@ -5270,7 +5323,7 @@ extend(_SVGObject, {
     // add our contentDocument property
     this._handler.flash.contentDocument = doc;
     
-    // Note: unfortunately we can't support the getSVGDocument() method; 
+    // FIXME: NOTE: unfortunately we can't support the getSVGDocument() method; 
     // Firefox throws an error when we try to override it:
     // 'Trying to add unsupported property on scriptable plugin object!'
     // this._handler.flash.getSVGDocument = function() {
@@ -6389,8 +6442,6 @@ extend(_Document, {
                 + " | //*[namespace-uri()='" + ns + "' and local-name()='" 
                 + localName + "']";
       }
-      
-      //console.log('query='+query);
 
       matches = xpath(this._xml, null, query, this._namespaces);
       if (matches !== null && matches !== undefined && matches.length > 0) {

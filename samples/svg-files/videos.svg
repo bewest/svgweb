@@ -14,7 +14,6 @@
       var currentTransform = null;
 
       function loaded() {
-top.console.log('loaded');
           // change onloadFunc to point to your real onload function that you
           // want called when the page is truly ready
           var onloadFunc = doload;
@@ -27,7 +26,6 @@ top.console.log('loaded');
       }   
 
       function doload() {
-top.console.log('doload');
           var videos;
 
           // load a few videos
