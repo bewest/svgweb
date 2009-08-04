@@ -1,7 +1,10 @@
 <html>
   <!-- 
     Tests dynamically creating an SVG root, adding many circles to it,
-    and animating them to bounce using JavaScript
+    and animating them to bounce using JavaScript.
+    
+    Note: This file does not currently work; see issue 202:
+    http://code.google.com/p/svgweb/issues/detail?id=202
   -->
   
   <head>
@@ -68,8 +71,8 @@
           p.el.setAttribute('transform', 'translate(' + p.X + ',' + p.Y + ')');
         }
       }
-
-      svgweb.addOnLoad(function() {
+      
+      window.onload = function() {
         console.log('developers window.onload called');
         root = document.createElementNS(svgns, 'svg');
         root.setAttribute('width', width);
@@ -82,7 +85,7 @@
 
           setInterval(loop, 10);
         }, false);
-        document.body.appendChild(root);
+        svgweb.appendChild(root, document.body);
       });
     </script>
   
