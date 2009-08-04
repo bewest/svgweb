@@ -5147,8 +5147,7 @@ function testRedraw() {
       assertExists('evt.target should exist', evt.target);
       assertEquals('evt.target.id == ' + this.id, this.id, evt.target.id);
     }, false);
-    getDoc('svg2').getElementById('pop1').appendChild(rect);
-    
+    getDoc('svg2').getElementById('pop1').appendChild(rect);    
     rect = document.createElementNS(svgns, 'rect');
     rect.setAttributeNS(null, 'x', 0 + (5 * i));
     rect.setAttributeNS(null, 'y', 120);
@@ -5219,6 +5218,7 @@ function testRedraw() {
   rect1 = getDoc('svg2').getElementById('pop1_50');
   rect1.style.fill = 'yellow';
   rect1.setAttribute('width', 25);
+  rect1.setAttribute('height', 200);
   console.log('SECOND IMAGE: There should be two small groups of multiple '
               + 'horizontal lines of varying lengths near the upper-left, one '
               + 'violet and the other navy blue. There should be a thicker '
@@ -5227,9 +5227,68 @@ function testRedraw() {
               + 'and out events fire -- you should see console.log messages '
               + 'print');
   
-  // remove many elements
+  // remove elements
+  svg = getRoot('svg2');
+  suspendID1 = svg.suspendRedraw(5000);
+  // dynamically created
+  circle = getDoc('svg2').createElementNS(svgns, 'circle');
+  circle.setAttribute('cx', 300);
+  circle.setAttribute('cy', 300);
+  circle.style.fill = 'green';
+  circle.id = 'suspendRedraw2';
+  circle.setAttribute('r', 100);
+  svg.appendChild(circle);
+  svg.removeChild(circle);
+  // make sure repeated adding and removing works
+  svg.appendChild(circle);
+  svg.removeChild(circle);
+  // already in markup
+  circle = getDoc('svg2').getElementById('suspendRedraw1');
+  circle.parentNode.removeChild(circle);
+  // unsuspend and make sure things are gone
+  svg.unsuspendRedraw(suspendID1);
+  assertNull('suspendRedraw1 should not exist',
+             getDoc('svg2').getElementById('suspendRedraw1'));
+  assertNull('suspendRedraw2 should not exist',
+             getDoc('svg2').getElementById('suspendRedraw2'));
+  // change a value on the detached node and make sure nothing bad happens
+  circle.setAttribute('fill', 'red');
+  console.log('SECOND IMAGE: There should _not_ be either a green or purple '
+              + 'circle');
   
-  // change the text value of many elements
+  // change the text value of elements; have two suspendRedraws as well;
+  // use unsuspendRedrawAll() to clear them out
+  svg = getRoot('svg2');
+  suspendID1 = svg.suspendRedraw(300);
+  suspendID2 = svg.suspendRedraw(400);
+  assertExists('suspendID2 should exist', suspendID2);
+  // dynamically created
+  text = getDoc('svg2').createElementNS(svgns, 'text');
+  text.setAttribute('x', 210);
+  text.setAttribute('y', 190);
+  text.style.fontSize = '24px';
+  text.style.fill = 'red';
+  text.appendChild(getDoc('svg2').createTextNode('Made during suspend', true));
+  svg.appendChild(text);
+  // already in markup
+  text = getDoc('svg2').getElementById('suspendRedraw3');
+  assertExists('suspendRedraw3 should exist', text);
+  text.firstChild.nodeValue = 'Set during suspend1';
+  text.lastChild.nodeValue = 'Set during suspend2';
+  text.childNodes[0].data = 'Set during suspend3';
+  // unsuspend and check values
+  svg.unsuspendRedrawAll();
+  text = svg.lastChild;
+  assertEquals('svg2 lastChild should be TEXT element',
+               'text', text.nodeName);
+  assertEquals('dynamically created text nodeValue == "Made during suspend"',
+               'Made during suspend', text.firstChild.textContent);
+  text = getDoc('svg2').getElementById('suspendRedraw3');
+  assertEquals('suspendRedraw3.childNodes[last child].data == '
+               + '"Set during suspend3"', 'Set during suspend3',
+               text.childNodes[text.childNodes.length - 1].data);
+  console.log('SECOND IMAGE: You should see the text "Made during suspend" and '
+              + '"Set during suspend3"');
   
   // replace another element many times
   
@@ -5238,6 +5297,12 @@ function testRedraw() {
   // do transforms on a bunch of circles while in a suspendRedraw
   
   // do getElementById + navigate the DOM inside a suspendRedraw
+  
+  // do getElementsByTagNameNS inside suspendRedraw
+  
+  // call forceRedraw inside of an event handler
+  
+  // call forceRedraw while things are suspended
   
   // modify the contents _inside_ of an object in the middle of a suspendRedraw
   
