@@ -1115,8 +1115,6 @@ extend(SVGWeb, {
         xml: parsed SVG as an XML object
   */
   _cleanSVG: function(svg, addMissing, normalizeWhitespace) {
-    start('cleanSVG');
-    
     // remove any leading whitespace from beginning and end of SVG doc
     svg = svg.replace(/^\s*/, '');
     svg = svg.replace(/\s*$/, '');
@@ -1261,7 +1259,6 @@ extend(SVGWeb, {
       svg = svg.replace(new RegExp(svgnsFake, 'g'), svgns);
     }
     
-    end('cleanSVG');
     return {svg: svg, xml: xml};
   },
   
@@ -1513,7 +1510,16 @@ extend(SVGWeb, {
       
       // clean up our hidden HTML DOM and our Flash object
       var flashObj = svgweb.handlers[i].flash;
-      flashObj.sendToFlash = null;
+      flashObj.jsSetAttribute
+            = flashObj.jsGetAttribute
+            = flashObj.jsAddEventListener
+            = flashObj.jsInsertBefore
+            = flashObj.jsAddChildAt
+            = flashObj.jsRemoveChild
+            = flashObj.jsSetText
+            = flashObj.jsAppendChild
+            = flashObj.jsHandleLoad
+            = null;      
       flashObj.parentNode.removeChild(flashObj);
       var html = root._getHTCDocument().getElementsByTagName('html')[0];
       html.parentNode.removeChild(html);
@@ -2298,24 +2304,6 @@ extend(FlashHandler, {
       are set by FlashInserter._determineSize(). */
   _explicitWidth: null,
   _explicitHeight: null,
-
-  /**
-    Stringifies the object we send back and forth between Flash and JavaScript.
-    Performance testing found that sending strings between Flash and JS is
-    about twice as fast as sending objects.
-  */
-  _msgToString: function(msg) {
-    var result = [];
-    for (var i in msg) {
-      result.push(i + ':' + msg[i]);
-    }
-    
-    // we use a custom delimiter (__SVG__DELIMIT) instead of commas, since 
-    // the message might have an XML payload or commas already
-    result = result.join('__SVG__DELIMIT');
-    
-    return result;
-  },
   
   /** Turns the string results from Flash back into an Object. The HTC
       still returns an Object, so we detect that and simply return it if so. */
@@ -2369,11 +2357,25 @@ extend(FlashHandler, {
     return '{' + result + '}';
   },
   
-  /** Sends a message to the Flash object rendering this SVG. */
-  sendToFlash: function(msg) {
+  /** Sends a message to the Flash object rendering this SVG. 
+  
+      @param invoke Flash method to invoke, such as jsSetAttribute. 
+      @param args Array of values to pass to the Flash method. */
+  sendToFlash: function(invoke, args) {
+    // Performance testing found that Flash/JS communication is one of the
+    // primary bottlenecks. Two workarounds were found to make this faster:
+    // 1) Send over giant strings instead of Objects and 2) minimize
+    // our own custom marshaling code. To accomodate this, we take all
+    // of our arguments and turn them into a giant string, delimited with
+    // __SVG__DELIMIT. We then call individual Flash methods exposed through
+    // ExternalInterface on the Flash side for each method (given by 'invoke');
+    // each of these methods knows how to deal with their arguments, so we
+    // can minimize our marshaling code and keep it from being too generic
+    // and slow
+    
     // note that 'this.flash' is set by the FlashInserter class after we 
     // create a Flash object there
-    return this._stringToMsg(this.flash.sendToFlash(this._msgToString(msg)));
+    return this.flash[invoke](args.join('__SVG__DELIMIT'));
   },
   
   /** @param msg The HTC sends us an Object populated with various values;
@@ -3163,12 +3165,9 @@ extend(_Node, {
     // inform Flash about the change
     if (this._attached && this._passThrough) {
       var xmlString = FlashHandler._encodeFlashData(this._toXML(newChild));
-      this._handler.sendToFlash({ type: 'invoke', 
-                                  method: 'insertBefore',
-                                  childXML: xmlString,
-                                  refChildGUID: refChild._guid,
-                                  parentGUID: this._guid,
-                                  position: position });
+      this._handler.sendToFlash('jsInsertBefore',
+                                [ refChild._guid, this._guid, position,
+                                  xmlString ]);
     }
     
     return newChild._getProxyNode();
@@ -3230,11 +3229,8 @@ extend(_Node, {
     // tell Flash about the newly inserted child
     if (this._attached) {
       var xmlString = FlashHandler._encodeFlashData(this._toXML(newChild));
-      this._handler.sendToFlash({ type: 'invoke', 
-                                  method: 'addChildAt',
-                                  childXML: xmlString,
-                                  parentGUID: this._guid,
-                                  position: position });
+      this._handler.sendToFlash('jsAddChildAt',
+                                [ this._guid, position, xmlString ]);
     }
     
     // track this removed node so we can clean it up on page unload
@@ -3295,10 +3291,7 @@ extend(_Node, {
     
     // inform Flash about the change
     if (this._attached && this._passThrough) {
-      this._handler.sendToFlash({ type: 'invoke', 
-                                  method: 'removeChild',
-                                  elementGUID: child._guid,
-                                  nodeType: child.nodeType });
+      this._handler.sendToFlash('jsRemoveChild', [ child._guid ]);
     }
     
     // recursively set the removed node to be unattached and to not
@@ -3316,7 +3309,7 @@ extend(_Node, {
       document.createTextNode. We return either a _Node or an HTC reference
       depending on the browser. */
   appendChild: function(child /* _Node or DOM Node */) {
-    // console.log('appendChild, child='+child.nodeName+', this.nodeName='+this.nodeName);
+    //console.log('appendChild, child='+child.nodeName+', this.nodeName='+this.nodeName);
     if (this.nodeType != _Node.ELEMENT_NODE) {
       throw new _DOMException(_DOMException.NOT_SUPPORTED_ERR);
     }
@@ -3470,10 +3463,7 @@ extend(_Node, {
       return;
     }
 
-    this._handler.sendToFlash({ type: 'invoke', 
-                                method: 'addEventListener',
-                                elementGUID: this._guid,
-                                eventType: type });
+    this._handler.sendToFlash('jsAddEventListener', [ this._guid, type ]);
   },
   
   removeEventListener: function(type, listener /* Function */, useCapture) {
@@ -3862,11 +3852,8 @@ extend(_Node, {
     if (this._attached && this._passThrough) {
       var flashStr = FlashHandler._encodeFlashData(newValue);
       var parentGUID = this._nodeXML.parentNode.getAttribute('__guid');
-      this._handler.sendToFlash({ type: 'invoke', 
-                                  method: 'setText',
-                                  parentGUID: parentGUID,
-                                  elementGUID: this._guid,
-                                  text: flashStr });
+      this._handler.sendToFlash('jsSetText',
+                                [ parentGUID, this._guid, flashStr ]);
     }
 
     return newValue;
@@ -3899,24 +3886,17 @@ extend(_Node, {
       to Flash or not. */
   _processAppendedChildren: function(child, parent, attached, passThrough) {
     //console.log('processAppendedChildren, this.nodeName='+this.nodeName+', child.nodeName='+child.nodeName+', attached='+attached+', passThrough='+passThrough);
-    start('processAppendedChildren', 'board');
-    
     // serialize this node and all its children into an XML string and
     // send that over to Flash
     if (attached) {
-      start('sending appendChild flash', 'board');
       var xmlString = FlashHandler._encodeFlashData(this._toXML(child));
-      this._handler.sendToFlash({ type: 'invoke', 
-                                  method: 'appendChild',
-                                  parentGUID: parent._guid, 
-                                  childXML: xmlString });
-      end('sending appendChild flash', 'board');
+      this._handler.sendToFlash('jsAppendChild',
+                                [ parent._guid, xmlString ]);
     }
 
     // walk the DOM from the child using an iterative algorithm, which was 
     // found to be faster than a recursive one; for each node visited we will
     // store some important reference information
-    start('total walk', 'board');
     var current = child;
     while (current) {
       // visit this node
@@ -3994,9 +3974,6 @@ extend(_Node, {
       lastVisited._attached = attached;
       lastVisited._passThrough = passThrough;
     }
-    end('total walk', 'board');
-
-    end('processAppendedChildren', 'board');
   },
   
   /** Transforms the given node and all of its children into an XML string,
@@ -4373,7 +4350,6 @@ _Element.prototype = new _Node;
 extend(_Element, {
   getAttribute: function(attrName) /* String */ {
     //console.log('getAttribute, attrName='+attrName+', this.nodeName='+this.nodeName);
-
     var value;
     
     // ignore internal __guid property
@@ -4382,13 +4358,9 @@ extend(_Element, {
     }
     
     if (this._attached && this._passThrough) {
-      var msg = this._handler.sendToFlash({ type: 'invoke', 
-                                            method: 'getAttribute',
-                                            elementGUID: this._guid, 
-                                            attrName: attrName });
-      if (msg) {
-        value = msg.attrValue;
-      }
+      value = this._handler.sendToFlash('jsGetAttribute',
+                                          [ this._guid, false, false, null, 
+                                            attrName ]);
     } else {
       value = this._nodeXML.getAttribute(attrName);
 
@@ -4485,13 +4457,9 @@ extend(_Element, {
 
     // send to Flash
     if (this._attached && this._passThrough) {
-      this._handler.sendToFlash(
-                       { type: 'invoke', 
-                         method: 'setAttribute',
-                         elementGUID: this._guid,
-                         attrNamespace: ns,
-                         attrName: localName, 
-                         attrValue: FlashHandler._encodeFlashData(attrValue) });
+      var flashStr = FlashHandler._encodeFlashData(attrValue);
+      this._handler.sendToFlash('jsSetAttribute', 
+                                [ this._guid, false, ns, localName, flashStr ]);
     }
   },
   
@@ -4860,13 +4828,9 @@ extend(_Style, {
     // tell Flash about the change
     if (this._element._attached && this._element._passThrough) {
       var flashStr = FlashHandler._encodeFlashData(styleValue);
-      this._element._handler.sendToFlash({ 
-                                          type: 'invoke', 
-                                          method: 'setAttribute',
-                                          elementGUID: this._element._guid,
-                                          applyToStyle: true,
-                                          attrName: stylePropName, 
-                                          attrValue: flashStr });
+      this._element._handler.sendToFlash('jsSetAttribute',
+                                          [ this._element._guid, true,
+                                            null, stylePropName, flashStr ]);
     }
   },
   
@@ -4876,17 +4840,11 @@ extend(_Style, {
     var stylePropName = this._fromCamelCase(styleName);
     
     if (this._element._attached && this._element._passThrough) {
-      var returnMsg = this._element._handler.sendToFlash({ 
-                                              type: 'invoke', 
-                                              method: 'getAttribute',
-                                              elementGUID: this._element._guid,
-                                              getFromStyle: true,
-                                              attrName: stylePropName });
-      if (!returnMsg) {
-         return null;
-      }
-
-      return returnMsg.attrValue;
+      var value = this._element._handler.sendToFlash('jsGetAttribute',
+                                              [ this._element._guid,
+                                                true, false, null, 
+                                                stylePropName ]);
+      return value;
     } else {
       // not attached yet; have to parse it from our local value
       var parsedStyle = this._fromStyleString();
@@ -5239,14 +5197,13 @@ extend(_SVGObject, {
     
     // if not IE, send the SVG string over to Flash
     if (!isIE) {
-      this._handler.sendToFlash({ type: 'load', 
-                                  sourceType: 'string',
-                                  svgString: this._svgString,
-                                  objectURL: this._getRelativeTo('object'),
-                                  pageURL: this._getRelativeTo('page'),
-                                  objectWidth: this._handler._explicitWidth,
-                                  objectHeight: this._handler._explicitHeight,
-                                  ignoreWhiteSpace: false });
+      this._handler.sendToFlash('jsHandleLoad',
+                                [ /* objectURL */ this._getRelativeTo('object'),
+                                  /* pageURL */ this._getRelativeTo('page'),
+                                  /* objectWidth */ this._handler._explicitWidth,
+                                  /* objectHeight */ this._handler._explicitHeight,
+                                  /* ignoreWhiteSpace */ false,
+                                  /* svgString */ this._svgString ]);
     } else {
       // if IE, force the HTC file to asynchronously load with a dummy element;
       // we want to do the async operation now so that external API users don't 
@@ -5288,14 +5245,13 @@ extend(_SVGObject, {
     head = null;
     
     // send the SVG string over to Flash
-    this._handler.sendToFlash({ type: 'load', 
-                                sourceType: 'string',
-                                svgString: this._svgString,
-                                objectURL: this._getRelativeTo('object'),
-                                pageURL: this._getRelativeTo('page'),
-                                objectWidth: this._handler._explicitWidth,
-                                objectHeight: this._handler._explicitHeight,
-                                ignoreWhiteSpace: false });
+    this._handler.sendToFlash('jsHandleLoad',
+                              [ /* objectURL */ this._getRelativeTo('object'),
+                                /* pageURL */ this._getRelativeTo('page'),
+                                /* objectWidth */ this._handler._explicitWidth,
+                                /* objectHeight */ this._handler._explicitHeight,
+                                /* ignoreWhiteSpace */ false,
+                                /* svgString */ this._svgString ]);
   },
   
   _onRenderingFinished: function(msg) {
@@ -6222,12 +6178,13 @@ extend(_SVGSVGElement, {
     }
     
     // send the SVG over to Flash now
-    this._handler.sendToFlash({ type: 'load', 
-                                sourceType: 'string',
-                                svgString: this._svgString,
-                                objectURL: this._getRelativeTo(),
-                                pageURL: this._getRelativeTo(),
-                                ignoreWhiteSpace: true });
+    this._handler.sendToFlash('jsHandleLoad',
+                              [ /* objectURL */ this._getRelativeTo('object'),
+                                /* pageURL */ this._getRelativeTo('page'),
+                                /* objectWidth */ null,
+                                /* objectHeight */ null,
+                                /* ignoreWhiteSpace */ true,
+                                /* svgString */ this._svgString ]);
   },
   
   /** The Flash is finished rendering. */
@@ -6256,13 +6213,23 @@ extend(_SVGSVGElement, {
     // tricks from Dojo Flash. More details on these
     // hidden Flash methods here:
     // http://codinginparadise.org/weblog/2006/02/how-to-speed-up-flash-8s.html
-    flash.sendToFlash = (function() {
+    var callFunction = function(callMe) {
       return function() {
         return eval(this.CallFunction(
-                      "<invoke name=\"sendToFlash\" returntype=\"javascript\">" 
+                      "<invoke name=\"" + callMe + "\" returntype=\"javascript\">" 
                       + __flash__argumentsToXML(arguments, 0) + "</invoke>"));
-      };
-    })(); // IE memory leaks
+      }; // IE memory leaks
+    }
+    
+    flash.jsSetAttribute = callFunction('jsSetAttribute');
+    flash.jsGetAttribute = callFunction('jsGetAttribute');
+    flash.jsAddEventListener = callFunction('jsAddEventListener');
+    flash.jsInsertBefore = callFunction('jsInsertBefore');
+    flash.jsAddChildAt = callFunction('jsAddChildAt');
+    flash.jsRemoveChild = callFunction('jsRemoveChild');
+    flash.jsSetText = callFunction('jsSetText');
+    flash.jsAppendChild = callFunction('jsAppendChild');
+    flash.jsHandleLoad = callFunction('jsHandleLoad');
   },
   
   /** Relative URLs inside of SVG need to expand against something (i.e.
