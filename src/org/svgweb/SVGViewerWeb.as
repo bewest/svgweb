@@ -467,6 +467,9 @@ package org.svgweb
             var element:SVGNode = this.svgRoot.getNodeByGUID(elementGUID);
 
             if (element) {
+                if (eventType == 'click') {
+                    element.addEventListener(MouseEvent.CLICK, handleAction);
+                }
                 if (eventType == 'mouseup') {
                     element.addEventListener(MouseEvent.MOUSE_UP, handleAction);
                 }
