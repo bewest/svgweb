@@ -94,7 +94,8 @@ var myRect, mySVG, rects, sodipodi, rdf, div, dc, bad, root, rect,
     stop, defs, parent, textNode2, renderer,
     origText, exp, html, ns, nextToLast, paths, styleStr,
     image, line, doTests, styleReturned, use, regExp, split, doc,
-    orig, rect1, rect2, obj1, obj2, obj3, handler, elem;
+    orig, rect1, rect2, obj1, obj2, obj3, handler, elem, suspendID1,
+    suspendID2, i;
     
 var allStyles = [
   'font', 'fontFamily', 'fontSize', 'fontSizeAdjust', 'fontStretch', 'fontStyle',
@@ -161,6 +162,7 @@ function runTests(embedTypes) {
   testIsSupported();
   testStyle();
   testCreateSVGObject();
+  testRedraw();
   testBugFixes();
   
   // TODO: Test setAttributeNS, hasChildNodes, removeAttribute
@@ -5104,6 +5106,155 @@ function testCreateSVGObject() {
   
   // TODO: have more tests with CDATA content, including setting it, getting
   // it, working with append/remove DOM operations, etc.
+}
+
+function testRedraw() {
+  // Tests to make sure the suspendRedraw/unsuspendRedraw system is working
+  console.log('Testing suspend/unsuspendRedraw...');
+  
+  // support common use cases
+  
+  // create a bunch of elements and add them to the DOM
+  svg = getRoot('svg2');
+  // create pop1 and pop2 container elements _before_ suspendRedraw
+  group = getDoc('svg2').createElementNS(svgns, 'g');
+  group.id = 'pop1';
+  group.setAttribute('transform', 'scale(0.25) rotate(90) translate(-100, -500)');
+  svg.appendChild(group);
+  group = getDoc('svg2').createElementNS(svgns, 'g');
+  group.id = 'pop2';
+  group.setAttribute('transform', 'scale(0.25) rotate(270) translate(-350, -110)');
+  svg.appendChild(group);
+  // now suspend things
+  suspendID1 = svg.suspendRedraw(5000);
+  assertExists('suspendID1 should exist', suspendID1);
+  for (i = 0; i < 100; i++) {
+    rect = document.createElementNS(svgns, 'rect');
+    rect.setAttribute('x', 445 - (5 * i));
+    rect.setAttribute('y', 0);
+    rect.setAttribute('id', 'pop1_' + i);
+    rect.setAttribute('width', 5);
+    rect.setAttribute('height', 0);
+    rect.addEventListener('mouseover', function(evt) { 
+      console.log('mouseover for pop1: ' + evt.target.id);
+      assertExists('this.id should exist', this.id);
+      assertExists('evt.target should exist', evt.target);
+      assertEquals('evt.target.id == ' + this.id, this.id, evt.target.id);
+    }, false);
+    rect.addEventListener('mouseout', function(evt) { 
+      console.log('mouseout for pop1: ' + evt.target.id);
+      assertExists('this.id should exist', this.id);
+      assertExists('evt.target should exist', evt.target);
+      assertEquals('evt.target.id == ' + this.id, this.id, evt.target.id);
+    }, false);
+    getDoc('svg2').getElementById('pop1').appendChild(rect);
+    
+    rect = document.createElementNS(svgns, 'rect');
+    rect.setAttributeNS(null, 'x', 0 + (5 * i));
+    rect.setAttributeNS(null, 'y', 120);
+    rect.setAttributeNS(null, 'id','pop2_' + i);
+    rect.setAttributeNS(null, 'width', 5);
+    rect.setAttributeNS(null, 'height', 0);
+    rect.addEventListener('mouseover', function(evt) { 
+      console.log('mouseover for pop2: ' + evt.target.id);
+      assertExists('this.id should exist', this.id);
+      assertExists('evt.target should exist', evt.target);
+      assertEquals('evt.target.id == ' + this.id, this.id, evt.target.id);
+    }, false);
+    rect.addEventListener('mouseout', function(evt) { 
+      console.log('mouseout for pop2: ' + evt.target.id);
+      assertExists('this.id should exist', this.id);
+      assertExists('evt.target should exist', evt.target);
+      assertEquals('evt.target.id == ' + this.id, this.id, evt.target.id);
+    }, false);
+    getDoc('svg2').getElementById('pop2').appendChild(rect);
+  }
+  // before unsuspending, loop around trying to set the fill and height
+  // and make sure the DOM is still around
+  for (i = 0; i < 100; i++)	{
+    rect1 = getDoc('svg2').getElementById('pop1_' + i);
+    assertExists('pop1_' + i + ' should exist', rect1);
+    rect2 = getDoc('svg2').getElementById('pop2_' + i);
+    assertExists('pop2_' + i + ' should exist', rect2);
+    // make sure the earlier set values are correct
+    assertEquals('pop1_' + i + '.getAttribute(y) == 0', 0,
+                 rect1.getAttribute('y'));
+    assertEquals('pop1_' + i + '.getAttribute(width) == 5', 5,
+                 rect1.getAttribute('width', 5));
+    // set the new values
+    rect1.setAttribute('height', (Math.random() * 700) / 2.8);
+    rect2.setAttribute('height', (Math.random() * 700) / 2.8);
+    rect1.setAttributeNS(null, 'fill', '#333366');
+    rect2.style.fill = '#660066';
+    // make sure they stick
+    assertEqualsAny('pop1_' + i + '.getAttribute(fill) == #333366',
+                    ['#333366'], rect1.getAttribute('fill'));
+    assertEqualsAny('pop1_' + i + '.getAttribute(fill) == #333366',
+                    ['#333366'], rect1.getAttribute('fill'));
+    assertEqualsAny('pop2_' + i + '.style.fill == #660066 or rgb(102, 0, 102)',
+                    ['#660066', 'rgb(102, 0, 102)'], rect2.style.fill);
+  }
+  // now unsuspend things
+  svg.unsuspendRedraw(suspendID1);
+  // make sure values are correct post-suspend
+  for (i = 0; i < 100; i++)	{
+    rect1 = getDoc('svg2').getElementById('pop1_' + i);
+    assertExists('post suspend: pop1_' + i + ' should exist', rect1);
+    rect2 = getDoc('svg2').getElementById('pop2_' + i);
+    assertExists('post suspend: pop2_' + i + ' should exist', rect2);
+    // make sure the earlier set values are correct
+    assertEquals('post suspend: pop1_' + i + '.getAttribute(y) == 0', 0,
+                 rect1.getAttribute('y'));
+    assertEquals('post suspend: pop1_' + i + '.getAttribute(width) == 5', 5,
+                 rect1.getAttribute('width', 5));
+    // make sure they stick
+    assertEqualsAny('post suspend: pop1_' + i 
+                    + '.getAttribute(fill) == #333366',
+                    ['#333366'], rect1.getAttribute('fill'));
+    assertEqualsAny('post suspend: pop2_' + i 
+                    + '.style.fill == #660066 or rgb(102, 0, 102)',
+                    ['#660066', 'rgb(102, 0, 102)'], rect2.style.fill);
+  }
+  // set a value post suspend to make sure it registers
+  rect1 = getDoc('svg2').getElementById('pop1_50');
+  rect1.style.fill = 'yellow';
+  rect1.setAttribute('width', 25);
+  console.log('SECOND IMAGE: There should be two small groups of multiple '
+              + 'horizontal lines of varying lengths near the upper-left, one '
+              + 'violet and the other navy blue. There should be a thicker '
+              + 'yellow line that was changed post-suspend. Also run your '
+              + 'mouse over both sets of lines  and make sure that mouse over '
+              + 'and out events fire -- you should see console.log messages '
+              + 'print');
+  
+  // remove many elements
+  
+  // change the text value of many elements
+  
+  // replace another element many times
+  
+  // fetch the value of many elements that are in the markup
+  
+  // do transforms on a bunch of circles while in a suspendRedraw
+  
+  // do getElementById + navigate the DOM inside a suspendRedraw
+  
+  // modify the contents _inside_ of an object in the middle of a suspendRedraw
+  
+  // create a bunch of SVG image elements in the middle of a suspendRedraw
+  
+  // have multiple suspendRedraws -- only remove one of them and ensure 
+  // redraw is still suspended
+  
+  // have multiple suspendRedraws -- do a unsuspendRedrawAll and make sure
+  // they all clear out
+  
+  // do a forceRedraw in the middle of a suspendRedraw
+  
+  // create SMIL elements _inside_ of a suspendRedraw
+  
+  // create SMIL elements _before_ a suspendRedraw, and then make sure fetching
+  // attributes from these in the _middle_ of a suspendRedraw is fine
 }
 
 function testBugFixes() {
