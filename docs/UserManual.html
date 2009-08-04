@@ -410,10 +410,15 @@ root.setAttribute('height', 200);
 root.addEventListener('SVGLoad', function(evt) {
   console.log('SVG onload called');
   // now you can do things with the SVG root element, like add more children
-});</code></pre>
+});
+svgweb.appendChild(root, document.body);</code></pre>
 
 <p>'load' and 'SVGLoad' are synonomous and are both supported; they lead to the
-same behavior when used.</p>
+same behavior when used. Notice also that when we append our newly created SVG
+root that we must use the method <code>svgweb.appendChild</code>. This method
+has the following arguments:</p>
+
+<pre><code>svgweb.appendChild(newNode, parentNode);</code></pre>
 
 <p>If you are loading an SVG file using the OBJECT tag and have an onload="" 
 attribute, such as:</p>
