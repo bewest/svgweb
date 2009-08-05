@@ -93,7 +93,7 @@ var myRect, mySVG, rects, sodipodi, rdf, div, dc, bad, root, rect,
     className, htmlTitle, head, circle, lengthBefore, matches, temp,
     stop, defs, parent, textNode2, renderer,
     origText, exp, html, ns, nextToLast, paths, styleStr,
-    image, line, doTests, styleReturned, use, regExp, split, doc,
+    image, images, line, doTests, styleReturned, use, regExp, split, doc,
     orig, rect1, rect2, obj1, obj2, obj3, handler, elem, suspendID1,
     suspendID2, i;
     
@@ -5290,19 +5290,79 @@ function testRedraw() {
   console.log('SECOND IMAGE: You should see the text "Made during suspend" and '
               + '"Set during suspend3"');
   
-  // replace another element many times
+  // replace another element
+  svg = getRoot('svg2');
+  suspendID1 = svg.suspendRedraw(200);
+  circle = getDoc('svg2').createElementNS(svgns, 'circle');
+  circle.setAttribute('cx', 300);
+  circle.setAttribute('cy', 300);
+  circle.setAttribute('fill', 'brown');
+  circle.setAttribute('r', 50);
+  svg.appendChild(circle);
+  rect = getDoc('svg2').createElementNS(svgns, 'rect');
+  rect.setAttribute('x', 300);
+  rect.setAttribute('y', 300);
+  rect.setAttribute('width', 50);
+  rect.setAttribute('height', 50);
+  rect.setAttribute('fill', 'yellow');
+  svg.appendChild(rect);
+  svg.replaceChild(rect, circle);
+  svg.unsuspendRedraw(suspendID1);
+  // make sure changing the color of the replaced element doesn't do bad
+  // things
+  circle.setAttribute('fill', 'orange');
+  rect.setAttribute('fill', 'blue');
+  console.log('SECOND IMAGE: You should see a blue rectangle, and should _not_ '
+              + 'see a brown or orange circle');
   
-  // fetch the value of many elements that are in the markup
+  // fetch the value of some elements that are in the markup
+  svg = getRoot('svg2');
+  suspendID1 = svg.suspendRedraw(200);
+  rect = getDoc('svg2').getElementById('rect5690');
+  assertExists('rect5690 should exist during suspendRedraw', rect);
+  assertEqualsAny('rect5690.width == 568.43536', 
+                  ['568.43536'], rect.getAttribute('width'));
+  svg.unsuspendRedrawAll();                
   
-  // do transforms on a bunch of circles while in a suspendRedraw
-  
-  // do getElementById + navigate the DOM inside a suspendRedraw
+  // do transforms on an image while in a suspendRedraw
+  svg = getRoot('svg11242');
+  suspendID1 = svg.suspendRedraw(500);
+  image = getDoc('svg11242').createElementNS(svgns, 'image');
+  image.setAttributeNS(xlinkns, 'xlink:href', 'balloon.jpg');
+  image.setAttribute('x', 0);
+  image.setAttribute('y', 0);
+  image.setAttribute('width', '100px');
+  image.setAttribute('height', '100px');
+  image.style.opacity = 0.8;
+  svg.appendChild(image);
+  image.setAttribute('transform', 'translate(450, 100) rotate(90)');
+  svg.unsuspendRedraw(suspendID1);
+  console.log('SECOND IMAGE: You should see an image of balloons rotated 90 '
+              + 'degrees near the end of the sword');
   
   // do getElementsByTagNameNS inside suspendRedraw
-  
-  // call forceRedraw inside of an event handler
+  svg = getRoot('svg11242');
+  suspendID1 = svg.suspendRedraw(500);
+  images = getDoc('svg11242').getElementsByTagNameNS(svgns, 'image');
+  assertEquals('There should be 2 images in svg11242', 2, images.length);
+  assertEquals('images[0].nodeName == image', 'image', images[0].nodeName);
+  assertEquals('images[1].nodeName == image', 'image', images[1].nodeName);
+  svg.unsuspendRedraw(suspendID1);
   
   // call forceRedraw while things are suspended
+  svg = getRoot('svg2');
+  svg.suspendRedraw(1000 * 10 /* 10 seconds */);
+  text = getDoc('svg2').createElementNS(svgns, 'text');
+  text.setAttribute('x', 200);
+  text.setAttribute('y', 100);
+  text.style.fontSize = '18px';
+  text.style.fill = 'red';
+  text.appendChild(getDoc('svg2').createTextNode('forceRedraw', 
+                   true));
+  svg.appendChild(text);
+  svg.forceRedraw();
+  console.log('SECOND IMAGE: You should see the text "forceRedraw"');
+  svg.unsuspendRedrawAll();
   
   // modify the contents _inside_ of an object in the middle of a suspendRedraw
   
