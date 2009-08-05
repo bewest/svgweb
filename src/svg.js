@@ -2458,8 +2458,8 @@ extend(FlashHandler, {
     var currentTarget = svgweb._guidLookup['_' + msg.currentTargetGUID];
 
     // TODO: FIXME: need to compute proper coordinates
-    var evt = { target: target,
-                currentTarget: currentTarget,
+    var evt = { target: target._getProxyNode(),
+                currentTarget: currentTarget._getProxyNode(),
                 clientX: msg.screenX,
                 clientY: msg.screenY,
                 screenX: msg.screenX,
