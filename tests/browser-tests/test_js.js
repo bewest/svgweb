@@ -95,7 +95,7 @@ var myRect, mySVG, rects, sodipodi, rdf, div, dc, bad, root, rect,
     origText, exp, html, ns, nextToLast, paths, styleStr,
     image, images, line, doTests, styleReturned, use, regExp, split, doc,
     orig, rect1, rect2, obj1, obj2, obj3, handler, elem, suspendID1,
-    suspendID2, i;
+    suspendID2, i, anim;
     
 var allStyles = [
   'font', 'fontFamily', 'fontSize', 'fontSizeAdjust', 'fontStretch', 'fontStyle',
@@ -5340,8 +5340,11 @@ function testRedraw() {
   assertExists('rect5690 should exist during suspendRedraw', rect);
   assertEqualsAny('rect5690.width == 568.43536', 
                   ['568.43536'], rect.getAttribute('width'));
-  svg.unsuspendRedrawAll();                
+  svg.unsuspendRedrawAll();
   
+  // commented out until Issue 207 is addressed:
+  // http://code.google.com/p/svgweb/issues/detail?id=207
+  /*
   // do transforms on an image while in a suspendRedraw
   svg = getRoot('svg11242');
   suspendID1 = svg.suspendRedraw(500);
@@ -5356,7 +5359,7 @@ function testRedraw() {
   image.setAttribute('transform', 'translate(450, 100) rotate(90)');
   svg.unsuspendRedraw(suspendID1);
   console.log('SECOND IMAGE: You should see an image of balloons rotated 90 '
-              + 'degrees near the end of the sword');
+              + 'degrees near the end of the sword');*/
   
   // do getElementsByTagNameNS inside suspendRedraw
   svg = getRoot('svg11242');
@@ -5369,7 +5372,7 @@ function testRedraw() {
   
   // call forceRedraw while things are suspended
   svg = getRoot('svg2');
-  svg.suspendRedraw(1000 * 10 /* 10 seconds */);
+  svg.suspendRedraw(1000 * 10); // 10 seconds
   text = getDoc('svg2').createElementNS(svgns, 'text');
   text.setAttribute('x', 200);
   text.setAttribute('y', 100);
@@ -5386,20 +5389,64 @@ function testRedraw() {
   // NOTE: this test is inside of the onload handler for dynamic2 above inside
   // of testCreateSVGObject()
   
-  // create a bunch of SVG image elements in the middle of a suspendRedraw
-  
-  // have multiple suspendRedraws -- only remove one of them and ensure 
-  // redraw is still suspended
-  
-  // have multiple suspendRedraws -- do a unsuspendRedrawAll and make sure
-  // they all clear out
-  
-  // do a forceRedraw in the middle of a suspendRedraw
-  
+  // commented out until Issue 145 is addressed:
+  // http://code.google.com/p/svgweb/issues/detail?id=145
+  /*
   // create SMIL elements _inside_ of a suspendRedraw
+  // NOTE: Safari has a known bug where it won't animate this:
+  // Bug 20028 - https://bugs.webkit.org/show_bug.cgi?id=20028 
+  svg = getRoot('svg2');
+  svg.suspendRedraw(500);
+  rect = getDoc('svg2').createElementNS(svgns, 'rect');
+  rect.setAttribute('x', 300);
+  rect.setAttribute('y', 300);
+  rect.setAttribute('width', 50);
+  rect.setAttribute('height', 50);
+  rect.setAttribute('fill', '#0f5');
+  rect.setAttribute('stroke', '#085');
+  rect.setAttribute('stroke-width', '4');
+  anim = getDoc('svg2').createElementNS(svgns, 'animate');
+  anim.setAttribute('attributeName', 'x');
+  anim.setAttribute('calcMode', 'linear');
+  anim.setAttribute('additive', 'replace');
+  anim.setAttribute('accumulate', 'none');
+  anim.setAttribute('from', 300);
+  anim.setAttribute('to', 220);
+  anim.setAttribute('begin', '2s; 5s');
+  anim.setAttribute('dur', '2s');
+  anim.setAttribute('fill', 'remove');
+  rect.appendChild(anim);
+  svg.appendChild(rect);
+  svg.unsuspendRedrawAll();
+  console.log('SECOND IMAGE: You should see a green rectangle animating');
   
-  // create SMIL elements _before_ a suspendRedraw, and then make sure fetching
-  // attributes from these in the _middle_ of a suspendRedraw is fine
+  // create another SMIL element that is activated by a mouse click
+  svg = getRoot('svg2');
+  svg.suspendRedraw(500);
+  rect = getDoc('svg2').createElementNS(svgns, 'rect');
+  rect.setAttribute('x', 200);
+  rect.setAttribute('y', 300);
+  rect.setAttribute('width', 20);
+  rect.setAttribute('height', 20);
+  rect.setAttribute('fill', 'red');
+  rect.setAttribute('stroke', '#085');
+  rect.setAttribute('stroke-width', '4');
+  rect.id = 'animateMe';
+  anim = getDoc('svg2').createElementNS(svgns, 'animate');
+  anim.setAttribute('attributeName', 'x');
+  anim.setAttribute('calcMode', 'linear');
+  anim.setAttribute('additive', 'replace');
+  anim.setAttribute('accumulate', 'none');
+  anim.setAttribute('from', 200);
+  anim.setAttribute('to', 100);
+  anim.setAttribute('begin', 'animateMe.click');
+  anim.setAttribute('dur', '10s');
+  anim.setAttribute('fill', 'freeze');
+  rect.appendChild(anim);
+  svg.appendChild(rect);
+  svg.unsuspendRedrawAll();
+  console.log('SECOND IMAGE: Click on the red rectangle to start it '
+              + 'animating');*/
 }
 
 function testBugFixes() {

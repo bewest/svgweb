@@ -420,6 +420,7 @@ package org.svgweb
         }
         
         public function js_setAttribute(msg:String):void {
+            //this.debug('js_setAttribute, msg='+msg);
             // msg is a string delimited by __SVG__DELIMIT with fields in
             // the following order: elementGUID, applyToStyle (boolean), 
             // attrNamespace, attrName, attrValue
@@ -678,7 +679,11 @@ package org.svgweb
         }
 
         override public function debug(debugMessage:String):void {
-            if (this.debugEnabled) {            
+            if (this.debugEnabled) {
+                if (debugMessage.indexOf(this.DELIMITER) != -1) {
+                    debugMessage = debugMessage.replace(new RegExp(this.DELIMITER, 'g'), ',');
+                }
+                
                 try {
                     ExternalInterface.call(this.js_handler + 'onMessage',
                                            this.msgToString(
@@ -694,7 +699,11 @@ package org.svgweb
         }
         
         override public function error(message:String):void {
-            if (this.debugEnabled) {            
+            if (this.debugEnabled) {     
+                if (message.indexOf(this.DELIMITER) != -1) {
+                    message = message.replace(new RegExp(this.DELIMITER, 'g'), ',');
+                }
+                       
                 try {
                     ExternalInterface.call(this.js_handler + 'onMessage',
                                            this.msgToString(
