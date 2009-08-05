@@ -5058,6 +5058,24 @@ function testCreateSVGObject() {
     assertEquals('this == SVG OBJECT', obj2, this);
     assertEquals('this.id == dynamic2', 'dynamic2', this.id);
     
+    // do a test for testRedraw() here
+    // modify the contents _inside_ of an object in the middle of a suspendRedraw
+    obj2 = document.getElementById('dynamic2');
+    assertExists('dynamic2 should exist', obj2);
+    svg.suspendRedraw(500);
+    rect = obj2.contentDocument.getElementsByTagNameNS(svgns, 'rect')[1];
+    assertExists('2nd rectangle should exist', rect);
+    rect.setAttribute('fill', 'blue');
+    // do it again, but fetch the object while inside of a suspendRedraw
+    obj2 = document.getElementById('dynamic2');
+    assertExists('dynamic2 should exist', obj2);
+    svg.suspendRedraw(500); // nested suspendRedraw
+    rect = obj2.contentDocument.getElementsByTagNameNS(svgns, 'rect')[1];
+    assertExists('2nd rectangle should exist', rect);
+    rect.setAttribute('stroke', 'red');
+    svg.unsuspendRedrawAll();
+    console.log('FOURTH IMAGE: The rectangle should be blue with a red stroke');
+    
     // indicate that this onload and its tests ran
     svgweb._dynamicObjOnloads++;
   };
@@ -5365,6 +5383,8 @@ function testRedraw() {
   svg.unsuspendRedrawAll();
   
   // modify the contents _inside_ of an object in the middle of a suspendRedraw
+  // NOTE: this test is inside of the onload handler for dynamic2 above inside
+  // of testCreateSVGObject()
   
   // create a bunch of SVG image elements in the middle of a suspendRedraw
   
