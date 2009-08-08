@@ -369,6 +369,7 @@ package org.svgweb.core
                         this.visible = false;
                     }
                     else {
+                        this.visible = true;
                         // <svg> nodes get an implicit mask of their height and width
                         if (this is SVGSVGNode) {
                             this.applyDefaultMask();

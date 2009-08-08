@@ -151,9 +151,10 @@ package org.svgweb
                 this.removeChildAt(0);
             }
             svgRoot = new SVGSVGNode(null, dataXML, null, objectURL, pageURL);
+            // See comment in handleRootSVGLoad()
             if (   (xmlString.indexOf("<animate") != -1)
                 || (xmlString.indexOf("<set") != -1) ) {
-                svgRoot.visible = false;
+                this.visible = false;
             }
             this.addActionListener(SVGEvent.SVGLoad, svgRoot);
             this.addChild(svgRoot);
@@ -265,7 +266,8 @@ package org.svgweb
             // completed rendering initially with animation effects.
             // We would start that tracking here, because the SVGLoad event
             // signals the end of parsing.
-            setTimeout(function ():void { svgRoot.visible = true }, 200); 
+            var outerthis:SVGViewer=this;
+            setTimeout(function ():void { outerthis.visible = true }, 200); 
      
             var onLoadHandler:String = '';
             if (this.svgRoot.xml.@onload) {
