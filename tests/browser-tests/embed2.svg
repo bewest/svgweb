@@ -208,6 +208,7 @@
       testInsertBefore();
       testHasChildNodes();
       testStyle();
+      testRedraw();
       
       // print out what should be visible after all tests
       top.console.log('2ND IMAGE: There should be blue text saying '
@@ -2961,6 +2962,124 @@
       top.assertEqualsAny('layer1.style.opacity after changing == 0.4',
                       [0.4],
                       group.style.opacity);
+    }
+    
+    function testRedraw() {
+      // test the suspendRedraw/unsuspendRedraw functionality
+      
+      top.console.log('Inside SVG OBJECT: Testing suspend/unsuspendRedraw...');
+      
+      // create a bunch of elements and add them to the DOM
+      svg = document.rootElement;
+      top.assertExists('document.rootElement should exist', svg);
+      // create pop1 and pop2 container elements _before_ suspendRedraw
+      group = document.createElementNS(svgns, 'g');
+      group.id = 'object_pop1';
+      group.setAttribute('transform', 'scale(0.25) translate(1490, 1330) rotate(90)');
+      svg.appendChild(group);
+      group = document.createElementNS(svgns, 'g');
+      group.id = 'object_pop2';
+      group.setAttribute('transform', 'scale(0.25) translate(1400, 1780) rotate(270)');
+      svg.appendChild(group);
+      // now suspend things
+      suspendID1 = svg.suspendRedraw(5000);
+      top.assertExists('suspendID1 should exist', suspendID1);
+      for (i = 0; i < 100; i++) {
+        rect = document.createElementNS(svgns, 'rect');
+        rect.setAttribute('x', 445 - (5 * i));
+        rect.setAttribute('y', 0);
+        rect.setAttribute('id', 'object_pop1_' + i);
+        rect.setAttribute('width', 5);
+        rect.setAttribute('height', 0);
+        rect.addEventListener('mouseover', function(evt) { 
+          top.console.log('mouseover for object_pop1: ' + evt.target.id);
+          top.assertExists('evt.target.id should exist', evt.target.id);
+        }, false);
+        rect.addEventListener('mouseout', function(evt) { 
+          top.console.log('mouseout for object_pop1: ' + evt.target.id);
+          top.assertExists('evt.target.id should exist', evt.target.id);
+        }, false);
+        document.getElementById('object_pop1').appendChild(rect);    
+        rect = document.createElementNS(svgns, 'rect');
+        rect.setAttributeNS(null, 'x', 0 + (5 * i));
+        rect.setAttributeNS(null, 'y', 120);
+        rect.setAttributeNS(null, 'id','object_pop2_' + i);
+        rect.setAttributeNS(null, 'width', 5);
+        rect.setAttributeNS(null, 'height', 0);
+        rect.addEventListener('mouseover', function(evt) { 
+          top.console.log('mouseover for object_pop2: ' + evt.target.id);
+          top.assertExists('evt.target.id should exist', evt.target.id);
+        }, false);
+        rect.addEventListener('mouseout', function(evt) { 
+          top.console.log('mouseout for object_pop2: ' + evt.target.id);
+          top.assertExists('evt.target.id should exist', evt.target.id);
+        }, false);
+        document.getElementById('object_pop2').appendChild(rect);
+      }
+      // before unsuspending, loop around trying to set the fill and height
+      // and make sure the DOM is still around
+      for (i = 0; i < 100; i++)	{
+        rect1 = document.getElementById('object_pop1_' + i);
+        top.assertExists('object_pop1_' + i + ' should exist', rect1);
+        rect2 = document.getElementById('object_pop2_' + i);
+        top.assertExists('object_pop2_' + i + ' should exist', rect2);
+        // make sure the earlier set values are correct
+        top.assertEquals('object_pop1_' + i + '.getAttribute(y) == 0', 0,
+                     rect1.getAttribute('y'));
+        top.assertEquals('object_pop1_' + i + '.getAttribute(width) == 5', 5,
+                     rect1.getAttribute('width', 5));
+        // set the new values
+        rect1.setAttribute('height', (Math.random() * 700) / 2.8);
+        rect2.setAttribute('height', (Math.random() * 700) / 2.8);
+        rect1.setAttributeNS(null, 'fill', '#333366');
+        rect2.style.fill = '#660066';
+        // make sure they stick
+        top.assertEqualsAny('object_pop1_' + i + '.getAttribute(fill) == #333366',
+                           ['#333366'], rect1.getAttribute('fill'));
+        top.assertEqualsAny('object_pop1_' + i + '.getAttribute(fill) == #333366',
+                           ['#333366'], rect1.getAttribute('fill'));
+        top.assertEqualsAny('object_pop2_' + i + '.style.fill == #660066 or '
+                           + 'rgb(102, 0, 102)',
+                           ['#660066', 'rgb(102, 0, 102)'], rect2.style.fill);
+      }
+      // now unsuspend things
+      svg.unsuspendRedraw(suspendID1);
+      // make sure values are correct post-suspend
+      for (i = 0; i < 100; i++)	{
+        rect1 = document.getElementById('object_pop1_' + i);
+        top.assertExists('post suspend: object_pop1_' + i + ' should exist', 
+                         rect1);
+        rect2 = document.getElementById('object_pop2_' + i);
+        top.assertExists('post suspend: object_pop2_' + i + ' should exist', 
+                         rect2);
+        // make sure the earlier set values are correct
+        top.assertEquals('post suspend: object_pop1_' + i 
+                         + '.getAttribute(y) == 0', 0,
+                         rect1.getAttribute('y'));
+        top.assertEquals('post suspend: object_pop1_' + i 
+                         + '.getAttribute(width) == 5', 
+                         5, rect1.getAttribute('width', 5));
+        // make sure they stick
+        top.assertEqualsAny('post suspend: object_pop1_' + i 
+                        + '.getAttribute(fill) == #333366',
+                        ['#333366'], rect1.getAttribute('fill'));
+        top.assertEqualsAny('post suspend: object_pop2_' + i 
+                        + '.style.fill == #660066 or rgb(102, 0, 102)',
+                        ['#660066', 'rgb(102, 0, 102)'], rect2.style.fill);
+      }
+      // set a value post suspend to make sure it registers
+      rect1 = document.getElementById('object_pop1_50');
+      rect1.style.fill = 'yellow';
+      rect1.setAttribute('width', 25);
+      rect1.setAttribute('height', 200);
+      top.console.log(
+                    'INSIDE OBJECT: SECOND IMAGE: There should be two small '
+                  + 'groups of multiple horizontal lines of varying lengths '
+                  + 'near the lower-right, one violet and the other navy blue. '
+                  + 'There should be a thicker yellow line that was changed '
+                  + 'post-suspend. Also run your mouse over both sets of lines '
+                  + 'and make sure that mouse over and out events fire -- you '
+                  + 'should see console.log messages print');
     }
   ]]></script>
   <g
