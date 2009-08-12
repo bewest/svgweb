@@ -5503,10 +5503,23 @@ function testDocumentFragment() {
   // test adding an empty DocumentFragment;
   // also test using DOM accessors (childNodes, firstChild, etc.) 
   // on DocumentFragment
+  frag = getDoc('svg11242').createDocumentFragment(true);
+  svg = getRoot('svg11242');
+  svg.appendChild(frag);
+  assertNull('after append, frag.firstChild == null', frag.firstChild);
+  assertNull('after append, frag.lastChild == null', frag.lastChild);
+  assertEquals('after append, frag.childNodes.length == 0', 0, 
+               frag.childNodes.length);
+  assertEquals('after append, frag.ownerDocument == getDoc(svg11242)',
+               getDoc('svg11242'), frag.ownerDocument);
+  assertNull('after append, frag.parentNode == null', frag.parentNode);
   
   // test adding one element with lots of children (plus some DOM text nodes)
   // using DocumentFragment; also test using DOM accessors (childNodes, 
   // firstChild, etc.) on DocumentFragment
+  
+  // repeat DocumentFragment with lots of children, but put it into an 
+  // OBJECT on that was dynamically created on the page
   
   // test adding multiple siblings using DocumentFragment;
   // also test using DOM accessors (childNodes, firstChild, etc.) 
