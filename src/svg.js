@@ -1503,7 +1503,8 @@ extend(SVGWeb, {
       
       // remove anything we added to the HTC's style object as well as our
       // property change listener
-      root.detachEvent('onpropertychange', root._fakeNode.style._changeListener);
+      root.detachEvent('onpropertychange', 
+                       root._fakeNode.style._changeListener);
       root.style.item = null;
       root.style.setProperty = null;
       root.style.getPropertyValue = null;
@@ -1519,6 +1520,8 @@ extend(SVGWeb, {
             = flashObj.jsSetText
             = flashObj.jsAppendChild
             = flashObj.jsHandleLoad
+            = flashObj.jsSuspendRedraw
+            = flashObj.jsUnsuspendRedrawAll
             = null;      
       flashObj.parentNode.removeChild(flashObj);
       var html = root._getHTCDocument().getElementsByTagName('html')[0];
@@ -1912,6 +1915,9 @@ function FlashHandler(args) {
   // the DOM we can clean up keyboard listeners, which are actually registered
   // on the document object
   this._keyboardListeners = [];
+  
+  // helps us with suspendRedraw operations
+  this._redrawManager = new _RedrawManager(this);
   
   if (this.type == 'script') {
     this.id = args.svgID;
@@ -2375,7 +2381,15 @@ extend(FlashHandler, {
     
     // note that 'this.flash' is set by the FlashInserter class after we 
     // create a Flash object there
-    return this.flash[invoke](args.join('__SVG__DELIMIT'));
+    
+    var message = args.join('__SVG__DELIMIT');
+    
+    // batch things up if we are in the middle of a suspendRedraw operation
+    if (this._redrawManager.isSuspended()) {
+      this._redrawManager.batch(invoke, message);
+    } else {
+      return this.flash[invoke](message);
+    }
   },
   
   /** @param msg The HTC sends us an Object populated with various values;
@@ -2491,7 +2505,7 @@ extend(FlashHandler, {
     // batch for later execution
     this._svgObject._scriptsToExec.push(msg.script);
   }
-});  
+});
 
 
 /** Creates a NativeHandler that will embed the given SVG into the page using
@@ -2860,6 +2874,117 @@ extend(NativeHandler, {
     return results;
   }
 });
+
+/** Utility class that helps us keep track of any suspendRedraw operations
+    that might be in effect. The FlashHandler.sendToFlash() method is the
+    primary point at which we check to see if things are suspended; if they
+    are, then we batch them up internally. When things are unsuspended we
+    send them all over in one shot to Flash.
+    
+    @param handler The handler associated with this _RedrawManager */
+function _RedrawManager(handler) {
+  this._handler = handler;
+  
+  // we batch all the methods and messages into an array
+  this._batch = [];
+  
+  // the next available suspend ID; we increment this each time so we don't
+  // get duplicate suspend IDs
+  this._nextID = 1;
+  
+  // array of our suspend IDs
+  this._ids = [];
+  
+  // a lookup table going from suspend ID to a window.setTimeout ID
+  this._timeoutIDs = {};
+}
+
+extend(_RedrawManager, {
+  /** Returns true if redrawing is suspended. */
+  isSuspended: function() {
+    return (this._ids.length > 0);
+  },
+  
+  /** Batches up the given Flash method and message for later execution
+      when things are unsuspended. 
+      
+      @param method Flash method to invoke
+      @param message Message to send to Flash method. */
+  batch: function(method, message) {
+    // turn into a single string
+    this._batch.push(method + ':' + message);
+  },
+  
+  suspendRedraw: function(ms) {
+    // generate an ID
+    var id = this._nextID; /* technically should be unsigned long */
+    this._nextID++;
+    
+    // kick off a timer to cancel if not unsuspended by developer in time
+    var self = this;
+    var timeoutID = window.setTimeout(function() {
+      self.unsuspendRedraw(id);
+      delete self._timeoutIDs['_' + id];
+    }, ms);
+    
+    // store an entry
+    this._ids.push(id);
+    this._timeoutIDs['_' + id] = timeoutID;
+    
+    // tell Flash to stop rendering
+    this._handler.flash.jsSuspendRedraw();
+    
+    return id;
+  },
+  
+  unsuspendRedraw: function(id) {
+    var idx = -1;
+    for (var i = 0; i < this._ids.length; i++) {
+      if (this._ids[i] == id) {
+        idx = i;
+        break;
+      }
+    }
+    if (idx == -1) {
+      throw 'Unknown id passed to unsuspendRedraw: ' + id;
+    }
+    
+    // clear timeout if still in effect
+    if (this._timeoutIDs['_' + id] != undefined) {
+      window.clearTimeout(this._timeoutIDs['_' + id]);
+    }
+    
+    // clear entry
+    this._ids.splice(idx, 1);
+    delete this._timeoutIDs['_' + id];
+    
+    // other suspendRedraws in effect or nothing to do?
+    if (this.isSuspended()) {
+      return;
+    }
+    
+    // Send over everything to Flash now. We call jsUnsuspendRedrawAll and
+    // send over everything as a giant string. This string is setup as follows.
+    // method:message__SVG__METHOD__DELIMIT
+    // Basically, we have the method name, followed by a colon, followed
+    // by the message to send to that method (which might have __SVG__DELIMITs
+    // in it). Each method is separated by the __SVG__METHOD__DELIMIT
+    // delimiter.
+    var sendMe = this._batch.join('__SVG__METHOD__DELIMIT');
+    this._batch = [];
+    this._handler.flash.jsUnsuspendRedrawAll(sendMe);
+  },
+  
+  unsuspendRedrawAll: function() {
+    for (var i = 0; i < this._ids.length; i++) {
+      this.unsuspendRedraw(this._ids[i]);
+    }
+  },
+  
+  forceRedraw: function() {
+    // not implemented
+  }
+});    
 
 
 /*
@@ -3322,7 +3447,7 @@ extend(_Node, {
     this._importNode(child);
     
     if (isIE) {
-      // _childNodes is a realy array on IE rather than an object literal
+      // _childNodes is a real array on IE rather than an object literal
       // like other browsers
       this._childNodes.push(child._htcNode);
     } else {
@@ -3332,7 +3457,7 @@ extend(_Node, {
       this._childNodes.length++;
     }
   
-    // process the children (add IDs, add a handler, etc.)
+    // process the children (cache important info, add a handler, etc.)
     this._processAppendedChildren(child, this, this._attached, 
                                   this._passThrough);
     
@@ -4357,14 +4482,17 @@ extend(_Element, {
       return null;
     }
     
-    if (this._attached && this._passThrough) {
+    // make sure we are attached and aren't in the middle of a 
+    // suspendRedraw operation
+    if (this._attached && this._passThrough 
+        && !this._handler._redrawManager.isSuspended()) {
       value = this._handler.sendToFlash('jsGetAttribute',
                                           [ this._guid, false, false, null, 
                                             attrName ]);
     } else {
       value = this._nodeXML.getAttribute(attrName);
 
-      // id property is special; we return empty string instead of null
+      // id property is special; we return an empty string instead of null
       // to mimic native behavior on Firefox and Safari
       if (attrName == 'id' && !value) {
         return '';
@@ -4839,7 +4967,8 @@ extend(_Style, {
     // convert camel casing (i.e. strokeWidth becomes stroke-width)
     var stylePropName = this._fromCamelCase(styleName);
     
-    if (this._element._attached && this._element._passThrough) {
+    if (this._element._attached && this._element._passThrough
+        && !this._element._handler._redrawManager.isSuspended()) {
       var value = this._element._handler.sendToFlash('jsGetAttribute',
                                               [ this._element._guid,
                                                 true, false, null, 
@@ -6070,6 +6199,9 @@ function _SVGSVGElement(nodeXML, svgString, scriptNode, handler) {
     
     this._htcNode = svgDOM;
     
+    // slot in our suspendRedraw/unsuspendRedraw methods
+    this._addRedrawMethods();
+    
     // track .style changes
     this.style = new _Style(this);
     
@@ -6089,6 +6221,9 @@ function _SVGSVGElement(nodeXML, svgString, scriptNode, handler) {
     // non-IE browsers; immediately insert the Flash
     this._inserter = new FlashInserter('script', document, this._nodeXML,
                                        this._scriptNode, this._handler);
+  } else if (isIE && this._handler.type == 'object') {
+    // slot in our suspendRedraw/unsuspendRedraw methods
+    this._addRedrawMethods();
   }
 }  
 
@@ -6105,12 +6240,22 @@ extend(_SVGSVGElement, {
   
   // TODO: Implement the functions below
   
-  suspendRedraw: function(max_wait_milliseconds /* unsigned long */) 
-                                                        /* unsigned long */ {},
-  unsuspendRedraw: function(suspend_handle_id /* unsigned long */) /* void */
-                                                /* throws DOMException */ {},
-  unsuspendRedrawAll: function() /* void */ {},
-  forceRedraw: function() /* void */ {},
+  suspendRedraw: function(ms /* unsigned long */) /* unsigned long */ {
+    return this._handler._redrawManager.suspendRedraw(ms);                                                     
+  },
+
+  unsuspendRedraw: function(id /* unsigned long */) /* void */
+                                                /* throws DOMException */ {
+    this._handler._redrawManager.unsuspendRedraw(id);                                                                                                   
+  },
+                                                
+  unsuspendRedrawAll: function() /* void */ {
+    this._handler._redrawManager.unsuspendRedrawAll();
+  },
+  
+  forceRedraw: function() /* void */ {
+    // not implemented
+  },
   
   // end SVGSVGElement
   
@@ -6230,6 +6375,8 @@ extend(_SVGSVGElement, {
     flash.jsSetText = callFunction('jsSetText');
     flash.jsAppendChild = callFunction('jsAppendChild');
     flash.jsHandleLoad = callFunction('jsHandleLoad');
+    flash.jsSuspendRedraw = callFunction('jsSuspendRedraw');
+    flash.jsUnsuspendRedrawAll = callFunction('jsUnsuspendRedrawAll');
   },
   
   /** Relative URLs inside of SVG need to expand against something (i.e.
@@ -6245,6 +6392,27 @@ extend(_SVGSVGElement, {
     }
     
     return results;
+  },
+  
+  /** Adds the various suspendRedraw/unsuspendRedraw methods to our HTC
+      proxy for IE. We do it here for two reasons: so that we don't have to
+      bloat the size of the HTC file which has a large affect on performance,
+      and so that these methods don't show up for SVG nodes that aren't the
+      root SVG node. */
+  _addRedrawMethods: function() {
+    // add methods inside of fresh closures to prevent IE memory leaks
+    this._htcNode.suspendRedraw = (function() {
+      return function(ms) { return this._fakeNode.suspendRedraw(ms); };
+    })();
+    this._htcNode.unsuspendRedraw = (function() { 
+      return function(id) { return this._fakeNode.unsuspendRedraw(id); };
+    })();
+    this._htcNode.unsuspendRedrawAll = (function() { 
+      return function() { return this._fakeNode.unsuspendRedrawAll(); };
+    })();
+    this._htcNode.forceRedraw = (function() { 
+      return function() { return this._fakeNode.forceRedraw(); };
+    })();
   }
 });
 

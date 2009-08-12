@@ -77,6 +77,9 @@ package org.svgweb
         // JavaScript; performance testing showed this to be an important
         // bottleneck, so we do various tricks to make it fast
         protected var DELIMITER:String = '__SVG__DELIMIT';
+        
+        // The delimiter between methods; used for unsuspendRedrawAll
+        protected var METHOD_DELIMITER:String = '__SVG__METHOD__DELIMIT';
 
         public function SVGViewerWeb():void {
             this.setupJavaScriptInterface();
@@ -150,7 +153,7 @@ package org.svgweb
             while(this.numChildren) {
                 this.removeChildAt(0);
             }
-            svgRoot = new SVGSVGNode(null, dataXML, null, objectURL, pageURL);
+            svgRoot = new SVGSVGNode(null, dataXML, this, null, objectURL, pageURL);
             // See comment in handleRootSVGLoad()
             if (   (xmlString.indexOf("<animate") != -1)
                 || (xmlString.indexOf("<set") != -1) ) {
@@ -210,6 +213,8 @@ package org.svgweb
                 // on the JS side since we found we don't need to optimize that
                 // into separate methods yet.
                 ExternalInterface.addCallback("jsHandleLoad", js_handleLoad);
+                ExternalInterface.addCallback("jsSuspendRedraw", js_suspendRedraw);
+                ExternalInterface.addCallback("jsUnsuspendRedrawAll", js_unsuspendRedrawAll);
                 ExternalInterface.addCallback("jsInsertBefore", js_insertBefore);
                 ExternalInterface.addCallback("jsAddChildAt", js_addChildAt);
                 ExternalInterface.addCallback("jsRemoveChild", js_removeChild);
@@ -456,7 +461,7 @@ package org.svgweb
 
             if (attrName == 'id') {
                 this.svgRoot.registerID(element);
-            }
+            }            
         }
         
         public function js_addEventListener(msg:String):void {
@@ -526,6 +531,7 @@ package org.svgweb
         }
         
         public function js_appendChild(msg:String):void {
+            //this.debug('js_appendChild, msg='+msg);
             // msg is a string delimited by __SVG__DELIMIT with fields in
             // the following order: parentGUID, childXML
             var args:Array = msg.split(DELIMITER);
@@ -591,6 +597,54 @@ package org.svgweb
             }
             
             return attrValue;
+        }
+        
+        public function js_suspendRedraw():void {
+            this.isSuspended = true;
+        }
+        
+        public function js_unsuspendRedrawAll(msg:String):void {
+            // msg is delimited a bit differently than the other js_* methods;
+            // each portion is a Flash method name, followed by a colon, 
+            // followed by the string message to send to that method name. Each
+            // of these portions is separated by the delimiter 
+            // __SVG__METHOD__DELIMITER
+            if (msg != '') {
+                var methods:Array = msg.split(this.METHOD_DELIMITER);
+                for (var i:int = 0; i < methods.length; i++) {
+                    var colonAt:int = methods[i].indexOf(':');
+                    var invoke:String = methods[i].substring(0, colonAt);
+                    var message:String = methods[i].substring(colonAt + 1);
+                    switch (invoke) {
+                        case 'jsInsertBefore':
+                            this.js_insertBefore(message);
+                            break;
+                        case 'jsAddChildAt':
+                            this.js_addChildAt(message);
+                            break;
+                        case 'jsRemoveChild':
+                            this.js_removeChild(message);
+                            break;
+                        case 'jsAddEventListener':
+                            this.js_addEventListener(message);
+                            break;
+                        case 'jsSetText':
+                            this.js_setText(message);
+                            break;
+                        case 'jsSetAttribute':
+                            this.js_setAttribute(message);
+                            break;
+                        case 'jsAppendChild':
+                            this.js_appendChild(message);
+                            break;
+                        default:
+                            this.error('Unknown unsuspendRedrawAll method: ' + invoke);
+                            break;
+                    }
+                }
+            }
+            
+            this.isSuspended = false;
         }
 
         override public function addActionListener(eventType:String, target:Sprite):void {

@@ -282,7 +282,7 @@ package org.svgweb.core
                     childNode = new SVGStopNode(this.svgRoot, childXML);            
                     break;
                 case "svg":
-                    childNode = new SVGSVGNode(this.svgRoot, childXML);
+                    childNode = new SVGSVGNode(this.svgRoot, childXML, this.svgRoot.viewer);
                     break;                        
                 case "symbol":
                     childNode = new SVGSymbolNode(this.svgRoot, childXML);
@@ -341,7 +341,14 @@ package org.svgweb.core
          * Redraws node graphics if _invalidDisplay == true
          **/
         protected function drawNode(event:Event = null):void {
-            if ( (this.parent != null) && (this._invalidDisplay) ) {
+            if ( this.parent != null 
+                 && this._invalidDisplay) {
+                     
+                // are we in the middle of a suspendRedraw operation?
+                if (this.svgRoot.viewer && this.svgRoot.viewer.isSuspended) {
+                    return;
+                }
+                
                 this._invalidDisplay = false;
                 if (this._xml != null) {
                     drawSprite.graphics.clear();

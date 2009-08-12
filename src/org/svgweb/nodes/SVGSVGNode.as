@@ -44,6 +44,8 @@ package org.svgweb.nodes
 
         public var title:String;
         
+        public var viewer:SVGViewer;
+        
         /** If this file was loaded from a URL, such as samples/scimitar.svg,
             then objectURL points to the relative path from which it was
             fetched, such as 'samples/' */
@@ -54,8 +56,10 @@ package org.svgweb.nodes
         public var pageURL:String = '';
         
         public function SVGSVGNode(svgRoot:SVGSVGNode = null, xml:XML = null, 
+                                   viewer:SVGViewer = null,
                                    original:SVGNode = null, objectURL:String = '',
                                    pageURL:String = ''):void {
+            this.viewer = viewer;
             this.objectURL = objectURL;
             this.pageURL = pageURL;
             if (svgRoot) {

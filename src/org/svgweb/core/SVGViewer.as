@@ -17,6 +17,10 @@ package org.svgweb.core
     public class SVGViewer extends Sprite
     {
         public var svgRoot:SVGSVGNode;
+        
+        // flag that indicates whether this viewer is in the middle of a 
+        // suspendRedraw operation
+        public var isSuspended:Boolean = false;
 
         protected var urlLoader:URLLoader;
         private var context:ContextMenu;
