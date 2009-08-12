@@ -853,6 +853,26 @@ will not get cleaned up correctly, and memory will get wasted over time:</p>
 // or
 containerDiv.parentNode.removeChild(mySVGObject); // bad!!</code></pre>
 
+<h1 id="suspendRedraw">suspendRedraw/unsuspendRedraw</h1>
+
+<p>SVG Web implements the SVG <code>suspendRedraw</code>, <code>unsuspendRedraw</code>, and <code>unsuspendRedrawAll</code> methods, which can be called on an SVG root tag. <code>forceRedraw</code> is not currently implemented and there are no plans to do so.</p>
+
+<p><code>suspendRedraw</code> can significantly speed things up when doing DOM operations in a loop on many elements. An example:</p>
+
+<pre><code>
+  var root = document.getElementsByTagNameNS(svgns, 'svg')[0];
+  var circles = document.getElementsByTagNameNS(svgns, 'circle');
+  var suspendID = root.suspendRedraw();
+  // let's say there are 500 circles
+  for (var i = 0; i &lt; circles.length; i++) {
+    circles[i].setAttribute('fill', 'red');
+  }
+  root.unsuspendRedraw(suspendID);
+  // could also do root.unsuspendRedrawAll() to clear out all suspended 
+  // operations
+</code></pre>
+
+<p>Under the covers for the Flash renderer we batch all the changes up and send them only when an unsuspend redraw operation is called, which makes things much faster.</p>
 
 <h1 id="known_issues">Known Issues and Errata</h1>
 

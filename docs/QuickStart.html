@@ -427,3 +427,28 @@ circle.addEventListener('mousedown', function(evt) {
 }, false);</code></pre>
 
 <p>This will cause an alert box to appear when a user presses the mouse button down. Notice that the <code>event</code> object is passed into the method (even on Internet Explorer -- use this instead of <code>window.event</code>). You can use the <code>event</code> object to get information, such as the id of the target: <code>evt.target.id</code>.</p>
+
+<h2 id="tips">Tips and Tricks</h2>
+
+<p>This section provides some tips and tricks to help with performance and reliability.</p>
+
+<ul>
+  <li id="tip_replace_renderer">Firefox's native SVG renderer can be slow in some circumstances. In these situations, it's recommended that you simply have SVG Web <a href="#renderer">replace the renderer</a> on Firefox if you run into performance or reliability issues with Firefox's native SVG renderer.</li>
+  <li id="tip_suspendRedraw"><p>If you are doing a bunch of DOM operations in a loop, such as creating elements or updating an attribute, you can significantly speed things up by using the <code>suspendRedraw</code> methods. An example:</p>
+    
+  <pre><code>
+    var root = document.getElementsByTagNameNS(svgns, 'svg')[0];
+    var circles = document.getElementsByTagNameNS(svgns, 'circle');
+    var suspendID = root.suspendRedraw();
+    // let's say there are 500 circles
+    for (var i = 0; i &lt; circles.length; i++) {
+      circles[i].setAttribute('fill', 'red');
+    }
+    root.unsuspendRedraw(suspendID);
+    // could also do root.unsuspendRedrawAll() to clear out all suspended 
+    // operations
+  </code></pre>
+  
+  <p>See the <a href="UserManual.html#suspendRedraw">suspendRedraw section in the User Manual</a> for more details.</p>
+  
+</ul>
