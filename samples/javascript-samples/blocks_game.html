@@ -70,20 +70,12 @@
 
       function suspendRedraw()
       {
-        // asv doesnt implement suspendRedraw, so we wrap this in a try-block:
-        try {
-          root.suspendRedraw(0);
-        }
-        catch(e) {}
+        root.suspendRedraw(6000);
       }
 
       function unsuspendRedraw()
       {
-        // asv doesn't implement unsuspendRedraw, so we wrap this in a try-block:
-        try {
-          root.unsuspendRedraw(0);
-        }
-        catch(e) {}
+        root.unsuspendRedrawAll();
       }
 
       //----------------------------------------------------------------------
@@ -476,7 +468,7 @@
         start('preview');
         preview = new Grid(4,4, "black", "grey", 2*HPAD+COLS+1, VPAD, 5, 5, document.getElementById("preview"));
         end('preview');
-
+        
         startNewGame();
 
         // initialize event processing:

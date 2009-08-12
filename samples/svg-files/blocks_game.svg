@@ -78,20 +78,12 @@ function every(p, a) {
 
 function suspendRedraw()
 {
-  // asv doesnt implement suspendRedraw, so we wrap this in a try-block:
-  try {
-    document.documentElement.suspendRedraw(0);
-  }
-  catch(e) {}
+  root.suspendRedraw(6000);
 }
 
 function unsuspendRedraw()
 {
-  // asv doesn't implement unsuspendRedraw, so we wrap this in a try-block:
-  try {
-    document.documentElement.unsuspendRedraw(0);
-  }
-  catch(e) {}
+  root.unsuspendRedrawAll();
 }
 
 //----------------------------------------------------------------------
