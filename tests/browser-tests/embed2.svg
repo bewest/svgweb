@@ -2972,6 +2972,8 @@
       // create a bunch of elements and add them to the DOM
       svg = document.rootElement;
       top.assertExists('document.rootElement should exist', svg);
+      top.assertEquals('document.rootElement.nodeName == svg', 'svg',
+                       document.rootElement.nodeName);
       // create pop1 and pop2 container elements _before_ suspendRedraw
       group = document.createElementNS(svgns, 'g');
       group.id = 'object_pop1';
