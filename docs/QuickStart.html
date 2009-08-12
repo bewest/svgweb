@@ -439,7 +439,7 @@ circle.addEventListener('mousedown', function(evt) {
   <pre><code>
     var root = document.getElementsByTagNameNS(svgns, 'svg')[0];
     var circles = document.getElementsByTagNameNS(svgns, 'circle');
-    var suspendID = root.suspendRedraw();
+    var suspendID = root.suspendRedraw(5000);
     // let's say there are 500 circles
     for (var i = 0; i &lt; circles.length; i++) {
       circles[i].setAttribute('fill', 'red');
@@ -449,6 +449,6 @@ circle.addEventListener('mousedown', function(evt) {
     // operations
   </code></pre>
   
-  <p>See the <a href="UserManual.html#suspendRedraw">suspendRedraw section in the User Manual</a> for more details.</p>
+  <p>The suspendRedraw method takes a timeout in milliseconds until redrawing is forced; higher numbers are recommended. See the <a href="UserManual.html#suspendRedraw">suspendRedraw section in the User Manual</a> for more details on these methods.</p>
   
 </ul>

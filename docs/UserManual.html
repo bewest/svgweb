@@ -862,7 +862,7 @@ containerDiv.parentNode.removeChild(mySVGObject); // bad!!</code></pre>
 <pre><code>
   var root = document.getElementsByTagNameNS(svgns, 'svg')[0];
   var circles = document.getElementsByTagNameNS(svgns, 'circle');
-  var suspendID = root.suspendRedraw();
+  var suspendID = root.suspendRedraw(5000);
   // let's say there are 500 circles
   for (var i = 0; i &lt; circles.length; i++) {
     circles[i].setAttribute('fill', 'red');
@@ -872,7 +872,7 @@ containerDiv.parentNode.removeChild(mySVGObject); // bad!!</code></pre>
   // operations
 </code></pre>
 
-<p>Under the covers for the Flash renderer we batch all the changes up and send them only when an unsuspend redraw operation is called, which makes things much faster.</p>
+<p>The suspendRedraw method takes a timeout in milliseconds until redrawing is forced; higher numbers are recommended. Under the covers for the Flash renderer we batch all the changes up and send them only when an unsuspend redraw operation is called, which makes things much faster.</p>
 
 <h1 id="known_issues">Known Issues and Errata</h1>
 
