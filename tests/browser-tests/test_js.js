@@ -95,7 +95,7 @@ var myRect, mySVG, rects, sodipodi, rdf, div, dc, bad, root, rect,
     origText, exp, html, ns, nextToLast, paths, styleStr,
     image, images, line, doTests, styleReturned, use, regExp, split, doc,
     orig, rect1, rect2, obj1, obj2, obj3, handler, elem, suspendID1,
-    suspendID2, i, anim;
+    suspendID2, i, anim, frag;
     
 var allStyles = [
   'font', 'fontFamily', 'fontSize', 'fontSizeAdjust', 'fontStretch', 'fontStyle',
@@ -163,6 +163,7 @@ function runTests(embedTypes) {
   testStyle();
   testCreateSVGObject();
   testRedraw();
+  testDocumentFragment();
   testBugFixes();
   
   // TODO: Test setAttributeNS, hasChildNodes, removeAttribute
@@ -5431,6 +5432,99 @@ function testRedraw() {
   svg.unsuspendRedrawAll();
   console.log('SECOND IMAGE: Click on the red rectangle to start it '
               + 'animating');*/
+}
+
+function testDocumentFragment() {
+  // Test the DOM DocumentFragment API
+  console.log('Testing DocumentFragment...');
+  
+  // test adding one element with no children using DocumentFragment;
+  // also test using DOM accessors (childNodes, firstChild, etc.) 
+  // on DocumentFragment; also test nodeName, nodeType, etc. on the
+  // DocumentFragment
+  frag = getDoc('svg11242').createDocumentFragment(true);
+  assertExists('DocumentFragment should exist', frag);
+  assertTrue('DocumentFragment should be fake', frag.fake);
+  // test basic DOM properties before any additions
+  assertEquals('frag.nodeName == #document-fragment',
+              '#document-fragment', frag.nodeName);
+  assertEquals('frag.nodeType == 11', 11, frag.nodeType);
+  assertNull('frag.firstChild == null', frag.firstChild);
+  assertNull('frag.lastChild == null', frag.lastChild);
+  assertEquals('frag.childNodes.length == 0', 0, frag.childNodes.length);
+  assertNull('frag.localName == null', frag.localName);
+  assertNull('frag.namespaceURI == null', frag.namespaceURI);
+  assertNull('frag.nextSibling == null', frag.nextSibling);
+  assertNull('frag.previousSibling == null', frag.previousSibling);
+  assertNull('frag.nodeValue == null', frag.nodeValue);
+  assertEquals('frag.ownerDocument == getDoc(svg11242)',
+               getDoc('svg11242'), frag.ownerDocument);
+  assertNull('frag.parentNode == null', frag.parentNode);
+  assertNull('frag.prefix == null', frag.prefix);
+  assertEquals('frag.textContent == ""', '', frag.textContent);
+  // now add one element
+  circle = getDoc('svg11242').createElementNS(svgns, 'circle');
+  circle.setAttribute('cx', 300);
+  circle.setAttribute('cy', 200);
+  circle.id = 'docFragElem1';
+  circle.setAttribute('fill', 'green');
+  circle.setAttribute('r', 10);
+  frag.appendChild(circle);
+  // make sure not in DOM
+  assertNull('document.getElementById(docFragElem1) == null',
+              document.getElementById('docFragElem1'));
+  // test DOM properties again
+  assertEquals('frag.firstChild == circle', circle, frag.firstChild);
+  assertEquals('frag.lastChild == circle', circle, frag.lastChild);
+  assertNull('frag.parentNode == null', frag.parentNode);
+  assertEquals('frag.childNodes.length == 1', 1, frag.childNodes.length);
+  assertEquals('frag.childNodes[0] == circle', circle, frag.childNodes[0]);
+  assertEquals('circle.parentNode == frag', frag, circle.parentNode);
+  // now add to a real live DOM
+  svg = getRoot('svg11242');
+  svg.appendChild(frag);
+  // test DOM properties after in real DOM
+  assertExists('after append, document.getElementById(docFragElem1) '
+                + 'should exist', document.getElementById('docFragElem1'));
+  assertEquals('after append, circle.ownerDocument == getDoc(svg11242)',
+               getDoc('svg11242'), circle.ownerDocument);
+  assertEquals('after append, circle.parentNode == svg', svg,
+               circle.parentNode);  
+  // DocumentFragment after append should be 'cleaned out'
+  assertNull('after append, frag.firstChild == null', frag.firstChild);
+  assertNull('after append, frag.lastChild == null', frag.lastChild);
+  assertEquals('after append, frag.childNodes.length == 0', 0, 
+               frag.childNodes.length);
+  assertEquals('after append, frag.ownerDocument == getDoc(svg11242)',
+               getDoc('svg11242'), frag.ownerDocument);
+  assertNull('after append, frag.parentNode == null', frag.parentNode);
+  console.log('THIRD IMAGE: You should see a small green circle');
+  
+  // test adding an empty DocumentFragment;
+  // also test using DOM accessors (childNodes, firstChild, etc.) 
+  // on DocumentFragment
+  
+  // test adding one element with lots of children (plus some DOM text nodes)
+  // using DocumentFragment; also test using DOM accessors (childNodes, 
+  // firstChild, etc.) on DocumentFragment
+  
+  // test adding multiple siblings using DocumentFragment;
+  // also test using DOM accessors (childNodes, firstChild, etc.) 
+  // on DocumentFragment
+  
+  // test surrounding DocumentFragment with suspendRedraw
+  
+  // test nesting one DocumentFragment into another one
+  
+  // test removeChild, insertBefore, and replaceChild on a DocumentFragment
+  
+  // test DocumentFragments with children, where mutual siblings 
+  // are DocumentFragments
+  
+  // Pass DocumentFragment instance into the various DOM append methods:
+  // insertBefore, removeChild, etc.
+  
+  // try to reuse a DocumentFragment several times
 }
 
 function testBugFixes() {
