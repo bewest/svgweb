@@ -27,6 +27,8 @@ var COLS = 10;
 var HPAD = 2; // horizontal padding used in laying out grids
 var VPAD = 2; // ditto for vertical
 
+var root;
+
 var SHAPE_DESCRIPTORS = [
   { color: "grey",   orientations: [ [[0,0],[1,0],[0,1],[1,1]] ] },
   { color: "blue",   orientations: [ [[0,0],[1,0],[2,0],[2,1]],
@@ -458,6 +460,8 @@ function loaded() {
 }
 
 function init() {
+  root = document.getElementsByTagNameNS(svgns, 'svg')[0];
+  
   // page layout:
   document.documentElement.setAttribute("viewBox", "0 0 "+(3*HPAD+(COLS+1)+5)+" "+(2*VPAD+(ROWS+1)));
 
