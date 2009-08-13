@@ -5944,9 +5944,79 @@ function testDocumentFragment() {
               + 'stacked on top of each other: frag1, frag2, frag3');
   
   // test removeChild, insertBefore, and replaceChild on a DocumentFragment
-  
-  // test DocumentFragments with children, where mutual siblings 
-  // are DocumentFragments
+  doc = getDoc('svg11242');
+  svg = getRoot('svg11242');
+  frag = doc.createDocumentFragment(true);
+  // replaceChild
+  // create element to be replaced with replaceChild
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('fragReplaceChild1', true));
+  frag.appendChild(svgText);
+  // now replace with a different node
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('fragReplaceChild2', true));
+  frag.replaceChild(svgText, frag.firstChild);
+  // insertBefore
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('fragInsertBefore1', true));
+  frag.insertBefore(svgText, frag.firstChild);
+  // removeChild
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('fragRemoveChild', true));
+  frag.appendChild(svgText);
+  frag.removeChild(svgText);
+  // now ensure the DOM is correct before appending
+  assertEquals('frag.childNodes.length == 2', 2, frag.childNodes.length);
+  assertEquals('frag.firstChild.firstChild.nodeValue == fragInsertBefore1',
+               'fragInsertBefore1', frag.firstChild.firstChild.nodeValue);
+  assertEquals('frag.lastChild.lastChild.data == fragReplaceChild2',
+               'fragReplaceChild2', frag.lastChild.lastChild.data);
+  assertNull('frag.firstChild.previousSibling == null', 
+             frag.firstChild.previousSibling);
+  assertNull('frag.lastChild.nextSibling == null', 
+             frag.lastChild.nextSibling);        
+  assertEquals('frag.firstChild.nextSibling.firstChild.nodeValue == '
+               + 'fragReplaceChild2', 'fragReplaceChild2',
+               frag.firstChild.nextSibling.firstChild.nodeValue);
+  assertEquals('frag.lastChild.previousSibling.lastChild.nodeValue == '
+               + 'fragInsertBefore1', 'fragInsertBefore1',
+               frag.lastChild.previousSibling.lastChild.nodeValue);
+  // do the appending
+  lengthBefore = svg.childNodes.length;
+  svg.appendChild(frag);
+  // make sure DocumentFragment is cleared out
+  assertNull('after append, frag.firstChild == null', frag.firstChild);
+  assertNull('after append, frag.lastChild == null', frag.lastChild);
+  assertEquals('after append, frag.childNodes.length == 0', 0, 
+               frag.childNodes.length);
+  // make sure the DOM is correct after appending
+  assertEquals('svg length == lengthBefore + 2', lengthBefore + 2,
+               svg.childNodes.length);
+  assertEquals('svg.lastChild.firstChild.nodeValue '
+               + '== fragReplaceChild2', 'fragReplaceChild2',
+               svg.lastChild.firstChild.nodeValue);
+  assertEquals('svg.lastChild.previousSibling.firstChild.nodeValue '
+               + '== fragInsertBefore1', 'fragInsertBefore1',
+               svg.lastChild.previousSibling.firstChild.nodeValue);
+  assertEquals('svg.lastChild.previousSibling.nextSibling.firstChild.nodeValue '
+               + '== fragReplaceChild2', 'fragReplaceChild2',
+               svg.lastChild.previousSibling.nextSibling.firstChild.nodeValue);
+  // reposition the text on the screen
+  svg.suspendRedraw(500);
+  svg.lastChild.setAttribute('x', 200);
+  svg.lastChild.setAttribute('y', 30);
+  svg.lastChild.style.fill = 'white';
+  svg.lastChild.previousSibling.setAttribute('x', 200);
+  svg.lastChild.previousSibling.style.fill = 'white';
+  svg.lastChild.previousSibling.setAttribute('y', 50);
+  svg.unsuspendRedrawAll();
+  console.log('THIRD IMAGE: You should see the words fragReplaceChild2 and '
+              + 'fragInsertBefore1 in white; you should _not_ see the words '
+              + 'fragReplaceChild1 or fragRemoveChild');
   
   // Pass DocumentFragment instance into the various DOM append methods:
   // insertBefore, removeChild, etc.
