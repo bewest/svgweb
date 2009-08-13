@@ -95,7 +95,7 @@ var myRect, mySVG, rects, sodipodi, rdf, div, dc, bad, root, rect,
     origText, exp, html, ns, nextToLast, paths, styleStr,
     image, images, line, doTests, styleReturned, use, regExp, split, doc,
     orig, rect1, rect2, obj1, obj2, obj3, handler, elem, suspendID1,
-    suspendID2, i, anim, frag, nodes;
+    suspendID2, i, anim, frag, frag2, frag3, nodes;
     
 var allStyles = [
   'font', 'fontFamily', 'fontSize', 'fontSizeAdjust', 'fontStretch', 'fontStyle',
@@ -5463,7 +5463,6 @@ function testDocumentFragment() {
   // DocumentFragment
   frag = getDoc('svg11242').createDocumentFragment(true);
   assertExists('DocumentFragment should exist', frag);
-  assertTrue('DocumentFragment should be fake', frag.fake);
   // test basic DOM properties before any additions
   assertEquals('frag.nodeName == #document-fragment',
               '#document-fragment', frag.nodeName);
@@ -5852,7 +5851,97 @@ function testDocumentFragment() {
               + 'stacked near the upper right of the image with the numbers '
               + '1 to 4 inside of them in white');
   
-  // test nesting one DocumentFragment into another one
+  // test nesting one DocumentFragment into another one, with some 
+  // DocumentFragments as mutual siblings; nest the top-level DocumentFragment
+  // into a group
+  doc = getDoc('svg11242');
+  svg = getRoot('svg11242');
+  group = doc.createElementNS(svgns, 'g');
+  group.setAttribute('font-size', '12px');
+  group.setAttribute('transform', 'translate(220, 145)');
+  group.style.fill = '#FFFFFF';
+  // top-level fragment
+  frag = doc.createDocumentFragment(true);
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.appendChild(doc.createTextNode('frag1', true));
+  frag.appendChild(svgText);
+  // nested fragment 1
+  frag2 = doc.createDocumentFragment(true);
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.appendChild(doc.createTextNode('frag2', true));
+  svgText.setAttribute('y', 20);
+  frag2.appendChild(svgText);
+  frag.appendChild(frag2); // poof - frag2 should disappear from the DOM
+  // nested fragment 2 - throw a random suspendRedraw in here
+  suspendID = svg.suspendRedraw(300);
+  frag3 = doc.createDocumentFragment(true);
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.appendChild(doc.createTextNode('frag3', true));
+  svgText.setAttribute('y', 40);
+  frag3.appendChild(svgText);
+  svg.unsuspendRedraw(suspendID);
+  frag.appendChild(frag3); // poof - frag3 should disappear from the DOM
+  // now add the top-level DocumentFragment to our group
+  group.appendChild(frag); // poof - frag should disappear from the DOM
+  // make sure all the DocumentFragments are now 'cleared' out
+  assertNull('after append, frag.firstChild == null', frag.firstChild);
+  assertNull('after append, frag.lastChild == null', frag.lastChild);
+  assertEquals('after append, frag.childNodes.length == 0', 0, 
+               frag.childNodes.length);
+  assertNull('after append, frag2.firstChild == null', frag2.firstChild);
+  assertNull('after append, frag2.lastChild == null', frag2.lastChild);
+  assertEquals('after append, frag2.childNodes.length == 0', 0, 
+               frag2.childNodes.length);
+  assertEquals('after append, frag2.parentNode == null', frag2.parentNode);
+  assertNull('after append, frag3.firstChild == null', frag3.firstChild);
+  assertNull('after append, frag3.lastChild == null', frag3.lastChild);
+  assertEquals('after append, frag3.childNodes.length == 0', 0, 
+               frag3.childNodes.length);
+  assertEquals('after append, frag3.parentNode == null', frag3.parentNode);
+  // ensure DOM is correct before appending to a real live DOM
+  assertNull('group.parentNode == null', group.parentNode);
+  assertEquals('group.childNodes.length == 3', 3, group.childNodes.length);
+  assertEquals('group.firstChild.nodeName == text', 'text',
+               group.firstChild.nodeName);
+  assertEquals('group.childNodes[1].nodeName == text', 'text',
+               group.childNodes[1].nodeName);
+  assertEquals('group.childNodes[1].firstChild.textContent == frag2',
+               'frag2', group.childNodes[1].firstChild.textContent);
+  assertEquals('group.childNodes[1].previousSibling.nodeName == text',
+               'text', group.childNodes[1].previousSibling.nodeName);
+  assertEquals('group.childNodes[1].nextSibling.firstChild.nodeValue == frag3',
+               'frag3', group.childNodes[1].nextSibling.firstChild.nodeValue);
+  assertEquals('group.childNodes[1].parentNode == group', group,
+                group.childNodes[1].parentNode);
+  assertEquals('group.childNodes[2].parentNode == group', group,
+                group.childNodes[2].parentNode);
+  // now append, and then ensure DOM is correct and DocumentFragments
+  // have disappeared
+  svg.appendChild(group);
+  group = svg.lastChild; // should be our newly appended group
+  assertEquals('after append, group.nodeName == g', 'g', group.nodeName);
+  assertEquals('after append, group.parentNode == svg', svg, group.parentNode);
+  assertEquals('after append, group.childNodes.length == 3', 3, 
+                group.childNodes.length);
+  assertEquals('after append, group.firstChild.nodeName == text', 'text',
+               group.firstChild.nodeName);
+  assertEquals('after append, group.childNodes[1].nodeName == text', 'text',
+               group.childNodes[1].nodeName);
+  assertEquals('after append, group.childNodes[1].firstChild.textContent '
+                + '== frag2', 'frag2', 
+                group.childNodes[1].firstChild.textContent);
+  assertEquals('after append, group.childNodes[1].previousSibling.nodeName '
+                + '== text', 'text', 
+                group.childNodes[1].previousSibling.nodeName);
+  assertEquals('after append, group.childNodes[1].nextSibling.firstChild.nodeValue '
+                + '== frag3', 'frag3', 
+                group.childNodes[1].nextSibling.firstChild.nodeValue);
+  assertEquals('after append, group.childNodes[1].parentNode == group', group,
+                group.childNodes[1].parentNode);
+  assertEquals('after append, group.childNodes[2].parentNode == group', group,
+                group.childNodes[2].parentNode);
+  console.log('THIRD IMAGE: You should see the following three words in white '
+              + 'stacked on top of each other: frag1, frag2, frag3');
   
   // test removeChild, insertBefore, and replaceChild on a DocumentFragment
   
