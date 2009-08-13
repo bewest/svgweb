@@ -5614,8 +5614,105 @@ function testDocumentFragment() {
               + 'stacked near the upper right of the image with the numbers '
               + '1 to 4 inside of them in orange');
   
-  // repeat DocumentFragment with lots of children, but put it into an 
-  // OBJECT on that was dynamically created on the page
+  // repeat DocumentFragment with lots of immediate children
+  frag = getDoc('svg11242').createDocumentFragment(true);
+  svg = getRoot('svg11242');
+  nodes = [];
+  for (var i = 1; i <= 4; i++) {
+    // have a circle with a small text value on it, all together in a group
+    group = getDoc('svg11242').createElementNS(svgns, 'g');
+    group.setAttribute('transform', 'scale(0.75) '
+                       + 'translate(555, ' + (46 + (i * 50)) + ')');
+    group.style.fill = 'black';
+    circle = getDoc('svg11242').createElementNS(svgns, 'circle');
+    circle.setAttribute('r', 20);
+    circle.setAttribute('fill', 'red');
+    group.appendChild(circle);
+    svgText = getDoc('svg11242').createElementNS(svgns, 'text');
+    svgText.appendChild(getDoc('svg11242').createTextNode(i, true));
+    svgText.style.fontSize = '30px';
+    svgText.setAttribute('x', -7);
+    svgText.setAttribute('y', 10);
+    group.appendChild(svgText);
+    frag.appendChild(group);
+    nodes.push(group);
+  }
+  // check DOM values before appending to a real DOM
+  assertEquals('frag.childNodes.length == 4', 4, frag.childNodes.length);
+  assertEquals('frag.childNodes[0] == nodes[0]', nodes[0], frag.childNodes[0]);
+  assertEquals('frag.firstChild == nodes[0]', nodes[0], frag.firstChild);
+  assertEquals('frag.lastChild == nodes[3]', nodes[3], frag.lastChild);
+  assertEquals('nodes[1].parentNode == frag', frag, nodes[1].parentNode);
+  assertEquals('nodes[1].firstChild.parentNode == nodes[1]', nodes[1], 
+                nodes[1].firstChild.parentNode);
+  assertEquals('frag.firstChild.childNodes[0].nodeName == circle', 
+               'circle', frag.firstChild.childNodes[0].nodeName);
+  assertEquals('frag.firstChild.childNodes[1].firstChild.nodeValue '
+                + '== 1', '1',
+                frag.firstChild.childNodes[1].firstChild.nodeValue);
+  // sibling relationships should be present
+  assertEquals('frag.childNodes[0].nextSibling == nodes[1]',
+                nodes[1], frag.childNodes[0].nextSibling);
+  assertNull('frag.childNodes[0].previousSibling == null',
+             frag.childNodes[0].previousSibling);
+  assertEquals('frag.childNodes[1].nextSibling == nodes[2]',
+               nodes[2], frag.childNodes[1].nextSibling);
+  assertEquals('frag.childNodes[1].previousSibling == nodes[0]',
+               nodes[0], frag.childNodes[1].previousSibling);
+  // now append to a real DOM and recheck all DOM values
+  svg.appendChild(frag);
+  assertEquals('svg.lastChild == nodes[3]', nodes[3], svg.lastChild);
+  assertEquals('svg.childNodes[last] == nodes[3]', nodes[3],
+                svg.childNodes[svg.childNodes.length - 1]);
+  assertEquals('svg.childNodes[one before last] == nodes[2]', nodes[2],
+                svg.childNodes[svg.childNodes.length - 2]);
+  assertEquals('svg.childNodes[two before last] == nodes[1]', nodes[1],
+                svg.childNodes[svg.childNodes.length - 3]);
+  assertEquals('svg.childNodes[three before last] == nodes[0]', nodes[0],
+                svg.childNodes[svg.childNodes.length - 4]);      
+  assertEquals('svg.lastChild.nodeName == g', 'g', svg.lastChild.nodeName);
+  assertEquals('svg.lastChild.parentNode == svg', svg, 
+               svg.lastChild.parentNode);
+  assertEquals('svg.childNodes[two before last].parentNode == svg',
+               svg, svg.childNodes[svg.childNodes.length - 3].parentNode); 
+  assertEquals('nodes[2].ownerDocument == getDoc(svg11242)',
+               getDoc('svg11242'), nodes[2].ownerDocument);
+  assertEquals('nodes[2].lastChild.ownerDocument == getDoc(svg11242)',
+               getDoc('svg11242'), nodes[2].lastChild.ownerDocument);
+  assertEquals('svg.lastChild.childNodes.length == 2', 2,
+               svg.lastChild.childNodes.length);
+  assertEquals('svg.childNodes[2nd to last].childNodes[1].firstChild.nodeValue == 3',
+               3, 
+               svg.childNodes[svg.childNodes.length - 2].childNodes[1].firstChild.nodeValue);
+  assertEquals('svg.childNodes[2nd to last].childNodes[1].firstChild '
+               + '== nodes[2].lastChild.lastChild', nodes[2].lastChild.lastChild,
+               svg.childNodes[svg.childNodes.length - 2].childNodes[1].firstChild);
+  assertEquals('nodes[0].nextSibling == nodes[1]', nodes[1],
+               nodes[0].nextSibling);
+  assertExists('nodes[0].previousSibling should exist', 
+               nodes[0].previousSibling);
+  assertEquals('nodes[0].nextSibling == svg[two before last]',
+               svg.childNodes[svg.childNodes.length - 3],
+               nodes[0].nextSibling);
+  assertEquals('nodes[1].nextSibling == nodes[2]', nodes[2],
+                nodes[1].nextSibling);
+  assertEquals('nodes[1].nextSibling == svg[one before last]',
+                svg.childNodes[svg.childNodes.length - 2],
+                nodes[1].nextSibling);
+  assertEquals('nodes[1].previousSibling == nodes[0]', nodes[0],
+               nodes[1].previousSibling);
+  assertNull('nodes[3].nextSibling == null', nodes[3].nextSibling);
+  // make sure the DocumentFragment is cleared
+  assertNull('after append, frag.firstChild == null', frag.firstChild);
+  assertNull('after append, frag.lastChild == null', frag.lastChild);
+  assertEquals('after append, frag.childNodes.length == 0', 0, 
+               frag.childNodes.length);
+  console.log('THIRD IMAGE: You should see four red circles vertically '
+              + 'stacked near the upper right of the image with the numbers '
+              + '1 to 4 inside of them in black');
+  
+  
+  // do a DocumentFragment into an SVG OBJECT dynamically created on the page
   
   // test adding multiple siblings using DocumentFragment;
   // also test using DOM accessors (childNodes, firstChild, etc.) 
