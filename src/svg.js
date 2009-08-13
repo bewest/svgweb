@@ -3006,70 +3006,7 @@ extend(_RedrawManager, {
   We underscore our DOM interface names below so that they don't collide 
   with the browser's implementations of these (for example, Firefox exposes 
   the DOMException, Node, etc. interfaces as well)
-  
-  FIXME: We aren't correctly throwing _DOMExceptions and _SVGExceptions 
-  throughout our code where required.
 */
-
-function _DOMException(code) {
-  this.code = code;
-  
-  // superclass constructor
-  Error(this.toString());
-}
-
-// subclass built-in browser Error object
-_DOMException.prototype = new Error;
-
-mixin(_DOMException, {
-  INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, HIERARCHY_REQUEST_ERR: 3,
-  WRONG_DOCUMENT_ERR: 4, INVALID_CHARACTER_ERR: 5, NO_DATA_ALLOWED_ERR: 6,
-  NO_MODIFICATION_ALLOWED_ERR: 7, NOT_FOUND_ERR: 8, NOT_SUPPORTED_ERR: 9,
-  INUSE_ATTRIBUTE_ERR: 10, INVALID_STATE_ERR: 11, SYNTAX_ERR: 12,
-  INVALID_MODIFICATION_ERR: 13, NAMESPACE_ERR: 14, INVALID_ACCESS_ERR: 15
-});
-
-extend(_DOMException, {
-  toString: function() {  
-    // rather than having a giant switch statement here which will bloat the
-    // code size, just dynamically get the property name for the given error 
-    // code and turn it into a string
-    for (var i in _DOMException) {
-      if (i.indexOf('ERR') != -1 && _DOMException[i] === this.code) {
-        return String(i);
-      }
-    }
-    
-    return 'Unknown error: ' + this.code;
-  }
-});
-
-
-function _SVGException(code) {
-  this.code = code;
-  
-  // superclass constructor
-  Error(this.toString());
-}
-
-// subclass built-in browser Error object
-_SVGException.prototype = new Error;
-
-mixin(_SVGException, {
-  SVG_WRONG_TYPE_ERR: 0, SVG_INVALID_VALUE_ERR: 1, SVG_MATRIX_NOT_INVERTABLE: 2
-});
-
-extend(_SVGException, {
-  toString: function() {  
-    switch(this.code) {
-      case 0: return 'SVG_WRONG_TYPE_ERR';
-      case 1: return 'SVG_INVALID_VALUE_ERR';
-      case 2: return 'SVG_MATRIX_NOT_INVERTABLE';
-      default: return 'Unknown error: ' + this.code;
-    }
-  }
-});
-
 
 function _DOMImplementation() {}
 
@@ -3253,7 +3190,7 @@ extend(_Node, {
     //console.log('insertBefore, newChild='+newChild.id+', refChild='+refChild.id);
     
     if (this.nodeType != _Node.ELEMENT_NODE) {
-      throw new _DOMException(_DOMException.NOT_SUPPORTED_ERR);
+      throw 'Not supported';
     }
     
     // if the children are DOM nodes, turn them into _Node or _Element
@@ -3306,7 +3243,7 @@ extend(_Node, {
     //console.log('replaceChild, newChild='+newChild.nodeName+', oldChild='+oldChild.nodeName);
     
     if (this.nodeType != _Node.ELEMENT_NODE) {
-      throw new _DOMException(_DOMException.NOT_SUPPORTED_ERR);
+      throw 'Not supported';
     }
     
     // the children could be DOM nodes; turn them into something we can
@@ -3371,7 +3308,7 @@ extend(_Node, {
   removeChild: function(child /* _Node or DOM Node */) {
     //console.log('removeChild, child='+child.nodeName+', this='+this.nodeName);
     if (this.nodeType != _Node.ELEMENT_NODE) {
-      throw new _DOMException(_DOMException.NOT_SUPPORTED_ERR);
+      throw 'Not supported';
     }
     
     // the child could be a DOM node; turn it into something we can
@@ -3440,7 +3377,7 @@ extend(_Node, {
   appendChild: function(child /* _Node or DOM Node */) {
     //console.log('appendChild, child='+child.nodeName+', this.nodeName='+this.nodeName);
     if (this.nodeType != _Node.ELEMENT_NODE) {
-      throw new _DOMException(_DOMException.NOT_SUPPORTED_ERR);
+      throw 'Not supported';
     }
     
     // the child could be a DOM node; turn it into something we can
@@ -3632,7 +3569,7 @@ extend(_Node, {
   },
   
   // NOTE: technically the following attributes should be read-only, 
-  // raising _DOMExceptions if set, but for simplicity we make them 
+  // raising DOMExceptions if set, but for simplicity we make them 
   // simple JS properties instead. If set nothing will happen.
   nodeName: null,
   nodeType: null,
@@ -4516,7 +4453,7 @@ extend(_Element, {
   },
   
   removeAttribute: function(name) /* void */ {
-    /* throws _DOMException */
+    /* throws DOMException */
     // TODO: Implement
   },
 
@@ -4596,7 +4533,7 @@ extend(_Element, {
   },
   
   removeAttributeNS: function(ns, localName) /* void */ {
-      /* throws _DOMException */
+      /* throws DOMException */
     // TODO: Implement
   },
   
@@ -6452,7 +6389,7 @@ extend(_Document, {
   
   /*
     Note: technically these 2 properties should be read-only and throw 
-    a _DOMException when set. For simplicity we make them simple JS
+    a DOMException when set. For simplicity we make them simple JS
     properties; if set, nothing will happen. Also note that we don't
     support the 'doctype' property.
   */
