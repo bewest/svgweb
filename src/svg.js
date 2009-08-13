@@ -2916,6 +2916,10 @@ extend(_RedrawManager, {
   },
   
   suspendRedraw: function(ms) {
+    if (ms === undefined) {
+      throw 'Not enough arguments to suspendRedraw';
+    }
+    
     // generate an ID
     var id = this._nextID; /* technically should be unsigned long */
     this._nextID++;
