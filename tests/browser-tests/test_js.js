@@ -404,6 +404,8 @@ function testContentDocument() {
     svg = document.getElementById('mySVG');
     assertExists('OBJECT with ID "svg" should exist', svg);
     assertExists('svg.contentDocument should exist', svg.contentDocument);
+    assertEquals('svg.contentDocument.nodeName == #document', '#document',
+                 svg.contentDocument.nodeName);
     assertExists('svg.contentDocument.rootElement should exist',
                  svg.contentDocument.rootElement);
     assertExists('svg.contentDocument.documentElement should exist',
@@ -5503,7 +5505,8 @@ function testDocumentFragment() {
   svg.appendChild(frag);
   // test DOM properties after in real DOM
   assertExists('after append, document.getElementById(docFragElem1) '
-                + 'should exist', document.getElementById('docFragElem1'));
+                + 'should exist', 
+                getDoc('svg11242').getElementById('docFragElem1'));
   assertEquals('after append, circle.ownerDocument == getDoc(svg11242)',
                getDoc('svg11242'), circle.ownerDocument);
   assertEquals('after append, circle.parentNode == svg', svg,
