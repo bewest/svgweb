@@ -6012,16 +6012,64 @@ function testDocumentFragment() {
   svg.lastChild.style.fill = 'white';
   svg.lastChild.previousSibling.setAttribute('x', 200);
   svg.lastChild.previousSibling.style.fill = 'white';
-  svg.lastChild.previousSibling.setAttribute('y', 50);
+  svg.lastChild.previousSibling.setAttribute('y', 45);
   svg.unsuspendRedrawAll();
   console.log('THIRD IMAGE: You should see the words fragReplaceChild2 and '
               + 'fragInsertBefore1 in white; you should _not_ see the words '
               + 'fragReplaceChild1 or fragRemoveChild');
   
   // Pass DocumentFragment instance into the various DOM append methods:
-  // insertBefore, removeChild, etc.
-  
-  // try to reuse a DocumentFragment several times
+  // insertBefore and replaceChild; reuse the DocumentFragment 
+  // over and over
+  doc = getDoc('svg11242');
+  svg = getRoot('svg11242');
+  frag = doc.createDocumentFragment(true);
+  lengthBefore = svg.childNodes.length;
+  // insertBefore
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('againInsertBefore1', true));
+  svgText.setAttribute('x', 200);
+  svgText.setAttribute('y', 15);
+  svgText.style.fill = 'white';
+  frag.appendChild(svgText);
+  svg.insertBefore(frag, svg.lastChild);
+  // replaceChild
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('againReplacedChild1', true));
+  svgText.setAttribute('x', 200);
+  svgText.setAttribute('y', 10);
+  svgText.style.fill = 'white';
+  svg.appendChild(svgText); // element to replace
+  // now replace
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('againReplacedChild2', true));
+  svgText.setAttribute('x', 200);
+  svgText.setAttribute('y', 60);
+  svgText.style.fill = 'white';
+  frag.appendChild(svgText);
+  svg.replaceChild(frag, svg.lastChild);
+  // removeChild - should get exception
+  exp = null;
+  try {
+    svg.removeChild(frag);
+  } catch (e) {
+    exp = e;
+  }
+  assertExists('removeChild(frag) should throw exception', exp);
+  // check DOM
+  assertEquals('svg.childNodes.length should be bumped by 2', 
+               lengthBefore + 2, svg.childNodes.length);
+  assertEquals('svg.lastChild.firstChild.nodeValue == againReplacedChild2',
+               'againReplacedChild2', svg.lastChild.firstChild.nodeValue);
+  assertEquals('svg.lastChild.previousSibling.previousSibling.firstChild.nodeValue '
+               + '== againInsertBefore1', 'againInsertBefore1',
+               svg.lastChild.previousSibling.previousSibling.firstChild.nodeValue);
+  console.log('THIRD IMAGE: You should see the words againInsertBefore1 and '
+              + 'againReplacedChild2 in white; you should _not_ see the '
+              + 'word againReplacedChild1');
 }
 
 function testBugFixes() {
