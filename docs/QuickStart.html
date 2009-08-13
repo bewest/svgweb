@@ -434,6 +434,7 @@ circle.addEventListener('mousedown', function(evt) {
 
 <ul>
   <li id="tip_replace_renderer">Firefox's native SVG renderer can be slow in some circumstances. In these situations, it's recommended that you simply have SVG Web <a href="#renderer">replace the renderer</a> on Firefox if you run into performance or reliability issues with Firefox's native SVG renderer.</li>
+  
   <li id="tip_suspendRedraw"><p>If you are doing a bunch of DOM operations in a loop, such as creating elements or updating an attribute, you can significantly speed things up by using the <code>suspendRedraw</code> methods. An example:</p>
     
   <pre><code>
@@ -451,4 +452,24 @@ circle.addEventListener('mousedown', function(evt) {
   
   <p>The suspendRedraw method takes a timeout in milliseconds until redrawing is forced; higher numbers are recommended. See the <a href="UserManual.html#suspendRedraw">suspendRedraw section in the User Manual</a> for more details on these methods.</p>
   
+  <li id="document_fragment"><p>If you are creating many DOM nodes at once, you should use the DOM DocumentFragment API. This will significantly speed things up, especially if you are creating these nodes on page load. To create a DocumentFragment for use with SVG, you should call <code>document.createDocumentFragment(true)</code>. Note the extra <code>true</code> parameter -- this is required by SVG Web to help us know that this DocumentFragment will be used with SVG, possibly going into our fake Flash backend. A small code example:</p>
+    
+    <pre><code>
+      // note the extra 'true' argument
+      var frag = document.createDocumentFragment(true);
+      for (var i = 0; i &lt; 100; i++) {
+        var circle = document.createElementNS(svgns, 'circle');
+        circle.setAttribute('x', i * 10);
+        circle.setAttribute('y', 10);
+        circle.setAttribute('r', 5);
+        circle.setAttribute('fill', 'red');
+        // append to DocumentFragment
+        frag.appendChild(circle);
+      }
+      // now append the DocumentFragment to the DOM
+      var svg = document.getElementsByTagNameNS(svgns, 'svg')[0];
+      svg.appendChild(frag); // DocumentFragment disappears leaving circles
+    </code></pre>
+    
+  <p>See the section on <a href="UserManual.html#document_fragment">DocumentFragments in the UserManual</a> for more details.</p>
 </ul>

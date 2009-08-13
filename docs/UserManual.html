@@ -874,6 +874,35 @@ containerDiv.parentNode.removeChild(mySVGObject); // bad!!</code></pre>
 
 <p>The suspendRedraw method takes a timeout in milliseconds until redrawing is forced; higher numbers are recommended. Under the covers for the Flash renderer we batch all the changes up and send them only when an unsuspend redraw operation is called, which makes things much faster.</p>
 
+<h1 id="document_fragment">DocumentFragments</h1>
+
+<p>The DOM DocumentFragment API is a way to efficiently add many DOM nodes to a page quickly; it is highly recommended when you are adding many SVG elements to a page quickly. This will significantly speed things up, especially if you are creating these nodes on page load. To create a DocumentFragment for use with SVG, you should call <code>document.createDocumentFragment(true)</code>. Note the extra <code>true</code> parameter -- this is required by SVG Web to help us know that this DocumentFragment will be used with SVG, possibly going into our fake Flash backend. A small code example:</p>
+  
+  <pre><code>
+    // note the extra 'true' argument
+    var frag = document.createDocumentFragment(true);
+    for (var i = 0; i &lt; 100; i++) {
+      var circle = document.createElementNS(svgns, 'circle');
+      circle.setAttribute('x', i * 10);
+      circle.setAttribute('y', 10);
+      circle.setAttribute('r', 5);
+      circle.setAttribute('fill', 'red');
+      // append to DocumentFragment
+      frag.appendChild(circle);
+    }
+    // now append the DocumentFragment to the DOM
+    var svg = document.getElementsByTagNameNS(svgns, 'svg')[0];
+    svg.appendChild(frag); // DocumentFragment disappears leaving circles
+  </code></pre>
+  
+<p>A few notes:</p>
+
+<ul>
+  <li>It is safe to recycle and reuse DocumentFragments. Once you use one the children will disappear and you can simply reuse it again.</li>
+  <li>You <em>must</em> provide the <code>true</code> argument to <code>document.createDocumentFragment(<b>true</b>)</code> when using DocumentFragments with SVG. This is an extra, non-standard argument necessary for SVG Web.</li>
+  <li>You can not nest HTML elements inside of an SVG DocumentFragment; you can also not create a root &lt;svg&gt; tag with children inside of a DocumentFragment. Neither of these will work.</li>
+</ul>
+
 <h1 id="known_issues">Known Issues and Errata</h1>
 
 <p>Most of the known issues are pretty minor and tend to affect edge conditions
