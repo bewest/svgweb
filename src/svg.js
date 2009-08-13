@@ -2478,6 +2478,9 @@ extend(FlashHandler, {
                 clientY: msg.screenY,
                 screenX: msg.screenX,
                 screenY: msg.screenY,
+                altKey: msg.altKey,
+                ctrlKey: msg.ctrlKey,
+                shiftKey: msg.shiftKey,
                 preventDefault: function() { this.returnValue=false; }
               };
               

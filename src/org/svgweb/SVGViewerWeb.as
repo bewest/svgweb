@@ -691,7 +691,10 @@ package org.svgweb
                                      clientX: event.localX,
                                      clientY: event.localY,
                                      screenX: event.stageX,
-                                     screenY: event.stageY
+                                     screenY: event.stageY,
+                                     altKey: event.altKey,
+                                     ctrlKey: event.ctrlKey,
+                                     shiftKey: event.shiftKey
                                    } 
                         )
                     );
