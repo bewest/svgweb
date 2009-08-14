@@ -1402,6 +1402,16 @@ package org.svgweb.core
             }
             
             switch (name) {
+                case 'onclick':
+                case 'onmousedown':
+                case 'onmousemove':
+                case 'onmouseout':
+                case 'onmouseover':
+                case 'onmouseup':
+                case 'onmousedown':
+                    this.attachEventListeners();
+                    break;
+
                 case 'transform':
                 case 'viewBox':
                 case 'x':

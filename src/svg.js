@@ -2485,10 +2485,20 @@ extend(FlashHandler, {
               };
               
     var handlers = currentTarget._listeners[msg.eventType];
-    for (var i = 0; i < handlers.length; i++) {
-      var handler = handlers[i];
-      var listener = handler.listener;
-      listener(evt);
+    if (handlers) {
+        for (var i = 0; i < handlers.length; i++) {
+          var handler = handlers[i];
+          var listener = handler.listener;
+          listener(evt);
+        }
+    }
+    if (msg.scriptCode != null) {
+      if (this.type == 'object') {
+        this._svgObject._executeScript(msg.scriptCode);
+      } 
+      else {
+        // TODO
+      }
     }
   },
   

@@ -648,11 +648,15 @@ package org.svgweb
         }
 
         override public function addActionListener(eventType:String, target:Sprite):void {
-            target.addEventListener(eventType, handleAction);
-        } 
+            if (!target.hasEventListener(eventType)) {
+                target.addEventListener(eventType, handleAction);
+            } 
+        }
 
         override public function removeActionListener(eventType:String, target:Sprite):void {
-            target.removeEventListener(eventType, handleAction);
+            if (target.hasEventListener(eventType)) {
+                target.removeEventListener(eventType, handleAction);
+            } 
         }
 
         protected function handleAction(event:Event):void {
@@ -675,18 +679,43 @@ package org.svgweb
         }
 
         public function js_sendMouseEvent(event:MouseEvent):void {
-            try {
-                if (   ( event.target is DisplayObject ) 
-                    && ( event.currentTarget is DisplayObject ) 
-                    && ( SVGNode.targetToSVGNode(DisplayObject(event.target)) != null)
-                    && ( SVGNode.targetToSVGNode(DisplayObject(event.currentTarget)) != null) ) { 
+            if (   ( event.target is DisplayObject ) 
+                && ( event.currentTarget is DisplayObject ) ) {
+                var targetNode:SVGNode = SVGNode.targetToSVGNode(DisplayObject(event.target));
+                var currentTargetNode:SVGNode = SVGNode.targetToSVGNode(DisplayObject(event.currentTarget));
+                var scriptCode:String;
+
+                if ( (targetNode != null) &&
+                     (currentTargetNode != null) ) { 
+
+                    switch(event.type) {
+                        case MouseEvent.CLICK:
+		            scriptCode = targetNode.getAttribute('onclick');
+			    break;
+                        case MouseEvent.MOUSE_DOWN:
+		            scriptCode = targetNode.getAttribute('onmousedown');
+			    break;
+                        case MouseEvent.MOUSE_MOVE:
+		            scriptCode = targetNode.getAttribute('onmousemove');
+			    break;
+                        case MouseEvent.MOUSE_OUT:
+		            scriptCode = targetNode.getAttribute('onmouseout');
+			    break;
+                        case MouseEvent.MOUSE_OVER:
+		            scriptCode = targetNode.getAttribute('onmouseover');
+			    break;
+                        case MouseEvent.MOUSE_UP:
+		            scriptCode = targetNode.getAttribute('onmouseup');
+			    break;
+		    }
                     
-                    ExternalInterface.call(this.js_handler + "onMessage",
-                       this.msgToString(
+                    try {
+                        ExternalInterface.call(this.js_handler + "onMessage",
+                           this.msgToString(
                                    { type: 'event',
                                      uniqueId: this.js_uniqueId,
-                                     targetGUID: SVGNode.targetToSVGNode(DisplayObject(event.target)).guid,
-                                     currentTargetGUID: SVGNode.targetToSVGNode(DisplayObject(event.currentTarget)).guid,
+                                     targetGUID: targetNode.guid,
+                                     currentTargetGUID: currentTargetNode.guid,
                                      eventType: event.type.toLowerCase(),
                                      clientX: event.localX,
                                      clientY: event.localY,
@@ -694,13 +723,15 @@ package org.svgweb
                                      screenY: event.stageY,
                                      altKey: event.altKey,
                                      ctrlKey: event.ctrlKey,
-                                     shiftKey: event.shiftKey
+                                     shiftKey: event.shiftKey,
+                                     scriptCode: scriptCode
                                    } 
-                        )
-                    );
+                            )
+                        );
+                    }
+                    catch(error:SecurityError) {
+                    }
                 }
-            }
-            catch(error:SecurityError) {
             }
         }
 
