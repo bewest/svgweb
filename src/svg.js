@@ -2468,21 +2468,8 @@ extend(FlashHandler, {
   
   _onMouseEvent: function(msg) {
     //console.log('_onMouseEvent, msg='+this.debugMsg(msg));
-    var target = svgweb._guidLookup['_' + msg.targetGUID];
-    if (target == undefined) {
-        target = this._getElementByGuid(msg.targetGUID);
-        if (target == null) {
-            return;
-        }
-    }
-
-    var currentTarget = svgweb._guidLookup['_' + msg.currentTargetGUID];
-    if (currentTarget == undefined) {
-        currentTarget = this._getElementByGuid(msg.currentTargetGUID);
-        if (currentTarget == null) {
-            return; 
-        }
-    }
+    var target = this._getElementByGuid(msg.targetGUID);
+    var currentTarget = this._getElementByGuid(msg.currentTargetGUID);
 
     // TODO: FIXME: need to compute proper coordinates
     var evt = { target: target._getProxyNode(),
@@ -2516,6 +2503,10 @@ extend(FlashHandler, {
   },
   
   _getElementByGuid: function(guid) {
+    var node = svgweb._guidLookup['_' + guid];
+    if (node) {
+        return node;
+    }
     
     var results = xpath(this._xml, null, '//*[@__guid="' + guid + '"]');
 
