@@ -29,6 +29,9 @@ package org.svgweb.nodes
         private var currentX:Number;
         private var currentY:Number;
         
+        private var startX:Number;
+        private var startY:Number;
+
         private var lastCurveControlX:Number;
         private var lastCurveControlY:Number;
         
@@ -81,7 +84,7 @@ package org.svgweb.nodes
                         isAbs = true;
                     case "m":
                         lineAbs = isAbs;
-                        if (firstMove) { //If first move is 'm' treate as absolute
+                        if (firstMove) { //If first move is 'm' treat as absolute
                             isAbs = true;
                             firstMove = false;
                         }
@@ -167,6 +170,9 @@ package org.svgweb.nodes
         
         private function closePath():void {
             this._graphicsCommands.push(['Z']);
+
+            this.currentX = this.startX;
+            this.currentY = this.startY;
         }
         
         private function moveTo(x:Number, y:Number, isAbs:Boolean):void {
@@ -179,6 +185,9 @@ package org.svgweb.nodes
             this.currentX = x;
             this.currentY = y;
             
+            this.startX = x;
+            this.startY = y;
+
             this.lastCurveControlX = this.currentX;
             this.lastCurveControlY = this.currentY;
 
