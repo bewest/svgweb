@@ -10,7 +10,7 @@ SVGSTAGE='codinginparadise.org:~/codinginparadise.org/html/projects/svgweb-stagi
 COMPRESS=0
 
 # Whether to copy over tests to our build
-COPY_TESTS=1
+COPY_TESTS=0
 
 # Whether to copy over non-licensed content suitable for testing. This should
 # not be on for released builds, only for staging builds for testing
