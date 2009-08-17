@@ -10,7 +10,7 @@ SVGSTAGE='codinginparadise.org:~/codinginparadise.org/html/projects/svgweb-stagi
 COMPRESS=0
 
 # Whether to copy over tests to our build
-COPY_TESTS=0
+COPY_TESTS=1
 
 # Whether to copy over non-licensed content suitable for testing. This should
 # not be on for released builds, only for staging builds for testing
@@ -57,8 +57,13 @@ build/src/svgflashtest.swf: src/org/svgweb/tests/SVGViewerFlashTest.as src/org/s
 
 build/src/svgflex.swf: src/org/svgweb/SVGViewerFlex.as src/org/svgweb/core/*.as src/org/svgweb/nodes/*.as src/org/svgweb/utils/*.as src/org/svgweb/smil/*.as
 	@echo Building svgflex.swf file...
-	(cd src/org/svgweb;mxmlc -output ../../../build/svgflex.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../ -- SVGViewerFlex.as)
-	cp build/svgflex.swf src/
+	(cd src/org/svgweb;mxmlc -output ../../../build/src/svgflex.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../ -- SVGViewerFlex.as)
+	cp build/src/svgflex.swf src/
+
+build/src/svgflextest.swf: src/org/svgweb/tests/svgflextest.mxml src/org/svgweb/SVGViewerFlex.as src/org/svgweb/core/*.as src/org/svgweb/nodes/*.as src/org/svgweb/utils/*.as src/org/svgweb/smil/*.as
+	@echo Building svgflex.swf file...
+	(cd src/org/svgweb/tests;mxmlc -output ../../../../build/src/svgflextest.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- svgflextest.mxml)
+	cp build/src/svgflextest.swf src/
 
 ifeq ($(COMPRESS), 1)
 build/src/svg.js: src/svg.js
