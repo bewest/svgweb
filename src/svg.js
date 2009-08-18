@@ -1119,6 +1119,19 @@ extend(SVGWeb, {
     svg = svg.replace(/^\s*/, '');
     svg = svg.replace(/\s*$/, '');
         
+    // expand ENTITY definitions
+    var entities = svg.match(/.*<!ENTITY\s+(\S+)\s+"([^"]*)"\s*>/mg);
+    var entityName = [];
+    var entityContent = [];
+    for (var i=0; i < entities.length; i++) {
+        var parts = entities[i].match(/.*<!ENTITY\s+(\S+)\s+"([^"]*)"\s*>/m);
+        entityName[i] = parts[1];
+        entityContent[i] = parts[2];
+    }
+    for (i=0; i < entityName.length; i++) {
+        svg = svg.split("&" + entityName[i] + ";").join(entityContent[i]);
+    }
+       
     if (addMissing) {
       // add any missing things (XML declaration, SVG namespace, etc.)
       if (/\<\?xml/m.test(svg) == false) { // XML declaration
