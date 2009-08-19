@@ -2420,8 +2420,6 @@ extend(FlashHandler, {
       @param invoke Flash method to invoke, such as jsSetAttribute. 
       @param args Array of values to pass to the Flash method. */
   sendToFlash: function(invoke, args) {
-    //console.log('sendToFlash, invoke='+invoke+', args='+args);
-    
     // Performance testing found that Flash/JS communication is one of the
     // primary bottlenecks. Two workarounds were found to make this faster:
     // 1) Send over giant strings instead of Objects and 2) minimize
@@ -4218,8 +4216,14 @@ extend(_Node, {
     // found to be faster than a recursive one; for each node visited we will
     // store some important reference information
     var current;
+    var suspendID;
     if (child.nodeType == _Node.DOCUMENT_FRAGMENT_NODE) {
       current = this._getFakeNode(child._getFirstChild());
+      
+      // turn on suspendRedraw so adding our event handlers happens in one go
+      if (attached && passThrough) {
+        suspendID = this._handler._redrawManager.suspendRedraw(10000);
+      }
     } else {
       current = child;
     }
@@ -4299,6 +4303,13 @@ extend(_Node, {
       // set our attached information
       lastVisited._attached = attached;
       lastVisited._passThrough = passThrough;
+    }
+    
+    // turn off suspendRedraw if dealing with a DocumentFragment; all 
+    // event handlers should shoot through now
+    if (child.nodeType == _Node.DOCUMENT_FRAGMENT_NODE 
+        && attached && passThrough) {
+      this._handler._redrawManager.unsuspendRedraw(suspendID);
     }
   },
   

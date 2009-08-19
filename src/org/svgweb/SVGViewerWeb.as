@@ -669,6 +669,7 @@ package org.svgweb
         }
         
         public function js_unsuspendRedrawAll(msg:String):void {
+            //this.debug('js_unsuspendRedrawAll, msg='+msg);
             // msg is delimited a bit differently than the other js_* methods;
             // each portion is a Flash method name, followed by a colon, 
             // followed by the string message to send to that method name. Each
