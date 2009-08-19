@@ -155,18 +155,12 @@
           this._rowArray.appendChild(row_group);
         }
         end('grid-middle', 'board');
-
-        start('grid-append1', 'board');
+        
+        start('grid-append', 'board');
         node.appendChild(this._border);
-        end('grid-append1', 'board');
-        
-        start('grid-append2', 'board');
         node.appendChild(this._background);
-        end('grid-append2', 'board');
-        
-        start('appendChild', 'board');
         node.appendChild(this._rowArray);
-        end('appendChild', 'board');
+        end('grid-append', 'board');
       }
 
       Grid.prototype = {

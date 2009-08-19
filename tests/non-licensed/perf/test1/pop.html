@@ -130,8 +130,8 @@ function localize(local) {
 
 function createPyramid() {
   start('createPyramid');
-  var maleFrag = document.createDocumentFragment(true);
-  var femaleFrag = document.createDocumentFragment(true);
+  //var maleFrag = document.createDocumentFragment(true);
+  //var femaleFrag = document.createDocumentFragment(true);
 	for (i=0;i<(100);i++)	{
     //create Males
     var newMRect = document.createElementNS(svgns,"rect");
@@ -142,8 +142,8 @@ function createPyramid() {
     newMRect.setAttributeNS(null,'height',0);
     newMRect.addEventListener('mouseover', function(evt) { tellme(evt.target.id);}, false); 		
     newMRect.addEventListener('mouseout', function(evt) { emptyme(evt.target.id);}, false); 		
-    maleFrag.appendChild(newMRect);
-    //document.getElementById('males').appendChild(newMRect);
+    //maleFrag.appendChild(newMRect);
+    document.getElementById('males').appendChild(newMRect);
     maleObjs.push(newMRect);
     //create Females
     var newFRect = document.createElementNS(svgns,"rect");
@@ -154,14 +154,14 @@ function createPyramid() {
     newFRect.setAttributeNS(null,'height',0);
     newFRect.addEventListener('mouseover', function(evt) { tellme(evt.target.id);}, false); 		
     newFRect.addEventListener('mouseout', function(evt) { emptyme(evt.target.id);}, false); 		
-    femaleFrag.appendChild(newFRect);
-    //document.getElementById('females').appendChild(newFRect);
+    //femaleFrag.appendChild(newFRect);
+    document.getElementById('females').appendChild(newFRect);
     femaleObjs.push(newFRect);
   }
-  start('fragAppend');
-  document.getElementById('males').appendChild(maleFrag);
-  document.getElementById('females').appendChild(femaleFrag);
-  end('fragAppend');
+  //start('fragAppend');
+  //document.getElementById('males').appendChild(maleFrag);
+  //document.getElementById('females').appendChild(femaleFrag);
+  //end('fragAppend');
   end('createPyramid');
 }
 
