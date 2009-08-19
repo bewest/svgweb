@@ -18,7 +18,7 @@ COPY_TESTS=0
 ALL_TESTS=0
 
 ifeq ($(COPY_TESTS), 1)
-all: build/ build/src/svg.swf build/src/svg.js build/src/svg.htc build/src/svg-htc.php build/src/svg-htc.jsp build/src/svg-htc.asp build/README.html build/COPYING.txt build/src/tools/webserver.jar build/src/tools/config.html
+all: build/ build/src/svg.swf build/src/svg.js build/src/svg.htc build/src/svg-htc.php build/src/svg-htc.jsp build/src/svg-htc.asp build/README.html build/COPYING.txt build/src/tools/webserver.jar build/src/tools/config.html build/samples/flash-samples/svgflashtest.swf build/samples/flex-samples/svgflextest.swf
 	svn --force export samples/ build/samples/
 	svn --force export tests/ build/tests/
 	svn --force export docs/ build/docs
@@ -32,7 +32,7 @@ all: build/ build/src/svg.swf build/src/svg.js build/src/svg.htc build/src/svg-h
 endif
 
 build/:
-	mkdir -p build/ build/samples build/tests build/src build/docs build/docs build/src/tools
+	mkdir -p build/ build/samples build/samples/flash-samples build/samples/flex-samples build/tests build/src build/docs build/docs build/src/tools
 
 build/README.html:
 	cp README.html build/README.html
@@ -45,25 +45,13 @@ build/src/svg.swf: src/org/svgweb/SVGViewerWeb.as src/org/svgweb/core/*.as src/o
 	(cd src/org/svgweb;mxmlc -output ../../../build/src/svg.swf -use-network=false -warnings=true -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../ -- SVGViewerWeb.as)
 	cp build/src/svg.swf src/
 
-build/src/svgflash.swf: src/org/svgweb/SVGViewerFlash.as src/org/svgweb/core/*.as src/org/svgweb/nodes/*.as src/org/svgweb/utils/*.as src/org/svgweb/smil/*.as
-	@echo Building svgflash.swf file...
-	(cd src/org/svgweb;mxmlc -output ../../../build/src/svgflash.swf -use-network=false -warnings=true -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../ -- SVGViewerFlash.as)
-	cp build/src/svgflash.swf src/
-
-build/src/svgflashtest.swf: src/org/svgweb/tests/SVGViewerFlashTest.as src/org/svgweb/core/*.as src/org/svgweb/nodes/*.as src/org/svgweb/utils/*.as src/org/svgweb/smil/*.as
+build/samples/flash-samples/svgflashtest.swf: src/org/svgweb/tests/SVGViewerFlashTest.as src/org/svgweb/core/*.as src/org/svgweb/nodes/*.as src/org/svgweb/utils/*.as src/org/svgweb/smil/*.as
 	@echo Building svgflashtest.swf file...
-	(cd src/org/svgweb/tests;mxmlc -output ../../../../build/src/svgflashtest.swf -use-network=false -warnings=true -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- SVGViewerFlashTest.as)
-	cp build/src/svgflashtest.swf src/
+	(cd src/org/svgweb/tests;mxmlc -output ../../../../build/samples/flash-samples/svgflashtest.swf -use-network=false -warnings=true -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- SVGViewerFlashTest.as)
 
-build/src/svgflex.swf: src/org/svgweb/SVGViewerFlex.as src/org/svgweb/core/*.as src/org/svgweb/nodes/*.as src/org/svgweb/utils/*.as src/org/svgweb/smil/*.as
+build/samples/flex-samples/svgflextest.swf: src/org/svgweb/tests/svgflextest.mxml src/org/svgweb/SVGViewerFlex.as src/org/svgweb/core/*.as src/org/svgweb/nodes/*.as src/org/svgweb/utils/*.as src/org/svgweb/smil/*.as
 	@echo Building svgflex.swf file...
-	(cd src/org/svgweb;mxmlc -output ../../../build/src/svgflex.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../ -- SVGViewerFlex.as)
-	cp build/src/svgflex.swf src/
-
-build/src/svgflextest.swf: src/org/svgweb/tests/svgflextest.mxml src/org/svgweb/SVGViewerFlex.as src/org/svgweb/core/*.as src/org/svgweb/nodes/*.as src/org/svgweb/utils/*.as src/org/svgweb/smil/*.as
-	@echo Building svgflex.swf file...
-	(cd src/org/svgweb/tests;mxmlc -output ../../../../build/src/svgflextest.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- svgflextest.mxml)
-	cp build/src/svgflextest.swf src/
+	(cd src/org/svgweb/tests;mxmlc -output ../../../../build/samples/flex-samples/svgflextest.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- svgflextest.mxml)
 
 ifeq ($(COMPRESS), 1)
 build/src/svg.js: src/svg.js
