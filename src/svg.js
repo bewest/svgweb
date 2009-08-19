@@ -3097,7 +3097,7 @@ extend(_RedrawManager, {
   The following DOM 2 Core interfaces are not supported:
   NamedNodeMap, Attr, Text, Comment, CDATASection, 
   DocumentType, Notation, Entity, EntityReference,
-  ProcessingInstruction, DocumentFragment
+  ProcessingInstruction
 
   We underscore our DOM interface names below so that they don't collide 
   with the browser's implementations of these (for example, Firefox exposes 
