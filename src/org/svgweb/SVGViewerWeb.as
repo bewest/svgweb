@@ -51,8 +51,6 @@ package org.svgweb
     import flash.net.URLLoader;
     import flash.net.URLRequest;
     import flash.utils.setTimeout;
-    import flash.xml.XMLNode;
-    import flash.xml.XMLNodeType;
 
     [SWF(frameRate="40", width="2048", height="1024")]
     /**
@@ -78,8 +76,14 @@ package org.svgweb
         // bottleneck, so we do various tricks to make it fast
         protected var DELIMITER:String = '__SVG__DELIMIT';
         
-        // The delimiter between methods; used for unsuspendRedrawAll
+        // The delimiter between each method that we have bunched up for later
+        // execution during a suspendRedraw session; used for unsuspendRedrawAll
         protected var METHOD_DELIMITER:String = '__SVG__METHOD__DELIMIT';
+        
+        // If we send over a DocumentFragment, we represent these internally
+        // using the tag <__document__fragment> followed by all of the nested
+        // DocumentFragment children
+        protected var DOCUMENT_FRAGMENT:String = '__document__fragment';
 
         public function SVGViewerWeb():void {
             this.setupJavaScriptInterface();
@@ -351,6 +355,7 @@ package org.svgweb
         }
         
         public function js_removeChild(msg:String):void {
+            //this.debug('js_removeChild, msg='+msg);
             // msg has one argument, the elementGUID
             var elementGUID:String = msg;
             
@@ -365,6 +370,7 @@ package org.svgweb
         }
         
         public function js_addChildAt(msg:String):void {
+            //this.debug('js_addChildAt, msg='+msg);
             // msg is a string delimited by __SVG__DELIMIT with fields in
             // the following order: parentGUID, position, childXML
             var args:Array = msg.split(DELIMITER);
@@ -380,17 +386,37 @@ package org.svgweb
                            + parentGUID + ' not found');
             }
             
-            // parse the newly appended element into an SVGNode and 
-            // all of its children as well
-            var element:SVGNode = parent.parseNode(new XML(decodeFlashData(childXML)));
-            element.forceParse();
+            // If this is a DocumentFragment parse into individual children
+            var isFragment:Boolean = (childXML.indexOf(DOCUMENT_FRAGMENT) != -1);
+            var addMe:Array = this.parseXMLChildren(childXML);
             
-            // append things now
-            parent.addSVGChildAt(element, position);
-            parent.invalidateDisplay();
+            // freeze redraws while adding DocumentFragment children
+            var suspendedBefore:Boolean = this.isSuspended;
+            if (isFragment) {
+                this.isSuspended = true;
+            }
+
+            for (var i:int = 0; i < addMe.length; i++) {
+                // parse the newly appended element into an SVGNode and 
+                // all of its children as well
+                var element:SVGNode = parent.parseNode(addMe[i]);
+                element.forceParse();
+            
+                // append things now
+                parent.addSVGChildAt(element, position + i);
+            }
+            
+            // unsuspend the display; however, keep the display suspended if 
+            // it was suspended before we touched it, such as by a developer
+            // calling suspendRedraw.
+            if (isFragment && !suspendedBefore) {
+                this.isSuspended = false;
+                parent.invalidateDisplay();
+            }
         }
         
         public function js_insertBefore(msg:String):void {
+            //this.debug('js_insertBefore, msg='+msg);
             // msg is a string delimited by __SVG__DELIMIT with fields in
             // the following order: refChildGUID, parentGUID, position,
             // childXML
@@ -417,13 +443,32 @@ package org.svgweb
                 this.error("error:insertBefore: parentGUID not found: " + parentGUID);
             }
             
-            // parse the newly appended element into an SVGNode and 
-            // all of its children as well
-            var element:SVGNode = parent.parseNode(new XML(decodeFlashData(childXML)));
-            element.forceParse();
+            // If this is a DocumentFragment parse into individual children
+            var isFragment:Boolean = (childXML.indexOf(DOCUMENT_FRAGMENT) != -1);
+            var addMe:Array = this.parseXMLChildren(childXML);
+            
+            // freeze redraws while adding DocumentFragment children
+            var suspendedBefore:Boolean = this.isSuspended;
+            if (isFragment) {
+                this.isSuspended = true;
+            }
 
-            // now insert the element
-            parent.insertSVGBefore(position, element, refChild);
+            for (var i:int = 0; i < addMe.length; i++) {
+                // parse the newly appended elements into SVGNode and 
+                // all of its children as well
+                var element:SVGNode = parent.parseNode(addMe[i]);
+                element.forceParse();
+
+                // now insert the element
+                parent.insertSVGBefore(position, element, refChild);
+            }
+            
+            // unsuspend the display; however, keep the display suspended if 
+            // it was suspended before we touched it, such as by a developer
+            // calling suspendRedraw.
+            if (isFragment && !suspendedBefore) {
+                this.isSuspended = false;
+            }
         }
         
         public function js_setAttribute(msg:String):void {
@@ -501,6 +546,7 @@ package org.svgweb
         }
         
         public function js_setText(msg:String):void {
+            //this.debug('js_setText, msg='+msg);
             // msg is a string delimited by __SVG__DELIMIT with fields in
             // the following order: parentGUID, elementGUID, text
             var args:Array = msg.split(DELIMITER);
@@ -545,13 +591,32 @@ package org.svgweb
                            + parentGUID + ' not found');
             }
             
-            // parse the newly appended element into an SVGNode and 
-            // all of its children as well
-            var element:SVGNode = parent.parseNode(new XML(childXML));
-            element.forceParse();
+            // If this is a DocumentFragment parse into individual children
+            var isFragment:Boolean = (childXML.indexOf(DOCUMENT_FRAGMENT) != -1);
+            var addMe:Array = this.parseXMLChildren(childXML);
             
-            // now actually append the element to our display
-            parent.appendSVGChild(element);
+            // freeze redraws while adding DocumentFragment children
+            var suspendedBefore:Boolean = this.isSuspended;
+            if (isFragment) {
+                this.isSuspended = true;
+            }
+                
+            for (var i:int = 0; i < addMe.length; i++) {
+                // parse the newly appended elements into SVGNode and 
+                // all of its children as well
+                var element:SVGNode = parent.parseNode(addMe[i]);
+                element.forceParse();
+            
+                // now actually append the element to our display
+                parent.appendSVGChild(element);
+            }
+            
+            // unsuspend the display; however, keep the display suspended if 
+            // it was suspended before we touched it, such as by a developer
+            // calling suspendRedraw.
+            if (isFragment && !suspendedBefore) {
+                this.isSuspended = false;
+            }
         }
         
         public function js_getAttribute(msg:String):String {
@@ -834,6 +899,51 @@ package org.svgweb
             }
             
             return str.replace(/__SVG__AMPERSAND/g, '&');
+        }
+        
+        /** Will parse an XML string of nodes into an array. Useful for
+            the various append methods like appendChild. Sometimes we will
+            be given just a single XML node with children, such as 
+            <g><circle/><g>, other times we will be handed a DocumentFragment
+            with multiple siblings:
+            <__document__fragment>
+              <circle/>
+              <circle/>
+              <circle/>
+            </__document__fragment>
+            
+            If handed a DocumentFragment, we remove the <__document__fragment>
+            wrapper and hand back all the children.
+            
+            @param xmlStr String of XML to parse.
+            
+            @returns An Array of parsed XML nodes.
+        */
+        protected function parseXMLChildren(xmlStr:String):Array {
+            var results:Array = [];
+            
+            if (xmlStr.indexOf(DOCUMENT_FRAGMENT) != -1) {
+                // DocumentFragment
+                var parsedChildren:XML = new XML(decodeFlashData(xmlStr));
+                var totalChildren:int = parsedChildren.*.length();
+                // as we remove our children the size of the childNodes array
+                // will change out from under us, so we just always grab the
+                // first child then remove it a total number of times as there
+                // are children
+                for (var i:int = 0; i < totalChildren; i++) {
+                    // get the child, then remove it from our DocumentFragment
+                    // parent so that the parentNode will correctly be null;
+                    // we don't want to re-clone the child and all its children
+                    // as that would be slow
+                    results.push(parsedChildren.*[0]);
+                    delete parsedChildren.*[0]; // e4x way to remove a child
+                }
+            } else {
+                // individual child
+                results.push(new XML(xmlStr));
+            }
+            
+            return results; 
         }
     }
 }

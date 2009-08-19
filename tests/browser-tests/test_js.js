@@ -138,7 +138,7 @@ function runTests(embedTypes) {
               || renderer == 'flash');
               
   console.log('Running suite of page-level tests');
-              
+  
   if (_hasObjects) {
     testScope();
   }
@@ -162,10 +162,10 @@ function runTests(embedTypes) {
   testIsSupported();
   testStyle();
   testCreateSVGObject();
-  testRedraw();
+  testSuspendRedraw();
   testDocumentFragment();
   testBugFixes();
-  
+    
   // TODO: Test setAttributeNS, hasChildNodes, removeAttribute
   
   // TODO: Create tests for svgweb.removeChild for removing SVG OBJECTs
@@ -424,7 +424,8 @@ function testContentDocument() {
                  'mySVG', svg.contentDocument.rootElement.id);
     assertEquals('svg.contentDocument.rootElement.nodeName == svg',
                  'svg', svg.contentDocument.rootElement.nodeName);
-    assertExists('svg.contentDocument.childNodes should exist', 
+    // TODO: Uncomment when Issue 227 is fixed for IE
+    /*assertExists('svg.contentDocument.childNodes should exist', 
                   svg.contentDocument.childNodes);
     assertEquals('svg.contentDocument.childNodes.length == 1', 1,
                   svg.contentDocument.childNodes.length);
@@ -442,7 +443,7 @@ function testContentDocument() {
     assertNull('svg.contentDocument.nextSibling == null',
                 svg.contentDocument.nextSibling);
     assertNull('svg.contentDocument.previousSibling == null',
-                svg.contentDocument.previousSibling);
+                svg.contentDocument.previousSibling);*/
   }
 }
 
@@ -612,7 +613,7 @@ function testGetElementsByTagNameNS() {
     rects = getDoc('svg2').getElementsByTagNameNS(svgns, 'rect');
     assertExists("svg2.contentDocument.getElementsByTagNameNS('rect')", rects);
     // 2 rects were added by tests inside of embed2.svg, then another
-    // 200 inside the testRedraw() method in embed2.svg
+    // 200 inside the testSuspendRedraw() method in embed2.svg
     assertEquals("svg2.contentDocument.getElementsByTagNameNS(rect).length "
                  + "should be 207", 207, rects.length);
   } else {
@@ -822,6 +823,7 @@ function testSVGSVGElementProperties() {
               root.x.baseVal.value);
   assertEquals("svg11242.y.baseVal.value should be 100", 100, 
               root.y.baseVal.value);
+  
   assertEquals("svg11242.width.baseVal.value should be 466.11172",
               466.11172, root.width.baseVal.value.toPrecision(8));
   assertEquals("svg11242.height.baseVal.value should be 265.35126",
@@ -1077,9 +1079,10 @@ function testChildNodes() {
   assertNull('2nd SVG root element.nodeValue == null', child.nodeValue);
   if (_hasObjects) {
     // Firefox and Safari differ by one; we also added two group elements
-    // to the root inside of embed2.svg in testRedraw()
-    assertEqualsAny('2nd SVG root element.childNodes.length == 46 or 47',
-                [46, 47], child.childNodes.length);
+    // to the root inside of embed2.svg in testSuspendRedraw(), as well as
+    // one group element in embed2.svg#testDocumentFragment()
+    assertEqualsAny('2nd SVG root element.childNodes.length == 47 or 48',
+                [47, 48], child.childNodes.length);
   } else {
     assertEquals('2nd SVG root element.childNodes.length == 19', 19, 
                 child.childNodes.length);
@@ -5082,7 +5085,7 @@ function testCreateSVGObject() {
     assertEquals('this == SVG OBJECT', obj2, this);
     assertEquals('this.id == dynamic2', 'dynamic2', this.id);
     
-    // do a test for testRedraw() here
+    // do a test for testSuspendRedraw() here
     // modify the contents _inside_ of an object in the middle of a suspendRedraw
     obj2 = document.getElementById('dynamic2');
     assertExists('dynamic2 should exist', obj2);
@@ -5150,7 +5153,7 @@ function testCreateSVGObject() {
   // it, working with append/remove DOM operations, etc.
 }
 
-function testRedraw() {
+function testSuspendRedraw() {
   // Tests to make sure the suspendRedraw/unsuspendRedraw system is working
   console.log('Testing suspend/unsuspendRedraw...');
   
@@ -5492,7 +5495,7 @@ function testDocumentFragment() {
   frag.appendChild(circle);
   // make sure not in DOM
   assertNull('document.getElementById(docFragElem1) == null',
-              document.getElementById('docFragElem1'));
+              getDoc('svg11242').getElementById('docFragElem1'));
   // test DOM properties again
   assertEquals('frag.firstChild == circle', circle, frag.firstChild);
   assertEquals('frag.lastChild == circle', circle, frag.lastChild);
@@ -5502,7 +5505,7 @@ function testDocumentFragment() {
   assertEquals('circle.parentNode == frag', frag, circle.parentNode);
   // now add to a real live DOM
   svg = getRoot('svg11242');
-  svg.appendChild(frag);
+  temp = svg.appendChild(frag);
   // test DOM properties after in real DOM
   assertExists('after append, document.getElementById(docFragElem1) '
                 + 'should exist', 
@@ -5510,7 +5513,9 @@ function testDocumentFragment() {
   assertEquals('after append, circle.ownerDocument == getDoc(svg11242)',
                getDoc('svg11242'), circle.ownerDocument);
   assertEquals('after append, circle.parentNode == svg', svg,
-               circle.parentNode);  
+               circle.parentNode);
+  assertEquals('svg.appendChild(frag) should return fragment', frag,
+               temp);
   // DocumentFragment after append should be 'cleaned out'
   assertNull('after append, frag.firstChild == null', frag.firstChild);
   assertNull('after append, frag.lastChild == null', frag.lastChild);
@@ -5520,13 +5525,21 @@ function testDocumentFragment() {
                getDoc('svg11242'), frag.ownerDocument);
   assertNull('after append, frag.parentNode == null', frag.parentNode);
   console.log('THIRD IMAGE: You should see a small green circle');
-  
+
   // test adding an empty DocumentFragment;
   // also test using DOM accessors (childNodes, firstChild, etc.) 
   // on DocumentFragment
   frag = getDoc('svg11242').createDocumentFragment(true);
   svg = getRoot('svg11242');
   svg.appendChild(frag);
+  assertNull('after append, frag.firstChild == null', frag.firstChild);
+  assertNull('after append, frag.lastChild == null', frag.lastChild);
+  assertEquals('after append, frag.childNodes.length == 0', 0, 
+               frag.childNodes.length);
+  assertEquals('after append, frag.ownerDocument == getDoc(svg11242)',
+               getDoc('svg11242'), frag.ownerDocument);
+  assertNull('after append, frag.parentNode == null', frag.parentNode);
+  // make sure fragment is cleared out
   assertNull('after append, frag.firstChild == null', frag.firstChild);
   assertNull('after append, frag.lastChild == null', frag.lastChild);
   assertEquals('after append, frag.childNodes.length == 0', 0, 
@@ -5945,7 +5958,7 @@ function testDocumentFragment() {
                 group.childNodes[2].parentNode);
   console.log('THIRD IMAGE: You should see the following three words in white '
               + 'stacked on top of each other: frag1, frag2, frag3');
-  
+
   // test removeChild, insertBefore, and replaceChild on a DocumentFragment
   doc = getDoc('svg11242');
   svg = getRoot('svg11242');
@@ -5991,6 +6004,7 @@ function testDocumentFragment() {
   // do the appending
   lengthBefore = svg.childNodes.length;
   svg.appendChild(frag);
+
   // make sure DocumentFragment is cleared out
   assertNull('after append, frag.firstChild == null', frag.firstChild);
   assertNull('after append, frag.lastChild == null', frag.lastChild);
@@ -6021,6 +6035,54 @@ function testDocumentFragment() {
               + 'fragInsertBefore1 in white; you should _not_ see the words '
               + 'fragReplaceChild1 or fragRemoveChild');
   
+  // we were getting some spurious text displayed to the screen with the
+  // Flash renderer with the following combo; make sure that doesn't happen
+  doc = getDoc('svg11242');
+  svg = getRoot('svg11242');
+  frag = doc.createDocumentFragment(true);
+  // A
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.id = 'strangeTextA';
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('A', true));
+  svgText.setAttribute('x', 100);
+  svgText.setAttribute('y', 150);
+  svgText.style.fill = 'white';
+  frag.appendChild(svgText);
+  // B
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.id = 'strangeTextB';
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('B', true));
+  svgText.setAttribute('x', 100);
+  svgText.setAttribute('y', 160);
+  svgText.style.fill = 'white';
+  frag.insertBefore(svgText, frag.firstChild);
+  svg.appendChild(frag);
+  // C
+  frag = doc.createDocumentFragment(true);
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.id = 'strangeTextC';
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('C', true));
+  svgText.setAttribute('x', 100);
+  svgText.setAttribute('y', 170);
+  svgText.style.fill = 'white';
+  frag.appendChild(svgText);
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  // D
+  svgText.appendChild(doc.createTextNode('D', true));
+  svgText.id = 'strangeTextD';
+  svgText.setAttribute('x', 100);
+  svgText.setAttribute('y', 180);
+  svgText.style.fill = 'white';
+  frag.appendChild(svgText);
+  svg.insertBefore(frag, svg.lastChild);
+  console.log('THIRD IMAGE: You should see the letters A, B, C, and D stacked '
+              + 'on top of each other, without any spurious text next to the '
+              + 'letter B');
+  
   // Pass DocumentFragment instance into the various DOM append methods:
   // insertBefore and replaceChild; reuse the DocumentFragment 
   // over and over
@@ -6034,6 +6096,13 @@ function testDocumentFragment() {
   svgText.appendChild(doc.createTextNode('againInsertBefore1', true));
   svgText.setAttribute('x', 200);
   svgText.setAttribute('y', 15);
+  svgText.style.fill = 'white';
+  frag.appendChild(svgText);
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('againInsertBefore2', true));
+  svgText.setAttribute('x', 215);
+  svgText.setAttribute('y', 215);
   svgText.style.fill = 'white';
   frag.appendChild(svgText);
   svg.insertBefore(frag, svg.lastChild);
@@ -6063,16 +6132,196 @@ function testDocumentFragment() {
   }
   assertExists('removeChild(frag) should throw exception', exp);
   // check DOM
-  assertEquals('svg.childNodes.length should be bumped by 2', 
-               lengthBefore + 2, svg.childNodes.length);
+  assertEquals('svg.childNodes.length should be bumped by 3', 
+               lengthBefore + 3, svg.childNodes.length);
   assertEquals('svg.lastChild.firstChild.nodeValue == againReplacedChild2',
                'againReplacedChild2', svg.lastChild.firstChild.nodeValue);
-  assertEquals('svg.lastChild.previousSibling.previousSibling.firstChild.nodeValue '
+  assertEquals('svg.lastChild.previousSibling.previousSibling'
+               + '.firstChild.nodeValue '
+               + '== againInsertBefore2', 'againInsertBefore2',
+               svg.lastChild.previousSibling.previousSibling
+                  .firstChild.nodeValue);
+  assertEquals('svg.lastChild.previousSibling.previousSibling'
+               + '.previousSibling.firstChild.nodeValue '
                + '== againInsertBefore1', 'againInsertBefore1',
-               svg.lastChild.previousSibling.previousSibling.firstChild.nodeValue);
+               svg.lastChild.previousSibling.previousSibling
+                  .previousSibling.firstChild.nodeValue);
   console.log('THIRD IMAGE: You should see the words againInsertBefore1 and '
               + 'againReplacedChild2 in white; you should _not_ see the '
-              + 'word againReplacedChild1');
+              + 'word againReplacedChild1. You should also see the word '
+              + 'againInsertBefore2 near the bottom of the image in white.');
+              
+  // do a replaceChild with a DocumentFragment that has multiple elements;
+  // replace something that is in the middle of the childNodes, and then another
+  // one that is the last element to be replaced
+  // elements to replace
+  svg = getRoot('svg11242');
+  doc = getDoc('svg11242');
+  group = doc.createElementNS(svgns, 'g');
+  // X
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('X', true));
+  svgText.setAttribute('x', 120);
+  svgText.setAttribute('y', 150);
+  svgText.style.fill = 'yellow';
+  group.appendChild(svgText);
+  // Y
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('Y', true));
+  svgText.setAttribute('x', 120);
+  svgText.setAttribute('y', 160);
+  svgText.style.fill = 'yellow';
+  group.appendChild(svgText);
+  // Z
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('Z', true));
+  svgText.setAttribute('x', 120);
+  svgText.setAttribute('y', 170);
+  svgText.style.fill = 'yellow';
+  group.appendChild(svgText);
+  svg.appendChild(group);
+  // now create a DocumentFragment with multiple members; replace the Y
+  // element in the middle of the child ordering
+  frag = doc.createDocumentFragment(true);
+  // O
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('O', true));
+  svgText.setAttribute('x', 120);
+  svgText.setAttribute('y', 160);
+  svgText.style.fill = 'yellow';
+  frag.appendChild(svgText);
+  // P
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('P', true));
+  svgText.setAttribute('x', 130);
+  svgText.setAttribute('y', 160);
+  svgText.style.fill = 'yellow';
+  frag.appendChild(svgText);
+  // Q
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('Q', true));
+  svgText.setAttribute('x', 140);
+  svgText.setAttribute('y', 160);
+  svgText.style.fill = 'yellow';
+  frag.appendChild(svgText);
+  svg.lastChild.replaceChild(frag, svg.lastChild.childNodes[1]);
+  // now replace the Z element at the end with a DocumentFragment
+  // R
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('R', true));
+  svgText.setAttribute('x', 120);
+  svgText.setAttribute('y', 170);
+  svgText.style.fill = 'yellow';
+  frag.appendChild(svgText);
+  // S
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('S', true));
+  svgText.setAttribute('x', 130);
+  svgText.setAttribute('y', 170);
+  svgText.style.fill = 'yellow';
+  frag.appendChild(svgText);
+  // T
+  svgText = doc.createElementNS(svgns, 'text');
+  svgText.style.fontSize = '12px';
+  svgText.appendChild(doc.createTextNode('T', true));
+  svgText.setAttribute('x', 140);
+  svgText.setAttribute('y', 170);
+  svgText.style.fill = 'yellow';
+  frag.appendChild(svgText);
+  svg.lastChild.replaceChild(frag, svg.lastChild.lastChild);
+  // now make sure orderings are correct
+  group = svg.lastChild;
+  assertEquals('svg11242 lastChild should be a group', 'g',
+               group.nodeName);
+  assertEquals('last group should have 7 children', 7, group.childNodes.length);
+  assertEquals('group.childNodes[0].firstChild.nodeValue == X', 'X',
+               group.childNodes[0].firstChild.nodeValue);
+  assertEquals('group.childNodes[1].firstChild.nodeValue == O', 'O',
+               group.childNodes[1].firstChild.nodeValue);
+  assertEquals('group.childNodes[2].firstChild.nodeValue == P', 'P',
+               group.childNodes[2].firstChild.nodeValue);
+  assertEquals('group.childNodes[3].firstChild.nodeValue == Q', 'Q',
+               group.childNodes[3].firstChild.nodeValue);
+  assertEquals('group.childNodes[4].firstChild.nodeValue == R', 'R',
+               group.childNodes[4].firstChild.nodeValue);
+  assertEquals('group.childNodes[5].firstChild.nodeValue == S', 'S',
+               group.childNodes[5].firstChild.nodeValue);
+  assertEquals('group.childNodes[6].firstChild.nodeValue == T', 'T',
+               group.childNodes[6].firstChild.nodeValue);
+  console.log('THIRD IMAGE: You should see the letter X; on the next line '
+              + 'should be the letters O P Q next to each other; followed '
+              + 'on the next line by the letters R S T next to each other, '
+              + 'all in yellow');
+           
+  // tunnel into an SVG OBJECT and create a DocumentFragment there
+  if (_hasObjects) {
+    svg = document.getElementById('svg11242');
+    doc = svg.contentDocument;
+    frag = doc.createDocumentFragment(true);
+    // test basic DOM properties before any additions
+    assertEquals('frag.nodeName == #document-fragment',
+                '#document-fragment', frag.nodeName);
+    assertEquals('frag.nodeType == 11', 11, frag.nodeType);
+    assertNull('frag.firstChild == null', frag.firstChild);
+    assertNull('frag.lastChild == null', frag.lastChild);
+    assertEquals('frag.childNodes.length == 0', 0, frag.childNodes.length);
+    assertNull('frag.localName == null', frag.localName);
+    assertNull('frag.namespaceURI == null', frag.namespaceURI);
+    assertNull('frag.nextSibling == null', frag.nextSibling);
+    assertNull('frag.previousSibling == null', frag.previousSibling);
+    assertNull('frag.nodeValue == null', frag.nodeValue);
+    assertEquals('frag.ownerDocument == svg.contentDocument',
+                 svg.contentDocument, frag.ownerDocument);
+    assertNull('frag.parentNode == null', frag.parentNode);
+    assertNull('frag.prefix == null', frag.prefix);
+    assertEquals('frag.textContent == ""', '', frag.textContent);
+    // now add one element
+    circle = doc.createElementNS(svgns, 'circle');
+    circle.setAttribute('cx', 330);
+    circle.setAttribute('cy', 200);
+    circle.setAttribute('r', 10);
+    circle.id = 'docFragElem2';
+    circle.setAttribute('fill', 'yellow');
+    frag.appendChild(circle);
+    // make sure not in DOM
+    assertNull('document.getElementById(docFragElem2) == null',
+                doc.getElementById('docFragElem2'));
+    // test DOM properties again
+    assertEquals('frag.firstChild == circle', circle, frag.firstChild);
+    assertEquals('frag.lastChild == circle', circle, frag.lastChild);
+    assertNull('frag.parentNode == null', frag.parentNode);
+    assertEquals('frag.childNodes.length == 1', 1, frag.childNodes.length);
+    assertEquals('frag.childNodes[0] == circle', circle, frag.childNodes[0]);
+    assertEquals('circle.parentNode == frag', frag, circle.parentNode);
+    // now add to a real live DOM
+    root = getRoot('svg11242');
+    root.appendChild(frag);
+    // test DOM properties after in real DOM
+    assertExists('after append, svg.contentDocument.getElementById(docFragElem2) '
+                  + 'should exist', 
+                  doc.getElementById('docFragElem2'));
+    assertEquals('after append, circle.ownerDocument == svg.contentDocument',
+                 doc, circle.ownerDocument);
+    assertEquals('after append, circle.parentNode == root', root,
+                 circle.parentNode);  
+    // DocumentFragment after append should be 'cleaned out'
+    assertNull('after append, frag.firstChild == null', frag.firstChild);
+    assertNull('after append, frag.lastChild == null', frag.lastChild);
+    assertEquals('after append, frag.childNodes.length == 0', 0, 
+                 frag.childNodes.length);
+    assertEquals('after append, frag.ownerDocument == svg.contentDocument',
+                 doc, frag.ownerDocument);
+    assertNull('after append, frag.parentNode == null', frag.parentNode);
+    console.log('THIRD IMAGE: You should see a small yellow circle');
+  }
 }
 
 function testBugFixes() {
@@ -6173,37 +6422,17 @@ function testBugFixes() {
 function testUnload() {
   // manually call unload listener to make sure no exceptions fire;
   // on browsers other than Internet Explorer this is a no-op
-  // TODO: commenting out right now because it deletes the SVG rendering
-  // on the screen. Uncomment when we have other tests that do bitmap
-  // testing or visual tests, and we don't need the tests in this file
-  // to be visually inspected.
+  
+  // Uncomment to test the page unload functionality. We comment this out 
+  // because it removes everything from the page.  
   /*
   console.log('Testing window.unload listener...');
   if (svgweb.getHandlerType() == 'flash') {
-    // TODO: Iterate over each OBJECT and make sure it's document overrides
-    // are removed for IE
-    exp = null;
-    // save document.getElementById and createTextNode so we can use it 
-    // for displaying our results with console.log; our unload listener 
-    // will clear these out to prevent memory leaks!
-    var getElementById, createTextNode;
-    if (document._getElementById) { // IE
-      getElementById = document._getElementById;
-      createTextNode = document._createTextNode;
-    } else { // non-IE browsers
-      getElementById = document.getElementById;
-      createTextNode = document.createTextNode;
-    }
-  
     try {
       svgweb._fireUnload();
     } catch (e) {
       exp = e;
     }
-    document.getElementById = getElementById;
-    document.createTextNode = createTextNode;
-    getElementById = null; // memory leaks
-    createTextNode = null;
     if (exp) {
       console.log(exp.message);
     }

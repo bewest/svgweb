@@ -130,7 +130,8 @@ function localize(local) {
 
 function createPyramid() {
   start('createPyramid');
-  svgRoot.suspendRedraw();
+  var maleFrag = document.createDocumentFragment(true);
+  var femaleFrag = document.createDocumentFragment(true);
 	for (i=0;i<(100);i++)	{
     //create Males
     var newMRect = document.createElementNS(svgns,"rect");
@@ -141,7 +142,8 @@ function createPyramid() {
     newMRect.setAttributeNS(null,'height',0);
     newMRect.addEventListener('mouseover', function(evt) { tellme(evt.target.id);}, false); 		
     newMRect.addEventListener('mouseout', function(evt) { emptyme(evt.target.id);}, false); 		
-    document.getElementById('males').appendChild(newMRect);
+    maleFrag.appendChild(newMRect);
+    //document.getElementById('males').appendChild(newMRect);
     maleObjs.push(newMRect);
     //create Females
     var newFRect = document.createElementNS(svgns,"rect");
@@ -152,18 +154,23 @@ function createPyramid() {
     newFRect.setAttributeNS(null,'height',0);
     newFRect.addEventListener('mouseover', function(evt) { tellme(evt.target.id);}, false); 		
     newFRect.addEventListener('mouseout', function(evt) { emptyme(evt.target.id);}, false); 		
-    document.getElementById('females').appendChild(newFRect);
+    femaleFrag.appendChild(newFRect);
+    //document.getElementById('females').appendChild(newFRect);
     femaleObjs.push(newFRect);
   }
-  svgRoot.unsuspendRedrawAll();
+  start('fragAppend');
+  document.getElementById('males').appendChild(maleFrag);
+  document.getElementById('females').appendChild(femaleFrag);
+  end('fragAppend');
   end('createPyramid');
 }
 
 function init()	{
   svgRoot = document.getElementsByTagNameNS(svgns, 'svg')[0];
-    hookEvent('main', 'mousewheel', MouseWheel);
+  hookEvent('main', 'mousewheel', MouseWheel);
 	createPyramid();
 	localize(0);
+	report();
 }
 
 
@@ -253,7 +260,7 @@ function emptyme()	{
 
 
 function pyramid(myYear)	{
-svgRoot.suspendRedraw();
+svgRoot.suspendRedraw(5000);
 var NrYears = currYear.length;
 the_count = myYear;
 
@@ -357,7 +364,6 @@ function animate()	{
 if (the_count<NrRecords-1)	{
 the_count+=1;
 pyramid(the_count);
-//report();
 the_timeout = setTimeout("animate();",speed);
 }
 else	{

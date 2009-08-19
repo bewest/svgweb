@@ -48,7 +48,7 @@ The 'lightWeight' attribute below is important for two reasons:
     <!-- A flag for someone to query whether a DOM node is one of our
          own fake ones or a real browser native one. Useful for someone
          to 'break' the abstraction if needed. -->
-    <property name="fake" value="true"/>
+    <property name="fake" value="true" />
              
     <method name="getAttribute" />
     <method name="setAttribute" />

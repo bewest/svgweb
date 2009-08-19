@@ -168,7 +168,6 @@ package org.svgweb.core
 
                     var newChildNode:SVGNode = this.parseNode(childXML);
                     if (!newChildNode) {
-                        this.dbg("did not add object!:" + childXML.localName());
                         continue;
                     }
                     SVGNode.addSVGChild(viewBoxSprite, newChildNode);
@@ -1781,11 +1780,7 @@ package org.svgweb.core
         public function insertSVGBefore(position:int, newChild:SVGNode, refChild:SVGNode):void {
             //this.dbg('insertSVGBefore, position='+position+', newChild='+newChild+', refChild='+refChild);
             // update our XML
-            if (position == 0) {
-                this._xml.*[0] = newChild + this._xml.*[0];
-            } else {
-                this._xml.*[position - 1] += newChild;
-            }
+            this._xml.insertChildBefore(refChild.xml, newChild.xml);
     
             // update our Flash display list
             viewBoxSprite.addChildAt(newChild, position);
@@ -1793,14 +1788,22 @@ package org.svgweb.core
         }
         
         public function addSVGChildAt(child:SVGNode, index:int):SVGNode {
-            viewBoxSprite.addChildAt(child, index);
-            
+            // update XML
             if (child is SVGDOMTextNode) {
                 if (this.hasText()) {
                     this.setText(child.xml.text());
                 }
+            } else {
+                if (index == (this._xml.children().length() - 1)) {
+                    this._xml.appendChild(child.xml);
+                } else {
+                    var insertBefore:XML = this._xml.children()[index];
+                    this._xml.insertChildBefore(insertBefore, child.xml);
+                }
             }
-            
+
+            // update our Flash display list
+            viewBoxSprite.addChildAt(child, index);
             return child;
         }
 

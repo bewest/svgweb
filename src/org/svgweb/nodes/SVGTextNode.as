@@ -88,6 +88,7 @@ package org.svgweb.nodes
         }
         
         override public function setText(newValue:String):void {
+            //this.dbg('setText, newValue='+newValue);
             this._xml.setChildren(newValue);
             this._text = newValue;
         }
@@ -316,7 +317,7 @@ package org.svgweb.nodes
                 if (fontWeight != null && fontWeight != 'normal') {
                     textFormat.bold = true;
                 }
-                                
+                
                 this._textField.text = this._xml.text().toString();
                 this._textField.setTextFormat(textFormat);
                 var textLineMetrics:TextLineMetrics = this._textField.getLineMetrics(0);

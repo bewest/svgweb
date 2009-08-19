@@ -1537,11 +1537,19 @@ extend(SVGWeb, {
             = flashObj.jsHandleLoad
             = flashObj.jsSuspendRedraw
             = flashObj.jsUnsuspendRedrawAll
-            = null;      
+            = null;
       flashObj.parentNode.removeChild(flashObj);
-      var html = root._getHTCDocument().getElementsByTagName('html')[0];
-      html.parentNode.removeChild(html);
-        
+      
+      // FIXME: Can crash IE 7 under the following conditions:
+      // *) Load the test_js1.html file
+      // *) Wait until the final window.setTimeout call has finished running,
+      // displaying 'All Tests Passed'.
+      // *) Navigate away from the page
+      // Not sure if a workaround is possible; I don't think this contributes
+      // to memory leaks anyway; commenting out
+      /*var html = root._getHTCDocument().getElementsByTagName('html')[0];
+      html.parentNode.removeChild(html);*/
+      
       // delete object references
       root._fakeNode._htcNode = null;
       root._fakeNode = null;
@@ -1552,7 +1560,7 @@ extend(SVGWeb, {
       
       root = null;
     }
-    
+
     // delete the HTC container and all HTC nodes
     var container = document.getElementById('__htc_container');
     if (container) {
@@ -1583,23 +1591,32 @@ extend(SVGWeb, {
       node._handler = null;
     }
     svgweb._removedNodes = null;
-    
+
     // cleanup document patching
-    document.getElementById = null;
+    document.getElementById = document._getElementById;
     document._getElementById = null;
-    document.getElementsByTagNameNS = null;
+    
+    document.getElementsByTagNameNS = document._getElementsByTagNameNS;
     document._getElementsByTagNameNS = null;
-    document.createElementNS = null;
+    
+    document.createElementNS = document._createElementNS;
     document._createElementNS = null;
-    document.createElement = null;
+    
+    document.createElement = document._createElement;
     document._createElement = null;
-    document.createTextNode = null;
+    
+    document.createTextNode = document._createTextNode;
     document._createTextNode = null;
+    
     document._importNodeFunc = null;
+    
+    document.createDocumentFragment = document._createDocumentFragment;
+    document._createDocumentFragment = null;
     
     window.addEventListener = null;
     window._addEventListener = null;
-    window.attachEvent = null;
+    
+    window.attachEvent = window._attachEvent;
     window._attachEvent = null;
   },
   
@@ -2044,6 +2061,9 @@ FlashHandler._patchBrowserObjects = function(win, doc) {
   document.createTextNode = FlashHandler._createTextNode;
   
   document._importNodeFunc = FlashHandler._importNodeFunc;
+  
+  document._createDocumentFragment = document.createDocumentFragment;
+  document.createDocumentFragment = FlashHandler._createDocumentFragment;
 };
 
 /** Our implementation of getElementById, which we patch into the 
@@ -2289,6 +2309,23 @@ FlashHandler._importNodeFunc = function(doc, node, allChildren) {
   }
 };
 
+/** Our implementation of createDocumentFragment, which we patch into the 
+    document object. We do it here to prevent a closure and therefore
+    a memory leak on IE. Note that this function runs in the global
+    scope, so 'this' will not refer to our object instance but rather
+    the window object. 
+    
+    @param forSVG Optional boolean value. If true, then we return a fake
+    _DocumentFragment suitable for adding SVG nodes into. If false or not
+    present, then this is a normal browser native DocumentFragment. */
+FlashHandler._createDocumentFragment = function(forSVG) {
+  if (forSVG) {
+    return new _DocumentFragment(document)._getProxyNode();
+  } else {
+    return document._createDocumentFragment();
+  }
+};
+
 /** Flash has a number of encoding issues when talking over the Flash/JS
     boundry. This method encapsulates fixing these issues. 
     
@@ -2383,6 +2420,8 @@ extend(FlashHandler, {
       @param invoke Flash method to invoke, such as jsSetAttribute. 
       @param args Array of values to pass to the Flash method. */
   sendToFlash: function(invoke, args) {
+    //console.log('sendToFlash, invoke='+invoke+', args='+args);
+    
     // Performance testing found that Flash/JS communication is one of the
     // primary bottlenecks. Two workarounds were found to make this faster:
     // 1) Send over giant strings instead of Objects and 2) minimize
@@ -2992,6 +3031,7 @@ extend(_RedrawManager, {
   },
   
   unsuspendRedraw: function(id) {
+    
     var idx = -1;
     for (var i = 0; i < this._ids.length; i++) {
       if (this._ids[i] == id) {
@@ -3002,21 +3042,21 @@ extend(_RedrawManager, {
     if (idx == -1) {
       throw 'Unknown id passed to unsuspendRedraw: ' + id;
     }
-    
+  
     // clear timeout if still in effect
     if (this._timeoutIDs['_' + id] != undefined) {
       window.clearTimeout(this._timeoutIDs['_' + id]);
     }
-    
+  
     // clear entry
     this._ids.splice(idx, 1);
     delete this._timeoutIDs['_' + id];
-    
+  
     // other suspendRedraws in effect or nothing to do?
     if (this.isSuspended()) {
       return;
     }
-    
+  
     // Send over everything to Flash now. We call jsUnsuspendRedrawAll and
     // send over everything as a giant string. This string is setup as follows.
     // method:message__SVG__METHOD__DELIMIT
@@ -3026,7 +3066,15 @@ extend(_RedrawManager, {
     // delimiter.
     var sendMe = this._batch.join('__SVG__METHOD__DELIMIT');
     this._batch = [];
-    this._handler.flash.jsUnsuspendRedrawAll(sendMe);
+    
+    // there is a chance that unsuspendRedraw is called while the page
+    // is unloading from a setTimout interval; surround everything with a 
+    // try/catch block to prevent an exception from blocking page unload
+    try {
+      this._handler.flash.jsUnsuspendRedrawAll(sendMe);
+    } catch (exp) {
+      console.log('unsuspendRedraw exception: ' + exp);
+    }
   },
   
   unsuspendRedrawAll: function() {
@@ -3069,9 +3117,9 @@ extend(_DOMImplementation, {
 });
 
 
-// Note: Only element and text section nodes are supported for now.
-// We don't parse and retain comments, processing instructions, etc. CDATA
-// nodes are turned into text nodes.
+// Note: Only element, text nodes, document nodes, and document fragment nodes
+// are supported for now. We don't parse and retain comments, processing 
+// instructions, etc. CDATA nodes are turned into text nodes.
 function _Node(nodeName, nodeType, prefix, namespaceURI, nodeXML, handler, 
                passThrough) {
   if (nodeName === undefined && nodeType === undefined) {
@@ -3113,6 +3161,10 @@ function _Node(nodeName, nodeType, prefix, namespaceURI, nodeXML, handler,
     }
         
     this._nodeXML = parseXML(xml).documentElement;
+  } else if (nodeType == _Node.DOCUMENT_FRAGMENT_NODE) {
+    var xml = '<?xml version="1.0"?>\n'
+              + '<__document__fragment></__document__fragment>';
+    this._nodeXML = parseXML(xml).documentElement;
   }
   
   // handle guid tracking
@@ -3141,7 +3193,9 @@ function _Node(nodeName, nodeType, prefix, namespaceURI, nodeXML, handler,
     this.nodeType = _Node.ELEMENT_NODE;
   }
     
-  if (nodeType == _Node.ELEMENT_NODE || nodeType == _Node.DOCUMENT_NODE) {
+  if (nodeType == _Node.ELEMENT_NODE 
+      || nodeType == _Node.DOCUMENT_NODE
+      || nodeType == _Node.DOCUMENT_FRAGMENT_NODE) {
     this.prefix = prefix;
     this.namespaceURI = namespaceURI;
     this._nodeValue = null;
@@ -3192,10 +3246,11 @@ function _Node(nodeName, nodeType, prefix, namespaceURI, nodeXML, handler,
   } else if (isIE && this.nodeType != _Node.DOCUMENT_NODE) {
     // If we are IE, we must use a behavior in order to get onpropertychange
     // and override core DOM methods. We only do this for normal SVG elements
-    // and not for the DOCUMENT element. For the SVG root element, we only
-    // create our HTC node here if we are being embedded with an SVG OBJECT
-    // element; SVG SCRIPT elements override the normal process here and do 
-    // their embedding in the _SVGSVGElement class itself later on.
+    // and DocumentFragments and not for the DOCUMENT element. For the SVG 
+    // root element, we only create our HTC node here if we are being embedded 
+    // with an SVG OBJECT element; SVG SCRIPT elements override the normal 
+    // process here and do their embedding in the _SVGSVGElement class itself 
+    // later on.
     if (this.nodeName == 'svg' && this._handler.type == 'script') {
       // do nothing; _SVGSVGElement will do the HTC node handling in this case
     } else { // everything else
@@ -3207,7 +3262,8 @@ function _Node(nodeName, nodeType, prefix, namespaceURI, nodeXML, handler,
 mixin(_Node, {
   ELEMENT_NODE: 1,
   TEXT_NODE: 3,
-  DOCUMENT_NODE: 9
+  DOCUMENT_NODE: 9,
+  DOCUMENT_FRAGMENT_NODE: 11
   
   // Note: many other node types left out here
 });
@@ -3239,7 +3295,8 @@ extend(_Node, {
   insertBefore: function(newChild /* _Node */, refChild /* _Node */) {
     //console.log('insertBefore, newChild='+newChild.id+', refChild='+refChild.id);
     
-    if (this.nodeType != _Node.ELEMENT_NODE) {
+    if (this.nodeType != _Node.ELEMENT_NODE
+        && this.nodeType != _Node.DOCUMENT_FRAGMENT_NODE) {
       throw 'Not supported';
     }
     
@@ -3248,12 +3305,21 @@ extend(_Node, {
     newChild = this._getFakeNode(newChild);
     refChild = this._getFakeNode(refChild);
     
-    // add an ID entry for newChild into nodeById
-    if (newChild.nodeType == _Node.ELEMENT_NODE) {
-      var newChildID = newChild._getId();
-      if (newChildID && this._attached) {
-        this._handler.document._nodeById['_' + newChildID] = newChild;
-      }
+    // flag that indicates that the child is a _DocumentFragment (keeps
+    // the overall code smaller); we have to treat these differently since
+    // we are importing all of the DocumentFragment's children rather than
+    // just one new child
+    var isFragment = (newChild.nodeType == _Node.DOCUMENT_FRAGMENT_NODE);
+    var fragmentChildren;
+    if (isFragment) {
+      fragmentChildren = newChild._getChildNodes(true /* get fake nodes */);
+    }
+    
+    // are we an empty DocumentFragment?
+    if (isFragment && fragmentChildren.length == 0) {
+      // nothing to do
+      newChild._reset(); // clean out DocumentFragment
+      return newChild._getProxyNode();
     }
     
     // get an index position for where refChild is
@@ -3264,18 +3330,22 @@ extend(_Node, {
     }
     var position = findResults.position;
     
-    // import newChild into ourselves, insert it into our XML, and process
-    // the newChild and all its descendants
-    var importedNode = this._importNode(newChild, false);
-    this._nodeXML.insertBefore(importedNode, refChild._nodeXML);
-    this._processAppendedChildren(newChild, this, this._attached, 
-                                  this._passThrough);
-    
-    if (!isIE) {
-      // _childNodes is an object literal instead of an array
-      // to support getter/setter magic for Safari
-      this._defineChildNodeAccessor(this._childNodes.length);
-      this._childNodes.length++;
+    // import the newChild or all of the _DocumentFragment children into 
+    // ourselves, insert it into our XML, and process the newChild and all 
+    // its descendants
+    var importMe = [];
+    if (isFragment) {
+      for (var i = 0; i < fragmentChildren.length; i++) {
+        importMe.push(fragmentChildren[i]);
+      }
+    } else {
+      importMe.push(newChild);
+    }
+    for (var i = 0; i < importMe.length; i++) {
+      var importedNode = this._importNode(importMe[i], false);
+      this._nodeXML.insertBefore(importedNode, refChild._nodeXML);
+      this._processAppendedChildren(importMe[i], this, this._attached, 
+                                    this._passThrough);
     }
     
     // inform Flash about the change
@@ -3286,13 +3356,28 @@ extend(_Node, {
                                   xmlString ]);
     }
     
+    if (!isIE) {
+      // _childNodes is an object literal instead of an array
+      // to support getter/setter magic for Safari
+      for (var i = 0; i < importMe.length; i++) {
+        this._defineChildNodeAccessor(this._childNodes.length);
+        this._childNodes.length++;
+      }
+    }
+    
+    // clear out the child if it is a DocumentFragment
+    if (newChild.nodeType == _Node.DOCUMENT_FRAGMENT_NODE) {
+      newChild._reset();
+    }
+    
     return newChild._getProxyNode();
   },
   
   replaceChild: function(newChild /* _Node */, oldChild /* _Node */) {
     //console.log('replaceChild, newChild='+newChild.nodeName+', oldChild='+oldChild.nodeName);
     
-    if (this.nodeType != _Node.ELEMENT_NODE) {
+    if (this.nodeType != _Node.ELEMENT_NODE
+        && this.nodeType != _Node.DOCUMENT_FRAGMENT_NODE) {
       throw 'Not supported';
     }
     
@@ -3300,6 +3385,23 @@ extend(_Node, {
     // work with, such as _Nodes or _Elements
     newChild = this._getFakeNode(newChild);
     oldChild = this._getFakeNode(oldChild);
+    
+    // flag that indicates that the child is a _DocumentFragment (keeps
+    // the overall code smaller); we have to treat these differently since
+    // we are importing all of the DocumentFragment's children rather than
+    // just one new child
+    var isFragment = (newChild.nodeType == _Node.DOCUMENT_FRAGMENT_NODE);
+    var fragmentChildren;
+    if (isFragment) {
+      fragmentChildren = newChild._getChildNodes(true /* get fake nodes */);
+    }
+    
+    // are we an empty DocumentFragment?
+    if (isFragment && fragmentChildren.length == 0) {
+      // nothing to do
+      newChild._reset(); // clean out DocumentFragment
+      return newChild._getProxyNode();
+    }
     
     // in our XML, find the index position of where oldChild used to be
     var findResults = this._findChild(oldChild);
@@ -3312,26 +3414,55 @@ extend(_Node, {
     // remove oldChild
     this.removeChild(oldChild);
     
-    if (!isIE) {
-      // _childNodes is an object literal instead of an array
-      // to support getter/setter magic for Safari
-      this._defineChildNodeAccessor(this._childNodes.length);
-      this._childNodes.length++;
+    // import the newChild or all of the _DocumentFragment children into 
+    // ourselves, insert it into our XML, and process the newChild and all 
+    // its descendants
+    var importMe = [];
+    if (isFragment) {
+      for (var i = 0; i < fragmentChildren.length; i++) {
+        importMe.push(fragmentChildren[i]);
+      }
+    } else {
+      importMe.push(newChild);
     }
     
-    // import newChild into ourselves, telling importNode not to do an
-    // appendChild since we will handle things ourselves manually later on
-    var importedNode = this._importNode(newChild, false);
-
-    // now bring the imported child into our XML where the oldChild used to be
+    if (!isIE) {
+      for (var i = 0; i < importMe.length; i++) {
+        // _childNodes is an object literal instead of an array
+        // to support getter/setter magic for Safari
+        this._defineChildNodeAccessor(this._childNodes.length);
+        this._childNodes.length++;
+      }
+    }
+    
+    var addToEnd = false;
     if (position >= this._nodeXML.childNodes.length) {
-      // old node was at the end -- just do an appendChild
-      this._nodeXML.appendChild(importedNode);
-    } else {
-      // old node is somewhere in the middle or beginning; jump one ahead
-      // from the old position and do an insertBefore
-      var placeBefore = this._nodeXML.childNodes[position];
-      this._nodeXML.insertBefore(importedNode, placeBefore);
+      addToEnd = true;
+    }
+    var insertAt = position;
+    for (var i = 0; i < importMe.length; i++) {    
+      // import newChild into ourselves, telling importNode not to do an
+      // appendChild since we will handle things ourselves manually later on
+      var importedNode = this._importNode(importMe[i], false);
+
+      // now bring the imported child into our XML where the oldChild used to be
+      if (addToEnd) {
+        // old node was at the end -- just do an appendChild
+        this._nodeXML.appendChild(importedNode);
+      } else {
+        // old node is somewhere in the middle or beginning; jump one ahead
+        // from the old position and do an insertBefore
+        var placeBefore = this._nodeXML.childNodes[insertAt];
+        this._nodeXML.insertBefore(importedNode, placeBefore);
+        insertAt++;
+      }
+    }
+    
+    // tell Flash about the newly inserted child
+    if (this._attached && this._passThrough) {
+      var xmlString = FlashHandler._encodeFlashData(this._toXML(newChild));
+      this._handler.sendToFlash('jsAddChildAt',
+                                [ this._guid, position, xmlString ]);
     }
     
     // now process the newChild's node
@@ -3342,23 +3473,27 @@ extend(_Node, {
     // pass through changes to Flash anymore
     oldChild._setUnattached();
     
-    // tell Flash about the newly inserted child
-    if (this._attached) {
-      var xmlString = FlashHandler._encodeFlashData(this._toXML(newChild));
-      this._handler.sendToFlash('jsAddChildAt',
-                                [ this._guid, position, xmlString ]);
-    }
-    
     // track this removed node so we can clean it up on page unload
     svgweb._removedNodes.push(oldChild._getProxyNode());
+    
+    // clear out the child if it is a DocumentFragment
+    if (newChild.nodeType == _Node.DOCUMENT_FRAGMENT_NODE) {
+      newChild._reset();
+    }
     
     return oldChild._getProxyNode();
   },
   
   removeChild: function(child /* _Node or DOM Node */) {
     //console.log('removeChild, child='+child.nodeName+', this='+this.nodeName);
-    if (this.nodeType != _Node.ELEMENT_NODE) {
+    if (this.nodeType != _Node.ELEMENT_NODE
+        && this.nodeType != _Node.DOCUMENT_FRAGMENT_NODE) {
       throw 'Not supported';
+    }
+    
+    if (child.nodeType != _Node.ELEMENT_NODE 
+        && child.nodeType != _Node.TEXT_NODE) {
+      throw 'Not supported';    
     }
     
     // the child could be a DOM node; turn it into something we can
@@ -3426,7 +3561,8 @@ extend(_Node, {
       depending on the browser. */
   appendChild: function(child /* _Node or DOM Node */) {
     //console.log('appendChild, child='+child.nodeName+', this.nodeName='+this.nodeName);
-    if (this.nodeType != _Node.ELEMENT_NODE) {
+    if (this.nodeType != _Node.ELEMENT_NODE
+        && this.nodeType != _Node.DOCUMENT_FRAGMENT_NODE) {
       throw 'Not supported';
     }
     
@@ -3434,24 +3570,75 @@ extend(_Node, {
     // work with, such as a _Node or _Element
     child = this._getFakeNode(child);
     
+    // flag that indicates that the child is a _DocumentFragment (keeps
+    // the overall code smaller); we have to treat these differently since
+    // we are importing all of the DocumentFragment's children rather than
+    // just one new child
+    var isFragment = (child.nodeType == _Node.DOCUMENT_FRAGMENT_NODE);
+    var fragmentChildren;
+    if (isFragment) {
+      fragmentChildren = child._getChildNodes(true /* get fake nodes */);
+    }
+    
+    // are we an empty DocumentFragment?
+    if (isFragment && fragmentChildren.length == 0) {
+      // nothing to do
+      child._reset(); // clean out DocumentFragment
+      return child._getProxyNode();
+    }
+    
     // add the child's XML to our own
-    this._importNode(child);
+    if (isFragment) {
+      for (var i = 0; i < fragmentChildren.length; i++) {
+        this._importNode(fragmentChildren[i]);
+      }
+    } else {
+      this._importNode(child);
+    }
     
     if (isIE) {
       // _childNodes is a real array on IE rather than an object literal
       // like other browsers
-      this._childNodes.push(child._htcNode);
+      if (isFragment) {
+        for (var i = 0; i < fragmentChildren.length; i++) {
+          this._childNodes.push(fragmentChildren[i]._htcNode);
+        }
+      } else {
+        this._childNodes.push(child._htcNode);
+      }
     } else {
       // _childNodes is an object literal instead of an array
       // to support getter/setter magic for Safari
-      this._defineChildNodeAccessor(this._childNodes.length);
-      this._childNodes.length++;
+      if (isFragment) {
+        for (var i = 0; i < fragmentChildren.length; i++) {
+          this._defineChildNodeAccessor(this._childNodes.length);
+          this._childNodes.length++;
+        }
+      } else {
+        this._defineChildNodeAccessor(this._childNodes.length);
+        this._childNodes.length++;
+      }
     }
-  
+
+    // serialize this node and all its children into an XML string and
+    // send that over to Flash
+    if (this._attached && this._passThrough) {  
+      // note that if the child is a DocumentFragment that we simply send
+      // the <__document__fragment> tag over to Flash so it knows what it is
+      // dealing with
+      var xmlString = FlashHandler._encodeFlashData(this._toXML(child));
+      this._handler.sendToFlash('jsAppendChild', [ this._guid, xmlString ]);
+    }
+
     // process the children (cache important info, add a handler, etc.)
     this._processAppendedChildren(child, this, this._attached, 
                                   this._passThrough);
-    
+
+    // clear out the child if it is a DocumentFragment
+    if (child.nodeType == _Node.DOCUMENT_FRAGMENT_NODE) {
+      child._reset();
+    }
+
     return child._getProxyNode();
   },
   
@@ -3464,12 +3651,12 @@ extend(_Node, {
   isSupported: function(feature /* String */, version /* String */) {
     if (version == '2.0') {
       if (feature == 'Core') {
-        // FIXME: There are a number of things we don't yet support in Core,
+        // NOTE: There are a number of things we don't yet support in Core,
         // but we support the bulk of it
         return true;
       } else if (feature == 'Events' || feature == 'UIEvents'
                  || feature == 'MouseEvents') {
-        // FIXME: We plan on supporting most of these interfaces, but not
+        // NOTE: We plan on supporting most of these interfaces, but not
         // all of them
         return true;
       }
@@ -3534,6 +3721,11 @@ extend(_Node, {
     //console.log('addEventListener, type='+type+', listener='+listener+', useCapture='+useCapture+', _adding='+_adding);
     // Note: capturing not supported
     
+    if (this.nodeType != _Node.ELEMENT_NODE
+        && this.nodeType != _Node.TEXT_NODE) {
+      throw 'Not supported';
+    }
+    
     if (!_adding && !this._attached) {
       // add to a list of event listeners that will get truly registered when
       // we get attached in _Node._processAppendedChildren()
@@ -3583,7 +3775,13 @@ extend(_Node, {
   },
   
   removeEventListener: function(type, listener /* Function */, useCapture) {
-    // Note: capturing not supported
+    // NOTE: capturing not supported
+    
+    if (this.nodeType != _Node.ELEMENT_NODE
+        && this.nodeType != _Node.TEXT_NODE) {
+      throw 'Not supported';
+    }
+    
     // TODO: Implement
   },
   
@@ -3593,8 +3791,10 @@ extend(_Node, {
              + this.localName.substring(1) + ']';
     } else if (this.prefix) {
       return '[' + this.prefix + ':' + this.localName + ']';
-    } else {
+    } else if (this.localName) {
       return '[' + this.localName + ']';
+    } else {
+      return '[' + this.nodeName + ']';
     }
   },
   
@@ -3635,7 +3835,8 @@ extend(_Node, {
   // childNodes defined as getter/setter
   
   _getParentNode: function() {
-    if (this.nodeType == _Node.DOCUMENT_NODE) {
+    if (this.nodeType == _Node.DOCUMENT_NODE
+        || this.nodeType == _Node.DOCUMENT_FRAGMENT_NODE) {
       return null;
     }
     
@@ -3698,7 +3899,8 @@ extend(_Node, {
   },
   
   _getPreviousSibling: function() {
-    if (this.nodeType == _Node.DOCUMENT_NODE) {
+    if (this.nodeType == _Node.DOCUMENT_NODE
+        || this.nodeType == _Node.DOCUMENT_FRAGMENT_NODE) {
       return null;
     }
     
@@ -3728,7 +3930,8 @@ extend(_Node, {
   },
   
   _getNextSibling: function() {
-    if (this.nodeType == _Node.DOCUMENT_NODE) {
+    if (this.nodeType == _Node.DOCUMENT_NODE
+        || this.nodeType == _Node.DOCUMENT_FRAGMENT_NODE) {
       return null;
     }
       
@@ -3873,13 +4076,20 @@ extend(_Node, {
       return the entire _childNodes array; what is nice is that IE applies
       the indexed lookup _after_ we've returned things, so this works. This
       requires us to instantiate all the children, however, when childNodes
-      is called. This method is called by the HTC file. 
+      is called. This method is called by the HTC file.
+      
+      @param returnFakeNodes Optional. If true, then we return our fake
+      nodes; if false, then we return the HTC proxy for IE. Defaults to false.
       
       @returns An array of either the HTC proxies for our nodes if IE,
       or an array of _Element and _Nodes for other browsers. */
-  _getChildNodes: function() {
+  _getChildNodes: function(returnFakeNodes) {
     if (!isIE) {
       return this._childNodes;
+    }
+    
+    if (returnFakeNodes === undefined) {
+      returnFakeNodes = false;
     }
     
     // NOTE: for IE we return a real full Array, while for other browsers
@@ -3897,7 +4107,8 @@ extend(_Node, {
       return results;
     }
     
-    if (this._nodeXML.childNodes.length == this._childNodes.length) {
+    if (this._nodeXML.childNodes.length == this._childNodes.length
+        && !returnFakeNodes) {
       // we've already processed our childNodes before
       return this._childNodes;
     } else {
@@ -3905,6 +4116,9 @@ extend(_Node, {
         var childXML = this._nodeXML.childNodes[i];
         var node = FlashHandler._getNode(childXML, this._handler);
         node._fakeNode._passThrough = this._passThrough;
+        if (returnFakeNodes) {
+          node = node._fakeNode;
+        }
         results.push(node);
       }
       
@@ -3917,11 +4131,11 @@ extend(_Node, {
   // and override core DOM methods
   _createHTC: function() {
     // we store our HTC nodes into a hidden container located in the
-    // HEAD of the document; either get it now or create one on demand
+    // BODY of the document; either get it now or create one on demand
     if (!this._htcContainer) {
       this._htcContainer = document.getElementById('__htc_container');
       if (!this._htcContainer) {
-        // strangely, onpropertychange does _not_ fire for HTC elements
+        // NOTE: Strangely, onpropertychange does _not_ fire for HTC elements
         // that are in the HEAD of the document, which is where we used
         // to put the htc_container. Instead, we have to put it into the BODY
         // of the document and position it offscreen.
@@ -3942,8 +4156,8 @@ extend(_Node, {
     // inside ourselves (inside _Element)
     // Note: we do svg: even if we are dealing with a non-SVG node on IE,
     // such as sodipodi:namedview; this is necessary so that our svg.htc
-    // file gets invoked for all these nodes, which is bound to the 
-    // svg: namespace
+    // file gets invoked for all these nodes, which is by necessity bound to 
+    // the svg: namespace
     var htcNode = document.createElement('svg:' + this.nodeName);
     htcNode._fakeNode = this;
     htcNode._handler = this._handler;
@@ -3954,8 +4168,6 @@ extend(_Node, {
   _setNodeValue: function(newValue) {
     //console.log('setNodeValue, newValue='+newValue);
     if (this.nodeType != _Node.TEXT_NODE) {
-      // FIXME: Is this correct? Can other kinds of nodes other than
-      // text nodes have a nodeValue?
       return newValue;
     }
     
@@ -4002,31 +4214,29 @@ extend(_Node, {
       to Flash or not. */
   _processAppendedChildren: function(child, parent, attached, passThrough) {
     //console.log('processAppendedChildren, this.nodeName='+this.nodeName+', child.nodeName='+child.nodeName+', attached='+attached+', passThrough='+passThrough);
-    // serialize this node and all its children into an XML string and
-    // send that over to Flash
-    if (attached) {
-      var xmlString = FlashHandler._encodeFlashData(this._toXML(child));
-      this._handler.sendToFlash('jsAppendChild',
-                                [ parent._guid, xmlString ]);
-    }
-
     // walk the DOM from the child using an iterative algorithm, which was 
     // found to be faster than a recursive one; for each node visited we will
     // store some important reference information
-    var current = child;
+    var current;
+    if (child.nodeType == _Node.DOCUMENT_FRAGMENT_NODE) {
+      current = this._getFakeNode(child._getFirstChild());
+    } else {
+      current = child;
+    }
+
     while (current) {
       // visit this node
       var currentXML = current._nodeXML;
 
       // set its handler
       current._handler = this._handler;
-      
+
       // store a reference to our node so we can return it in the future
       var id = currentXML.getAttribute('id');
       if (attached && current.nodeType == _Node.ELEMENT_NODE && id) {
         this._handler.document._nodeById['_' + id] = current;
       }
-      
+
       // set the ownerDocument based on how we were embedded
       if (attached) {
         if (this._handler.type == 'script') {
@@ -4358,7 +4568,8 @@ extend(_Node, {
       determinant in the amount of time it takes to create a new HTC element.
       In order to minimize the size of this code, we have many 'no-op'
       implementations of some methods so that we can just safely call
-      them from the HTC without checking the type of the node. */
+      them from the HTC without checking the type of the node inside the
+      HTC. */
   _createEmptyMethods: function() {
     if (this.nodeType == _Node.TEXT_NODE) {
       this.getAttribute 
@@ -4792,6 +5003,45 @@ extend(_Element, {
   }
 });
 
+
+/** The DOM DocumentFragment API. 
+
+    @param doc The document that produced this _DocumentFragment. Either
+    the global, browser native 'document' or a fake _Document if this was
+    created in the context of an SVG OBJECT. */
+function _DocumentFragment(doc) {
+  // superclass constructor
+  _Node.apply(this, ['#document-fragment', _Node.DOCUMENT_FRAGMENT_NODE, 
+                     null, null, null, null]);
+  
+  this.ownerDocument = doc;
+}
+
+// subclasses _Node
+_DocumentFragment.prototype = new _Node;
+
+extend(_DocumentFragment, {
+  /** 'Resets' a _DocumentFragment so it can be reused. Basically removes
+      all of it's children. */
+  _reset: function() {
+    // delete all the XML children; using a while() loop works better than
+    // for() since the # of childNodes will change out from under us as we
+    // remove children.
+    while (this._nodeXML.firstChild) {
+      this._nodeXML.removeChild(this._nodeXML.firstChild);
+    }
+
+    this._childNodes = this._createChildNodes();
+    if (!isIE) {
+      this._defineNodeAccessors();
+    }
+    
+    // NOTE: we never remove the DocumentFragment from the svgweb._guidLookup
+    // table or the HTC node for this DocumentFragment; this is because we
+    // must make it possible to reuse the DocumentFragment. This could cause
+    // a memory leak issue over time however.
+  }
+});
 
 /** Not an official DOM interface; used so that we can track changes to
     the CSS style property of an Element
@@ -5397,6 +5647,9 @@ extend(_SVGObject, {
     doc._nodeById['_' + rootID] = root;
 
     // add our contentDocument property
+    // TODO: This should be doc._getProxyNode(), but Issue 227 needs to be
+    // addressed first:
+    // http://code.google.com/p/svgweb/issues/detail?id=227
     this._handler.flash.contentDocument = doc;
     
     // FIXME: NOTE: unfortunately we can't support the getSVGDocument() method; 
@@ -6482,6 +6735,10 @@ extend(_Document, {
     textNode.ownerDocument = this;
     
     return textNode._getProxyNode();
+  },
+  
+  createDocumentFragment: function(forSVG) {
+    return new _DocumentFragment(this)._getProxyNode();
   },
   
   getElementById: function(id) /* _Element */ {

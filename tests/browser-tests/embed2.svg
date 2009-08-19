@@ -62,7 +62,7 @@
         image, line, defs, runTests, styleReturned, use, regExp, split, doc,
         orig, rect1, rect2, obj1, obj2, obj3, params, hasParams, hasParam1,
         hasParam2, param1Value, param2Value, pathname, origUrl, origWindowLoc,
-        loc, fakeLoc, timerID;
+        loc, fakeLoc, timerID, frag;
 
     var allStyles = [
       'font', 'fontFamily', 'fontSize', 'fontSizeAdjust', 'fontStretch', 'fontStyle',
@@ -208,7 +208,8 @@
       testInsertBefore();
       testHasChildNodes();
       testStyle();
-      testRedraw();
+      testSuspendRedraw();
+      testDocumentFragment();
       
       // print out what should be visible after all tests
       top.console.log('2ND IMAGE: There should be blue text saying '
@@ -2964,7 +2965,7 @@
                       group.style.opacity);
     }
     
-    function testRedraw() {
+    function testSuspendRedraw() {
       // test the suspendRedraw/unsuspendRedraw functionality
       
       top.console.log('Inside SVG OBJECT: Testing suspend/unsuspendRedraw...');
@@ -3082,6 +3083,102 @@
                   + 'post-suspend. Also run your mouse over both sets of lines '
                   + 'and make sure that mouse over and out events fire -- you '
                   + 'should see console.log messages print');
+    }
+    
+    function testDocumentFragment() {
+      // test the createDocumentFragment() API
+      
+      top.console.log('Inside SVG OBJECT: Testing DocumentFragment...');
+    
+      // test adding one element with lots of children (plus some DOM text nodes)
+      // using DocumentFragment; also test using DOM accessors (childNodes, 
+      // firstChild, etc.) on DocumentFragment
+      frag = document.createDocumentFragment(true);
+      svg = document.rootElement;
+      group2 = document.createElementNS(svgns, 'g');
+      group2.setAttribute('transform', 'translate(30, -15)');
+      nodes = [];
+      for (var i = 1; i <= 4; i++) {
+        // have a circle with a small text value on it, all together in a group
+        group = document.createElementNS(svgns, 'g');
+        group.setAttribute('transform', 'scale(0.75) '
+                           + 'translate(440, ' + (65 + (i * 50)) + ')');
+        circle = document.createElementNS(svgns, 'circle');
+        circle.setAttribute('r', 20);
+        circle.setAttribute('fill', 'yellow');
+        group.appendChild(circle);
+        svgText = document.createElementNS(svgns, 'text');
+        svgText.appendChild(document.createTextNode(i, true));
+        svgText.style.fontSize = '30px';
+        svgText.setAttribute('x', -7);
+        svgText.setAttribute('y', 10);
+        svgText.style.fill = 'black';
+        group.appendChild(svgText);
+        group2.appendChild(group);
+        nodes.push(group);
+      }
+      frag.appendChild(group2);
+      // check DOM values before appending to a real DOM
+      top.assertEquals('frag.childNodes.length == 1', 1, frag.childNodes.length);
+      top.assertEquals('frag.childNodes[0] == group2', group2, 
+                       frag.childNodes[0]);
+      top.assertEquals('frag.firstChild == group2', group2, frag.firstChild);
+      top.assertEquals('frag.lastChild == group2', group2, frag.lastChild);
+      top.assertEquals('group2.parentNode == frag', frag, group2.parentNode);
+      top.assertEquals('group.parentNode == group2', group2, group.parentNode);
+      top.assertEquals('group2.childNodes[0] == group', nodes[0], 
+                       group2.childNodes[0]);
+      top.assertEquals('group2.childNodes.length == 4', 4, 
+                       group2.childNodes.length);
+      top.assertEquals(
+                   'frag.firstChild.firstChild.childNodes[0].nodeName == circle', 
+                   'circle',
+                   frag.firstChild.firstChild.childNodes[0].nodeName);
+      top.assertEquals(
+                    'frag.firstChild.firstChild.childNodes[1].firstChild.nodeValue '
+                    + '== 1', '1',
+                    frag.firstChild.firstChild.childNodes[1].firstChild.nodeValue);
+      // now append to a real DOM and recheck all DOM values
+      svg.appendChild(frag);
+      top.assertEquals('svg.lastChild == group2', group2, svg.lastChild);
+      top.assertEquals('svg.lastChild.nodeName == g', 'g', 
+                       svg.lastChild.nodeName);
+      top.assertEquals('svg.lastChild.parentNode == svg', svg, 
+                   svg.lastChild.parentNode);
+      top.assertEquals('group2.parentNode == svg', svg, group2.parentNode);
+      top.assertEquals('group2.ownerDocument == doc' + 'ument', document, 
+                       group2.ownerDocument);
+      top.assertEquals('group.ownerDocument == doc' + 'ument',
+                       document, group.ownerDocument);
+      top.assertEquals('svg.lastChild.childNodes.length == 4', 4,
+                       svg.lastChild.childNodes.length);
+      top.assertEquals('svg.lastChild.childNodes[0].nodeName == g', 'g',
+                       svg.lastChild.childNodes[0].nodeName);
+      top.assertEquals('svg.lastChild.firstChild.childNodes.length == 2', 2,
+                       svg.lastChild.firstChild.childNodes.length);
+      top.assertEquals('svg.lastChild.firstChild.childNodes[0].nodeName == circle', 
+                       'circle', 
+                       svg.lastChild.firstChild.childNodes[0].nodeName);
+      top.assertEquals(
+                  'svg.lastChild.childNodes[2].childNodes[1].firstChild.nodeValue == 3',
+                   3, 
+                   svg.lastChild.childNodes[2].childNodes[1].firstChild.nodeValue);
+      top.assertEquals('svg.lastChild.childNodes[2].childNodes[1].firstChild '
+                       + '== nodes[2].lastChild.firstChild',
+                       nodes[2].lastChild.firstChild, 
+                       svg.lastChild.childNodes[2].childNodes[1].firstChild);
+      top.assertEquals('svg.childNodes[svg.childNodes.length - 1].firstChild.nextSibling '
+                    + '== nodes[1]', nodes[1],
+                    svg.childNodes[svg.childNodes.length - 1].firstChild.nextSibling);
+      // make sure the DocumentFragment is cleared
+      top.assertNull('after append, frag.firstChild == null', frag.firstChild);
+      top.assertNull('after append, frag.lastChild == null', frag.lastChild);
+      top.assertEquals('after append, frag.childNodes.length == 0', 0, 
+                   frag.childNodes.length);
+      top.console.log(
+                  'INSIDE OBJECT: 2ND IMAGE: You should see four yellow '
+                  + 'circles vertically stacked near the upper right of the '
+                  + 'image with the numbers 1 to 4 inside of them in black');
     }
   ]]></script>
   <g
