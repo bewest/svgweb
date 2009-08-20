@@ -1,0 +1,1 @@
+Issue 221 (http://code.google.com/p/svgweb/issues/detail?id=221&can=1&q=expand) has to do with expanding entities. The code in this directory is taken from David Coggeshall from the MapLab Project who first identified it. It was at the URL http://maplab.org/gladtest2. The copyright I presume is held by him or his organization.
