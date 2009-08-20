@@ -6,6 +6,21 @@ var printAsserts = false;
 // so we can halt testing and report the failure
 var _flashError = false;
 
+// For test_js1.html, we want to make sure that having an onload="" handler
+// on a directly embedded SVG script root tag gets fired. This variable
+// gets set by svgweb._scriptEmbedOnLoad(), which is called from the onload="" 
+// attribute of the first directly embedded SVG script root tag
+var _scriptEmbedOnLoadCalled = false;
+svgweb._scriptEmbedOnLoad = function(root) {
+  _scriptEmbedOnLoadCalled = true;
+  // root should be an instance of mySVG
+  assertExists('root should have been passed into our onload event handler',
+               root);
+  assertEquals('root.id == mySVG', 'mySVG', root.id);
+  assertEquals('root == getElementById(mySVG)', 
+               document.getElementById('mySVG'), root);
+}
+
 // if true, the page has SVG OBJECTs; if false then there are none and all
 // the SVG is directly embedded into the page using SCRIPT blocks
 var _hasObjects = false;
@@ -289,6 +304,11 @@ function runTests(embedTypes) {
       // make sure that embed2.svg called our _validateOnloads() method
       assertTrue('_validateOnloads should have been called', 
                  svgweb._validateOnloadsCalled);
+    } else {
+      // make sure that the onload="" attribute on our first directly embedded
+      // SVG root tag is fired
+      assertTrue('The onload attribute for the SVG root mySVG should have '
+                  + 'fired; it did not', _scriptEmbedOnLoadCalled);
     }
     
     // make sure that when we dynamically created our SVG OBJECTs that

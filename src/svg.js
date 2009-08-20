@@ -1289,6 +1289,36 @@ extend(SVGWeb, {
     svg = results.svg;
     var xml = results.xml;
     var rootID = xml.documentElement.getAttribute('id');
+    var rootOnload = xml.documentElement.getAttribute('onload');
+    if (rootOnload) {
+      // turn the textual onload handler into a real function
+      rootOnload = new Function(rootOnload);
+      
+      // return a function that makes the 'this' keyword apply to
+      // the SVG root; wrap in another anonymous closure as well to prevent
+      // IE memory leaks
+      var f = (function(rootOnload, rootID) {
+        return function() {
+          // get our SVG root so we can set the 'this' keyword correctly
+          var handler = svgweb.handlers[rootID];
+          var root;
+          if (svgweb.getHandlerType() == 'flash') {
+            root = handler.document.documentElement._getProxyNode();
+          } else { // native
+            // Safari/Native has a bizarre bug; earlier we save a reference
+            // to our handler._svgRoot variable, but it won't match what
+            // is returned by document.getElementById(rootID). We use that
+            // instead to have correct object identity.
+            root = document.getElementById(rootID);
+          }
+
+          return rootOnload.apply(root);
+        };
+      })(rootOnload, rootID);
+      
+      // add to our list of page-level onload listeners
+      this._loadListeners.push(f);
+    }
     
     // create the correct handler
     var self = this;
