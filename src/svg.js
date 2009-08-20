@@ -1322,7 +1322,7 @@ extend(SVGWeb, {
     
     // create the correct handler
     var self = this;
-    var finishedCallback = function(id, type){
+    var finishedCallback = function(id, type) {
       // prevent IE memory leaks
       script = null;
       xml = null;
@@ -2893,7 +2893,7 @@ extend(NativeHandler, {
     // onload of the SVG file _before_ our NativeHandler is done depending
     // on whether they are loading from the cache or not; others will do it the 
     // opposite way (Safari). If the onload was fired and therefore 
-    // svgweb.addOnLoad was called, then we stored a reference the SVG file's 
+    // svgweb.addOnLoad was called, then we stored a reference to the SVG file's 
     // Window object there.
     if (this._objNode._svgWindow) {
       this._onObjectLoad(this._objNode._svgFunc, this._objNode._svgWindow);
@@ -2902,6 +2902,17 @@ extend(NativeHandler, {
       // to get called by the SVG file itself. Store a reference to ourselves
       // to be used there.
       this._objNode._svgHandler = this;
+      
+      // if this is a purely static SVG file and it's the only one on the page
+      // then we need to manually see when it loads for Firefox; Safari
+      // correctly fires our onload listener but not Firefox.
+      // Issue 219: "body.onload not fired for SVG OBJECT"
+      // http://code.google.com/p/svgweb/issues/detail?id=219
+      var self = this;
+      this._objNode.addEventListener('load', function() {
+        var win = self._objNode.contentDocument.defaultView;
+        self._onObjectLoad(self._objNode._svgFunc, win);
+      }, false);
     }
   },
   
@@ -2916,6 +2927,12 @@ extend(NativeHandler, {
       @param win The Window object inside the SVG OBJECT */
   _onObjectLoad: function(func, win) {
     //console.log('onObjectLoad');
+    
+    // we might have already been called before
+    if (this._loaded) {
+      return; // nothing to do
+    }
+    
     // flag that we are loaded
     this._loaded = true;
     
