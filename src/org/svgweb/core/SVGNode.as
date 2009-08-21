@@ -114,7 +114,6 @@ package org.svgweb.core
          */
         public function SVGNode(svgRoot:SVGSVGNode, xml:XML = null, original:SVGNode = null):void {
             this.svgRoot = svgRoot;
-
             transformSprite = this;
 
             // This handles strange gradient bugs with negative transforms
@@ -314,6 +313,7 @@ package org.svgweb.core
                     childNode = new SVGUnknownNode(this.svgRoot, childXML);
                     break;    
             }
+
             return childNode;
         }
         
@@ -347,7 +347,7 @@ package org.svgweb.core
                 if (this.svgRoot.viewer && this.svgRoot.viewer.isSuspended) {
                     return;
                 }
-                
+
                 this._invalidDisplay = false;
                 if (this._xml != null) {
                     drawSprite.graphics.clear();
@@ -1898,6 +1898,21 @@ package org.svgweb.core
         
         public function err(errorString:String):void {
             this.svgRoot.error(errorString);
+        }
+        
+        /** Functions for profiling. */
+        public function start(subject:String, subjectStarted:String = null):void {
+            this.svgRoot.start(subject, subjectStarted);
+        }
+        
+        /** Functions for profiling. */
+        public function end(subject:String, subjectStarted:String = null):void {
+            this.svgRoot.end(subject, subjectStarted);
+        }
+        
+        /** Functions for profiling. */
+        public function increment(subject:String, amount:int):void {
+            this.svgRoot.increment(subject, amount);
         }
     }
 }

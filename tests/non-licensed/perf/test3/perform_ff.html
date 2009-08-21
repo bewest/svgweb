@@ -11,20 +11,19 @@
 		<script src="../../../../src/svg.js" data-path="../../../../src/" data-debug="true"></script>
 		
 		<script>
-		  var startTime = new Date().getTime();
-		  console.profile('pageload');
+		  //console.profile();
+		  start('pageload');
 		  
 		  function endTiming() {
-		    console.profileEnd();
-		    var endTime = new Date().getTime();
-		    console.log('total time=' + (endTime - startTime) + ' ms');
+		    //console.profileEnd();
+		    end('pageload');
+		    report();
 		  }
 		</script>
 
 	</head>
 
 	<body>
-	
 	
 	<script type="image/svg+xml">
 	<svg	id="svgroot" width="556px" height="700px"
@@ -470,7 +469,7 @@
   
 </svg>
 </script>
-	
+
 </body>
 
 </html>

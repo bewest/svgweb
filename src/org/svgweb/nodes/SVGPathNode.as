@@ -45,11 +45,98 @@ package org.svgweb.nodes
          * for easy data.split(',');
          */
         public function normalizeSVGData(data:String):String {
-            // TODO: needs performance analysis
+            // NOTE: This code is very performance sensitive and was 
+            // a bottleneck affecting page load; rewritten to not use
+            // regular expressions as well as other tricks that were shown
+            // to be faster (like caching data.length for example).
+            // Be careful when changing this code without seeing what the
+            // performance is before and after. See 
+            // Issue 229 for details:
+            // "Speedup page load time of MichaelN's static map page on IE"
+            // http://code.google.com/p/svgweb/issues/detail?id=229
+            
+            //var totalTime:int = new Date().getTime();
+            
             data = StringUtil.trim(data);
                         
-            data = data.replace(/([MACSLHVQTZ])/sig,",$1,");    
+            var results:String = "";
+            // basically a simple state machine for final character in
+            // results a comma
+            var prevCharComma:Boolean = true;
+            var dataLength:int = data.length; // found to be faster
+            var c:String;
+            for (var i:int = 0; i < dataLength; i++) {
+                // faster to cache value current character we are looking at
+                c = data.charAt(i);
+                
+                if (c == "\n") {
+                    continue;
+                }
+                
+                // results.replace(/([MACSLHVQTZ])/sig,",$1,");
+                switch (c) {
+                    case "M": case "m": 
+                    case "A": case "a":
+                    case "C": case "c":
+                    case "S": case "s":
+                    case "L": case "l":
+                    case "H": case "h":
+                    case "V": case "v":
+                    case "Q": case "q":
+                    case "T": case "t":
+                    case "Z": case "z":
+                        c = "," + c + ",";
+                        break;
+                    case "-":
+                        if (i != 0 && data.charAt(i - 1) != 'e') {
+                            // "-" dashes denote a negative number, not a separator;
+                            // avoid e-* style numbers      
+                            // results = results.replace(/-/sg,",-"); 
+                            c = ",-";
+                        }
+                        break;
+                    case " ":
+                        // Replace spaces with a comma 
+                        // results.replace(/\s+/sg,",");
+                        c = ",";
+                        break;
+                }
+                
+                // Was the previous character a comma? Is our first character
+                // a comma? If so then ignore our new comma
+                if (prevCharComma && c.charAt(0) == ",") {
+                    if (c.length == 1) {
+                        continue;
+                    } else {
+                        c = c.substring(1);
+                    }
+                }
+                
+                // Record our state on whether our final new character
+                // is a comma
+                if (c.charAt(c.length - 1) == ",") {
+                    prevCharComma = true;
+                } else {
+                    prevCharComma = false;
+                }
+                
+                // Remove trailing comma
+                if (i == (dataLength - 1) && c.charAt(c.length - 1) == ",") {
+                    if (c.length == 1) {
+                        continue;
+                    } else {
+                        c = c.substring(0, c.length - 1);
+                    }
+                }
+                
+                results += c;
+            }
             
+            //increment('new_normalizeSVGData', (new Date().getTime() - totalTime));
+
+            // old pre-optimized version
+            /*data = StringUtil.trim(origData);         
+            data = data.replace(/([MACSLHVQTZ])/sig,",$1,");    
             data = data.replace(/e-/sg,"eneg"); // "-" dashes can be an exponent
             data = data.replace(/-/sg,",-"); // "-" dashes denote a negative number, not a separator        
             data = data.replace(/eneg/sg,"e-"); // "-" dashes can be an exponent
@@ -57,18 +144,21 @@ package org.svgweb.nodes
             data = data.replace(/,{2,}/sg,","); // Remove any extra commas
             data = data.replace(/^,/, ''); //Remove leading comma
             data = data.replace(/,$/, ''); //Remove trailing comma
-            return data;
+            increment('old_normalizeSVGData', (new Date().getTime() - totalTime));*/
+            
+            return results;
         }
         
-        protected override function generateGraphicsCommands():void {  
-            this._graphicsCommands = new  Array();
+        protected override function generateGraphicsCommands():void {
+            //var startTime:int = new Date().getTime();
+            this._graphicsCommands = new Array();
             
             var command:String;
 
             var lineAbs:Boolean;
             var isAbs:Boolean;
 
-            var pathData:String = this.normalizeSVGData(this._xml.@d);            
+            var pathData:String = this.normalizeSVGData(this._xml.@d);
             var szSegs:Array = pathData.split(',');
             
             this._graphicsCommands.push(['SF']);
@@ -165,7 +255,9 @@ package org.svgweb.nodes
                         break;
                 }            
             }        
-            this._graphicsCommands.push(['EF']);    
+            this._graphicsCommands.push(['EF']); 
+            
+            //increment('generateGraphicsCommands_path', (new Date().getTime() - startTime));   
         }
         
         private function closePath():void {

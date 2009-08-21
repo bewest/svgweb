@@ -1076,6 +1076,8 @@
     }
     
     function svgOnLoad() {
+        // for profiling
+        //report();
         if (SVGFiles[currentSVGIndex].viewBox) {
             currentSVGObject.contentDocument.documentElement.setAttribute('viewBox', SVGFiles[currentSVGIndex].viewBox);
             document.getElementById('inputViewBox').value = SVGFiles[currentSVGIndex].viewBox;

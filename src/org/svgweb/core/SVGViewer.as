@@ -108,11 +108,22 @@ package org.svgweb.core
         }
 
         public function debug(debugMessage:String):void {
-
         }
         
         public function error(message:String):void {
             this.debug(message);
+        }
+        
+        /** Functions for profiling. */
+        public function start(subject:String, subjectStarted:String = null):void {
+        }
+        
+        /** Functions for profiling. */
+        public function end(subject:String, subjectStarted:String = null):void {
+        }
+        
+        /** Functions for profiling. */
+        public function increment(subject:String, amount:int):void {
         }
 
     }

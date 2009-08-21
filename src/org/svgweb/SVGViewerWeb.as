@@ -151,8 +151,8 @@ package org.svgweb
 
         protected function setSVGString(xmlString:String, objectURL:String = '', pageURL:String = '',
                                         ignoreWhiteSpace:Boolean = false):void {
+            //start('setSVGString');
             // FIXME: TODO: Respect the ignoreWhiteSpace setting
-            this.renderStartTime = (new Date()).valueOf();
             var dataXML:XML = new XML(SVGViewerWeb.expandEntities(xmlString));
             while(this.numChildren) {
                 this.removeChildAt(0);
@@ -165,6 +165,7 @@ package org.svgweb
             }
             this.addActionListener(SVGEvent.SVGLoad, svgRoot);
             this.addChild(svgRoot);
+            //end('setSVGString');
         }
 
         public static function expandEntities(xmlString:String):String {
@@ -329,6 +330,7 @@ package org.svgweb
          * JavaScript interface handlers
          **/
         public function js_handleLoad(msg:String):void {
+            this.renderStartTime = (new Date()).valueOf();
             // msg is a string delimited by __SVG__DELIMIT with fields in
             // the following order: objectURL, pageURL, objectWidth, 
             // objectHeight, ignoreWhiteSpace (boolean), svgString
@@ -872,6 +874,21 @@ package org.svgweb
                 catch(error:SecurityError) {
                 }
             }
+        }
+        
+        /** Functions for profiling. */
+        override public function start(subject:String, subjectStarted:String = null):void {
+            ExternalInterface.call('start', subject, subjectStarted);
+        }
+        
+        /** Functions for profiling. */
+        override public function end(subject:String, subjectStarted:String = null):void {
+            ExternalInterface.call('end', subject, subjectStarted);
+        }
+        
+        /** Functions for profiling. */
+        override public function increment(subject:String, amount:int):void {
+            ExternalInterface.call('increment', subject, amount);
         }
         
         /**

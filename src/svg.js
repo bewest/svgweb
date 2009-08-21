@@ -60,6 +60,14 @@ function end(subject, subjectStarted) {
   //console.log('at end, storing total time: ' + total(subject));
 }
 
+function increment(subject, amount) {
+  if (!window.timer[subject]) {
+    window.timer[subject] = {incremented: true, total: 0};
+  }
+  
+  window.timer[subject].total += amount;
+}
+
 function total(subject) {
   if (!window.timer[subject]) {
     console.log('Unknown subject: ' + subject);
@@ -67,7 +75,9 @@ function total(subject) {
   }
   
   var t = window.timer[subject];
-  if (t) {
+  if (t.incremented) {
+    return t.total;
+  } else if (t) {
     return t.end - t.start;
   } else {
     return null;
@@ -489,6 +499,7 @@ function guid() {
   Gets exposed globally as 'svgweb'.
 */
 function SVGWeb() {
+  //start('SVGWeb_constructor');
   // grab any configuration that might exist on where our library resources
   // are
   this.libraryPath = this._getLibraryPath();
@@ -510,6 +521,7 @@ function SVGWeb() {
   
   // wait for our page's DOM content to be available
   this._initDOMContentLoaded();
+  //end('SVGWeb_constructor');
 }
 
 extend(SVGWeb, {
@@ -874,6 +886,7 @@ extend(SVGWeb, {
   /** Fires when the DOM content of the page is ready to be worked with. */
   _onDOMContentLoaded: function() {
     //console.log('onDOMContentLoaded');
+    //start('DOMContentLoaded');
     
     // quit if this function has already been called
     if (arguments.callee.done) {
@@ -957,6 +970,7 @@ extend(SVGWeb, {
       // handler._svgObjects array
       this._svgObjects[i]._objID = objID;
     }
+    //end('DOMContentLoaded');
     
     // wait until all of them have done their work, then fire onload
   },
@@ -6496,6 +6510,7 @@ function _SVGSVGElement(nodeXML, svgString, scriptNode, handler) {
     // for IE, replace the SCRIPT tag with our SVG root element; this is so
     // that we can kick off the HTC running so that it can insert our Flash
     // as a shadow DOM
+    //start('HTCLoading');
     var svgDOM = document.createElement('svg:svg');
     svgDOM._fakeNode = this;
     svgDOM._handler = handler;
@@ -6590,6 +6605,8 @@ extend(_SVGSVGElement, {
   /** Called when the Microsoft Behavior HTC file is loaded. */
   _onHTCLoaded: function() {
     //console.log('onHTCLoaded');
+    //end('HTCLoading');
+    //start('onHTCLoaded');
     
     // cleanup our event handler
     this._htcNode.detachEvent('onreadystatechange', this._readyStateListener);
@@ -6598,12 +6615,14 @@ extend(_SVGSVGElement, {
     var elemDoc = this._htcNode._getHTCDocument();
     
     // now insert our Flash
+    //start('SWFLoading');
     this._inserter = new FlashInserter('script', elemDoc, this._nodeXML,
                                        this._scriptNode, this._handler,
                                        this._htcNode);
                            
     // pay attention to style changes now in the HTC
     this.style._ignoreStyleChanges = false;
+    //end('onHTCLoaded');
     
     // TODO: we are not handling dynamically created nodes yet
   },
@@ -6612,6 +6631,8 @@ extend(_SVGSVGElement, {
       include the SVG being rendered -- at this point we haven't even
       sent the SVG to the Flash file for rendering yet. */
   _onFlashLoaded: function(msg) {
+    //end('SWFLoading');
+    //start('onFlashLoaded');
     // the Flash object is done loading
     //console.log('_onFlashLoaded');
     
@@ -6633,6 +6654,7 @@ extend(_SVGSVGElement, {
     }
     
     // send the SVG over to Flash now
+    //start('firstSendToFlash');
     this._handler.sendToFlash('jsHandleLoad',
                               [ /* objectURL */ this._getRelativeTo('object'),
                                 /* pageURL */ this._getRelativeTo('page'),
@@ -6640,10 +6662,13 @@ extend(_SVGSVGElement, {
                                 /* objectHeight */ null,
                                 /* ignoreWhiteSpace */ true,
                                 /* svgString */ this._svgString ]);
+    //end('onFlashLoaded');
   },
   
   /** The Flash is finished rendering. */
   _onRenderingFinished: function(msg) {
+    //end('firstSendToFlash');
+    //start('onRenderingFinished');
     //console.log('onRenderingFinished');
     
     if (!isIE && this._handler.type == 'script') {
@@ -6655,6 +6680,7 @@ extend(_SVGSVGElement, {
     }
     
     var elementId = this._nodeXML.getAttribute('id');
+    //end('onRenderingFinished');
     this._handler.fireOnLoad(elementId, 'script');
   },
   

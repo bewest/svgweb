@@ -476,5 +476,35 @@ package org.svgweb.nodes
                 SVGViewer(this.parent).error(message);
             }
         }
+        
+        /** Functions for profiling. */
+        override public function start(subject:String, subjectStarted:String = null):void {
+            if (this.parentSVGRoot) {
+                this.parentSVGRoot.start(subject, subjectStarted);
+            }
+            else if (this.parent is SVGViewer) {
+                SVGViewer(this.parent).start(subject, subjectStarted);
+            }
+        }
+        
+        /** Functions for profiling. */
+        override public function end(subject:String, subjectStarted:String = null):void {
+            if (this.parentSVGRoot) {
+                this.parentSVGRoot.end(subject, subjectStarted);
+            }
+            else if (this.parent is SVGViewer) {
+                SVGViewer(this.parent).end(subject, subjectStarted);
+            }
+        }
+        
+        /** Functions for profiling. */
+        override public function increment(subject:String, amount:int):void {
+            if (this.parentSVGRoot) {
+                this.parentSVGRoot.increment(subject, amount);
+            }
+            else if (this.parent is SVGViewer) {
+                SVGViewer(this.parent).increment(subject, amount);
+            }
+        }
     }
 }
