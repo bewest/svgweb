@@ -1120,34 +1120,40 @@ extend(SVGWeb, {
     svg = svg.replace(/\s*$/, '');
         
     // expand ENTITY definitions
-    if (svg.indexOf("<!ENTITY") != -1) { // avoid slow regex if possible
-        var entities = svg.match(/.*<!ENTITY\s+(\S+)\s+"([^"]*)"\s*>/mg);
-        if (entities) {
-            var entityName = [];
-            var entityContent = [];
-            for (var i=0; i < entities.length; i++) {
-                var parts = entities[i].match(/.*<!ENTITY\s+(\S+)\s+"([^"]*)"\s*>/m);
-                entityName[i] = parts[1];
-                entityContent[i] = parts[2];
-            }
-            for (i=0; i < entityName.length; i++) {
-                svg = svg.split("&" + entityName[i] + ";").join(entityContent[i]);
-            }
-        }
+    // Issue 221: "DOCTYPE ENTITYs not expanded on certain 
+    // browsers (safari, opera)"
+    // http://code.google.com/p/svgweb/issues/detail?id=221
+    // NOTE: entity expansion is performance sensitive; see 
+    // Issue 218 for details 
+    // (http://code.google.com/p/svgweb/issues/detail?id=218)
+    RegExp.lastIndex = 0;
+    var match;
+    var entityRE = /<!ENTITY\s+(\S+)\s+"([^"]*)"/g;
+    while ((match = entityRE.exec(svg)) != null) {
+      var entityName = RegExp.$1;
+      var entityValue = RegExp.$2;
+      svg = svg.replace('&' + entityName + ';', entityValue);
     }
-       
+    
     if (addMissing) {
       // add any missing things (XML declaration, SVG namespace, etc.)
       if (/\<\?xml/m.test(svg) == false) { // XML declaration
         svg = '<?xml version="1.0"?>\n' + svg;
       }
+      
       // add SVG namespace declaration; don't however if there is a custom 
       // prefix for SVG namespace
-      if (/\<[^\:]+\:svg/m.test(svg) == false) {
+
+      // NOTE: the following regular expression in this if statement
+      // right below had to be replaced since it was a performance
+      // bottleneck; see Issue 218
+      // for details: http://code.google.com/p/svgweb/issues/detail?id=218
+      if (svg.indexOf(':svg ') == -1) { // was regular expression
         if (/xmlns\=['"]http:\/\/www\.w3\.org\/2000\/svg['"]/.test(svg) == false) {
           svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
         }
       }
+      
       // add xlink namespace if it is not present
       if (/xmlns:[^=]+=['"]http:\/\/www\.w3\.org\/1999\/xlink['"]/.test(svg) == false) {
         svg = svg.replace('<svg', '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
@@ -1169,7 +1175,7 @@ extend(SVGWeb, {
       // line comments; stripping them out is a simple solution for now.
       var commentRE = /<!\-\-/g;
       RegExp.lastIndex = 0; // reset global exec()
-      var match = commentRE.exec(svg);
+      match = commentRE.exec(svg);
       var i = 0;
       var strippedSVG = svg;
       while (match && RegExp.lastMatch) {
