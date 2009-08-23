@@ -1583,6 +1583,8 @@ extend(SVGWeb, {
             = flashObj.jsHandleLoad
             = flashObj.jsSuspendRedraw
             = flashObj.jsUnsuspendRedrawAll
+            = flashObj.jsGetScreenCTM
+            = flashObj.jsMatrixInvert
             = null;
       flashObj.parentNode.removeChild(flashObj);
       
@@ -2569,13 +2571,37 @@ extend(FlashHandler, {
     var target = this._getElementByGuid(msg.targetGUID);
     var currentTarget = this._getElementByGuid(msg.currentTargetGUID);
 
-    // TODO: FIXME: need to compute proper coordinates
+    // TODO: FIXME:
+    // The stageX,Y mouse coordinates delivered from flash are
+    // relative to the flash object.
+    // In native implementations, mouse event coordinates are
+    // relative to the browser content viewport (clientX, clientY)
+    // and to the actual physical screen pixels (screenX, screenY).
+    // AFAICT, flash does not have access to this positioning information,
+    // so for now we provide mouse coordinates which assume the flash
+    // object is located at the viewport origin and that the viewport
+    // origin is at the screen origin, which of course is not accurate.
+    // 
+    // However, SVG developers who take no interest as to what
+    // location the SVG file has been placed within the browser viewport
+    // or screen should be OK.
+    // 
+    // This logic should remain consistent with the implementation
+    // of getScreenCTM. Native implementations implement getScreenCTM
+    // relative to the browser viewport, not the actual screen,
+    // which is confusing because that differs from screenX,Y in
+    // mouse events. In fact, getScreenCTM must be implemented consistent
+    // with clientX,clientY mouse event coordinates! There are SVG
+    // scripting examples which depend on this.
+    // In our case, that means getScreenCTM should return a transform
+    // assuming the flash object is located at the browser origin,
+    // which is what flash provides as node.transform.concatenatedMatrix
     var evt = { target: target._getProxyNode(),
                 currentTarget: currentTarget._getProxyNode(),
-                clientX: msg.screenX,
-                clientY: msg.screenY,
-                screenX: msg.screenX,
-                screenY: msg.screenY,
+                clientX: new Number(msg.stageX),
+                clientY: new Number(msg.stageY),
+                screenX: new Number(msg.stageX),
+                screenY: new Number(msg.stageY),
                 altKey: msg.altKey,
                 ctrlKey: msg.ctrlKey,
                 shiftKey: msg.shiftKey,
@@ -3845,7 +3871,15 @@ extend(_Node, {
     
     // TODO: Implement
   },
-  
+
+  getScreenCTM: function() {
+    var msg = this._handler.sendToFlash('jsGetScreenCTM', [ this._guid ]); 
+    msg = this._handler._stringToMsg(msg);
+    return new _SVGMatrix(new Number(msg.a), new Number(msg.b), new Number(msg.c),
+                          new Number(msg.d), new Number(msg.e), new Number(msg.f),
+                          this._handler);
+  },
+
   toString: function() {
     if (this.namespaceURI == svgns) {
       return '[_SVG' + this.localName.charAt(0).toUpperCase()
@@ -6589,7 +6623,6 @@ extend(_SVGSVGElement, {
   
   getBBox: function() /* SVGRect */ {},
   getCTM: function() /* SVGMatrix */ {},
-  getScreenCTM: function() /* SVGMatrix */ {},
   getTransformToElement: function(element /* SVGElement */) /* SVGMatrix */ {
     /* throws SVGException */
   },
@@ -6707,6 +6740,8 @@ extend(_SVGSVGElement, {
     flash.jsHandleLoad = callFunction('jsHandleLoad');
     flash.jsSuspendRedraw = callFunction('jsSuspendRedraw');
     flash.jsUnsuspendRedrawAll = callFunction('jsUnsuspendRedrawAll');
+    flash.jsGetScreenCTM = callFunction('jsGetScreenCTM');
+    flash.jsMatrixInvert = callFunction('jsMatrixInvert');
   },
   
   /** Relative URLs inside of SVG need to expand against something (i.e.
@@ -7004,8 +7039,9 @@ function createCharacterData(data) {
 // return standard JavaScript Arrays. For SVGAngle we also
 // just return a JS Number for now.
 
-function _SVGMatrix(a /** All Numbers */, b, c, d, e, f) {
+function _SVGMatrix(a /** All Numbers */, b, c, d, e, f, _handler) {
   this.a = a; this.b = b; this.c = c; this.d = d; this.e = e; this.f = f;
+  this._handler = _handler;
 }
 
 extend(_SVGMatrix, {
@@ -7014,7 +7050,15 @@ extend(_SVGMatrix, {
   // TODO: Implement the following methods
   
   multiply: function(secondMatrix /* _SVGMatrix */ ) {},
-  inverse: function() {},
+  inverse: function() {
+      var msg =this._handler.sendToFlash('jsMatrixInvert',
+                                [ this.a, this.b, this.c, this.d,
+                                  this.e, this.f ]);
+      msg = this._handler._stringToMsg(msg);
+      return new _SVGMatrix(new Number(msg.a), new Number(msg.b), new Number(msg.c),
+                            new Number(msg.d), new Number(msg.e), new Number(msg.f),
+                            this._handler);
+  },
   translate: function(x /* Number */, y /* Number */) {},
   scale: function(scaleFactor /* Number */) {},
   scaleNonUniform: function(scaleFactorX /* Number */, scaleFactorY /* Number */) {},
@@ -7070,24 +7114,39 @@ extend(_SVGTransform, {
 });
 
 
+function _SVGPoint(x, y) {
+  this.x = x;
+  this.y = y;
+}
+
+extend(_SVGPoint, {
+  matrixTransform: function(m) {
+    return new _SVGPoint(
+                m.a * this.x + m.c * this.y + m.e,
+                m.b * this.x + m.d * this.y + m.f);
+  }
+});
+
+// SVGPoint
+function createSVGPoint() {
+  return new _SVGPoint(0,0);
+}
+
 // the following just return object literals or other basic
 // JS types for simplicity instead of having full classes
 
 // SVGRect
-function createSVGRect(x /* float */, y /* float */, width /* float */, 
-                     height /* float */) {
-  return {x: parseFloat(x), y: parseFloat(y), 
-          width: parseFloat(width), height: parseFloat(height)};
+function createSVGRect() {
+  return {x: 0, y: 0, width: 0, height: 0};
 }
 
 
-// SVGPoint
-function createSVGPoint(x /* Number */, y /* Number */) { 
-  return {x: Number(x), y: Number(y)};
-  
-  // Note: matrixTransform method not supported
-}
 
+extend(_Node, {
+    createSVGPoint: createSVGPoint,
+    createSVGRect: createSVGRect
+});
+     
 // end SVG DOM interfaces
 
 /* 

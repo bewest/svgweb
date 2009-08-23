@@ -62,6 +62,8 @@ The 'lightWeight' attribute below is important for two reasons:
     <method name="isSupported" />
     <method name="addEventListener" />
     <method name="removeEventListener" />
+    <method name="getScreenCTM" />
+    <method name="createSVGPoint" />
     
     <!-- Internal method we use to get the HTC internal objects -->
     <method name="_getHTCDocument" />
@@ -98,6 +100,8 @@ The 'lightWeight' attribute below is important for two reasons:
   function isSupported(f, v) { return this._fakeNode.isSupported(f, v); }
   function addEventListener(t, l, u) { return this._fakeNode.addEventListener(t, l, u); }
   function removeEventListener(t, l, u) { return this._fakeNode.removeEventListener(t, l, u); }
+  function getScreenCTM() { return this._fakeNode.getScreenCTM(); }
+  function createSVGPoint() { return this._fakeNode.createSVGPoint(); }
 
   function _getNodeName() { return this._fakeNode.nodeName; }
   function _getNodeType() { return this._fakeNode.nodeType; }

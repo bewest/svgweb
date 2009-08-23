@@ -48,6 +48,7 @@ package org.svgweb
     import flash.events.IOErrorEvent;
     import flash.events.SecurityErrorEvent;
     import flash.external.ExternalInterface;
+    import flash.geom.Matrix;
     import flash.net.URLLoader;
     import flash.net.URLRequest;
     import flash.utils.setTimeout;
@@ -228,6 +229,8 @@ package org.svgweb
                 ExternalInterface.addCallback("jsSetAttribute", js_setAttribute);
                 ExternalInterface.addCallback("jsGetAttribute", js_getAttribute);
                 ExternalInterface.addCallback("jsAppendChild", js_appendChild);
+                ExternalInterface.addCallback("jsGetScreenCTM", js_getScreenCTM);
+                ExternalInterface.addCallback("jsMatrixInvert", js_matrixInvert);
             }
             catch(error:SecurityError) {
                 var debugstr:String = "Security Error on ExternalInterface.addCallback(...). ";
@@ -267,9 +270,12 @@ package org.svgweb
             // parsed and progressively rendered, without animation effects,
             // because animations may not be parsed yet. Once animations are
             // parsed, they cause new frames to be rendered. These frames
-            // should be rendered before anything is visible. Since it is
-            // difficult to determine exactly when these  frames have rendered,
-            // we just wait a "long time".
+            // should be rendered before anything is visible because the
+            // animation effects may have been scheduled to begin at time zero
+            // and rendering without them could be bad, like when objects are
+            // rendered which would be invisible if animation was working.
+            // Since it is difficult to determine exactly when the first 
+            // "correct" frames have rendered, we just wait a "long time".
             // A better solution than the 200ms delay is to figure out all the
             // elements that should be rendered with animation effects at frame
             // zero, and unhide exactly when all of these elements have
@@ -715,6 +721,51 @@ package org.svgweb
             this.isSuspended = false;
         }
 
+        public function js_getScreenCTM(msg:String):String {
+            // msg is a string delimited by __SVG__DELIMIT with fields in
+            // the following order: elementGUID
+            var args:Array = msg.split(DELIMITER);
+            var elementGUID:String = args[0];
+            
+            // Get the element to add the event listener to
+            var element:SVGNode = this.svgRoot.getNodeByGUID(elementGUID);
+
+            if (element) {
+                var m:Matrix = element.transform.concatenatedMatrix;
+                return this.msgToString({ type: 'matrix',
+                                          a: m.a, b: m.b,
+                                          c: m.c, d: m.d,
+                                          e: m.tx, f: m.ty
+                                        });
+                return retVal;
+            }
+            else {
+                this.error("getScreenCTM: GUID not found: " 
+                           + elementGUID);
+            }
+            return null;
+        }
+
+        public function js_matrixInvert(msg:String):String {
+            // msg is a string delimited by __SVG__DELIMIT with fields in
+            // the following order: a,b,c,d,e,f
+            var args:Array = msg.split(DELIMITER);
+            var a:Number = Number(args[0]);
+            var b:Number = Number(args[1]);
+            var c:Number = Number(args[2]);
+            var d:Number = Number(args[3]);
+            var e:Number = Number(args[4]);
+            var f:Number = Number(args[5]);
+
+            var m:Matrix = new Matrix(a,b,c,d,e,f);
+            m.invert();
+            return this.msgToString({ type: 'matrix',
+                                      a: m.a, b: m.b,
+                                      c: m.c, d: m.d,
+                                      e: m.tx, f: m.ty
+                                    });
+        }
+
         override public function addActionListener(eventType:String, target:Sprite):void {
             if (!target.hasEventListener(eventType)) {
                 target.addEventListener(eventType, handleAction);
@@ -758,25 +809,25 @@ package org.svgweb
 
                     switch(event.type) {
                         case MouseEvent.CLICK:
-		            scriptCode = targetNode.getAttribute('onclick');
-			    break;
+                            scriptCode = targetNode.getAttribute('onclick');
+                            break;
                         case MouseEvent.MOUSE_DOWN:
-		            scriptCode = targetNode.getAttribute('onmousedown');
-			    break;
+                            scriptCode = targetNode.getAttribute('onmousedown');
+                            break;
                         case MouseEvent.MOUSE_MOVE:
-		            scriptCode = targetNode.getAttribute('onmousemove');
-			    break;
+                            scriptCode = targetNode.getAttribute('onmousemove');
+                            break;
                         case MouseEvent.MOUSE_OUT:
-		            scriptCode = targetNode.getAttribute('onmouseout');
-			    break;
+                            scriptCode = targetNode.getAttribute('onmouseout');
+                            break;
                         case MouseEvent.MOUSE_OVER:
-		            scriptCode = targetNode.getAttribute('onmouseover');
-			    break;
+                            scriptCode = targetNode.getAttribute('onmouseover');
+                            break;
                         case MouseEvent.MOUSE_UP:
-		            scriptCode = targetNode.getAttribute('onmouseup');
-			    break;
-		    }
-                    
+                            scriptCode = targetNode.getAttribute('onmouseup');
+                            break;
+                    }
+
                     try {
                         ExternalInterface.call(this.js_handler + "onMessage",
                            this.msgToString(
@@ -785,10 +836,10 @@ package org.svgweb
                                      targetGUID: targetNode.guid,
                                      currentTargetGUID: currentTargetNode.guid,
                                      eventType: event.type.toLowerCase(),
-                                     clientX: event.localX,
-                                     clientY: event.localY,
-                                     screenX: event.stageX,
-                                     screenY: event.stageY,
+                                     localX: event.localX,
+                                     localY: event.localY,
+                                     stageX: event.stageX,
+                                     stageY: event.stageY,
                                      altKey: event.altKey,
                                      ctrlKey: event.ctrlKey,
                                      shiftKey: event.shiftKey,
