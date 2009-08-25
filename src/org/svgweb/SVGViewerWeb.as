@@ -731,7 +731,7 @@ package org.svgweb
             var element:SVGNode = this.svgRoot.getNodeByGUID(elementGUID);
 
             if (element) {
-                var m:Matrix = element.transform.concatenatedMatrix;
+                var m:Matrix = element.viewBoxSprite.transform.concatenatedMatrix;
                 return this.msgToString({ type: 'matrix',
                                           a: m.a, b: m.b,
                                           c: m.c, d: m.d,
