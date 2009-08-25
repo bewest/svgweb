@@ -40,15 +40,14 @@ package org.svgweb.nodes
         }
         
         /**
-         * Normalize SVG Path Data:
-         * Place a comma between each element and number
-         * for easy data.split(',');
+         * Normalize SVG Path Data into an array we can work with.
          */
-        public function normalizeSVGData(data:String):String {
+        public function normalizeSVGData():Array {
             // NOTE: This code is very performance sensitive and was 
             // a bottleneck affecting page load; rewritten to not use
             // regular expressions as well as other tricks that were shown
-            // to be faster (like caching data.length for example).
+            // to be faster (like caching data.length, parsing right into
+            // an array instead of an intermediate string, etc.).
             // Be careful when changing this code without seeing what the
             // performance is before and after. See 
             // Issue 229 for details:
@@ -57,100 +56,64 @@ package org.svgweb.nodes
             
             //var totalTime:int = new Date().getTime();
             
+            var data:String = this._xml.@d;
             data = StringUtil.trim(data);
-                        
-            var results:String = "";
-            // basically a simple state machine for final character in
-            // results a comma
-            var prevCharComma:Boolean = true;
+            
+            // In the algorithm below, we are doing a few things. It is
+            // unfortunately complicated but it was found to be the primary
+            // bottleneck when dealing with lots of PATH statements. 
+            // We use the charCode since as a number it is much faster than
+            // dealing with strings. We test the value against the Unicode
+            // values for the numerical and alphabetical ranges for our 
+            // commands, which is fast. We also order our IF statements from
+            // most common (numbers) to least common (letter commands). Testing
+            // also paradoxically found that simply building up another 
+            // string is much faster than having an intermediate array; arrays
+            // in ActionScript are very slow, and the final split() method 
+            // is very fast at producing an array we can work with
+            var results:String = '';
             var dataLength:int = data.length; // found to be faster
             var c:String;
-            for (var i:int = 0; i < dataLength; i++) {
-                // faster to cache value current character we are looking at
-                c = data.charAt(i);
+            var code:Number;
+            var i:int = 0;
+            while (i < dataLength) {
+                code = data.charCodeAt(i);
+
+                // from most common to least common encountered
                 
-                if (c == "\n") {
-                    continue;
-                }
-                
-                // results.replace(/([MACSLHVQTZ])/sig,",$1,");
-                switch (c) {
-                    case "M": case "m": 
-                    case "A": case "a":
-                    case "C": case "c":
-                    case "S": case "s":
-                    case "L": case "l":
-                    case "H": case "h":
-                    case "V": case "v":
-                    case "Q": case "q":
-                    case "T": case "t":
-                    case "Z": case "z":
-                        c = "," + c + ",";
-                        break;
-                    case "-":
-                        if (i != 0 && data.charAt(i - 1) != 'e') {
-                            // "-" dashes denote a negative number, not a separator;
-                            // avoid e-* style numbers      
-                            // results = results.replace(/-/sg,",-"); 
-                            c = ",-";
-                        }
-                        break;
-                    case " ":
-                        // Replace spaces with a comma 
-                        // results.replace(/\s+/sg,",");
-                        c = ",";
-                        break;
-                }
-                
-                // Was the previous character a comma? Is our first character
-                // a comma? If so then ignore our new comma
-                if (prevCharComma && c.charAt(0) == ",") {
-                    if (c.length == 1) {
-                        continue;
-                    } else {
-                        c = c.substring(1);
-                    }
-                }
-                
-                // Record our state on whether our final new character
-                // is a comma
-                if (c.charAt(c.length - 1) == ",") {
-                    prevCharComma = true;
+                if ((code >= 48 && code <= 57) || code == 45 || code == 101 || code == 46) {
+                    // 0 through 9, -, e-, or .
+                    do {
+                        results += data.charAt(i);
+                        i++;
+                        code = data.charCodeAt(i);
+                    } while (((code >= 48 && code <= 57) || code == 46) && code);
+                    results += ',';
+                } else if (code == 44 || code == 32 || code == 10 || code == 13) {
+                    // just ignore delimiters since we are adding in our own
+                    // in the correct places
+                    i++;
+                } else if (code >= 65 && code <= 122) {
+                    // A-Z and a-z
+                    results += data.charAt(i) + ',';
+                    i++;
                 } else {
-                    prevCharComma = false;
+                    // unknown character
+                    i++;
                 }
-                
-                // Remove trailing comma
-                if (i == (dataLength - 1) && c.charAt(c.length - 1) == ",") {
-                    if (c.length == 1) {
-                        continue;
-                    } else {
-                        c = c.substring(0, c.length - 1);
-                    }
-                }
-                
-                results += c;
             }
             
-            //increment('new_normalizeSVGData', (new Date().getTime() - totalTime));
-
-            // old pre-optimized version
-            /*data = StringUtil.trim(origData);         
-            data = data.replace(/([MACSLHVQTZ])/sig,",$1,");    
-            data = data.replace(/e-/sg,"eneg"); // "-" dashes can be an exponent
-            data = data.replace(/-/sg,",-"); // "-" dashes denote a negative number, not a separator        
-            data = data.replace(/eneg/sg,"e-"); // "-" dashes can be an exponent
-            data = data.replace(/\s+/sg,","); //Replace spaces with a comma
-            data = data.replace(/,{2,}/sg,","); // Remove any extra commas
-            data = data.replace(/^,/, ''); //Remove leading comma
-            data = data.replace(/,$/, ''); //Remove trailing comma
-            increment('old_normalizeSVGData', (new Date().getTime() - totalTime));*/
+            // remove trailing comma, but outside of big loop above
+            if (results.charAt(results.length - 1) == ',') {
+                results = results.substring(0, results.length - 1);
+            }
             
-            return results;
+            return results.split(',');
         }
         
         protected override function generateGraphicsCommands():void {
             //var startTime:int = new Date().getTime();
+            //var pieceTime:int;
             this._graphicsCommands = new Array();
             
             var command:String;
@@ -158,13 +121,16 @@ package org.svgweb.nodes
             var lineAbs:Boolean;
             var isAbs:Boolean;
 
-            var pathData:String = this.normalizeSVGData(this._xml.@d);
-            var szSegs:Array = pathData.split(',');
+            //pieceTime = new Date().getTime();
+            var szSegs:Array = this.normalizeSVGData();
+            //increment('generateGraphicsCommands_normalizeSVGData', (new Date().getTime() - pieceTime));   
             
             this._graphicsCommands.push(['SF']);
 
             var firstMove:Boolean = true;
-            for(var pos:int = 0; pos < szSegs.length; ) {
+            var loopTime:int = new Date().getTime();
+            var szSegsLength:int = szSegs.length;
+            for(var pos:int = 0; pos < szSegsLength; ) {             
                 command = szSegs[pos++];                
                                         
                 isAbs = false;
@@ -179,9 +145,9 @@ package org.svgweb.nodes
                             firstMove = false;
                         }
                         this.moveTo(szSegs[pos++],szSegs[pos++], isAbs);
-                        while (pos < szSegs.length && !isNaN(Number(szSegs[pos]))) {
+                        while (!isNaN(Number(szSegs[pos])) && pos < szSegsLength) {
                             this.line(szSegs[pos++], szSegs[pos++], lineAbs);
-                        } 
+                        }
                         break;
                     case "A":
                         isAbs = true;
@@ -189,7 +155,7 @@ package org.svgweb.nodes
                         do {
                             this.ellipticalArc(szSegs[pos++],szSegs[pos++],szSegs[pos++],
                                                szSegs[pos++],szSegs[pos++],szSegs[pos++],szSegs[pos++],isAbs);
-                        } while (pos < szSegs.length && !isNaN(Number(szSegs[pos])));
+                        } while (!isNaN(Number(szSegs[pos])) && pos < szSegsLength);
                         break;                        
                     case "C":
                         isAbs = true;
@@ -197,55 +163,55 @@ package org.svgweb.nodes
                         do {
                             this.cubicBezier(szSegs[pos++],szSegs[pos++],szSegs[pos++],
                                              szSegs[pos++],szSegs[pos++],szSegs[pos++],isAbs);
-                        } while (pos < szSegs.length && !isNaN(Number(szSegs[pos])));
+                        } while (!isNaN(Number(szSegs[pos])) && pos < szSegsLength);
                         break;
                     case "S":
                         isAbs = true;
                     case "s":
                         do {
                             this.cubicBezierSmooth(szSegs[pos++],szSegs[pos++],szSegs[pos++],szSegs[pos++],isAbs);
-                        } while (pos < szSegs.length && !isNaN(Number(szSegs[pos])));
+                        } while (!isNaN(Number(szSegs[pos])) && pos < szSegsLength);
                         break;                        
                     case "Q":
                         isAbs = true;
                     case "q":
                         do {
                             this.quadraticBezier(szSegs[pos++],szSegs[pos++],szSegs[pos++],szSegs[pos++],isAbs);
-                        } while (pos < szSegs.length && !isNaN(Number(szSegs[pos])));
+                        } while (!isNaN(Number(szSegs[pos])) && pos < szSegsLength);
                         break;
                     case "T":
                         isAbs = true;
                     case "t":
                         do {
                             this.quadraticBezierSmooth(szSegs[pos++],szSegs[pos++],isAbs);
-                        } while (pos < szSegs.length && !isNaN(Number(szSegs[pos])));
+                        } while (!isNaN(Number(szSegs[pos])) && pos < szSegsLength);
                         break;
                     case "L":
                         isAbs = true;
                     case "l":
                         do {
                             this.line(szSegs[pos++],szSegs[pos++],isAbs);
-                        } while (pos < szSegs.length && !isNaN(Number(szSegs[pos])));
+                        } while (!isNaN(Number(szSegs[pos])) && pos < szSegsLength);
                         break;
                     case "H":
                         isAbs = true;
                     case "h":
                         do {
                             this.lineHorizontal(szSegs[pos++],isAbs);
-                        } while (pos < szSegs.length && !isNaN(Number(szSegs[pos])));
+                        } while (!isNaN(Number(szSegs[pos])) && pos < szSegsLength);
                         break;
                     case "V":
                         isAbs = true;
                     case "v":
                         do {
                             this.lineVertical(szSegs[pos++],isAbs);
-                        } while (pos < szSegs.length && !isNaN(Number(szSegs[pos])));
+                        } while (!isNaN(Number(szSegs[pos])) && pos < szSegsLength);
                         break;
                     case "Z":
                         isAbs = true;
                     case "z":
                         this.closePath();
-                        while (pos < szSegs.length && !isNaN(Number(szSegs[pos]))) {
+                        while (!isNaN(Number(szSegs[pos])) && pos < szSegsLength) {
                             this.line(szSegs[pos++], szSegs[pos++], isAbs);
                         }
                         break;            
@@ -257,6 +223,7 @@ package org.svgweb.nodes
             }        
             this._graphicsCommands.push(['EF']); 
             
+            //increment('generateGraphicsCommands_totalLoop', (new Date().getTime() - loopTime)); 
             //increment('generateGraphicsCommands_path', (new Date().getTime() - startTime));   
         }
         
