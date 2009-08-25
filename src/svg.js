@@ -1123,10 +1123,6 @@ extend(SVGWeb, {
         xml: parsed SVG as an XML object
   */
   _cleanSVG: function(svg, addMissing, normalizeWhitespace) {
-    // remove any leading whitespace from beginning and end of SVG doc
-    svg = svg.replace(/^\s*/, '');
-    svg = svg.replace(/\s*$/, '');
-        
     // expand ENTITY definitions
     // Issue 221: "DOCTYPE ENTITYs not expanded on certain 
     // browsers (safari, opera)"
@@ -1215,40 +1211,44 @@ extend(SVGWeb, {
       
       // extract CDATA sections temporarily so that we don't end up
       // adding double <__text> blocks
-      RegExp.lastIndex = 0; // reset global exec()
-      var cdataRE = /<\!\[CDATA\[/g;
-      match = cdataRE.exec(pieces[1]);
-      var cdataBlocks = [];
-      i = 0;
-      while (match && RegExp.rightContext) {
-        var startIdx = cdataRE.lastIndex - '<![CDATA['.length;
-        var context = RegExp.rightContext;
-        var endIdx = cdataRE.lastIndex + context.indexOf(']]>') + 2;
-        var section = context.substring(0, context.indexOf(']]>'));
-        
-        // save this CDATA section for later
-        section = '<![CDATA[' + section + ']]>';
-        cdataBlocks.push(section);
-        
-        // change the CDATA section into a token that we will replace later
-        var before = pieces[1].substring(0, startIdx);
-        var after = pieces[1].substring(endIdx + 1, pieces[1].length);
-        pieces[1] = before + '__SVG_CDATA_TOKEN_' + i + after;
-        
-        // find next match
+      if (pieces[1].indexOf('<![CDATA[') != -1) {
+        RegExp.lastIndex = 0; // reset global exec()
+        var cdataRE = /<\!\[CDATA\[/g;
         match = cdataRE.exec(pieces[1]);
-        i++;
+        var cdataBlocks = [];
+        i = 0;
+        while (match && RegExp.rightContext) {
+          var startIdx = cdataRE.lastIndex - '<![CDATA['.length;
+          var context = RegExp.rightContext;
+          var endIdx = cdataRE.lastIndex + context.indexOf(']]>') + 2;
+          var section = context.substring(0, context.indexOf(']]>'));
+        
+          // save this CDATA section for later
+          section = '<![CDATA[' + section + ']]>';
+          cdataBlocks.push(section);
+        
+          // change the CDATA section into a token that we will replace later
+          var before = pieces[1].substring(0, startIdx);
+          var after = pieces[1].substring(endIdx + 1, pieces[1].length);
+          pieces[1] = before + '__SVG_CDATA_TOKEN_' + i + after;
+        
+          // find next match
+          match = cdataRE.exec(pieces[1]);
+          i++;
+        }
       }
       
       // capture anything between > and < tags
       pieces[1] = pieces[1].replace(/>([^>]+)</g, 
                                     '><__text>$1</__text><');
-                                    
+      
       // re-assemble our CDATA blocks
-      for (var i = 0; i < cdataBlocks.length; i++) {
-        pieces[1] = pieces[1].replace('__SVG_CDATA_TOKEN_' + i, cdataBlocks[i]);
+      if (pieces[1].indexOf('<![CDATA[') != -1) {
+        for (var i = 0; i < cdataBlocks.length; i++) {
+          pieces[1] = pieces[1].replace('__SVG_CDATA_TOKEN_' + i, cdataBlocks[i]);
+        }
       }
-                      
+             
       // paste the pieces back together
       svg = pieces[0] + separator + pieces[1];
       for (var i = 2; i < pieces.length; i++) {
