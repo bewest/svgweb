@@ -1211,7 +1211,8 @@ extend(SVGWeb, {
       
       // extract CDATA sections temporarily so that we don't end up
       // adding double <__text> blocks
-      if (pieces[1].indexOf('<![CDATA[') != -1) {
+      var hasCData = (pieces[1].indexOf('<![CDATA[') != -1);
+      if (hasCData) {
         RegExp.lastIndex = 0; // reset global exec()
         var cdataRE = /<\!\[CDATA\[/g;
         match = cdataRE.exec(pieces[1]);
@@ -1243,7 +1244,7 @@ extend(SVGWeb, {
                                     '><__text>$1</__text><');
       
       // re-assemble our CDATA blocks
-      if (pieces[1].indexOf('<![CDATA[') != -1) {
+      if (hasCData) {
         for (var i = 0; i < cdataBlocks.length; i++) {
           pieces[1] = pieces[1].replace('__SVG_CDATA_TOKEN_' + i, cdataBlocks[i]);
         }
