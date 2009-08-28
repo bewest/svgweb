@@ -525,14 +525,10 @@ package org.svgweb.core
 
             // XXX hack because tspan x,y apparently replaces
             // the parent text x,y instead of offsetting the
-            // parent like every other node. the 'correct'
-            // calculation is commented out because it does
-            // not work currently
+            // parent like every other node.
             if (this is SVGTspanNode) {
-                this.x = 0;
-                this.y = 0;
-                //this.x = this.x - this.parent.x;
-                //this.y = this.y - this.parent.y;
+                this.x = this.x - this.getSVGParent().getAttribute('x',0);
+                this.y = this.y - this.getSVGParent().getAttribute('y',0);
             }
             
             this.loadAttribute('rotate', 'rotation');
