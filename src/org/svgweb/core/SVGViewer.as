@@ -23,7 +23,7 @@ package org.svgweb.core
         public var isSuspended:Boolean = false;
 
         protected var urlLoader:URLLoader;
-        private var context:ContextMenu;
+        protected var context:ContextMenu;
 
         public function SVGViewer() {
             customizeContextMenu();

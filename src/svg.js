@@ -2508,6 +2508,9 @@ extend(FlashHandler, {
     } else if (msg.type == 'script') {
       this._onObjectScript(msg);
       return;
+    } else if (msg.type == 'viewsource') {
+      this._onViewSource(msg);
+      return;
     } else if (msg.type == 'error') {
       this._onFlashError(msg);
     }
@@ -2664,6 +2667,35 @@ extend(FlashHandler, {
     
     // batch for later execution
     this._svgObject._scriptsToExec.push(msg.script);
+  },
+
+  /** View XML source for svg. Invoked from flash context menu. */
+  _onViewSource: function(msg) {
+
+    // Add xml tag if not present
+    if (msg.source.indexOf('<?xml') == -1) {
+        msg.source='<?xml version="1.0"?>\n' + msg.source;
+    }
+    // Remove svg web artifacts
+    msg.source=msg.source.replace(/<svg:([^ ]+) /g,'<$1 ');
+    msg.source=msg.source.replace(/<\/svg:([^>]+)>/g,'<\/$1>');
+    msg.source=msg.source.replace(/\n\s*<__text[^\/]*\/>/gm,'');
+    msg.source=msg.source.replace(/<__text[^>]*>([^<]*)<\/__text>/gm,'$1');
+    msg.source=msg.source.replace(/<__text[^>]*>/g,'');
+    msg.source=msg.source.replace(/<\/__text>/g,'');
+    msg.source=msg.source.replace(/ __guid="[^"]*"/g,'');
+    msg.source=msg.source.replace(/ id="__svg__random__[^"]*"/g,'');
+    msg.source=msg.source.replace(/>\n\n/g,'>\n');
+
+    // Escape tags
+    msg.source=msg.source.replace(/>/g,'&gt;');
+    msg.source=msg.source.replace(/</g,'&lt;');
+
+    // Place source in a new window
+    var viewSrcWin = window.open('', '_blank');
+    viewSrcWin.document.write('<body><pre>' + msg.source +
+                                   '</pre></body>');
+    viewSrcWin.document.close();
   }
 });
 

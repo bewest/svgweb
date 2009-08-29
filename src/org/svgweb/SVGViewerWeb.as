@@ -47,10 +47,13 @@ package org.svgweb
     import flash.events.MouseEvent;
     import flash.events.IOErrorEvent;
     import flash.events.SecurityErrorEvent;
+    import flash.events.ContextMenuEvent;
     import flash.external.ExternalInterface;
     import flash.geom.Matrix;
     import flash.net.URLLoader;
     import flash.net.URLRequest;
+    import flash.ui.ContextMenu;
+    import flash.ui.ContextMenuItem;
     import flash.utils.setTimeout;
 
     [SWF(frameRate="40", width="2048", height="1024")]
@@ -65,6 +68,7 @@ package org.svgweb
         protected var svgIdParam:String = "";
         public var scaleModeParam:String = "showAll_svg";
         protected var scriptSentToJS:Boolean = false;
+        protected var xmlString:String;
 
         protected var renderStartTime:Number;
         protected var debugEnabled:Boolean = true;
@@ -150,18 +154,19 @@ package org.svgweb
          * Load methods.
          **/
 
-        protected function setSVGString(xmlString:String, objectURL:String = '', pageURL:String = '',
+        protected function setSVGString(xmlStringParam:String, objectURL:String = '', pageURL:String = '',
                                         ignoreWhiteSpace:Boolean = false):void {
             //start('setSVGString');
             // FIXME: TODO: Respect the ignoreWhiteSpace setting
-            var dataXML:XML = new XML(SVGViewerWeb.expandEntities(xmlString));
+            this.xmlString = SVGViewerWeb.expandEntities(xmlStringParam);
+            var dataXML:XML = new XML(this.xmlString);
             while(this.numChildren) {
                 this.removeChildAt(0);
             }
             svgRoot = new SVGSVGNode(null, dataXML, this, null, objectURL, pageURL);
             // See comment in handleRootSVGLoad()
-            if (   (xmlString.indexOf("<animate") != -1)
-                || (xmlString.indexOf("<set") != -1) ) {
+            if (   (this.xmlString.indexOf("<animate") != -1)
+                || (this.xmlString.indexOf("<set") != -1) ) {
                 this.visible = false;
             }
             this.addActionListener(SVGEvent.SVGLoad, svgRoot);
@@ -240,7 +245,29 @@ package org.svgweb
                 this.debug(debugstr);
             }
         }
-        
+
+        override public function customizeContextMenu():void {
+            super.customizeContextMenu();
+            var itemViewSource:ContextMenuItem = new ContextMenuItem("View SVG Source");
+            itemViewSource.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, viewSource);
+            this.contextMenu.customItems.push(itemViewSource);
+
+            var outerthis:SVGViewerWeb = this;
+            function viewSource():void {
+                try {
+                    ExternalInterface.call(outerthis.js_handler + "onMessage",
+                                           outerthis.msgToString(
+                                                         { type: 'viewsource',
+                                                           source: outerthis.xmlString
+                                                         } 
+                                           ));
+                }
+                catch(error:SecurityError) {
+                }
+
+            }
+        }
+       
         /**
          * Stringifies the object we send back and forth between Flash and JavaScript.
          * Performance testing found that sending strings between Flash and JS is
