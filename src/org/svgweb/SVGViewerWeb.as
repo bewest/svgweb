@@ -255,10 +255,11 @@ package org.svgweb
             var outerthis:SVGViewerWeb = this;
             function viewSource():void {
                 try {
+                    var parsedXML:XML = new XML(outerthis.xmlString);
                     ExternalInterface.call(outerthis.js_handler + "onMessage",
                                            outerthis.msgToString(
                                                          { type: 'viewsource',
-                                                           source: outerthis.xmlString
+                                                           source: parsedXML.toString()
                                                          } 
                                            ));
                 }
