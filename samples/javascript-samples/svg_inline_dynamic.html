@@ -4,24 +4,10 @@
 
  <head>
 
-   <script src="../../src/svg.js" data-path="../../src/" data-debug="true"></script>
+   <script src="../../src/svg.js" data-path="../../src/"></script>
    
    <script>
      svgweb.addOnLoad(function() {
-       console.log('Developers window.onload');
-       var svgNS = 'http://www.w3.org/2000/svg';
-       
-       // make sure setting and getting attributes in various ways works
-       var rect = document.getElementById('myRect');
-       console.log('rect.stroke-width='+rect.getAttribute('stroke-width'));
-       rect.setAttribute('stroke-width', '15px');
-       console.log('rect.stroke-width after setting (should be 15px)='+rect.getAttribute('stroke-width'));
-       console.log('rect.style.strokeWidth='+rect.style.strokeWidth);
-       console.log('setting rect.style.strokeWidth to 20px');
-       rect.style.strokeWidth = '20px';
-       console.log('rect.style.strokeWidth after setting through style property '
-                    + '(should be 20px)='+rect.style.strokeWidth);                  
-                    
        // use some JavaScript to animate the rectangles over and over
        window._counter = 1;
        window.setInterval(function() {
@@ -34,7 +20,7 @@
          }
 
          rect.setAttribute('fill', fill);
-         var svg = document.getElementsByTagNameNS(svgNS, 'svg')[1];
+         var svg = document.getElementsByTagNameNS(svgns, 'svg')[0];
          rect = svg.childNodes[0];
          if (window._counter % 2 == 0) {
            fill = 'blue';

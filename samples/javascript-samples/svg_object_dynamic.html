@@ -8,20 +8,7 @@
    
    <script>
      svgweb.addOnLoad(function() {
-       console.log('Developers window.onload');
-
-       var doc = document.getElementById('mySVG').contentDocument;
-       
-       // make sure setting and getting attributes in various ways works
-       var rect = doc.getElementById('myRect');
-       console.log('rect.stroke-width='+rect.getAttribute('stroke-width'));
-       rect.setAttribute('stroke-width', '15px');
-       console.log('rect.stroke-width after setting (should be 15px)='+rect.getAttribute('stroke-width'));
-       console.log('rect.style.strokeWidth='+rect.style.strokeWidth);
-       console.log('setting rect.style.strokeWidth to 20px');
-       rect.style.strokeWidth = '20px';
-       console.log('rect.style.strokeWidth after setting through style property '
-                    + '(should be 20px)='+rect.style.strokeWidth);                  
+       var doc = document.getElementById('mySVG').contentDocument;                
                     
        // use some JavaScript to animate the rectangles over and over
        window._counter = 1;
@@ -35,7 +22,7 @@
          }
          rect.setAttribute('fill', fill);
          
-         rect = doc.getElementsByTagNameNS(SVGNS, 'rect')[0];
+         rect = doc.getElementsByTagNameNS(svgns, 'rect')[0];
          if (window._counter % 2 == 0) {
            fill = 'blue';
          } else {
@@ -53,6 +40,16 @@
    
    <h1>Tests embedding SVG using an OBJECT tag, and manipulating it through
         JavaScript</h1>
+        
+   <!--[if IE]>
+   <object id="mySVG" src="../svg-files/mysvg.svg" classid="image/svg+xml"
+           width="250" height="150">
+   <![endif]-->
+   <!--[if !IE]>-->
+   <object id="mySVG" data="../svg-files/mysvg.svg" type="image/svg+xml" 
+           width="250" height="150">
+   <!--<![endif]-->
+   </object>
 
  </body>
 </html>
