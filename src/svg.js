@@ -1306,9 +1306,9 @@ extend(SVGWeb, {
       @param script SCRIPT node to get the SVG from. */
   _processSVGScript: function(script) {
     //console.log('processSVGScript, script='+script);
-    var svg = script.innerHTML;
-    var results = this._cleanSVG(svg, true, true);
-    svg = results.svg;
+    var origSVG = script.innerHTML;
+    var results = this._cleanSVG(origSVG, true, true);
+    var svg = results.svg;
     var xml = results.xml;
     var rootID = xml.documentElement.getAttribute('id');
     var rootOnload = xml.documentElement.getAttribute('onload');
@@ -1356,6 +1356,7 @@ extend(SVGWeb, {
                                      svgID: rootID,
                                      xml: xml, 
                                      svgString: svg,
+                                     origSVG: origSVG,
                                      scriptNode: script,
                                      finishedCallback: finishedCallback});
 
@@ -1947,6 +1948,9 @@ FlashInfo.prototype = {
     svgID - A unique ID for the SVG root tag.
     xml - XML Document object for parsed SVG.
     svgString - The SVG content as a String.
+    origSVG - The original, pre-cleaned up SVG. Useful so that we can
+    provide the original SVG for 'View Source' functionality. Only used
+    by the FlashHandler.
     scriptNode - The DOM element for the SVG SCRIPT block.
     finishedCallback - Called when we are done loading and rendering the
     SVG inside of the Flash player; called with two arguments, the svgID
@@ -1978,6 +1982,7 @@ function FlashHandler(args) {
     this.id = args.svgID;
     this._xml = args.xml;
     this._svgString = args.svgString;
+    this._origSVG = args.origSVG;
     this._scriptNode = args.scriptNode;
     this._handleScript();
   } else if (this.type == 'object') {
@@ -2483,7 +2488,7 @@ extend(FlashHandler, {
       this._onObjectScript(msg);
       return;
     } else if (msg.type == 'viewsource') {
-      this._onViewSource(msg);
+      this._onViewSource();
       return;
     } else if (msg.type == 'error') {
       this._onFlashError(msg);
@@ -2644,32 +2649,20 @@ extend(FlashHandler, {
   },
 
   /** View XML source for svg. Invoked from flash context menu. */
-  _onViewSource: function(msg) {
+  _onViewSource: function() {
+    var origSVG = this._origSVG;
 
-    // Add xml tag if not present
-    if (msg.source.indexOf('<?xml') == -1) {
-        msg.source='<?xml version="1.0"?>\n' + msg.source;
+    if (!origSVG) { // dynamically created SVG objects and roots
+      origSVG = 'SVG Source Not Available';
     }
-    // Remove svg web artifacts
-    msg.source=msg.source.replace(/<svg:([^ ]+) /g,'<$1 ');
-    msg.source=msg.source.replace(/<\/svg:([^>]+)>/g,'<\/$1>');
-    msg.source=msg.source.replace(/\n\s*<__text[^\/]*\/>/gm,'');
-    msg.source=msg.source.replace(/<__text[^>]*>([^<]*)<\/__text>/gm,'$1');
-    msg.source=msg.source.replace(/<__text[^>]*>/g,'');
-    msg.source=msg.source.replace(/<\/__text>/g,'');
-    msg.source=msg.source.replace(/ __guid="[^"]*"/g,'');
-    msg.source=msg.source.replace(/ id="__svg__random__[^"]*"/g,'');
-    msg.source=msg.source.replace(/>\n\n/g,'>\n');
+    
+    // escape tags
+    origSVG = origSVG.replace(/>/g,'&gt;').replace(/</g,'&lt;');
 
-    // Escape tags
-    msg.source=msg.source.replace(/>/g,'&gt;');
-    msg.source=msg.source.replace(/</g,'&lt;');
-
-    // Place source in a new window
-    var viewSrcWin = window.open('', '_blank');
-    viewSrcWin.document.write('<body><pre>' + msg.source +
-                                   '</pre></body>');
-    viewSrcWin.document.close();
+    // place source in a new window
+    var w = window.open('', '_blank');
+    w.document.write('<html><body><pre>' + origSVG + '</pre></body></html>');
+    w.document.close();
   }
 });
 
@@ -2683,6 +2676,9 @@ extend(FlashHandler, {
     svgID - A unique ID for the SVG root tag.
     xml - XML Document object for parsed SVG.
     svgString - The SVG content as a String.
+    origSVG - The original, pre-cleaned up SVG. Useful so that we can
+    provide the original SVG for 'View Source' functionality. Only used
+    by the FlashHandler.
     scriptNode - The DOM element for the SVG SCRIPT block.
     finishedCallback - Called when we are done loading and rendering the
     SVG; called with two arguments, the svgID that was just rendered and 
@@ -5599,6 +5595,7 @@ function _SVGObject(svgNode, handler) {
     // success function
     hitch(this, function(svgStr) {
       // clean up and parse our SVG
+      this._handler._origSVG = svgStr;
       var results = svgweb._cleanSVG(svgStr, true, false);
       this._svgString = results.svg;
       this._xml = results.xml;
