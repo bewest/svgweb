@@ -5599,7 +5599,7 @@ function _SVGObject(svgNode, handler) {
     // success function
     hitch(this, function(svgStr) {
       // clean up and parse our SVG
-      var results = svgweb._cleanSVG(svgStr, false, false);
+      var results = svgweb._cleanSVG(svgStr, true, false);
       this._svgString = results.svg;
       this._xml = results.xml;
 
