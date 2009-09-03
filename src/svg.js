@@ -493,7 +493,7 @@ function guid() {
   Gets exposed globally as 'svgweb'.
 */
 function SVGWeb() {
-  start('SVGWeb_constructor');
+  //start('SVGWeb_constructor');
   // grab any configuration that might exist on where our library resources
   // are
   this.libraryPath = this._getLibraryPath();
@@ -515,7 +515,7 @@ function SVGWeb() {
   
   // wait for our page's DOM content to be available
   this._initDOMContentLoaded();
-  end('SVGWeb_constructor');
+  //end('SVGWeb_constructor');
 }
 
 extend(SVGWeb, {
@@ -880,7 +880,7 @@ extend(SVGWeb, {
   /** Fires when the DOM content of the page is ready to be worked with. */
   _onDOMContentLoaded: function() {
     //console.log('onDOMContentLoaded');
-    start('DOMContentLoaded');
+    //start('DOMContentLoaded');
     
     // quit if this function has already been called
     if (arguments.callee.done) {
@@ -964,7 +964,7 @@ extend(SVGWeb, {
       // handler._svgObjects array
       this._svgObjects[i]._objID = objID;
     }
-    end('DOMContentLoaded');
+    //end('DOMContentLoaded');
     
     // wait until all of them have done their work, then fire onload
   },
@@ -1123,22 +1123,6 @@ extend(SVGWeb, {
         xml: parsed SVG as an XML object
   */
   _cleanSVG: function(svg, addMissing, normalizeWhitespace) {
-    // expand ENTITY definitions
-    // Issue 221: "DOCTYPE ENTITYs not expanded on certain 
-    // browsers (safari, opera)"
-    // http://code.google.com/p/svgweb/issues/detail?id=221
-    // NOTE: entity expansion is performance sensitive; see 
-    // Issue 218 for details 
-    // (http://code.google.com/p/svgweb/issues/detail?id=218)
-    RegExp.lastIndex = 0;
-    var match;
-    var entityRE = /<!ENTITY\s+(\S+)\s+"([^"]*)"/g;
-    while ((match = entityRE.exec(svg)) != null) {
-      var entityName = RegExp.$1;
-      var entityValue = RegExp.$2;
-      svg = svg.replace('&' + entityName + ';', entityValue);
-    }
-    
     if (addMissing) {
       // add any missing things (XML declaration, SVG namespace, etc.)
       if (/\<\?xml/m.test(svg) == false) { // XML declaration
@@ -1162,6 +1146,27 @@ extend(SVGWeb, {
       if (/xmlns:[^=]+=['"]http:\/\/www\.w3\.org\/1999\/xlink['"]/.test(svg) == false) {
         svg = svg.replace('<svg', '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
       }
+    }
+    
+    // remove leading whitespace before XML declaration
+    if (svg.charAt(0) != '<') {
+      svg = svg.replace(/\s*<\?xml/, '<?xml');
+    }
+    
+    // expand ENTITY definitions
+    // Issue 221: "DOCTYPE ENTITYs not expanded on certain 
+    // browsers (safari, opera)"
+    // http://code.google.com/p/svgweb/issues/detail?id=221
+    // NOTE: entity expansion is performance sensitive; see 
+    // Issue 218 for details 
+    // (http://code.google.com/p/svgweb/issues/detail?id=218)
+    RegExp.lastIndex = 0;
+    var match;
+    var entityRE = /<!ENTITY\s+(\S+)\s+"([^"]*)"/g;
+    while ((match = entityRE.exec(svg)) != null) {
+      var entityName = RegExp.$1;
+      var entityValue = RegExp.$2;
+      svg = svg.replace('&' + entityName + ';', entityValue);
     }
     
     if (normalizeWhitespace) {
@@ -1571,40 +1576,9 @@ extend(SVGWeb, {
       root.style.setProperty = null;
       root.style.getPropertyValue = null;
       
-      // clean up our hidden HTML DOM and our Flash object
-      var flashObj = svgweb.handlers[i].flash;
-      flashObj.jsSetAttribute
-            = flashObj.jsGetAttribute
-            = flashObj.jsAddEventListener
-            = flashObj.jsInsertBefore
-            = flashObj.jsAddChildAt
-            = flashObj.jsRemoveChild
-            = flashObj.jsSetText
-            = flashObj.jsAppendChild
-            = flashObj.jsHandleLoad
-            = flashObj.jsSuspendRedraw
-            = flashObj.jsUnsuspendRedrawAll
-            = flashObj.jsGetScreenCTM
-            = flashObj.jsMatrixInvert
-            = null;
-      flashObj.parentNode.removeChild(flashObj);
-      
-      // FIXME: Can crash IE 7 under the following conditions:
-      // *) Load the test_js1.html file
-      // *) Wait until the final window.setTimeout call has finished running,
-      // displaying 'All Tests Passed'.
-      // *) Navigate away from the page
-      // Not sure if a workaround is possible; I don't think this contributes
-      // to memory leaks anyway; commenting out
-      /*var html = root._getHTCDocument().getElementsByTagName('html')[0];
-      html.parentNode.removeChild(html);*/
-      
       // delete object references
       root._fakeNode._htcNode = null;
       root._fakeNode = null;
-      root._realParentNode = null;
-      root._realPreviousSibling = null;
-      root._realNextSibling = null;
       root._handler = null;
       
       root = null;
@@ -3366,16 +3340,8 @@ function _Node(nodeName, nodeType, prefix, namespaceURI, nodeXML, handler,
   } else if (isIE && this.nodeType != _Node.DOCUMENT_NODE) {
     // If we are IE, we must use a behavior in order to get onpropertychange
     // and override core DOM methods. We only do this for normal SVG elements
-    // and DocumentFragments and not for the DOCUMENT element. For the SVG 
-    // root element, we only create our HTC node here if we are being embedded 
-    // with an SVG OBJECT element; SVG SCRIPT elements override the normal 
-    // process here and do their embedding in the _SVGSVGElement class itself 
-    // later on.
-    if (this.nodeName == 'svg' && this._handler.type == 'script') {
-      // do nothing; _SVGSVGElement will do the HTC node handling in this case
-    } else { // everything else
-      this._createHTC();
-    }
+    // and DocumentFragments and not for the DOCUMENT element.
+    this._createHTC();
   }
 }
 
@@ -3970,13 +3936,7 @@ extend(_Node, {
     
     // are we the root SVG node when being embedded by an SVG SCRIPT?
     if (this.nodeName == 'svg' && this._handler.type == 'script') {
-      if (this._htcNode) { // IE
-        // we stored the realParentNode in the _SVGSVGElement constructor
-        // when we created the SVG root
-        return this._htcNode._realParentNode;
-      } else { // other browsers
-        return this._handler.flash;
-      }
+      return this._handler.flash.parentNode;
     } else if (this.nodeName == 'svg' && this._handler.type == 'object') {
       // if we are the root SVG node and are embedded by an SVG OBJECT, then
       // our parent is a #document object
@@ -4034,13 +3994,15 @@ extend(_Node, {
     
     // are we the root SVG object when being embedded by an SVG SCRIPT?
     if (this.nodeName == 'svg' && this._handler.type == 'script') {
-      if (this._htcNode) { // IE
-        // we stored the realPreviousSibling in the _SVGSVGElement constructor
-        // when we created the SVG root, otherwise this._htcNode.previousSibling
-        // will recursively call ourselves infinitely!
-        return this._htcNode._realPreviousSibling;
-      } else { // other browsers
-        return this._handler.flash.previousSibling;
+      var sibling = this._handler.flash.previousSibling;
+      // is our previous sibling also an SVG object?
+      if (sibling && sibling.nodeType == 1 && sibling.className 
+          && sibling.className.indexOf('embedssvg') != -1) {
+        var rootID = sibling.getAttribute('id').replace('_flash', '');
+        var node = svgweb.handlers[rootID].document.documentElement;
+        return node._getProxyNode();
+      } else {
+        return sibling;
       }
     }
     
@@ -4065,13 +4027,16 @@ extend(_Node, {
       
     // are we the root SVG object when being embedded by an SVG SCRIPT?
     if (this.nodeName == 'svg' && this._handler.type == 'script') {
-      if (this._htcNode) { // IE
-        // we stored the realNextSibling in the _SVGSVGElement constructor
-        // when we created the SVG root, otherwise this._htcNode.nextSibling
-        // will recursively call ourselves infinitely!
-        return this._htcNode._realNextSibling;
-      } else { // other browsers
-        return this._handler.flash.nextSibling;
+      var sibling = this._handler.flash.nextSibling;
+      
+      // is our previous sibling also an SVG object?
+      if (sibling && sibling.nodeType == 1 && sibling.className 
+          && sibling.className.indexOf('embedssvg') != -1) {
+        var id = sibling.getAttribute('id').replace('_flash', '');
+        var node = this._handler.document._nodeById['_' + id];
+        return node._getProxyNode();
+      } else {
+        return sibling;
       }
     }
     
@@ -4255,9 +4220,11 @@ extend(_Node, {
     }
   },
   
-  // if we are IE, we must use a behavior in order to get onpropertychange
-  // and override core DOM methods
+  /** If we are IE, we must use an HTC behavior in order to get onpropertychange
+      and override core DOM methods. */
   _createHTC: function() {
+    //console.log('createHTC');
+    
     // we store our HTC nodes into a hidden container located in the
     // BODY of the document; either get it now or create one on demand
     if (!this._htcContainer) {
@@ -5587,6 +5554,10 @@ function _SVGObject(svgNode, handler) {
   this._svgNode = svgNode;
   this._scriptsToExec = [];
   
+  // flags to know when the SWF file (and on IE the HTC file) are done loading
+  this._htcLoaded = false;
+  this._swfLoaded = false;
+  
   // handle any onload event listeners that might be present for
   // dynamically created OBJECT tags; this._svgNode._listeners is an array 
   // we expose through our custom document.createElement('object', true) -- 
@@ -5605,6 +5576,11 @@ function _SVGObject(svgNode, handler) {
       };
     })(this._handler, this._svgNode._listeners[i]); // pass values into function
     svgweb.addOnLoad(wrappedListener);
+  }
+  
+  // start fetching the HTC file in the background
+  if (isIE) {
+    this._loadHTC();
   }
   
   // fetch the SVG URL now and start processing.
@@ -5637,8 +5613,7 @@ function _SVGObject(svgNode, handler) {
       this._savedParams = this._getPARAMs(this._svgNode);
       
       // now insert the Flash
-      var inserter = new FlashInserter('object', document, 
-                                       this._xml.documentElement,
+      var inserter = new FlashInserter('object', this._xml.documentElement,
                                        this._svgNode, this._handler);
 
       // wait for Flash to finish loading; see _onFlashLoaded() in this class
@@ -5683,6 +5658,33 @@ extend(_SVGObject, {
     console.log('onError (fallback), error='+error);
     // TODO!!!
   },
+  
+  _loadHTC: function() {
+    // if IE, force the HTC file to asynchronously load with a dummy element;
+    // we want to do the async operation now so that external API users don't 
+    // get hit with the async nature of the HTC file first loading when they
+    // make a sync call; we will send the SVG over to the Flash _after_ the
+    // HTC file is done loading.
+    this._dummyNode = document.createElement('svg:__force__load');
+    this._dummyNode._handler = this._handler;
+    
+    // find out when the content is ready
+    // NOTE: we do this here instead of inside the HTC file using an
+    // internal oncontentready event in order to make the HTC file faster
+    // and use less memory. Note also that 'oncontentready' is not available 
+    // outside HTC files, only 'onreadystatechange' is available.
+    this._readyStateListener = hitch(this, this._onHTCLoaded); // cleanup later
+    this._dummyNode.attachEvent('onreadystatechange', 
+                                this._readyStateListener);
+    
+    var head = document.getElementsByTagName('head')[0];
+    // NOTE: as _soon_ as we append the dummy element the HTC file will
+    // get called, branching control, so code after this call will not
+    // get run in the sequence expected
+    head.appendChild(this._dummyNode);
+    
+    // wait for HTC to load
+  },
     
   _onFlashLoaded: function(msg) {
     //console.log('_SVGObject, onFlashLoaded, msg='+this._handler.debugMsg(msg));
@@ -5706,43 +5708,24 @@ extend(_SVGObject, {
     // expose top and parent attributes on Flash OBJECT
     this._handler.flash.top = this._handler.flash.parent = window;
     
-    // if not IE, send the SVG string over to Flash
-    if (!isIE) {
-      this._handler.sendToFlash('jsHandleLoad',
-                                [ /* objectURL */ this._getRelativeTo('object'),
-                                  /* pageURL */ this._getRelativeTo('page'),
-                                  /* objectWidth */ this._handler._explicitWidth,
-                                  /* objectHeight */ this._handler._explicitHeight,
-                                  /* ignoreWhiteSpace */ false,
-                                  /* svgString */ this._svgString ]);
-    } else {
-      // if IE, force the HTC file to asynchronously load with a dummy element;
-      // we want to do the async operation now so that external API users don't 
-      // get hit with the async nature of the HTC file first loading when they
-      // make a sync call; we will send the SVG over to the Flash _after_ the
-      // HTC file is done loading.
-      this._dummyNode = document.createElement('svg:__force__load');
-      this._dummyNode._handler = this._handler;
-      
-      // find out when the content is ready
-      // NOTE: we do this here instead of inside the HTC file using an
-      // internal oncontentready event in order to make the HTC file faster
-      // and use less memory. Note also that 'oncontentready' is not available 
-      // outside HTC files, only 'onreadystatechange' is available.
-      this._readyStateListener = hitch(this, this._onHTCLoaded); // cleanup later
-      this._dummyNode.attachEvent('onreadystatechange', 
-                                  this._readyStateListener);
-      
-      var head = document.getElementsByTagName('head')[0];
-      // NOTE: as _soon_ as we append the dummy element the HTC file will
-      // get called, branching control, so code after this call will not
-      // get run in the sequence expected
-      head.appendChild(this._dummyNode);
+    // flag that the SWF is loaded; if not IE, send everything over to Flash;
+    // if IE, make sure the HTC file is done loading
+    this._swfLoaded = true;
+    if (!isIE || this._htcLoaded) {
+      this._onEverythingLoaded();
     }
   },
   
   _onHTCLoaded: function() {
     //console.log('_SVGObject, onHTCLoaded');
+    
+    // We added a 'dummy' HTC node to the page when we first instantiated our
+    // _SVGObject; this was so that the HTC part of the architecture is primed
+    // and loaded and ready to go, so later on when someone does a 
+    // synchronous createElement() to create an SVG node the HTC behavior is
+    // already loaded and ready to do it's magic. Now that the HTC file is 
+    // loaded we want to remove the dummy element created earlier.
+    
     // can't use htcNode.parentNode to get the parent and remove the child
     // since we override that inside svg.htc
     var head = document.getElementsByTagName('head')[0];
@@ -5755,7 +5738,16 @@ extend(_SVGObject, {
     this._dummyNode = null;
     head = null;
     
-    // send the SVG string over to Flash
+    // flag that we are loaded; send things over to Flash if the SWF is loaded
+    this._htcLoaded = true;
+    if (this._swfLoaded) {
+      this._onEverythingLoaded();
+    }
+  },
+  
+  _onEverythingLoaded: function() {
+    //console.log('_SVGObject, onEverythingLoaded');
+    
     this._handler.sendToFlash('jsHandleLoad',
                               [ /* objectURL */ this._getRelativeTo('object'),
                                 /* pageURL */ this._getRelativeTo('page'),
@@ -6137,37 +6129,29 @@ extend(_SVGWindow, {
 
 /** Utility helper class that will generate the correct HTML for a Flash
     OBJECT and embed it into a page. Broken out so that both _SVGObject
-    and _SVGSVGElement can use it in different contexts (i.e. _SVGObject
-    will directly embed the Flash onto a page to simulate and SVG OBJECT tag,
-    while _SVGSVGElement will do various tricks to emulate the SVG being
-    directly embedded into HTML markup.
+    and _SVGSVGElement can use it in different contexts.
     
     @param embedType Either the string 'script' when embedding SVG into
     a page using the SCRIPT tag or 'object' if embedding SVG into a page
     using the OBJECT tag.
-    @param doc The document object to use. Used for embedType of 'script' so
-    that we can embed either into the actual page or into an HTC element's
-    shadow DOM (see _insertFlash() method inside of svg.htc for details).
     @param nodeXML The parsed XML for the root SVG element, used for sizing,
     background, color, etc.
     @param replaceMe If embedType is 'script', this is the SCRIPT node to
     replace. If embedType is 'object', then this is the SVG OBJECT node.
     @param handler The FlashHandler that will be associated with this Flash
     object.
-    @param htcNode Optional. If present, this is the HTC node for Internet
-    Explorer pointing to the SVG root element. Used when embedType is 'script'.
   */
-function FlashInserter(embedType, doc, nodeXML, replaceMe, handler, htcNode) {
+function FlashInserter(embedType, nodeXML, replaceMe, handler) {
   this._embedType = embedType;
   this._nodeXML = nodeXML;
   this._replaceMe = replaceMe;
   this._handler = handler;
   
-  this._setupFlash(doc, htcNode);
+  this._setupFlash();
 }
 
 extend(FlashInserter, {
-  _setupFlash: function(doc, htcNode) {
+  _setupFlash: function() {
     // determine various information we need to display this object
     var size = this._determineSize();  
     var background = this._determineBackground();
@@ -6189,156 +6173,58 @@ extend(FlashInserter, {
     
     // get a Flash object and insert it into our document
     var flash = this._createFlash(size, elementID, background, style, 
-                                  className, doc);
-    if (isIE) {
-      this._insertFlashIE(flash, size, background, style, className, htcNode,
-                          doc);
-    } else {
-      this._insertFlash(flash);
-    }
+                                  className);
+    this._insertFlash(flash);
     
     // wait for the Flash file to finish loading
   },
   
-  /** Inserts the Flash object into the page for all non-IE browsers.
+  /** Inserts the Flash object into the page.
   
       @param flash Flash HTML string.
       
       @returns The Flash DOM object. */
   _insertFlash: function(flash) {
-    // do a trick to turn the Flash HTML string into an actual DOM object
-    // unfortunately this doesn't work on IE; on IE the Flash is immediately
-    // loaded when we do div.innerHTML even though we aren't attached
-    // to the document!
-    var div = document.createElement('div');
-    div.innerHTML = flash;
-    var flashObj = div.childNodes[0];
-    div.removeChild(flashObj);
+    if (!isIE) {
+      // do a trick to turn the Flash HTML string into an actual DOM object
+      // unfortunately this doesn't work on IE; on IE the Flash is immediately
+      // loaded when we do div.innerHTML even though we aren't attached
+      // to the document!
+      var div = document.createElement('div');
+      div.innerHTML = flash;
+      var flashObj = div.childNodes[0];
+      div.removeChild(flashObj);
     
-    // at this point we have the OBJECT tag; ExternalInterface communication
-    // won't work on Firefox unless we get the EMBED tag itself
-    for (var i = 0; i < flashObj.childNodes.length; i++) {
-      var check = flashObj.childNodes[i];
-      if (check.nodeName.toUpperCase() == 'EMBED') {
-        flashObj = check;
-        break;
+      // at this point we have the OBJECT tag; ExternalInterface communication
+      // won't work on Firefox unless we get the EMBED tag itself
+      for (var i = 0; i < flashObj.childNodes.length; i++) {
+        var check = flashObj.childNodes[i];
+        if (check.nodeName.toUpperCase() == 'EMBED') {
+          flashObj = check;
+          break;
+        }
       }
-    }
-    // now insert the EMBED tag into the document
-    this._replaceMe.parentNode.replaceChild(flashObj, this._replaceMe);
+      // now insert the EMBED tag into the document
+      this._replaceMe.parentNode.replaceChild(flashObj, this._replaceMe);
     
-    return flashObj;
-  },
-  
-  /** For SVG OBJECTs, we have to replace the OBJECT with a Flash one. We
-      have to do this on IE differently than for other browsers primarily
-      because as _soon_ as we call innerHTML or outerHTML with our Flash
-      string control immediately leaves us and asynchronously starts 
-      initializing the Flash control, so we have to do the outerHTML
-      assignment last. */
-  _insertFlashIE: function(flash, size, background, style, className, htcNode,
-                           htcDoc) {
-    if (this._embedType == 'object') {
-      // Note: as _soon_ as we make this call the Flash will load, even
+      return flashObj;
+    } else { // IE
+      // NOTE 1: as _soon_ as we make this call the Flash will load, even
       // before the rest of this method has finished. The Flash can
       // therefore finish loading before anything after the next statement
       // has run, so be careful of timing bugs.
-      this._replaceMe.outerHTML = flash;
-    } else if (this._embedType == 'script') {
-      // apply width and height
-      htcNode.style.width = size.width;
-      htcNode.style.height = size.height;
-      
-      // apply our style to the HTC node
-      var rules = style.split(';');
-      for (var i = 0; i < rules.length; i++) {
-        var rule = rules[i].split(':');
-        if (!rules[i] || rules[i].indexOf(':') == -1) {
-          continue;
-        }
-        var propName = rule[0].replace(/^\s*|\s*$/, '');
-        var propValue = rule[1].replace(/^\s*|\s*$/, '');
-        htcNode.style[propName] = propValue;
-      }
-
-      // apply our class name to the HTC node
-      if (className) {
-        htcNode.className = className;
-      }
-      
-      /**
-        Now insert the Flash.
-
-        We use a Behavior ViewLink trick to 'hide' this shadow content from 
-        the external page, so that we don't see the Flash object in the 
-        external DOM. For more details on ViewLinks: 
-
-        http://msdn.microsoft.com/en-us/library/ms531428(VS.85).aspx
-
-        Note, though, that we want to keep almost all of our SVG elements
-        'lightWeight' (see the lightWeight attribute on the
-        'component' tag at the top of the HTC file) because
-        non-lightWeight components have performance and caching issues.
-        LightWeight HTC components however can not use View Links or have
-        shadow content.
-
-        As a trick, we 'convert' our HTC into having a shadow DOM
-        just for the SVG root tag by manually creating an HTML document below,
-        then storing this document inside the HTC file for later retrieval.
-        For the trick to work we also have to set some 'defaults'
-        above at the top of the HTC file.
-
-        This approach successfully keeps the performance benefits of
-        lightWeight HTCs while being able to have shadow content that
-        doesn't show up in the external DOM.
-      */
-      var html = htcDoc.createElement('html');
-      var body = htcDoc.createElement('body');
-      var div = htcDoc.createElement('div');
-      body.appendChild(div);
-      html.appendChild(body);
-      var defaults = htcNode._getHTCDefaults();
-      defaults.viewLink = html.document; // ViewLink magic
-      // store doc reference for use later in _SVGSVGElement._onHTCLoaded
-      // so that we can get a reference to the actual created Flash object
-      this._shadowDoc = html.document;
-
-      // if we want to allow the background of the Flash movie to be transparent
-      // and 'show through' HTML elements underneath, then we need to make our
-      // inner shadow document also be transparent; the line below makes this
-      // magic happen 
-      if (background.transparent) {
-        body.style.backgroundColor = 'transparent';
-      }
-      
-      // IE memory leaks
-      html = null;
-      body = null;
-
-      // We have to use a DIV container for the Flash object; since we don't
-      // want this DIV to stay around, acting almost like a DocumentFragment,
-      // we use div.outerHTML on it to have the Flash control go into it and
-      // have the DIV 'disappear' in a poof of smoke
-
-      // outerHTML must be set _after_ DIV is added to DOM for
-      // Flash ExternalInterface to work correctly
-
-      // Note: as _soon_ as we make this call the Flash will load, even
-      // before the rest of this method has finished. The Flash can
-      // therefore finish loading before anything after the next statement
-      // has run, so be careful of timing bugs. We do it on a slight
-      // timeout; if we don't, the Flash will incorrectly start executing
-      // immediately and the rest of our SVG on the page won't be rendered!
-      // If we do it on a timeout this execution happens away from our 
-      // primary program flow here.
-      (function(div, flash) {
-          window.setTimeout(function() {
-            div.outerHTML = flash;
-        
-            // IE memory leaks
-            div = null;
-          }, 1);
-      })(div, flash); // closure magic to prevent IE memory leaks
+      // NOTE 2: IE requires that we have this on a slight timeout, or we
+      // will get the following issue on IE 7: when the SWF and HTC files are
+      // loaded from the browser's cache (i.e. the second time a page loads
+      // by using ctrl-R), loading the HTC and SWF file from the same 'thread'
+      // of control causes an IE bug where the SWF never loads. The one
+      // second timeout gets both files loading on separate 'threads' of
+      // control.
+      var self = this;
+      window.setTimeout(function() {
+        self._replaceMe.outerHTML = flash;
+        self = null; // IE memory leaks
+      }, 1);
     }
   },
   
@@ -6471,11 +6357,9 @@ extend(FlashInserter, {
       transparent boolean.
       @param style Style string to copy onto Flash object.
       @param className The class name to copy into the Flash object.
-      @param doc Either 'document' or element.document if being called
-      from the Microsoft Behavior HTC. 
       
       @returns Flash object as HTML string. */ 
-  _createFlash: function(size, elementID, background, style, className, doc) {
+  _createFlash: function(size, elementID, background, style, className) {
     var flashVars = 
           'uniqueId=' + encodeURIComponent(elementID)
         + '&sourceType=string'
@@ -6554,6 +6438,10 @@ function _SVGSVGElement(nodeXML, svgString, scriptNode, handler) {
   this._svgString = svgString;
   this._scriptNode = scriptNode;
   
+  // flash that we use to know whether the HTC and SWF files are loaded
+  this._htcLoaded = false;
+  this._swfLoaded = false;
+  
   // add to our nodeByID lookup table so that fetching this node in the
   // future works
   if (this._handler.type == 'script') {
@@ -6568,23 +6456,6 @@ function _SVGSVGElement(nodeXML, svgString, scriptNode, handler) {
   // we don't do this since the OBJECT tag itself is what is visible on the 
   // screen
   if (isIE && this._handler.type == 'script') {
-    // for IE, replace the SCRIPT tag with our SVG root element; this is so
-    // that we can kick off the HTC running so that it can insert our Flash
-    // as a shadow DOM
-    start('HTCLoading');
-    var svgDOM = document.createElement('svg:svg');
-    svgDOM._fakeNode = this;
-    svgDOM._handler = handler;
-    
-    // store the real parentNode and sibling info so we can return it; calling
-    // svgDOM.parentNode, for example, would cause us to recursively call our
-    // magic parentNode getter instead, so we store this
-    svgDOM._realParentNode = scriptNode.parentNode;
-    svgDOM._realPreviousSibling = scriptNode.previousSibling;
-    svgDOM._realNextSibling = scriptNode.nextSibling;
-    
-    this._htcNode = svgDOM;
-    
     // slot in our suspendRedraw/unsuspendRedraw methods
     this._addRedrawMethods();
     
@@ -6598,18 +6469,19 @@ function _SVGSVGElement(nodeXML, svgString, scriptNode, handler) {
     // outside HTC files, only 'onreadystatechange' is available.
     this._readyStateListener = hitch(this, this._onHTCLoaded); // cleanup later
     this._htcNode.attachEvent('onreadystatechange', this._readyStateListener);
-    
-    // now kick off replacing the SCRIPT node with a Flash object
-    scriptNode.parentNode.replaceChild(svgDOM, scriptNode);
-    
-    // now wait for the HTC file to load for the SVG root element
-  } else if (!isIE && this._handler.type == 'script') { 
-    // non-IE browsers; immediately insert the Flash
-    this._inserter = new FlashInserter('script', document, this._nodeXML,
-                                       this._scriptNode, this._handler);
+ 
+    // now wait for the HTC file to load for the SVG root element;
+    // continue inserting our Flash object below as well so that the HTC 
+    // file and SWF file load in parallel for better overall performance
   } else if (isIE && this._handler.type == 'object') {
     // slot in our suspendRedraw/unsuspendRedraw methods
     this._addRedrawMethods();
+  }
+
+  if (this._handler.type == 'script') { 
+    // insert the Flash
+    this._inserter = new FlashInserter('script', this._nodeXML,
+                                       this._scriptNode, this._handler);
   }
 }  
 
@@ -6665,24 +6537,21 @@ extend(_SVGSVGElement, {
   /** Called when the Microsoft Behavior HTC file is loaded. */
   _onHTCLoaded: function() {
     //console.log('onHTCLoaded');
-    end('HTCLoading');
-    start('onHTCLoaded');
+    //end('HTCLoading');
+    //start('onHTCLoaded');
     
     // cleanup our event handler
     this._htcNode.detachEvent('onreadystatechange', this._readyStateListener);
-
-    // get the document object _inside_ the HTC
-    var elemDoc = this._htcNode._getHTCDocument();
-    
-    // now insert our Flash
-    start('SWFLoading');
-    this._inserter = new FlashInserter('script', elemDoc, this._nodeXML,
-                                       this._scriptNode, this._handler,
-                                       this._htcNode);
                            
     // pay attention to style changes now in the HTC
     this.style._ignoreStyleChanges = false;
-    end('onHTCLoaded');
+    //end('onHTCLoaded');
+    
+    // indicate that the HTC is loaded; see if Flash is loaded
+    this._htcLoaded = true;
+    if (this._swfLoaded) {
+      this._onEverythingLoaded();
+    }
     
     // TODO: we are not handling dynamically created nodes yet
   },
@@ -6691,30 +6560,31 @@ extend(_SVGSVGElement, {
       include the SVG being rendered -- at this point we haven't even
       sent the SVG to the Flash file for rendering yet. */
   _onFlashLoaded: function(msg) {
-    end('SWFLoading');
-    start('onFlashLoaded');
+    //end('SWFLoading');
+    //start('onFlashLoaded');
     // the Flash object is done loading
     //console.log('_onFlashLoaded');
     
-    // store a reference to the Flash object so we can send it messages
-    if (isIE) {
-      // use the shadow document we created earlier 
-      // in FlashInserter._insertFlashIE() to get a reference to our Flash
-      this._handler.flash = 
-                this._inserter._shadowDoc.getElementById(this._handler.flashID);
-      
-      // IE memory leaks
-      this._inserter._shadowDoc = null;
-      this._inserter = null;
-      
-      // now make the Flash callable
-      this._makeFlashCallable(this._handler.flash);
-    } else {
-      this._handler.flash = document.getElementById(this._handler.flashID);
+    // store a reference to our Flash object
+    this._handler.flash = document.getElementById(this._handler.flashID);
+    
+    // for non-IE browsers we are ready to go; for IE, see if the HTC is done
+    // loading yet
+    this._swfLoaded = true;
+    if (!isIE || this._htcLoaded) {
+      this._onEverythingLoaded();
     }
     
+    //end('onFlashLoaded');
+  },
+  
+  /** Called when the Flash is loaded initially, as well as the HTC file for IE. */
+  _onEverythingLoaded: function() {
+    //console.log('_onEverythingLoaded');
+    
     // send the SVG over to Flash now
-    start('firstSendToFlash');
+    //start('firstSendToFlash');
+    //start('jsHandleLoad');
     this._handler.sendToFlash('jsHandleLoad',
                               [ /* objectURL */ this._getRelativeTo('object'),
                                 /* pageURL */ this._getRelativeTo('page'),
@@ -6722,59 +6592,26 @@ extend(_SVGSVGElement, {
                                 /* objectHeight */ null,
                                 /* ignoreWhiteSpace */ true,
                                 /* svgString */ this._svgString ]);
-    end('onFlashLoaded');
+    //end('jsHandleLoad');
   },
   
   /** The Flash is finished rendering. */
   _onRenderingFinished: function(msg) {
-    end('firstSendToFlash');
-    start('onRenderingFinished');
+    //end('firstSendToFlash');
+    //start('onRenderingFinished');
     //console.log('onRenderingFinished');
     
-    if (!isIE && this._handler.type == 'script') {
-      // expose the root SVG element as 'documentElement' on the EMBED tag
-      // for SVG SCRIPT embed as a utility property for developers to descend
-      // down into the SVG root tag
+    if (this._handler.type == 'script') {
+      // expose the root SVG element as 'documentElement' on the EMBED
+      // or OBJECT tag for SVG SCRIPT embed as a utility property for 
+      // developers to descend down into the SVG root tag
       // (see Known Issues and Errata for details)
-      this._handler.flash.documentElement = this;
+      this._handler.flash.documentElement = this._getProxyNode();
     }
     
     var elementId = this._nodeXML.getAttribute('id');
-    end('onRenderingFinished');
+    //end('onRenderingFinished');
     this._handler.fireOnLoad(elementId, 'script');
-  },
-  
-  /** For Internet Explorer; makes calling ExternalInterface functions on the 
-      Flash object work. */
-  _makeFlashCallable: function(flash) {
-    // if we use the Behavior ViewLink trick to 'hide' the Flash object
-    // from the external page's DOM (see FlashInserter._insertFlashIE for
-    // the SCRIPT embedType), then Flash's ExternalInterface
-    // doesn't work correctly. That's ok, we can fix this with some
-    // tricks from Dojo Flash. More details on these
-    // hidden Flash methods here:
-    // http://codinginparadise.org/weblog/2006/02/how-to-speed-up-flash-8s.html
-    var callFunction = function(callMe) {
-      return function() {
-        return eval(this.CallFunction(
-                      "<invoke name=\"" + callMe + "\" returntype=\"javascript\">" 
-                      + __flash__argumentsToXML(arguments, 0) + "</invoke>"));
-      }; // IE memory leaks
-    }
-    
-    flash.jsSetAttribute = callFunction('jsSetAttribute');
-    flash.jsGetAttribute = callFunction('jsGetAttribute');
-    flash.jsAddEventListener = callFunction('jsAddEventListener');
-    flash.jsInsertBefore = callFunction('jsInsertBefore');
-    flash.jsAddChildAt = callFunction('jsAddChildAt');
-    flash.jsRemoveChild = callFunction('jsRemoveChild');
-    flash.jsSetText = callFunction('jsSetText');
-    flash.jsAppendChild = callFunction('jsAppendChild');
-    flash.jsHandleLoad = callFunction('jsHandleLoad');
-    flash.jsSuspendRedraw = callFunction('jsSuspendRedraw');
-    flash.jsUnsuspendRedrawAll = callFunction('jsUnsuspendRedrawAll');
-    flash.jsGetScreenCTM = callFunction('jsGetScreenCTM');
-    flash.jsMatrixInvert = callFunction('jsMatrixInvert');
   },
   
   /** Relative URLs inside of SVG need to expand against something (i.e.
@@ -6788,7 +6625,7 @@ extend(_SVGSVGElement, {
       // snip off any filename after a final slash
       results = pathname.replace(/\/([^/]*)$/, '/');
     }
-    
+
     return results;
   },
   

@@ -24,7 +24,7 @@ non-XHTML HTML much easier, as was well as supporting using the OBJECT tag to
 easily bring in SVG files. Using SVG in backgrounds and with the IMAGE tag is 
 not currently supported.</p>
 
-<p>The SVG Web toolkit is currently in alpha</p>
+<p>The SVG Web toolkit is currently in alpha. Please <a href="http://code.google.com/p/svgweb/issues/list">file issues</a> if you run into problems.</p>
 
 <h1 id="browser_support">Browser and Flash Support</h1>
 
@@ -38,8 +38,7 @@ supported.</p>
 <p>Flash 9+ is required for the Flash renderer; this has close to 97% installed
 base so it is safe to depend on.</p>
 
-<p>The Adobe SVG Viewer (ASV) is not supported; it is a non-goal of this project to
-have support for the ASV viewer or its proprietary extensions.</p>
+<p>The Adobe SVG Viewer (ASV) is not supported; it is a non-goal of this project to have support for the ASV viewer or its proprietary extensions.</p>
 
 <h1 id="direct_embed">Embedding SVG</h1>
 
@@ -350,8 +349,7 @@ is a common SVG mistake. You only need to do this for XLink attributes:</p>
 
 <pre><code>el.setAttributeNS(xlinkns, 'href');</code></pre>
 
-<p>If you like being pedantic and typing more you can use null for a namespace when
-working with SVG attributes:</p>
+<p>If you like being pedantic and typing more you can use null for a namespace when working with SVG attributes:</p>
 
 <pre><code>el.setAttributeNS(null, 'fill', 'black');</code></pre>
 
@@ -909,11 +907,7 @@ containerDiv.parentNode.removeChild(mySVGObject); // bad!!</code></pre>
 you won't run into often, but they are documented here for reference if
 you find that you are running into an issue:</p>
 
-<p>* If you use the Flash viewer on browsers such as Firefox and Safari, rather
-than Internet Explorer, and embed some SVG into a SCRIPT tag, the Flash will 
-show up directly in the DOM as an EMBED tag with the 'class' set to 'embedssvg'. 
-You can get the SVG root element by calling 'documentElement' on the EMBED tag
-(this is non-standard and is not part of the SVG 1.1 spec). </p>
+<p>* If you use the Flash viewer, and embed some SVG into a SCRIPT tag, the Flash will show up directly in the DOM as an EMBED tag (non-IE browsers) or an OBJECT tag (IE) with the 'class' set to 'embedssvg'. You can get the SVG root element by calling 'documentElement' on the EMBED tag (this is non-standard and is not part of the SVG 1.1 spec). </p>
 
 <p>For example, if your page had an SVG SCRIPT block right under the BODY tag, 
 this would get transformed into an EMBED tag with the Flash viewer:</p>
@@ -929,13 +923,6 @@ if (embed.className &amp;&amp; embed.className.indexOf('embedssvg') != -1) {
   var svg = embed.documentElement;
   // now have root SVG element and can manipulate it as normal
 }</code></pre>
-
-<p>Internet Explorer does not have this limitation, with the SVG root element
-showing up directly in the DOM and the Flash object being 'hidden' from 
-showing up in the DOM. Note though that we also add the 'embedssvg' 
-class name automatically onto the SVG root element for Internet Explorer 
-(i.e. &lt;svg class="embedssvg"&gt;); this can be useful for certain styling 
-scenarios.</p>
 
 <p>* Scoping getElementsByTagNameNS on elements other than the document element is
 not implemented yet. For example, you can not currently do

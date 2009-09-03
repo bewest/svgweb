@@ -1054,9 +1054,10 @@ function testChildNodes() {
   } else {
     child = div.childNodes[1]; 
   } 
+
   if (_hasObjects) {
     child = child.contentDocument.documentElement;
-  } else if (!isIE && String(child.className).indexOf('embedssvg') != -1) {
+  } else if (String(child.className).indexOf('embedssvg') != -1) {
     child = child.documentElement;
   }
   assertExists('First SVG root element', child);
@@ -1089,7 +1090,7 @@ function testChildNodes() {
   }
   if (_hasObjects) {
     child = child.contentDocument.documentElement;
-  } else if (!isIE && String(child.className).indexOf('embedssvg') != -1) {
+  } else if (String(child.className).indexOf('embedssvg') != -1) {
     child = child.documentElement;
   }
   assertExists('Second SVG root element', child);
@@ -1124,7 +1125,7 @@ function testChildNodes() {
   }
   if (_hasObjects) {
     child = child.contentDocument.documentElement;
-  } else if (!isIE && String(child.className).indexOf('embedssvg') != -1) {
+  } else if (String(child.className).indexOf('embedssvg') != -1) {
     child = child.documentElement;
   }
   assertExists('Third SVG root element', child);
@@ -1557,17 +1558,9 @@ function testDOMHierarchyAccessors() {
     doc = getDoc('svg11242');
     assertEquals('svg.parentNode.nodeName == #document', 
                  '#document', svg.parentNode.nodeName.toLowerCase());
-  } else if (svg.parentNode.nodeName.toLowerCase() == 'embed') {
-    assertEquals('svg.parentNode.nodeName == embed (non-IE browsers)', 
-                 'embed', svg.parentNode.nodeName.toLowerCase());
-    assertEquals('svg.parentNode.className == embedssvg '
-                 + '(non-IE browsers)', 'embedssvg',
-                 svg.parentNode.className);
-  } else { // IE with Flash and FF and Safari using native support
+  } else {
     assertEquals('svg.parentNode.nodeName == div', 
                  'div', svg.parentNode.nodeName.toLowerCase());
-    assertEquals('svg.parentNode.id == test_container', 'test_container', 
-                 svg.parentNode.id);
   }
   
   if (_hasObjects) {
@@ -5139,7 +5132,7 @@ function testCreateSVGObject() {
     } else {
       matches = document.getElementsByTagName('embed');
     }
-    if ((!isIE && renderer == 'flash') || _hasObjects) {
+    if (renderer == 'flash' || _hasObjects) {
       obj3 = matches[5];
     } else {
       obj3 = matches[2];

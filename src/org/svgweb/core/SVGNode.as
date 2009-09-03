@@ -114,6 +114,7 @@ package org.svgweb.core
          */
         public function SVGNode(svgRoot:SVGSVGNode, xml:XML = null, original:SVGNode = null):void {
             this.svgRoot = svgRoot;
+            //var t:int = new Date().getTime();
             transformSprite = this;
 
             // This handles strange gradient bugs with negative transforms
@@ -142,6 +143,7 @@ package org.svgweb.core
 
             drawSprite.addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
             this.addEventListener(Event.REMOVED_FROM_STAGE, onRemovedFromStage);
+            //increment('SVGNode_Constructor', new Date().getTime() - t);
         }
 
         /**
@@ -347,19 +349,28 @@ package org.svgweb.core
                 if (this.svgRoot.viewer && this.svgRoot.viewer.isSuspended) {
                     return;
                 }
-
+                //var t:int;
+                //var pieceTime:int;
                 this._invalidDisplay = false;
                 if (this._xml != null) {
+                    //t = new Date().getTime();
+                    //pieceTime = new Date().getTime();
                     drawSprite.graphics.clear();
+                    //increment('drawNode_graphics.clear', new Date().getTime() - pieceTime);
 
+                    //pieceTime = new Date().getTime();
                     if (!this._parsedChildren) {
                         this.parseChildren();
                         this._parsedChildren = true;
                     }
+                    //increment('drawNode_parseChildren', new Date().getTime() - pieceTime);
 
                     // sets x, y, rotate, and opacity
+                    //pieceTime = new Date().getTime();
                     this.setAttributes();
+                    //increment('drawNode_setAttributes', new Date().getTime() - pieceTime);
 
+                    //pieceTime = new Date().getTime();
                     if (this.getStyleOrAttr('visibility') == 'hidden') {
                         // SVG spec says visibility='hidden' should fully draw
                         // the shape with full stroke widths, etc., 
@@ -368,38 +379,69 @@ package org.svgweb.core
                         // explicitly have a visibility set to 'visible'.
                         this.setVisibility('hidden');
                     } else {
+                        //increment('drawNode_getStyleOrAttr(visibility)', new Date().getTime() - pieceTime);
+                        //pieceTime = new Date().getTime();
                         this.setVisibility('visible');
+                        //increment('drawNode_setVisibility', new Date().getTime() - pieceTime);
                     }
                     
+                    //pieceTime = new Date().getTime();
                     if (this.getStyleOrAttr('display') == 'none') {
                         this.visible = false;
                     }
                     else {
+                        //increment('drawNode_getStyleOrAttr(display)', new Date().getTime() - pieceTime);
                         this.visible = true;
+                        //pieceTime = new Date().getTime();
                         // <svg> nodes get an implicit mask of their height and width
                         if (this is SVGSVGNode) {
                             this.applyDefaultMask();
                         }
+                        //increment('drawNode_applyDefaultMask', new Date().getTime() - pieceTime);
 
+                        //pieceTime = new Date().getTime();
                         this.generateGraphicsCommands();
+                        //increment('drawNode_generateGraphicsCommands', new Date().getTime() - pieceTime);
+                        //pieceTime = new Date().getTime();
                         this.transformNode();
+                        //increment('drawNode_transformNode', new Date().getTime() - pieceTime);
+                        //pieceTime = new Date().getTime();
                         this.draw();
+                        //increment('drawNode_draw', new Date().getTime() - pieceTime);
 
+                        //pieceTime = new Date().getTime();
                         this.applyClipPathMask();
+                        //increment('drawNode_applyClipPathMask', new Date().getTime() - pieceTime);
+                        //pieceTime = new Date().getTime();
                         this.applyViewBox();
+                        //increment('drawNode_applyViewBox', new Date().getTime() - pieceTime);
+                        //pieceTime = new Date().getTime();
                         this.setupFilters();
+                        //increment('drawNode_setupFilters', new Date().getTime() - pieceTime);
                     }
                 }
                 
+                //pieceTime = new Date().getTime();
                 this.removeEventListener(Event.ENTER_FRAME, drawNode);
+                //increment('drawNode_removeEventListener', new Date().getTime() - pieceTime);
 
+                //pieceTime = new Date().getTime();
                 if (this.xml.@id)  {
+                    //increment('drawNode_xml.@id', new Date().getTime() - pieceTime);
+                    //pieceTime = new Date().getTime();
                     this.svgRoot.invalidateReferers(this.xml.@id);
+                    //increment('drawNode_invalidateReferers', new Date().getTime() - pieceTime);
                 }
 
+                //pieceTime = new Date().getTime();
                 if (getPatternAncestor() != null) {
+                    //increment('drawNode_getPatternAncestor', new Date().getTime() - pieceTime);
+                    //pieceTime = new Date().getTime();
                     this.svgRoot.invalidateReferers(getPatternAncestor().id);
+                    //increment('drawNode_invalidateReferers', new Date().getTime() - pieceTime);
                 }
+
+                //increment('drawNodeTOTAL', new Date().getTime() - t);
             }
             
             if (!this._initialRenderDone && this.parent) {
@@ -512,7 +554,7 @@ package org.svgweb.core
          * Called to generate AS3 graphics commands from the SVG instructions
          **/
         protected function generateGraphicsCommands():void {
-            this._graphicsCommands = new  Array();    
+            this._graphicsCommands = new Array();    
         }
 
         /**
