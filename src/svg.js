@@ -6781,7 +6781,7 @@ extend(_SVGSVGElement, {
     if (isIE) {
       window.attachEvent('onresize', function() {
         if (self._handler) {
-          self._handler._handleResize();
+          self._handler._onWindowResize();
         }
       });
     } else {
