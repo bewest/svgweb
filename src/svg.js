@@ -2384,13 +2384,6 @@ extend(FlashHandler, {
   /** The Flash object; set by _SVGSVGElement. */
   flash: null,
   
-  /** If we this handler is in charge of an SVG OBJECT and that object
-      has explicit width and height settings on itself, we store these
-      here to later pass to Flash to help with viewBox calculations. These
-      are set by FlashInserter._determineSize(). */
-  _explicitWidth: null,
-  _explicitHeight: null,
-  
   /** Turns the string results from Flash back into an Object. The HTC
       still returns an Object, so we detect that and simply return it if so. */
   _stringToMsg: function(msg) {
@@ -2607,6 +2600,15 @@ extend(FlashHandler, {
         // TODO
       }
     }
+  },
+
+  _onWindowResize: function() {
+    var size = this._inserter._determineSize();
+    this.flash.width = size.width;
+    this.flash.height = size.height;
+    this.sendToFlash('jsHandleResize',
+                       [ /* objectWidth */ size.pixelsWidth,
+                         /* objectHeight */ size.pixelsHeight ]);
   },
   
   _getElementByGuid: function(guid) {
@@ -5610,8 +5612,8 @@ function _SVGObject(svgNode, handler) {
       this._savedParams = this._getPARAMs(this._svgNode);
       
       // now insert the Flash
-      var inserter = new FlashInserter('object', this._xml.documentElement,
-                                       this._svgNode, this._handler);
+      this._handler._inserter = new FlashInserter('object', this._xml.documentElement,
+                                                  this._svgNode, this._handler);
 
       // wait for Flash to finish loading; see _onFlashLoaded() in this class
       // for further execution after the Flash asynchronous process is done
@@ -5744,12 +5746,31 @@ extend(_SVGObject, {
   
   _onEverythingLoaded: function() {
     //console.log('_SVGObject, onEverythingLoaded');
-    
+
+    // Attach window resize listener to adjust
+    // object size when % is used.
+    var self = this;
+    // FIXME: Need to remove these event handlers on unload.
+    if (isIE) {
+      window.attachEvent('onresize', function() {
+        if (self._handler) {
+          self._handler._onWindowResize();
+        }
+      });
+    } else {
+      window.addEventListener('resize', function() {
+        if (self._handler) {
+          self._handler._onWindowResize();
+        }
+      }, false);
+    }
+
+    var size = self._handler._inserter._determineSize();
     this._handler.sendToFlash('jsHandleLoad',
                               [ /* objectURL */ this._getRelativeTo('object'),
                                 /* pageURL */ this._getRelativeTo('page'),
-                                /* objectWidth */ this._handler._explicitWidth,
-                                /* objectHeight */ this._handler._explicitHeight,
+                                /* objectWidth */ size.pixelsWidth,
+                                /* objectHeight */ size.pixelsHeight,
                                 /* ignoreWhiteSpace */ false,
                                 /* svgString */ this._svgString ]);
   },
@@ -6143,7 +6164,14 @@ function FlashInserter(embedType, nodeXML, replaceMe, handler) {
   this._nodeXML = nodeXML;
   this._replaceMe = replaceMe;
   this._handler = handler;
+  this._parentNode = replaceMe.parentNode;
   
+  // Get width and height from object tag, if present.
+  if (this._embedType == 'object') {
+    this._explicitWidth = this._replaceMe.getAttribute('width');
+    this._explicitHeight = this._replaceMe.getAttribute('height');
+  }
+
   this._setupFlash();
 }
 
@@ -6154,6 +6182,7 @@ extend(FlashInserter, {
     var background = this._determineBackground();
     var style = this._determineStyle();
     var className = this._determineClassName();
+    //console.log("js: _setupFlash: Using size: " + size.width + "," + size.height);
     
     // setup our ID; if we are embedded with a SCRIPT tag, we use the ID from 
     // the SVG ROOT tag; if we are embedded with an OBJECT tag, then we 
@@ -6226,59 +6255,221 @@ extend(FlashInserter, {
   },
   
   /** Determines a width and height for the parsed SVG XML. Returns an
-      object literal with two values, width and height. */
+      object literal with two values, width and height.
+
+      It is worth noting that pixels in this function and generally in
+      javascript land refer to "unzoomed" pixels. An object has a css
+      width value and that unit system does not change due to browser
+      zooming.
+       
+      Flash knows the object size in real screen pixels, so it will
+      account for the zoom mismatch. It does not know the javascript
+      land units, so we must tell it. That is mainly why we are
+      always calculating the pixel values here (from percent values,
+      if necessary).
+    */
   _determineSize: function() {
-    var width = '100%', height = '100%';
-    
-    // explicit sizing information on an SVG OBJECT overrides everything else
-    if (this._embedType == 'object' && this._replaceMe.getAttribute('width')) {
-      width = this._replaceMe.getAttribute('width');
-      // store the explicit width to pass to Flash later to help with viewBox
-      // sizing
-      this._handler._explicitWidth = width;
-    }
-    if (this._embedType == 'object' && this._replaceMe.getAttribute('height')) {
-      height = this._replaceMe.getAttribute('height');
-      // store the explicit height to pass to Flash later to help with viewBox
-      // sizing
-      this._handler._explicitHeight = height;
-    }
-    
-    if (width && width != '100%' && height && height != '100%') {
-      return {width: width, height: height};
-    }
-    
-    var xmlWidth = this._nodeXML.getAttribute('width');
-    var xmlHeight = this._nodeXML.getAttribute('height');
-    
-    // explicit width and height set
-    if (xmlWidth) {
-      width = xmlWidth;
-    }
-    
-    if (xmlHeight) {
-      height = xmlHeight;
-    }
-    
-    // both explicit width and height set; we are done
-    if (xmlWidth && xmlWidth.indexOf('%') == -1
-        && xmlHeight && xmlHeight.indexOf('%') == -1) {
-      return {width: width, height: height};
-    }
-    
-    // viewBox
-    if (this._nodeXML.getAttribute('viewBox')) {
-      var viewBox = this._nodeXML.getAttribute('viewBox').split(/\s+|,/);
-      var boxX = viewBox[0];
-      var boxY = viewBox[1];
-      var boxWidth = viewBox[2];
-      var boxHeight = viewBox[3];
-      width = boxWidth - boxX;
-      height = boxHeight - boxY;
+    var pixelsWidth, pixelsHeight;
+
+    var parentWidth = this._parentNode.clientWidth
+                               - this._getMargin(this._parentNode, 'margin-left')
+                               - this._getMargin(this._parentNode, 'margin-right');
+
+    var parentHeight = this._parentNode.clientHeight
+                               - this._getMargin(this._parentNode, 'margin-top')
+                               - this._getMargin(this._parentNode, 'margin-bottom');
+
+    // Calculate the object width and size starting with
+    // the width and height from the object tag.
+    // 
+    // If this is script embed type, the algorithm will perform as
+    // an object tag with neither width nor height specified.
+    // 
+    var objWidth = this._explicitWidth;
+    var objHeight = this._explicitHeight;
+
+    //console.log("js: _determineSize: obj size: "+ objWidth + "," + objHeight);
+    if (objWidth && objHeight) {
+      // calculate width in pixels
+      if (objWidth.indexOf('%') != -1) {
+        pixelsWidth = parentWidth * parseInt(objWidth) / 100;
+      } else {
+        pixelsWidth = objWidth;
+      }
+      // calculate height in pixels
+      if (objHeight.indexOf('%') != -1) {
+        pixelsHeight = parentHeight * parseInt(objHeight) / 100;
+      } else {
+        pixelsHeight = objHeight;
+      }
+      if (this._nodeXML.getAttribute('viewBox')) {
+        return {width: objWidth, height: objHeight,
+                pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight, clipMode: 'neither'};
+      } else {
+        return {width: objWidth, height: objHeight,
+                pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight, clipMode: 'both'};
+      }
     }
 
-    return {width: width, height: height};      
+    var xmlWidth = this._nodeXML.getAttribute('width');
+    var xmlHeight = this._nodeXML.getAttribute('height');
+
+    //console.log("js: _determineSize: xml size: "+ xmlWidth + "," + xmlHeight);
+    //console.log("js: _determineSize: parent size: "+ parentWidth+ "," + parentHeight);
+
+    var viewBox, boxWidth, boxHeight;
+    if (objWidth) {
+      // estimate the width that will be used for percents
+      if (objWidth.indexOf('%') != -1) {
+        pixelsWidth = parentWidth * parseInt(objWidth) / 100;
+      } else {
+        pixelsWidth = objWidth;
+      }
+
+      if (this._nodeXML.getAttribute('viewBox')) {
+        // If width and height are both specified on the SVG file in pixels,
+        // then the height is calculated based on the object width and the
+        // aspect ratio between the svg height and width.
+        // The viewBox scales into resulting area (honoring preserveAspectRatio).
+        // SVG height and width are not using in actual rendering.
+        if (xmlWidth && xmlWidth.indexOf('%') == -1 &&
+            xmlHeight && xmlHeight.indexOf('%') == -1) {
+          objHeight = pixelsWidth * (xmlHeight / xmlWidth);
+        }
+        else {
+          viewBox = this._nodeXML.getAttribute('viewBox').split(/\s+|,/);
+          boxWidth = viewBox[2];
+          boxHeight = viewBox[3];
+          objHeight = pixelsWidth * (boxHeight / boxWidth);
+        }
+        return {width: objWidth, height: objHeight,
+                pixelsWidth: pixelsWidth, pixelsHeight: objHeight, clipMode: 'neither'};
+      } else {
+        if (xmlWidth && xmlWidth.indexOf('%') == -1 &&
+          xmlHeight && xmlHeight.indexOf('%') == -1) {
+          objHeight = pixelsWidth * (xmlHeight / xmlWidth);
+        } else {
+          if (xmlHeight && xmlHeight.indexOf('%') == -1) {
+            objHeight = xmlHeight;
+          } else {
+            objHeight = 150;
+          }
+        }
+      }
+      return {width: objWidth, height: objHeight,
+              pixelsWidth: pixelsWidth, pixelsHeight: objHeight, clipMode: 'both'};
+    }
+
+    if (objHeight) {
+      // estimate the height that will be used for percents
+      if (objHeight.indexOf('%') != -1) {
+        pixelsHeight = parentHeight * parseInt(objHeight) / 100;
+      } else {
+        pixelsHeight = objHeight;
+      }
+
+      if (this._nodeXML.getAttribute('viewBox')) {
+        // If width and height are both specified on the SVG file in pixels,
+        // then the object width is calculated based on the object height and the
+        // aspect ratio between the svg height and width.
+        if (xmlWidth && xmlWidth.indexOf('%') == -1 &&
+          xmlHeight && xmlHeight.indexOf('%') == -1) {
+          objWidth = pixelsHeight * (xmlWidth / xmlHeight);
+        } else {
+          viewBox = this._nodeXML.getAttribute('viewBox').split(/\s+|,/);
+          boxWidth = viewBox[2];
+          boxHeight = viewBox[3];
+          objWidth = pixelsHeight * (boxWidth / boxHeight);
+        }
+        return {width: objWidth, height: objHeight,
+                pixelsWidth: objWidth, pixelsHeight: pixelsHeight, clipMode: 'neither'};
+      } else {
+        // No viewbox, use svg width for object size
+        if (xmlWidth && xmlWidth.indexOf('%') == -1 &&
+          xmlHeight && xmlHeight.indexOf('%') == -1) {
+          objWidth = pixelsHeight * (xmlWidth / xmlHeight);
+          pixelsWidth = objWidth;
+        } else {
+          if (xmlWidth) {
+            objWidth = xmlWidth;
+          } else {
+            objWidth = "100%";
+          }
+
+          // estimate the width that will be used for percents
+          if (objWidth.indexOf('%') != -1) {
+            pixelsWidth = parentWidth * parseInt(objWidth) / 100;
+          } else {
+            pixelsWidth = objWidth;
+          }
+        }
+
+        // Also use svg width for svg clipping
+        return {width: objWidth, height: objHeight,
+                pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight, clipMode: 'both'};
+      }
+    }
+
+
+    // If we are here, neither object height nor width were specified.
+
+    // Use the svg width
+    if (xmlWidth) {
+      objWidth = xmlWidth;
+    } else {
+      objWidth = "100%";
+    }
+
+    // estimate the width that will be used for percents
+    if (objWidth.indexOf('%') != -1) {
+      pixelsWidth = parentWidth * parseInt(objWidth) / 100;
+    } else {
+      pixelsWidth = objWidth;
+    }
+
+    if (xmlHeight) {
+      // height pixels are used directly
+      if (xmlHeight.indexOf('%') == -1) {
+        objHeight = xmlHeight;
+        return {width: objWidth, height: objHeight,
+                pixelsWidth: pixelsWidth, pixelsHeight: objHeight, clipMode: 'height'};
+      }
+    } else {
+      xmlHeight = '100%';
+    }
+
+
+    // the height is a %. Check for viewBox
+    if (this._nodeXML.getAttribute('viewBox')) {
+      var viewBox = this._nodeXML.getAttribute('viewBox').split(/\s+|,/);
+      var boxWidth = viewBox[2];
+      var boxHeight = viewBox[3];
+
+      objHeight = pixelsWidth * (boxHeight / boxWidth);
+      return {width: objWidth, height: objHeight,
+              pixelsWidth: pixelsWidth, pixelsHeight: objHeight, clipMode: 'neither'};
+    } else {
+      objHeight = 150;
+      return {width: objWidth, height: objHeight,
+              pixelsWidth: pixelsWidth, pixelsHeight: objHeight, clipMode: 'height'};
+    }
+
   },
+
+  // http://www.quirksmode.org/dom/getstyles.html
+  _getMargin: function(node,styleProp) {
+    var y;
+    if (node.currentStyle)
+      y = parseInt(node.currentStyle[styleProp]);
+    else if (window.getComputedStyle)
+      y = parseInt(document.defaultView.getComputedStyle(node,null).getPropertyValue(styleProp));
+
+    if (y)
+      return y;
+    else
+      return 0;
+  },
+
   
   /** Determines the background coloring. Returns an object literal with
       two values, 'color' with a color or null and 'transparent' with a 
@@ -6360,7 +6551,7 @@ extend(FlashInserter, {
     var flashVars = 
           'uniqueId=' + encodeURIComponent(elementID)
         + '&sourceType=string'
-        + '&scaleMode=showAll_svg' // FIXME: is this the right scaleMode?
+        + '&clipMode=' + size.clipMode
         + '&debug=true'
         + '&svgId=' + encodeURIComponent(elementID);
     var src = svgweb.libraryPath + 'svg.swf';
@@ -6477,8 +6668,8 @@ function _SVGSVGElement(nodeXML, svgString, scriptNode, handler) {
 
   if (this._handler.type == 'script') { 
     // insert the Flash
-    this._inserter = new FlashInserter('script', this._nodeXML,
-                                       this._scriptNode, this._handler);
+    this._handler._inserter = new FlashInserter('script', this._nodeXML,
+                                                this._scriptNode, this._handler);
   }
 }  
 
@@ -6582,11 +6773,31 @@ extend(_SVGSVGElement, {
     // send the SVG over to Flash now
     //start('firstSendToFlash');
     //start('jsHandleLoad');
+
+    // Attach window resize listener to adjust
+    // object size when % is used.
+    // FIXME: Need to remove these event handlers on unload.
+    var self = this;
+    if (isIE) {
+      window.attachEvent('onresize', function() {
+        if (self._handler) {
+          self._handler._handleResize();
+        }
+      });
+    } else {
+      window.addEventListener('resize', function(evt) {
+        if (self._handler) {
+          self._handler._onWindowResize();
+        }
+      }, false);
+    }
+
+    var size = self._handler._inserter._determineSize();
     this._handler.sendToFlash('jsHandleLoad',
                               [ /* objectURL */ this._getRelativeTo('object'),
                                 /* pageURL */ this._getRelativeTo('page'),
-                                /* objectWidth */ null,
-                                /* objectHeight */ null,
+                                /* objectWidth */ size.pixelsWidth,
+                                /* objectHeight */ size.pixelsHeight,
                                 /* ignoreWhiteSpace */ true,
                                 /* svgString */ this._svgString ]);
     //end('jsHandleLoad');

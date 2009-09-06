@@ -66,16 +66,19 @@ package org.svgweb
         private var js_uniqueId:String = '';
         private var js_guidLookup:Object = {};
         protected var svgIdParam:String = "";
-        public var scaleModeParam:String = "showAll_svg";
+        public var clipModeParam:String = "useNone";
         protected var scriptSentToJS:Boolean = false;
         protected var xmlString:String;
 
         protected var renderStartTime:Number;
         protected var debugEnabled:Boolean = true;
         
+        protected var firstObjectWidth:Number;
+        protected var firstObjectHeight:Number;
+
         protected var objectWidth:Number;
         protected var objectHeight:Number;
-        
+
         // The delimiter we use when passing arguments between Flash and
         // JavaScript; performance testing showed this to be an important
         // bottleneck, so we do various tricks to make it fast
@@ -94,6 +97,7 @@ package org.svgweb
             this.setupJavaScriptInterface();
             //this.debug('SVGViewerWeb constructor');
             this.addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
+            stage.addEventListener(Event.RESIZE, handleResize);
             super();
         }
 
@@ -116,8 +120,8 @@ package org.svgweb
             var item:String;
 
             for (item in paramsObj) {
-                if (item == "scaleMode") {
-                    this.scaleModeParam = paramsObj[item];
+                if (item == "clipMode") {
+                    this.clipModeParam = paramsObj[item];
                 }
                 if (item == "sourceType") {
                     sourceTypeParam = paramsObj[item];
@@ -224,6 +228,7 @@ package org.svgweb
                 // on the JS side since we found we don't need to optimize that
                 // into separate methods yet.
                 ExternalInterface.addCallback("jsHandleLoad", js_handleLoad);
+                ExternalInterface.addCallback("jsHandleResize", js_handleResize);
                 ExternalInterface.addCallback("jsSuspendRedraw", js_suspendRedraw);
                 ExternalInterface.addCallback("jsUnsuspendRedrawAll", js_unsuspendRedrawAll);
                 ExternalInterface.addCallback("jsInsertBefore", js_insertBefore);
@@ -367,23 +372,37 @@ package org.svgweb
             var objectURL:String = args[0];
             var pageURL:String = args[1];
             // Flash/JS bridge transforms nulls/undefined into '' empty strings
-            var objectWidth:String = (args[2] !== '') ? args[2] : null;
-            var objectHeight:String = (args[3] !== '') ? args[3] : null;
+            this.firstObjectWidth = SVGUnits.cleanNumber(args[2]);
+            this.firstObjectHeight = SVGUnits.cleanNumber(args[3]);
+            this.objectWidth = this.firstObjectWidth;
+            this.objectHeight = this.firstObjectHeight;
             var ignoreWhiteSpace:Boolean = (args[4] === 'true') ? true : false;
             var svgString:String = this.decodeFlashData(args[5]);
-                        
-            // see if an explicit width and height were set external
-            // to us on an SVG OBJECT; this helps us with viewBox
-            // calculations
-            if (objectWidth !== null) {
-                this.objectWidth = SVGUnits.cleanNumber(objectWidth);
-            }
-            if (objectHeight !== null) {
-                this.objectHeight = SVGUnits.cleanNumber(objectHeight);
-            }
             
             this.setSVGString(svgString, objectURL, pageURL, ignoreWhiteSpace);
+            //this.debug("js_handleLoad: object size: " + objectWidth + "," + objectHeight);
+            //this.debug("js_handleLoad: stage size: " +
+            //           this.stage.stageWidth + "," + this.stage.stageHeight);
+            this.scaleX = (this.stage.stageWidth/this.objectWidth)
+                           * (this.objectWidth / this.getWidth());
+            this.scaleY = (this.stage.stageHeight/this.objectHeight)
+                           * (this.objectHeight / this.getHeight());
         }
+
+        /**
+         **/
+        public function js_handleResize(msg:String):void {
+            // msg is a string delimited by __SVG__DELIMIT with fields in
+            // the following order: objectWidth, objectHeight
+            var args:Array = msg.split(DELIMITER);
+            this.objectWidth = SVGUnits.cleanNumber(args[0]);
+            this.objectHeight = SVGUnits.cleanNumber(args[1]);
+            this.scaleX = (this.stage.stageWidth/this.objectWidth)
+                           * (this.objectWidth / this.getWidth());
+            this.scaleY = (this.stage.stageHeight/this.objectHeight)
+                           * (this.objectHeight / this.getHeight());
+        }
+        
         
         public function js_removeChild(msg:String):void {
             //this.debug('js_removeChild, msg='+msg);
@@ -734,6 +753,9 @@ package org.svgweb
                         case 'jsAppendChild':
                             this.js_appendChild(message);
                             break;
+                        case 'jsHandleResize':
+                            this.js_handleResize(message);
+                            break;
                         default:
                             this.error('Unknown unsuspendRedrawAll method: ' + invoke);
                             break;
@@ -820,6 +842,11 @@ package org.svgweb
             }
         }
 
+        protected function handleResize(event:Event):void {
+            this.scaleX = (this.stage.stageWidth/this.objectWidth) * (this.objectWidth / this.getWidth());
+            this.scaleY = (this.stage.stageHeight/this.objectHeight) * (this.objectHeight / this.getHeight());
+        }
+
         public function js_sendMouseEvent(event:MouseEvent):void {
             if (   ( event.target is DisplayObject ) 
                 && ( event.currentTarget is DisplayObject ) ) {
@@ -877,38 +904,18 @@ package org.svgweb
             }
         }
 
-        /*
-           The width and height that is used is the size of the coordinate space that
-           flash is using for scaling. The coordinate space comes from the SWF directive
-           (2048 x 1024) at the top of this file. However, if the scaleModeParam is
-           showAll_svg, then we use flash noScale mode and the size of the coordinate space
-           is the size of the flash object.
-        */
         override public function getWidth():Number {
-            // an explicit width was passed in
-            if (this.objectWidth) {
-                return this.objectWidth;
-            }
-            else if (this.scaleModeParam == "showAll_svg") {
-                return this.stage.stageWidth;
-            }
-            else {
-                return 2048.0;
-            }
+            return this.firstObjectWidth;
         }
 
         override public function getHeight():Number {
-            // an explicit height was passed in
-            if (this.objectHeight) {
-                return this.objectHeight;
-            }
-            else if (this.scaleModeParam == "showAll_svg") {
-                return this.stage.stageHeight;
-            }
-            else {
-                return 1024.0;
-            }
+            return this.firstObjectHeight;
         }
+
+        public function getClipMode():String {
+            return clipModeParam;
+        }
+
 
         override public function debug(debugMessage:String):void {
             if (this.debugEnabled) {

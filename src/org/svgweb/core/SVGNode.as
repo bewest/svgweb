@@ -21,6 +21,7 @@
 package org.svgweb.core
 {
     import org.svgweb.core.SVGViewer;
+    import org.svgweb.SVGViewerWeb;
     import org.svgweb.nodes.*;
     import org.svgweb.utils.SVGColors;
     import org.svgweb.utils.SVGUnits;
@@ -41,7 +42,8 @@ package org.svgweb.core
     public class SVGNode extends Sprite
     {
         public static const ATTRIBUTES_NOT_INHERITED:Array = ['id', 'x', 'y', 'width', 'height', 'rotate', 'transform', 
-                                                'gradientTransform', 'opacity', 'mask', 'clip-path', 'href', 'target', 'viewBox'];
+                                                'gradientTransform', 'opacity', 'mask', 'clip-path', 'href', 'target',
+                                                'viewBox', 'preserveAspectRatio'];
         
         public namespace xlink = 'http://www.w3.org/1999/xlink';
         public namespace svg = 'http://www.w3.org/2000/svg';
@@ -534,8 +536,10 @@ package org.svgweb.core
 
         // <svg> and <image> nodes get an implicit mask of their height and width
         public function applyDefaultMask():void {
-            if (   (this.getAttribute('width') != null)
-                && (this.getAttribute('height') != null) ) {
+            if ( (this is SVGImageNode &&
+                   this.getAttribute('width') != null &&
+                   this.getAttribute('height') != null )
+               || this is SVGSVGNode ) {
                 if (transformSprite.mask == null) {
                     var myMask:Shape = new Shape();
                     transformSprite.parent.addChild(myMask);
@@ -544,7 +548,38 @@ package org.svgweb.core
                 if (transformSprite.mask is Shape) {
                     Shape(transformSprite.mask).graphics.clear();
                     Shape(transformSprite.mask).graphics.beginFill(0x000000);
-                    Shape(transformSprite.mask).graphics.drawRect(drawSprite.x, drawSprite.y, this.getWidth(), this.getHeight());
+                    var canvasWidth:Number;
+                    var canvasHeight:Number;
+                    if (this.parent is SVGViewerWeb) {
+                        var clipMode:String= SVGViewerWeb(this.parent).getClipMode();
+                        //this.dbg("<svg> clip mode: "+ clipMode);
+                        switch (clipMode) {
+                           case 'height':
+                             canvasWidth = SVGViewer(this.parent).getWidth();
+                             canvasHeight = this.getHeight();
+                             break;
+                           case 'neither':
+                             canvasWidth = SVGViewer(this.parent).getWidth();
+                             canvasHeight = SVGViewer(this.parent).getHeight();
+                             break;
+                           case 'width':
+                             canvasWidth = this.getWidth();
+                             canvasHeight = SVGViewer(this.parent).getHeight();
+                             break;
+                           default:
+                             this.dbg("invalid <svg> clip mode: "+ clipMode);
+                           case 'both':
+                             canvasWidth = this.getWidth();
+                             canvasHeight = this.getHeight();
+                             break;
+                        }
+                    }
+                    else {
+                        canvasWidth = this.getWidth();
+                        canvasHeight = this.getHeight();
+                    }
+                    Shape(transformSprite.mask).graphics.drawRect(drawSprite.x, drawSprite.y,
+                                                                  canvasWidth, canvasHeight);
                     Shape(transformSprite.mask).graphics.endFill();
                 }
             }
@@ -907,8 +942,16 @@ package org.svgweb.core
                 /**
                  * Canvas, the viewport
                  **/
-                var canvasWidth:Number = this.getWidth();
-                var canvasHeight:Number = this.getHeight();
+                var canvasWidth:Number;
+                var canvasHeight:Number;
+                if (this.parent is SVGViewerWeb) {
+                    canvasWidth = SVGViewerWeb(this.parent).getWidth();
+                    canvasHeight = SVGViewerWeb(this.parent).getHeight();
+                }
+                else {
+                    canvasWidth = this.getWidth();
+                    canvasHeight = this.getHeight();
+                }
 
                 /**
                  * Viewbox
@@ -931,7 +974,6 @@ package org.svgweb.core
                     viewWidth = canvasWidth;
                     viewHeight = canvasHeight;
                 }
-
 
                 var oldAspectRes:Number = viewWidth / viewHeight;
                 var newAspectRes:Number = canvasWidth /  canvasHeight;
