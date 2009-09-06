@@ -204,6 +204,17 @@ package org.svgweb.nodes
             return defaultValue;
         }
 
+        override protected function loadAttribute(name:String, field:String = null,
+                                         applyStyle:Boolean = false):void {
+            // Issue 226: Topmost <svg> tag ignores x and y
+            if (this.parent is SVGViewer && 
+                name == 'x' || name == 'y') {
+                return;
+            } else {
+                super.loadAttribute(name, field, applyStyle);
+            }
+        }
+
         // The following functions track the number of elements that have a redraw
         // pending. When the count reaches zero, the onLoad handler can be called.
         // 
