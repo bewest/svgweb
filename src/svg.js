@@ -6271,13 +6271,15 @@ extend(FlashInserter, {
   _determineSize: function() {
     var pixelsWidth, pixelsHeight;
 
-    var parentWidth = this._parentNode.clientWidth
-                               - this._getMargin(this._parentNode, 'margin-left')
-                               - this._getMargin(this._parentNode, 'margin-right');
+    var parentWidth = this._parentNode.clientWidth;
+    var parentHeight = this._parentNode.clientHeight;
+    if (!isSafari) {
+      parentWidth -= this._getMargin(this._parentNode, 'margin-left');
+      parentWidth -= this._getMargin(this._parentNode, 'margin-right');
+      parentHeight -= this._getMargin(this._parentNode, 'margin-top');
+      parentHeight -= this._getMargin(this._parentNode, 'margin-bottom');
+    }
 
-    var parentHeight = this._parentNode.clientHeight
-                               - this._getMargin(this._parentNode, 'margin-top')
-                               - this._getMargin(this._parentNode, 'margin-bottom');
 
     // Calculate the object width and size starting with
     // the width and height from the object tag.
@@ -6432,7 +6434,13 @@ extend(FlashInserter, {
       if (xmlHeight.indexOf('%') == -1) {
         objHeight = xmlHeight;
         return {width: objWidth, height: objHeight,
-                pixelsWidth: pixelsWidth, pixelsHeight: objHeight, clipMode: 'height'};
+                pixelsWidth: pixelsWidth, pixelsHeight: objHeight, clipMode: 'neither'};
+      // can we calculate pixels?
+      } else if (xmlHeight.indexOf('%') != -1 && parentHeight > 0) {
+        objHeight = xmlHeight;
+        pixelsHeight = parentHeight * parseInt(xmlHeight) / 100;
+        return {width: objWidth, height: objHeight,
+                pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight, clipMode: 'neither'};
       }
     } else {
       xmlHeight = '100%';
