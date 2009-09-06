@@ -208,7 +208,7 @@ package org.svgweb.nodes
                                          applyStyle:Boolean = false):void {
             // Issue 226: Topmost <svg> tag ignores x and y
             if (this.parent is SVGViewer && 
-                name == 'x' || name == 'y') {
+                (name == 'x' || name == 'y') ) {
                 return;
             } else {
                 super.loadAttribute(name, field, applyStyle);
