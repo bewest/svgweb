@@ -147,6 +147,14 @@ function _detectBrowsers() {
   if (document.all && !isOpera) {
     isIE = parseFloat(dav.split('MSIE ')[1]) || undefined;
   }
+
+  // compatMode deprecated on IE8 in favor of documentMode
+  if (document.documentMode) {
+    isStandardsMode = (document.documentMode > 5);
+  } else {
+    isStandardsMode = (document.compatMode == 'CSS1Compat');
+  }
+
 }
 
 _detectBrowsers();
@@ -6273,15 +6281,6 @@ extend(FlashInserter, {
     }
   },
   
-  _standardsMode: function() {
-    // compatMode deprecated on IE8 in favor of documentMode
-    if (document.documentMode) {
-      return (document.documentMode > 5);
-    } else {
-      return (document.compatMode == 'CSS1Compat');
-    }
-  },
-
   /** Determines a width and height for the parsed SVG XML. Returns an
       object literal with two values, width and height.
 
@@ -6298,15 +6297,16 @@ extend(FlashInserter, {
     */
   _determineSize: function() {
 
-    if (this._standardsMode()) {
-        return this._standardsSize();
+    if (isStandardsMode) {
+        return this._getStandardsSize();
     }
     else {
-        return this._quirksSize();
+        return this._getQuirksSize();
     }
+
   },
 
-  _quirksSize: function() {
+  _getQuirksSize: function() {
     var pixelsWidth, pixelsHeight;
 
     var parentWidth = this._parentNode.clientWidth;
@@ -6469,7 +6469,7 @@ extend(FlashInserter, {
     } else {
       // The height is a % or missing. Check for viewBox.
       if (this._nodeXML.getAttribute('viewBox')) {
-        if (isSafari && this._embedType == 'script'
+        if (this._embedType == 'script'
             && xmlHeight.indexOf('%') != -1 && parentHeight > 0) {
           objHeight = xmlHeight;
           pixelsHeight = parentHeight * parseInt(xmlHeight) / 100;
@@ -6491,7 +6491,7 @@ extend(FlashInserter, {
 
   },
 
-  _standardsSize: function() {
+  _getStandardsSize: function() {
     var pixelsWidth, pixelsHeight;
 
     var parentWidth = this._parentNode.clientWidth;
@@ -6517,11 +6517,11 @@ extend(FlashInserter, {
     var xmlHeight = this._nodeXML.getAttribute('height');
 
     if (objWidth && !objHeight) {
-      return this._quirksSize();
+      return this._getQuirksSize();
     }
 
     if (!objWidth && !objHeight) {
-      return this._quirksSize();
+      return this._getQuirksSize();
     }
 
     if (!objWidth && objHeight) {
