@@ -6315,11 +6315,11 @@ extend(FlashInserter, {
     var grandParent = this._parentNode;
     while (grandParent && grandParent.style) {
       // If a grandparent is a div, the parent height is ok.
-      if (grandParent.nodeName == 'DIV') {
+      if (grandParent.nodeName.toLowerCase() == 'div') {
         break;
       }
       // If we get to the body without div, ignore parent height.
-      if (grandParent.nodeName == 'BODY') {
+      if (grandParent.nodeName.toLowerCase() == 'body') {
         parentHeight = 0;
         break;
       }
