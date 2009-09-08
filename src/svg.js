@@ -1,8 +1,8 @@
 /*
 Copyright (c) 2009 Google Inc. (Brad Neuberg, http://codinginparadise.org)
 
-Portions Copyright (c) 2008 Rick Masters
-Portions Copyright (c) 2008 Others (see COPYING.txt for details on
+Portions Copyright (c) 2009 Rick Masters
+Portions Copyright (c) 2009 Others (see COPYING.txt for details on
 third party code)
 
 Permission is hereby granted, free of charge, to any person
@@ -6182,7 +6182,6 @@ extend(FlashInserter, {
     var background = this._determineBackground();
     var style = this._determineStyle();
     var className = this._determineClassName();
-    //console.log("js: _setupFlash: Using size: " + size.width + "," + size.height);
     
     // setup our ID; if we are embedded with a SCRIPT tag, we use the ID from 
     // the SVG ROOT tag; if we are embedded with an OBJECT tag, then we 
@@ -6254,6 +6253,15 @@ extend(FlashInserter, {
     }
   },
   
+  _standardsMode: function() {
+    // compatMode deprecated on IE8 in favor of documentMode
+    if (document.documentMode) {
+      return (document.documentMode > 5);
+    } else {
+      return (document.compatMode == 'CSS1Compat');
+    }
+  },
+
   /** Determines a width and height for the parsed SVG XML. Returns an
       object literal with two values, width and height.
 
@@ -6269,17 +6277,27 @@ extend(FlashInserter, {
       if necessary).
     */
   _determineSize: function() {
+
+    if (this._standardsMode()) {
+        return this._standardsSize();
+    }
+    else {
+        return this._quirksSize();
+    }
+  },
+
+  _quirksSize: function() {
     var pixelsWidth, pixelsHeight;
 
     var parentWidth = this._parentNode.clientWidth;
     var parentHeight = this._parentNode.clientHeight;
+
     if (!isSafari) {
       parentWidth -= this._getMargin(this._parentNode, 'margin-left');
       parentWidth -= this._getMargin(this._parentNode, 'margin-right');
       parentHeight -= this._getMargin(this._parentNode, 'margin-top');
       parentHeight -= this._getMargin(this._parentNode, 'margin-bottom');
     }
-
 
     // Calculate the object width and size starting with
     // the width and height from the object tag.
@@ -6290,7 +6308,9 @@ extend(FlashInserter, {
     var objWidth = this._explicitWidth;
     var objHeight = this._explicitHeight;
 
-    //console.log("js: _determineSize: obj size: "+ objWidth + "," + objHeight);
+    var xmlWidth = this._nodeXML.getAttribute('width');
+    var xmlHeight = this._nodeXML.getAttribute('height');
+
     if (objWidth && objHeight) {
       // calculate width in pixels
       if (objWidth.indexOf('%') != -1) {
@@ -6298,26 +6318,17 @@ extend(FlashInserter, {
       } else {
         pixelsWidth = objWidth;
       }
+
       // calculate height in pixels
       if (objHeight.indexOf('%') != -1) {
         pixelsHeight = parentHeight * parseInt(objHeight) / 100;
       } else {
         pixelsHeight = objHeight;
       }
-      if (this._nodeXML.getAttribute('viewBox')) {
-        return {width: objWidth, height: objHeight,
-                pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight, clipMode: 'neither'};
-      } else {
-        return {width: objWidth, height: objHeight,
-                pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight, clipMode: 'both'};
-      }
+      return {width: objWidth, height: pixelsHeight,
+              pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight,
+              clipMode: this._nodeXML.getAttribute('viewBox') ? 'neither' : 'both'};
     }
-
-    var xmlWidth = this._nodeXML.getAttribute('width');
-    var xmlHeight = this._nodeXML.getAttribute('height');
-
-    //console.log("js: _determineSize: xml size: "+ xmlWidth + "," + xmlHeight);
-    //console.log("js: _determineSize: parent size: "+ parentWidth+ "," + parentHeight);
 
     var viewBox, boxWidth, boxHeight;
     if (objWidth) {
@@ -6357,13 +6368,13 @@ extend(FlashInserter, {
             objHeight = 150;
           }
         }
+        return {width: objWidth, height: objHeight,
+                pixelsWidth: pixelsWidth, pixelsHeight: objHeight, clipMode: 'both'};
       }
-      return {width: objWidth, height: objHeight,
-              pixelsWidth: pixelsWidth, pixelsHeight: objHeight, clipMode: 'both'};
     }
 
     if (objHeight) {
-      // estimate the height that will be used for percents
+
       if (objHeight.indexOf('%') != -1) {
         pixelsHeight = parentHeight * parseInt(objHeight) / 100;
       } else {
@@ -6422,45 +6433,178 @@ extend(FlashInserter, {
       objWidth = "100%";
     }
 
-    // estimate the width that will be used for percents
+    // Calculate the width that will be used for percents.
     if (objWidth.indexOf('%') != -1) {
       pixelsWidth = parentWidth * parseInt(objWidth) / 100;
     } else {
       pixelsWidth = objWidth;
     }
 
-    if (xmlHeight) {
-      // height pixels are used directly
-      if (xmlHeight.indexOf('%') == -1) {
-        objHeight = xmlHeight;
+    // Height pixels are used directly.
+    if (xmlHeight && xmlHeight.indexOf('%') == -1) {
+      objHeight = xmlHeight;
+      return {width: objWidth, height: objHeight,
+              pixelsWidth: pixelsWidth, pixelsHeight: objHeight,
+              clipMode: this._nodeXML.getAttribute('viewBox') ? 'neither' : 'both'};
+    } else {
+      // The height is a % or missing. Check for viewBox.
+      if (this._nodeXML.getAttribute('viewBox')) {
+        if (isSafari && this._embedType == 'script'
+            && xmlHeight.indexOf('%') != -1 && parentHeight > 0) {
+          objHeight = xmlHeight;
+          pixelsHeight = parentHeight * parseInt(xmlHeight) / 100;
+          return {width: objWidth, height: objHeight,
+                  pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight, clipMode: 'neither'};
+        }
+        var viewBox = this._nodeXML.getAttribute('viewBox').split(/\s+|,/);
+        var boxWidth = viewBox[2];
+        var boxHeight = viewBox[3];
+        objHeight = pixelsWidth * (boxHeight / boxWidth);
         return {width: objWidth, height: objHeight,
                 pixelsWidth: pixelsWidth, pixelsHeight: objHeight, clipMode: 'neither'};
-      // can we calculate pixels?
-      } else if (xmlHeight.indexOf('%') != -1 && parentHeight > 0) {
-        objHeight = xmlHeight;
-        pixelsHeight = parentHeight * parseInt(xmlHeight) / 100;
+      } else {
+        objHeight = 150;
         return {width: objWidth, height: objHeight,
-                pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight, clipMode: 'neither'};
+                pixelsWidth: pixelsWidth, pixelsHeight: objHeight, clipMode: 'both'};
       }
-    } else {
-      xmlHeight = '100%';
     }
 
+  },
 
-    // the height is a %. Check for viewBox
-    if (this._nodeXML.getAttribute('viewBox')) {
-      var viewBox = this._nodeXML.getAttribute('viewBox').split(/\s+|,/);
-      var boxWidth = viewBox[2];
-      var boxHeight = viewBox[3];
+  _standardsSize: function() {
+    var pixelsWidth, pixelsHeight;
 
-      objHeight = pixelsWidth * (boxHeight / boxWidth);
-      return {width: objWidth, height: objHeight,
-              pixelsWidth: pixelsWidth, pixelsHeight: objHeight, clipMode: 'neither'};
-    } else {
-      objHeight = 150;
-      return {width: objWidth, height: objHeight,
-              pixelsWidth: pixelsWidth, pixelsHeight: objHeight, clipMode: 'height'};
+    var parentWidth = this._parentNode.clientWidth;
+    var parentHeight = this._parentNode.clientHeight;
+
+    if (!isSafari) {
+      parentWidth -= this._getMargin(this._parentNode, 'margin-left');
+      parentWidth -= this._getMargin(this._parentNode, 'margin-right');
+      parentHeight -= this._getMargin(this._parentNode, 'margin-top');
+      parentHeight -= this._getMargin(this._parentNode, 'margin-bottom');
     }
+
+    // Calculate the object width and size starting with
+    // the width and height from the object tag.
+    // 
+    // If this is script embed type, the algorithm will perform as
+    // an object tag with neither width nor height specified.
+    // 
+    var objWidth = this._explicitWidth;
+    var objHeight = this._explicitHeight;
+
+    var xmlWidth = this._nodeXML.getAttribute('width');
+    var xmlHeight = this._nodeXML.getAttribute('height');
+
+    if (objWidth && !objHeight) {
+      return this._quirksSize();
+    }
+
+    if (!objWidth && !objHeight) {
+      return this._quirksSize();
+    }
+
+    if (!objWidth && objHeight) {
+      if (xmlWidth) {
+         objWidth = xmlWidth;
+      } else {
+         objWidth = '100%';
+      }
+
+      // calculate width in pixels
+      if (objWidth.indexOf('%') != -1) {
+        pixelsWidth = parentWidth * parseInt(objWidth) / 100;
+      } else {
+        pixelsWidth = objWidth;
+      }
+
+      // Use object height pixels, if specified.
+      if (objHeight.indexOf('%') == -1) {
+        pixelsHeight = objHeight;
+        // If width and height are both specified on the SVG file in pixels,
+        // then the object width is calculated based on the object height and the
+        // aspect ratio between the svg height and width.
+        if (xmlWidth && xmlWidth.indexOf('%') == -1 &&
+          xmlHeight && xmlHeight.indexOf('%') == -1) {
+          objWidth = objHeight * (xmlWidth / xmlHeight);
+          pixelsWidth = objWidth;
+        } else {
+          if (this._nodeXML.getAttribute('viewBox')) {
+            viewBox = this._nodeXML.getAttribute('viewBox').split(/\s+|,/);
+            boxWidth = viewBox[2];
+            boxHeight = viewBox[3];
+            objWidth = pixelsHeight * (boxWidth / boxHeight);
+            pixelsWidth = objWidth;
+          }
+        }
+        return {width: objWidth, height: objHeight,
+                pixelsWidth: pixelsWidth, pixelsHeight: objHeight,
+                clipMode: this._nodeXML.getAttribute('viewBox') ? 'neither' : 'both'};
+      } else {
+        if (xmlHeight && xmlHeight.indexOf('%') == -1) {
+          pixelsHeight = xmlHeight;
+        } else {
+          if (this._nodeXML.getAttribute('viewBox')) {
+            viewBox = this._nodeXML.getAttribute('viewBox').split(/\s+|,/);
+            boxWidth = viewBox[2];
+            boxHeight = viewBox[3];
+            pixelsHeight = pixelsWidth * (boxHeight / boxWidth);
+          }
+          else {
+            pixelsHeight = 150;
+          }
+        }
+        return {width: objWidth, height: pixelsHeight,
+                pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight,
+                clipMode: this._nodeXML.getAttribute('viewBox') ? 'neither' : 'both'};
+      }
+    }
+
+    if (objWidth && objHeight) {
+      // calculate width in pixels
+      if (objWidth.indexOf('%') != -1) {
+        pixelsWidth = parentWidth * parseInt(objWidth) / 100;
+      } else {
+        pixelsWidth = objWidth;
+      }
+
+      // Use object height pixels, if specified.
+      if (objHeight.indexOf('%') == -1) {
+        return {width: objWidth, height: objHeight,
+                pixelsWidth: pixelsWidth, pixelsHeight: objHeight,
+                clipMode: this._nodeXML.getAttribute('viewBox') ? 'neither' : 'both'};
+      }
+      else {
+        if (xmlWidth && xmlWidth.indexOf('%') == -1 &&
+          // If width and height are both specified on the SVG file in pixels,
+          // then the height is calculated based on the object width and the
+          // aspect ratio between the svg height and width.
+          xmlHeight && xmlHeight.indexOf('%') == -1) {
+          pixelsHeight = pixelsWidth * (xmlHeight / xmlWidth);
+          return {width: objWidth, height: pixelsHeight,
+                  pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight, clipMode: 'neither'};
+        } else {
+          // Default to viewbox aspect resolution
+          if (this._nodeXML.getAttribute('viewBox')) {
+            viewBox = this._nodeXML.getAttribute('viewBox').split(/\s+|,/);
+            boxWidth = viewBox[2];
+            boxHeight = viewBox[3];
+            objHeight = pixelsWidth * (boxHeight / boxWidth);
+            return {width: objWidth, height: objHeight,
+                    pixelsWidth: pixelsWidth, pixelsHeight: objHeight, clipMode: 'neither'};
+          } else {
+            if (xmlHeight && xmlHeight.indexOf('%') == -1) {
+              pixelsHeight = xmlHeight;
+            } else {
+              pixelsHeight = 150;
+            }
+            return {width: objWidth, height: pixelsHeight,
+                    pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight, clipMode: 'both'};
+          }
+        }
+      }
+    }
+
 
   },
 
