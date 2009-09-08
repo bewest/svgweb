@@ -6312,6 +6312,20 @@ extend(FlashInserter, {
     var parentWidth = this._parentNode.clientWidth;
     var parentHeight = this._parentNode.clientHeight;
 
+    var grandParent = this._parentNode;
+    while (grandParent && grandParent.style) {
+      // If a grandparent is a div, the parent height is ok.
+      if (grandParent.nodeName == 'DIV') {
+        break;
+      }
+      // If we get to the body without div, ignore parent height.
+      if (grandParent.nodeName == 'BODY') {
+        parentHeight = 0;
+        break;
+      }
+      grandParent = grandParent.parentNode;
+    }
+
     if (!isSafari) {
       parentWidth -= this._getMargin(this._parentNode, 'margin-left');
       parentWidth -= this._getMargin(this._parentNode, 'margin-right');
