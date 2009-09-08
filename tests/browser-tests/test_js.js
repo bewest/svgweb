@@ -5087,6 +5087,16 @@ function testCreateSVGObject() {
   obj2.setAttribute('id', 'dynamic2');
   obj2.setAttribute('data', '../../samples/svg-files/rectangles.svg');
   obj2.setAttribute('type', 'image/svg+xml');
+  // add some extra attributes; make sure they transfer through
+  obj2.setAttribute('custom1', 'foobar');
+  obj2.setAttribute('custom2', true);
+  // NOTE: Known to fail on IE unfortunately; IE simply doesn't place attributes
+  // into the DOM that have a direct false value as opposed to the string 
+  // 'false'
+  //obj2.setAttribute('custom3', false);
+  obj2.setAttribute('custom4', 'true');
+  obj2.setAttribute('custom5', 'false');
+  obj2.setAttribute('camelCaseName', 'camelCaseValue');
   obj2.onload = function() {
     // now run our tests for this object
     
@@ -5115,6 +5125,25 @@ function testCreateSVGObject() {
     rect.setAttribute('stroke', 'red');
     svg.unsuspendRedrawAll();
     console.log('FOURTH IMAGE: The rectangle should be blue with a red stroke');
+    
+    // make sure that custom attributes came through
+    assertEquals('obj2.getAttribute(custom1) == "foobar"', 'foobar',
+                 obj2.getAttribute('custom1'));
+    assertEquals('obj2.getAttribute(custom2) == "true"', 'true',
+                 obj2.getAttribute('custom2'));
+    // NOTE: Known to fail on IE unfortunately; IE simply doesn't place 
+    // attributes into the DOM that have a direct false value as opposed to 
+    // the string 'false'
+    //assertEquals('obj2.getAttribute(custom3) == "false"', 'false',
+    //             obj2.getAttribute('custom3'));
+    assertTrue('obj2.getAttribute(custom4) == true',
+               (obj2.getAttribute('custom4') == 'true'
+                || obj2.getAttribute('custom4') == true));
+    assertTrue('obj2.getAttribute(custom5) == false',
+               (obj2.getAttribute('custom5') == 'false'
+                 || obj2.getAttribute('custom5') == false))
+    assertEquals('obj2.getAttribute(camelCaseName) == "camelCaseValue"', 
+                 'camelCaseValue', obj2.getAttribute('camelCaseName'));
     
     // indicate that this onload and its tests ran
     svgweb._dynamicObjOnloads++;

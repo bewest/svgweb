@@ -16,9 +16,9 @@
            > Manual </a>]--></span></h1>
     <label>Select SVG:
     </label>
-    <select id="selectSVG" onClick="showSVG();" >
-        <option value="scim-anim">scimitar-anim
+    <select id="selectSVG" onclick="showSVG();" >
         <option value="scim">scimitar
+        <option value="scim-anim">scimitar-anim
         <option value="anim1">anim1 - animate
         <option value="anim2">anim2 - animateTransform
         <option value="anim3">anim3 - key splines!
@@ -486,29 +486,33 @@
         <option value='yinyang'>yinyang
         <option value='zillow'>zillow
     </select>
-    <input type="button" onClick="window.document.getElementById('selectSVG').selectedIndex = window.document.getElementById('selectSVG').selectedIndex + 1;showSVG();" value="next" style="margin-right:10px"/>
+    <input type="button" onclick="showNext()" value="next" style="margin-right:10px" />
     <p id='selectModeP'><span>Select Display Mode:</span>
-    <select id="selectMode" onClick="setMode(this.selectedIndex);">
+    <select id="selectMode" onclick="setMode(this.selectedIndex);">
         <option value="image">image
         <option value="xml">xml
     </select>
     </p>
     <p><span>Select Renderer:</span>
-    <select id="selectRenderer" onClick="changeRenderer(this.value);">
+    <select id="selectRenderer" onclick="changeRenderer(this.value);">
         <option value="flash">rendered by Flash
         <option value="native">browser native svg
     </select>
     </p>
+    <p><span>Show Demos Known to Fail:</span>
+      <input id="showFailingDemos" type="checkbox" onclick="handleFailingDemos()" />
+    </p>
+      
     <p>
     <span>viewBox:</span>
     <input id='inputViewBox' type="text" value=""/>
-    <input type="button" onClick="setViewBox();" value="set" style="margin-right:10px"/>
-    <input type="button" onClick="modVB(function(vb) {vb[0]=parseFloat(vb[0])+25.0;});" value="<"/>
-    <input type="button" onClick="modVB(function(vb) {vb[0]=parseFloat(vb[0])-25.0;});" value=">"/>
-    <input type="button" onClick="modVB(function(vb) {vb[1]=parseFloat(vb[1])+25.0;});" value="^"/>
-    <input type="button" onClick="modVB(function(vb) {vb[1]=parseFloat(vb[1])-25.0;});" value="V"/>
-    <input type="button" onClick="modVB(function(vb) {vb[2]=parseFloat(vb[2])/1.1;vb[3]=parseFloat(vb[3])/1.1;});" value="+"/>
-    <input type="button" onClick="modVB(function(vb) {vb[2]=parseFloat(vb[2])*1.1;vb[3]=parseFloat(vb[3])*1.1;});" value="-"/>
+    <input type="button" onclick="setViewBox();" value="set" style="margin-right:10px"/>
+    <input type="button" onclick="modVB(function(vb) {vb[0]=parseFloat(vb[0])+25.0;});" value="<"/>
+    <input type="button" onclick="modVB(function(vb) {vb[0]=parseFloat(vb[0])-25.0;});" value=">"/>
+    <input type="button" onclick="modVB(function(vb) {vb[1]=parseFloat(vb[1])+25.0;});" value="^"/>
+    <input type="button" onclick="modVB(function(vb) {vb[1]=parseFloat(vb[1])-25.0;});" value="V"/>
+    <input type="button" onclick="modVB(function(vb) {vb[2]=parseFloat(vb[2])/1.1;vb[3]=parseFloat(vb[3])/1.1;});" value="+"/>
+    <input type="button" onclick="modVB(function(vb) {vb[2]=parseFloat(vb[2])*1.1;vb[3]=parseFloat(vb[3])*1.1;});" value="-"/>
     </p>
     <p><div id='mySVGDiv' style='display:block;float:left;'><!--SVG will go here --></div></p>
     <pre id='myXMLp' width="100%" style='clear:left;'></pre>
@@ -516,10 +520,11 @@
     <script type='text/javascript'>
     var currentSVGIndex = -1;
     var currentSVGObject;
+    var currentSVGName;
     
     var SVGFiles= [
-                    { name: 'scim-anim', svgURL: "svg-files/scimitar-anim.svg", width:466, height:265 },
                     { name: 'scim', svgURL: "svg-files/scimitar.svg", width:466, height:265 },
+                    { name: 'scim-anim', svgURL: "svg-files/scimitar-anim.svg", width:466, height:265 },
                     { name: 'anim1', svgURL: "svg-files/anim1.svg", width:800, height:600 },
                     { name: 'anim2', svgURL: "svg-files/anim2.svg", width:800, height:600 },
                     { name: 'anim3', svgURL: "svg-files/anim3.svg", width:800, height:600 },
@@ -547,11 +552,11 @@
                     { name: 'acar', svgURL: "svg-files/tommek_Car.svg", width:1052, height:744 },
                     { name: 'blocks_game', svgURL: "svg-files/blocks_game.svg", width:345, height:407 },
                     { name: 'photos', svgURL: "svg-files/photos.svg", width:800, height:600 },
-                    { name: 'webstats', svgURL: "svg-files/displayWebStats.svg", width:800, height:600 },
-                    { name: 'us', svgURL: "svg-files/USStates.svg" },
-                    { name: 'snakes', svgURL: "svg-files/snake.svg" },
-                    { name: 'steps', svgURL: "svg-files/Steps.svg" },
-                    { name: 'circles1', svgURL: "svg-files/circles1.svg", width:300, height: 300 },
+                    { name: 'webstats', svgURL: "svg-files/displayWebStats.svg", width:800, height:600, fails: true },
+                    { name: 'us', svgURL: "svg-files/USStates.svg", fails: true },
+                    { name: 'snakes', svgURL: "svg-files/snake.svg", fails: true },
+                    { name: 'steps', svgURL: "svg-files/Steps.svg", fails: true },
+                    { name: 'circles1', svgURL: "svg-files/circles1.svg", width:800, height:600, fails: true },
                     { name: 'gaussian 1', svgURL: "svg-files/gaussian1.svg" },
                     { name: 'gaussian 2', svgURL: "svg-files/gaussian2.svg" },
                     { name: 'gaussian 3', svgURL: "svg-files/gaussian3.svg" },
@@ -560,7 +565,7 @@
                     { name: 'lingrad2', svgURL: "svg-files/lineargradient2.svg" },
                     { name: 'lingrad3', svgURL: "svg-files/lineargradient3.svg" },
                     { name: 'linear grad pct', svgURL: "svg-files/lineargradient4.svg" },
-                    { name: 'mouseEvents', svgURL: "svg-files/mouseEvents.svg", width:600, height: 600 },
+                    { name: 'mouseEvents', svgURL: "svg-files/mouseEvents.svg", width: 600, height: 600, fails: true },
                     { name: 'pencil', svgURL: "svg-files/pencil.svg" },
                     { name: 'preserve', svgURL: "svg-files/preserveAspectRatio.svg" },
                     { name: 'radial1', svgURL: "svg-files/radialgradient1.svg" },
@@ -939,7 +944,7 @@
                     { name: 'openweb', svgURL: 'svg-files/openweb.svg', width:118, height:84 },
                     { name: 'opera', svgURL: 'svg-files/opera.svg', width:94, height:106 },
                     { name: 'osa', svgURL: 'svg-files/osa.svg', width:100, height:100 },
-                    { name: 'oscon', svgURL: 'svg-files/oscon.svg', width:111, height:96 },
+                    { name: 'oscon', svgURL: 'svg-files/oscon.svg', width:111, height:96, fails: true },
                     { name: 'osi', svgURL: 'svg-files/osi.svg', width:100, height:100 },
                     { name: 'padlock', svgURL: 'svg-files/padlock.svg', width:100, height:100 },
                     { name: 'patch', svgURL: 'svg-files/patch.svg', width:100, height:100 },
@@ -993,6 +998,11 @@
     if (document.all && !navigator.userAgent.indexOf('Opera') >= 0) {
       isIE = parseFloat(navigator.appVersion.split('MSIE ')[1]) || undefined;
     }
+    
+    // Internet Explorer doesn't support the disabled attribute on OPTION
+    // elements, so we have to keep a copy of the original SELECT around
+    // if the user toggles showing failing demos on and off
+    var origSelect;
                   
     /* 
       Internet Explorer's list of standard XHR PROGIDS. 
@@ -1032,7 +1042,8 @@
         }
         if (mode == 1) {
             if (document.getElementById('mySVGDiv').style.display != 'none') {
-                fetchXML(SVGFiles[currentSVGIndex].svgURL);
+              var name = indexToName(currentSVGIndex);
+              fetchXML(SVGFiles['_' + name].svgURL);
             }
         }
     }
@@ -1075,16 +1086,44 @@
         document.getElementById('myXMLp').style.display='';
     }
     
-    function svgOnLoad() {
+    function svgOnLoad(svgInstance, svgName) {
         // for profiling
         //report();
-        if (SVGFiles[currentSVGIndex].viewBox) {
-            currentSVGObject.contentDocument.documentElement.setAttribute('viewBox', SVGFiles[currentSVGIndex].viewBox);
-            document.getElementById('inputViewBox').value = SVGFiles[currentSVGIndex].viewBox;
+        var name = indexToName(currentSVGIndex);
+
+        // the user might have rapidly pressed next, so that this onload event
+        // is 'late' and doesn't represent what we want anymore
+        if (svgName != name) {
+          return;
+        }
+        
+        // save a reference to the SVG OBJECT after its been transformed
+        currentSVGObject = svgInstance;
+        
+        var entry = SVGFiles['_' + name];
+        if (entry.viewBox) {
+            currentSVGObject.contentDocument.documentElement.setAttribute('viewBox', entry.viewBox);
+            document.getElementById('inputViewBox').value = entry.viewBox;
         }
         else {
-            window.modVB(function(vb){});
+            modVB(function(vb){});
         }
+    }
+    
+    // turns an option index position into the SVG file name it represents
+    function indexToName(index) {
+      var options = document.getElementById('selectSVG').childNodes;
+      var optionIndex = 0;
+      for (var i = 0; i < options.length; i++) {
+        if (options[i].nodeType != 1) {
+          continue;
+        }
+        
+        if (optionIndex == index) {
+          return options[i].getAttribute('value');
+        }
+        optionIndex++;
+      }
     }
 
     function showSVG(forceIndex) {
@@ -1093,15 +1132,21 @@
           svgIndex = forceIndex;
           document.getElementById('selectSVG').selectedIndex = svgIndex;
         } else {
-          svgIndex = document.getElementById('selectSVG').selectedIndex;
+          var select = document.getElementById('selectSVG');
+          svgIndex = select.selectedIndex;
         }
+        
+        // get the SVG file name to display
+        var svgName = indexToName(svgIndex);
         
         // now render new SVG file
         if (currentSVGIndex != svgIndex) {
-            var newSVG = SVGFiles[svgIndex];
+            var newSVG = SVGFiles['_' + svgName];
+            currentSVGName = svgName;
             currentSVGObject = document.createElement('object', true);
             currentSVGObject.setAttribute('type', 'image/svg+xml');
             currentSVGObject.setAttribute('data', newSVG.svgURL);
+            currentSVGObject.setAttribute('svgName', svgName);
             if (newSVG.width != undefined) {
               currentSVGObject.setAttribute('width', newSVG.width);
             }
@@ -1109,9 +1154,14 @@
               currentSVGObject.setAttribute('height', newSVG.height);
             }
             currentSVGObject.addEventListener('load', function() {
-              // save a reference to the SVG OBJECT after its been transformed
-              currentSVGObject = this;
-              svgOnLoad();
+              // if the user is very rapidly pressing the next button, some of
+              // the old SVG OBJECTs might have loaded in the interim while
+              // we were waiting; remove all existing SVG OBJECTs except
+              // our new one again
+              removeObjects(currentSVGName);
+                            
+              // indicate that we are now loade
+              svgOnLoad(this, svgName);
             }, false);
             
             // remove any old SVG OBJECTs that might be around
@@ -1119,15 +1169,9 @@
             
             // reset the display mode
             setMode(0);
-
-            for (var i = 0; i < container.childNodes.length; i++) {
-              var child = container.childNodes[i];
-              if (child.nodeType == 1 
-                  && (child.className.indexOf('embedssvg') != -1
-                      || child.getAttribute('type') == 'image/svg+xml')) {
-                svgweb.removeChild(child, container);
-              }
-            }
+            
+            // remove any SVG OBJECTs already on the page
+            removeObjects();
             
             // append new SVG object
             currentSVGObject = svgweb.appendChild(currentSVGObject, container);
@@ -1139,18 +1183,51 @@
             document.getElementById('selectSVG').blur();
         }
     }
+    
+    function removeObjects(exceptFor) {      
+      // remove any old SVG OBJECTs that might be around
+      var container = document.getElementById('mySVGDiv');
+      
+      for (var i = 0; i < container.childNodes.length; i++) {
+        var child = container.childNodes[i];
+        if (child.nodeType == 1 
+            && (child.className.indexOf('embedssvg') != -1
+                || child.getAttribute('type') == 'image/svg+xml')) {
+          if (exceptFor && child.getAttribute('svgName') == exceptFor) {
+            continue;
+          }
+          
+          // if the user rapidly presses the next button there might
+          // not be an object to remove
+          try {
+            svgweb.removeChild(child, container);
+          } catch (exp) {
+            console.log('Error removing child: ' + (exp.message || exp));
+          }
+        }
+      }
+    }
 
     function changeRenderer(newRenderer) {
       if (newRenderer != svgweb.getHandlerType()) {
         var url = window.location.toString();
+        
         // strip off any existing query string
         url = url.replace(/\?.*$/, '');
+        
         // build up our new query string
-        url = '?svgIndex='+currentSVGIndex;
+        var name = indexToName(currentSVGIndex);
+        url = '?name='+encodeURIComponent(name);
         if (newRenderer == 'flash') {
           url += '&svg.render.forceflash=true';
         } else {
           url += '&svg.render.forceflash=false';
+        }
+        
+        // save whether to show failing demos
+        var showAll = document.getElementById('showFailingDemos').checked;
+        if (showAll) {
+          url += '&showFailingDemos=true';
         }
         
         window.location = url;
@@ -1158,6 +1235,11 @@
     }
 
     function modVB(modfunc) {
+        if (!currentSVGObject || !currentSVGObject.contentDocument) {
+          // not finished loading yet
+          return;
+        }
+        
         var viewBox = currentSVGObject.contentDocument.documentElement.getAttribute('viewBox');
         if (typeof(viewBox) != "string" || !viewBox.match(/\s*\S+\s*\S+\s*\S+\s*\S+\s*/)) {
             var width = currentSVGObject.getAttribute('width');
@@ -1178,11 +1260,79 @@
         currentSVGObject.contentDocument.documentElement.setAttribute('viewBox', viewBox);
     }
     
+    function handleFailingDemos() {
+      var showAll = document.getElementById('showFailingDemos').checked;
+      var select = document.getElementById('selectSVG');
+      
+      var origIndex = select.selectedIndex;
+      
+      // IE doesn't supported disabled attribute on OPTION elements, so we
+      // keep an original pristine version of the options around if the user
+      // toggles showing failing demos on and off
+      if (!origSelect) {
+        origSelect = select.cloneNode(true);
+      }
+      
+      // remove old children
+      select.innerHTML = '';
+      
+      // add in the new OPTIONs with the correct failing demos setting
+      for (var i = 0; i < origSelect.childNodes.length; i++) {
+        var option = origSelect.childNodes[i];
+        if (option.nodeName.toLowerCase() != 'option') {
+          continue;
+        }
+        
+        var name = option.getAttribute('value');
+        var entry = SVGFiles['_' + name];
+        if (!entry) {
+          console.log('Unable to find SVGFiles demo entry for ' + name);
+          continue;
+        }
+        
+        if (entry.fails && !showAll) {
+          continue;
+        }
+        
+        // make a copy of the original OPTION
+        select.appendChild(option.cloneNode(true));
+      }
+      
+      // force a redisplay
+      currentSVGIndex = -1;
+      showSVG(origIndex);
+    }
+    
+    function showNext() {
+      var selectSVG = document.getElementById('selectSVG');
+      var nextIndex = selectSVG.selectedIndex + 1;
+      var showAll = document.getElementById('showFailingDemos').checked;
+      
+      // skip past disabled demos if user wants that
+      while (!showAll && nextIndex < SVGFiles.length 
+             && SVGFiles[nextIndex].fails) {
+        nextIndex++;
+      }
+      
+      selectSVG.selectedIndex = nextIndex;
+      showSVG();
+    }
+    
+    function indexSVGFiles() {
+      for (var i = 0; i < SVGFiles.length; i++) {
+        var entry = SVGFiles[i];
+        SVGFiles['_' + entry.name] = entry;
+      }
+    }
+    
     if (!document.implementation.hasFeature('http://www.w3.org/TR/SVG11/feature#BasicStructure', '1.1')) {
         document.getElementById('selectRenderer').disabled='true';
     }
     
     window.onload = function() {
+      // be able to grab a specific demo by name
+      indexSVGFiles();
+      
       // see if an SVG file is specified in the URL
       var svgIndex, svgName;
       var search = window.location.search;
@@ -1205,6 +1355,14 @@
       if (window.location.search.indexOf('svg.render.forceflash=false') != -1) {
         document.getElementById('selectRenderer').value = 'native';
       }
+      
+      // see if we are forcing all demos to be shown
+      if (window.location.search.indexOf('showFailingDemos=true') != -1) {
+        document.getElementById('showFailingDemos').checked = true;
+      }
+      
+      // enable or disable demos known to fail
+      handleFailingDemos();
         
       showSVG(svgIndex);
     }

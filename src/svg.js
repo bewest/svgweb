@@ -620,14 +620,22 @@ extend(SVGWeb, {
           node.addEventListener('load', node.onload, false);
         }
         
-        // turn our OBJECT into a place-holder DIV attached to the DOM, 
+        // Turn our OBJECT into a place-holder DIV attached to the DOM, 
         // copying over our properties; this will get replaced by the 
-        // Flash OBJECT
+        // Flash OBJECT. We need to do this because we need a real element
+        // to 'replace' later on for IE which uses outerHTML, and the DIV
+        // will act as that place-holder element.
         var div = document._createElement('div');
         for (var j = 0; j < node.attributes.length; j++) {
           var attr = node.attributes[j];
+          // trim out 'empty' attributes with no value
+          if (!attr.nodeValue && attr.nodeValue !== 'true') {
+            continue;
+          }
+          
           div.setAttribute(attr.nodeName, attr.nodeValue);
-        } 
+        }
+
         parent.appendChild(div);
       
         // copy over internal event listener info
@@ -657,8 +665,8 @@ extend(SVGWeb, {
   removeChild: function(node, parent) {
     if (node.nodeName.toLowerCase() == 'object' 
         || node.nodeName.toLowerCase() == 'embed') {
-      this.totalSVG--;
-      this.totalLoaded--;
+      this.totalSVG = this.totalSVG == 0 ? 0 : this.totalSVG - 1;
+      this.totalLoaded = this.totalLoaded == 0 ? 0 : this.totalLoaded - 1;
       
       // remove from our list of handlers
       var objID = node.getAttribute('id');
@@ -673,7 +681,12 @@ extend(SVGWeb, {
       }
       this.handlers = newHandlers;
       
-      if (this.getHandlerType() == 'flash') {
+      // ObjHandler might not have a fake 'document' object; this can happen
+      // if loading of the SVG OBJECT is 'interrupted' by a rapid removeChild
+      // before it ever had a chance to even finish loading. If there is no
+      // fake document then skip trying to remove timing functions and event
+      // handlers below
+      if (this.getHandlerType() == 'flash' && objHandler.document) {
         // remove any setTimeout or setInterval functions that might have
         // been registered inside this object; see _SVGWindow.setTimeout
         // for details
@@ -745,8 +758,12 @@ extend(SVGWeb, {
         objHandler.flash.contentDocument = null;
         objHandler.flash = null;
         objHandler._xml = null;
-        objHandler.window._scope = null;
-        objHandler.window = null;
+        // objHandler.window might not be present if this SVG OBJECT is being
+        // removed before it was even finished loading
+        if (objHandler.window) {
+          objHandler.window._scope = null;
+          objHandler.window = null;
+        }
       
         var svgObj = objHandler._svgObject;
         var svgDoc = svgObj.document;
@@ -760,10 +777,12 @@ extend(SVGWeb, {
         svgObj._svgNode = null;
         svgObj._handler = null;
       
-        iframeWin._setTimeout = null;
-        iframeWin.setTimeout = null;
-        iframeWin._setInterval = null;
-        iframeWin.setInterval = null;
+        if (iframeWin) {
+          iframeWin._setTimeout = null;
+          iframeWin.setTimeout = null;
+          iframeWin._setInterval = null;
+          iframeWin.setInterval = null;
+        }
       
         objHandler._svgObject = null;
         svgObj = null;
@@ -5687,7 +5706,7 @@ extend(_SVGObject, {
     
   _onFlashLoaded: function(msg) {
     //console.log('_SVGObject, onFlashLoaded, msg='+this._handler.debugMsg(msg));
-    
+
     // store a reference to our Flash object
     this._handler.flash = document.getElementById(this._handler.flashID);
 
@@ -6182,6 +6201,7 @@ extend(FlashInserter, {
     var background = this._determineBackground();
     var style = this._determineStyle();
     var className = this._determineClassName();
+    var customAttrs = this._determineCustomAttrs();
     
     // setup our ID; if we are embedded with a SCRIPT tag, we use the ID from 
     // the SVG ROOT tag; if we are embedded with an OBJECT tag, then we 
@@ -6198,7 +6218,7 @@ extend(FlashInserter, {
     
     // get a Flash object and insert it into our document
     var flash = this._createFlash(size, elementID, background, style, 
-                                  className);
+                                  className, customAttrs);
     this._insertFlash(flash);
     
     // wait for the Flash file to finish loading
@@ -6688,6 +6708,47 @@ extend(FlashInserter, {
     }
   },
   
+  /** The developer might have added custom attributes on to the place holder
+      we are replacing for SVG OBJECTs; copy those over and make sure they
+      show up on the Flash OBJECT as well. */
+  _determineCustomAttrs: function() {
+    var results = [];
+    if (this._embedType == 'object') {
+      var node = this._replaceMe;
+      // we use a fake object to determine potential default attributes that
+      // we don't want to copy over to our Flash object
+      var commonObj = document._createElement('object');
+      for (var j = 0; j < node.attributes.length; j++) {
+        var attr = node.attributes[j];
+        var attrName = attr.nodeName;
+        var attrValue = attr.nodeValue;
+                 
+        // trim out 'empty' attributes with no value
+        if (!attrValue && attrValue !== 'true') {
+          continue;
+        }
+        
+        // trim out anything that is on a common OBJECT so we don't have
+        // overlap
+        if (commonObj.getAttribute(attrName)) {
+          continue;
+        }
+        
+        // trim out other OBJECT overrides as well as some custom attributes
+        // we might have added earlier in the OBJECT creation process 
+        // (_listeners, addEventListener, etc.)
+        if (/^(id|name|width|height|data|class|style|codebase|type|_listeners|addEventListener|onload)$/.test(attrName)) {
+          continue;
+        }
+        
+        results.push({attrName: attrName.toString(), 
+                      attrValue: attrValue.toString()});
+      }
+    }
+    
+    return results;
+  },
+  
   /** Creates a Flash object that embeds the Flash SVG Viewer.
 
       @param size Object literal with width and height.
@@ -6697,9 +6758,13 @@ extend(FlashInserter, {
       transparent boolean.
       @param style Style string to copy onto Flash object.
       @param className The class name to copy into the Flash object.
+      @param customAttrs Array of custom attributes that the developer might
+      have put on their SVG OBJECT; each entry in the array is an object
+      literal with attrName and attrValue as the keys.
       
       @returns Flash object as HTML string. */ 
-  _createFlash: function(size, elementID, background, style, className) {
+  _createFlash: function(size, elementID, background, style, className,
+                         customAttrs) {
     var flashVars = 
           'uniqueId=' + encodeURIComponent(elementID)
         + '&sourceType=string'
@@ -6711,7 +6776,13 @@ extend(FlashInserter, {
     if (protocol.charAt(protocol.length - 1) == ':') {
       protocol = protocol.substring(0, protocol.length - 1);
     }
-
+    
+    var customAttrStr = '';
+    for (var i = 0; i < customAttrs.length; i++) {
+      customAttrStr += ' ' + customAttrs[i].attrName + '="'
+                            + customAttrs[i].attrValue + '"';
+    }
+    
     var flash =
           '<object\n '
             + 'classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"\n '
@@ -6725,6 +6796,7 @@ extend(FlashInserter, {
             + 'name="' + this._handler.flashID + '"\n '
             + 'style="' + style + '"\n '
             + 'class="' + className + '"\n '
+            + customAttrStr + '\n'
             + '>\n '
             + '<param name="allowScriptAccess" value="always"></param>\n '
             + '<param name="movie" value="' + src + '"></param>\n '
@@ -6754,6 +6826,7 @@ extend(FlashInserter, {
               + '://www.macromedia.com/go/getflashplayer" '
               + 'style="' + style + '"\n '
               + 'class="' + className + '"\n '
+              + customAttrStr + '\n'
               + ' />'
           + '</object>';
 
