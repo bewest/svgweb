@@ -1617,7 +1617,10 @@ extend(SVGWeb, {
     if (container) {
       for (var i = 0; i < container.childNodes.length; i++) {
         var child = container.childNodes[i];
-        child._fakeNode._htcNode = null;
+        // May be root svg:svg tag, already nulled above.
+        if (child._fakeNode) {
+            child._fakeNode._htcNode = null;
+        }
         child._fakeNode = null;
         child._handler = null;
       }
