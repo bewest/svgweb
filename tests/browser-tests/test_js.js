@@ -279,8 +279,6 @@ function runTests(embedTypes) {
   // browsers and can be fetched with getElementById, childNodes,
   // getElementsByTagNameNS, etc.
   
-  testUnload();
-  
   // our SVG OBJECTs located in the page source itself should have loaded by now
   if (_hasObjects) {
     console.log('Testing SVG OBJECT onload listeners...');
@@ -390,6 +388,10 @@ function runTests(embedTypes) {
       assertEquals('3rd page onload handler == bodyOnLoad', 'bodyOnLoad',
                    window._pageLoadedListeners[2]);
     }
+    
+    // Uncomment to test the page unload functionality. We comment this out 
+    // because it removes everything from the page.
+    //testUnload();
     
     // check for any Flash errors           
     if (!_flashError) {
@@ -6463,21 +6465,21 @@ function testBugFixes() {
 
 function testUnload() {
   // manually call unload listener to make sure no exceptions fire;
-  // on browsers other than Internet Explorer this is a no-op
+  // on browsers other than Internet Explorer this is a no-op 
   
-  // Uncomment to test the page unload functionality. We comment this out 
-  // because it removes everything from the page.  
-  /*
   console.log('Testing window.unload listener...');
   if (svgweb.getHandlerType() == 'flash') {
+    exp = null;
     try {
       svgweb._fireUnload();
     } catch (e) {
       exp = e;
     }
+
     if (exp) {
       console.log(exp.message);
     }
+
     assertNull('Window.unload should run without an exception', exp);
-  }*/
+  }
 }

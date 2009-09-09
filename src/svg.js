@@ -694,7 +694,9 @@ extend(SVGWeb, {
       // before it ever had a chance to even finish loading. If there is no
       // fake document then skip trying to remove timing functions and event
       // handlers below
-      if (this.getHandlerType() == 'flash' && objHandler.document) {
+      if (this.getHandlerType() == 'flash' 
+          && objHandler.document
+          && objHandler.document.defaultView) {
         // remove any setTimeout or setInterval functions that might have
         // been registered inside this object; see _SVGWindow.setTimeout
         // for details
@@ -729,10 +731,23 @@ extend(SVGWeb, {
           break;
         }
       }
+      
+      // remove window resize listener; do this before removing the SVG OBJECT
+      // from the page or else we will get an error on IE below since the 
+      // object is 'resized' when removed and onWindowResize will incorrectly
+      // get called
+      if (this.getHandlerType() == 'flash') {
+        if (isIE) {
+          window.detachEvent('onresize', objHandler._svgObject._resizeFunc);
+        } else {
+          window.removeEventListener('resize', 
+                                     objHandler._svgObject._resizeFunc, false);
+        }  
+      }
               
       // remove from the page
       node.parentNode.removeChild(node);
-      
+
       if (this.getHandlerType() == 'flash') {
         // delete the HTC container and all HTC nodes that belong to this
         // SVG OBJECT
@@ -741,17 +756,18 @@ extend(SVGWeb, {
           for (var i = 0; i < container.childNodes.length; i++) {
             var child = container.childNodes[i];
             if (typeof child.ownerDocument != 'undefined'
-                && child.ownerDocument === objHandler._svgObject.document) {
+                && child.ownerDocument == objHandler._svgObject.document) {
               if (typeof child._fakeNode != 'undefined'
                   && typeof child._fakeNode._htcNode != 'undefined') {
                 child._fakeNode._htcNode = null;
               }
               child._fakeNode = null;
               child._handler = null;
+              container.removeChild(child);
             }
           }
         }
-      
+
         // clear out the guidLookup table for nodes that belong to this
         // SVG OBJECT
         for (var guid in svgweb._guidLookup) {
@@ -760,7 +776,7 @@ extend(SVGWeb, {
             delete svgweb._guidLookup[guid];
           }
         }
-      
+
         // remove various properties to prevent IE memory leaks
         objHandler._finishedCallback = null;
         objHandler.flash.contentDocument = null;
@@ -772,7 +788,7 @@ extend(SVGWeb, {
           objHandler.window._scope = null;
           objHandler.window = null;
         }
-      
+
         var svgObj = objHandler._svgObject;
         var svgDoc = svgObj.document;
         svgDoc._nodeById = null;
@@ -784,14 +800,14 @@ extend(SVGWeb, {
         svgDoc = null;  
         svgObj._svgNode = null;
         svgObj._handler = null;
-      
+
         if (iframeWin) {
           iframeWin._setTimeout = null;
           iframeWin.setTimeout = null;
           iframeWin._setInterval = null;
           iframeWin.setInterval = null;
         }
-      
+
         objHandler._svgObject = null;
         svgObj = null;
         objHandler = null;
@@ -1588,28 +1604,15 @@ extend(SVGWeb, {
       return;
     }
 
-    // clean up svg:svg root tags
-    for (var i = 0; i < svgweb.handlers.length; i++) {
-      var root = svgweb.handlers[i].document.documentElement;
-      
-      if (svgweb.handlers[i].type == 'script') {
-        root = root._htcNode;
+    // clean up SVG OBJECTs
+    for (var i = 0; i < svgweb.handlers.length; i++) {      
+      if (svgweb.handlers[i].type == 'object') {
+        var removeMe = svgweb.handlers[i].flash;
+        svgweb.removeChild(removeMe, removeMe.parentNode);
+      } else {
+        // null out reference to root
+        svgweb.handlers[i].document.documentElement = null;
       }
-      
-      // remove anything we added to the HTC's style object as well as our
-      // property change listener
-      root.detachEvent('onpropertychange', 
-                       root._fakeNode.style._changeListener);
-      root.style.item = null;
-      root.style.setProperty = null;
-      root.style.getPropertyValue = null;
-      
-      // delete object references
-      root._fakeNode._htcNode = null;
-      root._fakeNode = null;
-      root._handler = null;
-      
-      root = null;
     }
 
     // delete the HTC container and all HTC nodes
@@ -1617,7 +1620,16 @@ extend(SVGWeb, {
     if (container) {
       for (var i = 0; i < container.childNodes.length; i++) {
         var child = container.childNodes[i];
-        // May be root svg:svg tag, already nulled above.
+        // remove style handling
+        if (child.nodeType == 1 && child.namespaceURI == svgns) {
+          child.detachEvent('onpropertychange', 
+                           child._fakeNode.style._changeListener);
+          child.style.item = null;
+          child.style.setProperty = null;
+          child.style.getPropertyValue = null;
+        }
+        
+        // remove other references
         if (child._fakeNode) {
             child._fakeNode._htcNode = null;
         }
@@ -5634,6 +5646,7 @@ function _SVGObject(svgNode, handler) {
 
       // create our document objects
       this.document = new _Document(this._xml, this._handler);
+      this._handler.document = this.document;
 
       // insert our Flash and replace the SVG OBJECT tag
       var nodeXML = this._xml.documentElement;
@@ -5779,23 +5792,26 @@ extend(_SVGObject, {
 
     // Attach window resize listener to adjust
     // object size when % is used.
-    var self = this;
-    // FIXME: Need to remove these event handlers on unload.
     if (isIE) {
-      window.attachEvent('onresize', function() {
-        if (self._handler) {
-          self._handler._onWindowResize();
+      this._resizeFunc = 
+          (function(self) {
+            return function() {
+              if (self._handler) {
+                self._handler._onWindowResize();
+              }
+            };
+          })(this); // prevent IE memory leaks
+      window.attachEvent('onresize', this._resizeFunc);
+    } else {
+      this._resizeFunc = hitch(this, function() {
+        if (this._handler) {
+          this._handler._onWindowResize();
         }
       });
-    } else {
-      window.addEventListener('resize', function() {
-        if (self._handler) {
-          self._handler._onWindowResize();
-        }
-      }, false);
+      window.addEventListener('resize', this._resizeFunc, false);
     }
 
-    var size = self._handler._inserter._determineSize();
+    var size = this._handler._inserter._determineSize();
     this._handler.sendToFlash('jsHandleLoad',
                               [ /* objectURL */ this._getRelativeTo('object'),
                                 /* pageURL */ this._getRelativeTo('page'),
@@ -5812,9 +5828,6 @@ extend(_SVGObject, {
     // we made the SVG hidden before to avoid scrollbars on IE; make visible
     // now
     this._handler.flash.style.visibility = 'visible';
-
-    // create the document object
-    this._handler.document = new _Document(this._xml, this._handler);
 
     // create the documentElement and rootElement and set them to our SVG 
     // root element
