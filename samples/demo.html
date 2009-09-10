@@ -1125,6 +1125,24 @@
         optionIndex++;
       }
     }
+    
+    // turns an SVG name into the index position it represents
+    function nameToIndex(name) {
+      var options = document.getElementById('selectSVG').childNodes;
+      var optionIndex = 0;
+      for (var i = 0; i < options.length; i++) {
+        if (options[i].nodeType != 1) {
+          continue;
+        }
+        
+        if (name == options[i].getAttribute('value')) {
+          return optionIndex;
+        }
+        optionIndex++;
+      }
+      
+      return undefined;
+    }
 
     function showSVG(forceIndex) {
         var svgIndex;
@@ -1260,9 +1278,13 @@
         currentSVGObject.contentDocument.documentElement.setAttribute('viewBox', viewBox);
     }
     
-    function handleFailingDemos() {
+    function handleFailingDemos(firstTime) {
       var showAll = document.getElementById('showFailingDemos').checked;
       var select = document.getElementById('selectSVG');
+      
+      if (firstTime === undefined) {
+        firstTime = false;
+      }
       
       var origIndex = select.selectedIndex;
       
@@ -1298,9 +1320,11 @@
         select.appendChild(option.cloneNode(true));
       }
       
-      // force a redisplay
+      // force a redisplay if not first time
       currentSVGIndex = -1;
-      showSVG(origIndex);
+      if (!firstTime) {
+        showSVG(origIndex);
+      }
     }
     
     function showNext() {
@@ -1333,6 +1357,9 @@
       // be able to grab a specific demo by name
       indexSVGFiles();
       
+      // enable or disable demos known to fail
+      handleFailingDemos(true);
+      
       // see if an SVG file is specified in the URL
       var svgIndex, svgName;
       var search = window.location.search;
@@ -1342,12 +1369,7 @@
         svgName = decodeURIComponent(search).match(/name=([^\&]*)/);
         if (svgName.length) {
           svgName = svgName[1];
-          for (var i = 0; i < SVGFiles.length; i++) {
-            if (SVGFiles[i].name === svgName) {
-              svgIndex = i;
-              break;
-            }
-          }
+          svgIndex = nameToIndex(svgName);
         }
       }
       
@@ -1361,9 +1383,6 @@
         document.getElementById('showFailingDemos').checked = true;
       }
       
-      // enable or disable demos known to fail
-      handleFailingDemos();
-        
       showSVG(svgIndex);
     }
     </script>

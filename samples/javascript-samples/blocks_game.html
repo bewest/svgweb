@@ -2,7 +2,7 @@
   <head>
     <meta name="svg.render.forceflash" content="true" />
     
-    <script src="../../src/svg.js" data-path="../../src/" data-debug="true"></script>
+    <script src="../../src/svg.js" data-path="../../src/" data-debug="false"></script>
     
     <script>
     
@@ -470,7 +470,7 @@
         
         end('everything');
         
-        report();
+        //report();
       }
     
       svgweb.addOnLoad(init);
@@ -482,7 +482,9 @@
     <script type="image/svg+xml">
       <svg xmlns="http://www.w3.org/2000/svg"
            xmlns:xlink="http://www.w3.org/1999/xlink"
-           onload="loaded();">
+           onload="loaded();"
+           width="600"
+           height="400">
         <text x="1" y="1" font-size="1px">Mozilla SVG Tetris - Press 'h' for help.</text>
         <g id="preview" stroke-width="0.02"/>
         <g id="board" stroke-width="0.02"/>
