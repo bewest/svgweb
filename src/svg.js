@@ -594,8 +594,8 @@ extend(SVGWeb, {
   
   /** Appends a dynamically created SVG OBJECT or SVG root to the page.
       See the section "Dynamically Creating and Removing SVG OBJECTs and 
-      SVG Roots" for details. NOTE: Only appending SVG OBJECTs is supported
-      for now.
+      SVG Roots" in the User Guide for details. NOTE: Only appending 
+      SVG OBJECTs is supported for now.
       
       @node Either an 'object' created with 
       document.createElement('object', true) or an SVG root created with
