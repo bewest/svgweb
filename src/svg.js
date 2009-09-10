@@ -1087,6 +1087,7 @@ extend(SVGWeb, {
   
   /** Fires any addOnLoad() listeners that were registered by a developer. */
   _fireOnLoad: function() {
+    //console.log('svgweb._fireOnLoad');
     // see if all SVG OBJECTs are done loading; if so, fire final onload
     // event for any externally registered SVG
     if (this.handlers.length < this._svgObjects.length) {
@@ -2528,6 +2529,7 @@ extend(FlashHandler, {
       @param type The type of element that is finished loading,
       either 'script' or 'object'. */
   fireOnLoad: function(id, type) {
+    //console.log('FlashHandler.fireOnLoad');
     this._finishedCallback(id, type);
   },
   
@@ -5840,7 +5842,7 @@ extend(_SVGObject, {
   _onRenderingFinished: function(msg) {
     //console.log('_SVGObject, onRenderingFinished, id='+this._handler.id
     //            + ', msg='+this._handler.debugMsg(msg));
-
+    
     // we made the SVG hidden before to avoid scrollbars on IE; make visible
     // now
     this._handler.flash.style.visibility = 'visible';
@@ -5860,6 +5862,15 @@ extend(_SVGObject, {
     // TODO: This should be doc._getProxyNode(), but Issue 227 needs to be
     // addressed first:
     // http://code.google.com/p/svgweb/issues/detail?id=227
+    
+    if (isIE) {
+      // this workaround will prevent Issue 140:
+      // "SVG OBJECT.contentDocument does not work when DOCTYPE specified 
+      // inside of HTML file itself"
+      // http://code.google.com/p/svgweb/issues/detail?id=140
+      this._handler.flash.setAttribute('contentDocument', null);
+    }
+    
     this._handler.flash.contentDocument = doc;
     
     // FIXME: NOTE: unfortunately we can't support the getSVGDocument() method; 
@@ -6078,6 +6089,7 @@ extend(_SVGWindow, {
   },
   
   _fireOnload: function() {
+    //console.log('_SVGWindow._fireOnLoad');
     for (var i = 0; i < this._onloadListeners.length; i++) {
       try {
         this._onloadListeners[i]();
