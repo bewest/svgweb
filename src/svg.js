@@ -480,14 +480,6 @@ function xhrObj() {
   }
 }
 
-// GUID generation from blog post at
-// http://note19.com/2007/05/27/javascript-guid-generator/
-// We simply use randomly generated numbers, which is fine since we only
-// need these to be locally unique during a single session
-function S4() {
-   return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
-}
-
 // we just use an autoincrement counter to ensure uniqueness, which is fine
 // for our situation and produces much smaller GUIDs
 var guidCounter = 0;
