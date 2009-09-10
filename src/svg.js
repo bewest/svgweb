@@ -5654,7 +5654,7 @@ function _SVGObject(svgNode, handler) {
       // for further execution after the Flash asynchronous process is done
     }),
     // failure function
-    hitch(this, this.fallback)
+    hitch(this, this._fallback)
   );
 }
 
@@ -5662,12 +5662,36 @@ extend(_SVGObject, {
   /** An array of strings, where each string is an SVG SCRIPT tag embedded
       in an external SVG file. This is when SVG is embedded with an OBJECT. */
   _scriptsToExec: null,
+ 
+  /**
+   * UTF-8 data encode / decode
+   * http://www.webtoolkit.info/
+   **/
+  _utf8encode : function (string) {
+    string = string.replace(/\r\n/g,"\n");
+    var utftext = "";
+    for (var n = 0; n < string.length; n++) {
+      var c = string.charCodeAt(n);
+        if (c < 128) {
+          utftext += String.fromCharCode(c);
+        } else if((c > 127) && (c < 2048)) {
+          utftext += String.fromCharCode((c >> 6) | 192);
+          utftext += String.fromCharCode((c & 63) | 128);
+        } else {
+          utftext += String.fromCharCode((c >> 12) | 224);
+          utftext += String.fromCharCode(((c >> 6) & 63) | 128);
+          utftext += String.fromCharCode((c & 63) | 128);
+        }
+    }
+    return utftext;
+  },
   
   _fetchURL: function(url, onSuccess, onFailure) {
     var req = xhrObj();
     
     // bust the cache for IE since IE's XHR GET requests are wonky
     if (isIE) {
+      url = escape(this._utf8encode(url));
       url += (url.indexOf('?') == -1) ? '?' : '&';
       url += new Date().getTime();
     }
