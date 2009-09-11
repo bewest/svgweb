@@ -5274,9 +5274,16 @@ function testCreateSVGObject() {
     // make sure 'this' points to the right thing
     assertEquals('this == SVG OBJECT', obj3, this);
     
-    // Do tests for removing inline event handlers here instead of in 
-    // testEventHandlers(). We remove the inline event handlers from the SVG
-    // root for the second and third dynamic object (dynamic2 and dynamic3)
+    // remove inline event handlers
+    svg = obj3.contentDocument.rootElement;
+    assertExists('dynamic3 should exist', svg);
+    doc = obj3.contentDocument;
+    assertExists("dynamic3's document should exist", doc);
+    svg.onclick = null;
+    svg.onmouseover = null;
+    svg.onmouseout = null;
+    svg.onmousedown = null;
+    svg.onmouseup = null;
     
     // indicate that this onload and its tests ran
     svgweb._dynamicObjOnloads++;
