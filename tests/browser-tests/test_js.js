@@ -5234,16 +5234,16 @@ function testCreateSVGObject() {
                   || svg.onmouseout.toString().replace(/\n/g, '')
                         .replace(/\{\s*\}/, '{}')
                         == 'function onmouseout(evt) {}'));
-                        console.log('svg.onmousedown='+svg.onmousedown);
     assertTrue('svg.onmousedown == undefined || empty function',
                (svg.onmousedown === undefined 
                   || svg.onmousedown.toString().replace(/\n/g, '')
-                        == 'function onmousedown(evt) { null;}'));
+                        == 'function onmousedown(evt) { null;}')
+                  || svg.onmousedown.toString().replace(/\n/g, '')
+                        == 'function onmousedown(evt) {}');
     assertTrue('svg.onmouseup == undefined || empty function',
                (svg.onmouseup === undefined 
-                  || svg.onmouseup.toString().replace(/\n/g, '')
-                        .replace(/\{\s*\}/, '{}')
-                        == 'function onmouseup(evt) { undefined;}'));
+                  || /^function onmouseup\(evt\)\s*\{\s*undefined\;\s*\}$/.test(
+                          svg.onmouseup.toString().replace(/\n/g, ''))));
     
     // indicate that this onload and its tests ran
     svgweb._dynamicObjOnloads++;
@@ -6588,7 +6588,6 @@ function testEventHandlers() {
   // test having event handlers inside the markup, but don't pass in 'evt'
   // object as first argument but rather a custom variable, a string, and 
   // no arguments
-  
 
   // remove a node with an on* handler from the page that was in the markup
   // and make sure that its event handlers go away; repeat for keydown listener
