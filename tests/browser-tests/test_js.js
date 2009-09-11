@@ -110,7 +110,8 @@ var myRect, mySVG, rects, sodipodi, rdf, div, dc, bad, root, rect,
     origText, exp, html, ns, nextToLast, paths, styleStr,
     image, images, line, doTests, styleReturned, use, regExp, split, doc,
     orig, rect1, rect2, obj1, obj2, obj3, handler, elem, suspendID1,
-    suspendID2, i, anim, frag, frag2, frag3, nodes;
+    suspendID2, i, anim, frag, frag2, frag3, nodes, eventHandlers,
+    makeEventHandler, g11138;
     
 var allStyles = [
   'font', 'fontFamily', 'fontSize', 'fontSizeAdjust', 'fontStretch', 'fontStyle',
@@ -179,6 +180,7 @@ function runTests(embedTypes) {
   testCreateSVGObject();
   testSuspendRedraw();
   testDocumentFragment();
+  testEventHandlers();
   testBugFixes();
     
   // TODO: Test setAttributeNS, hasChildNodes, removeAttribute
@@ -5078,6 +5080,66 @@ function testCreateSVGObject() {
     assertEquals('this == SVG OBJECT', obj1, this);
     assertEquals('this.id == dynamic1', 'dynamic1', this.id);
     
+    // do inline event handler tests for inline on* event handlers on the 
+    // SVG root tag here rather than in testEventHandlers()
+    // svg root element
+    svg = obj1.contentDocument.rootElement;
+    assertExists('dynamic1 should exist', svg);
+    // add these to the window object so they are 'visible' from inside the
+    // markup
+    doc = obj1.contentDocument;
+    assertExists("dynamic1's document should exist", doc);
+    // NOTE: makeEventHandler() is defined in testEventHandlers()
+    doc.svgOnClick = makeEventHandler('onclick', 'dynamic1', svg, 
+                                      ['svg', 'rect'], ['svg']);
+    doc.svgOnMouseDown = makeEventHandler('onmousedown', 'dynamic1', svg,
+                                          ['svg', 'rect'], ['svg']);
+    doc.svgOnMouseUp = makeEventHandler('onmouseup', 'dynamic1', svg,
+                                        ['svg', 'rect'], ['svg']);
+    doc.svgOnMouseOver = makeEventHandler('onmouseover', 'dynamic1', svg,
+                                          ['svg', 'rect'], ['svg']);
+    doc.svgOnMouseOut = makeEventHandler('onmouseout', 'dynamic1', svg,
+                                         ['svg', 'rect'], ['svg']);
+    // make sure these event handlers 'show up' using getAttribute and
+    // someElement.on* syntax
+    assertExists('dynamic1.onclick should exist', svg.onclick);
+    assertEquals('typeof dynamic1.onclick == function', 'function',
+                 typeof svg.onclick);
+    assertEquals('dynamic1.onclick == '
+                    + 'function onclick(evt){'
+                    + 'document.svgOnClick(evt, this);'
+                    + '}',
+                    'function onclick(evt){'
+                    + 'document.svgOnClick(evt,this);'
+                    + '}',
+                    svg.onclick.toString()
+                            .replace(/\s/g, '')
+                            .replace(/functiononclick/g, 'function onclick'));
+    assertExists('dynamic1.onmousedown should exist', svg.onmousedown);
+    assertEquals('typeof dynamic1.onmousedown == function', 'function',
+                 typeof svg.onmousedown);
+    assertEquals('svg.onmousedown == '
+                    + 'function onmousedown(evt){'
+                    + 'document.svgOnMouseDown(evt, this);'
+                    + '}',
+                    'function onmousedown(evt){'
+                    + 'document.svgOnMouseDown(evt,this);'
+                    + '}',
+                    svg.onmousedown.toString()
+                            .replace(/\s/g, '')
+                            .replace(/functiononmousedown/g, 
+                                     'function onmousedown'));
+    assertExists('dynamic1.getAttribute(onclick) should exist', 
+                 svg.getAttribute('onclick'));
+    assertEquals('typeof dynamic1.getAttribute(onclick) == string', 'string',
+                 typeof svg.getAttribute('onclick'));
+    assertEquals('dynamic1.getAttribute(onclick) == '
+                    + 'document.svgOnClick(evt, this)',
+                    'document.svgOnClick(evt, this)',
+                    svg.getAttribute('onclick'));
+    console.log('FOURTH IMAGE: Run your mouse into and out of the SVG image; '
+                + 'also click the mouse button');
+    
     // indicate that this onload and its tests ran
     svgweb._dynamicObjOnloads++;
   }, false);
@@ -5146,6 +5208,42 @@ function testCreateSVGObject() {
                  || obj2.getAttribute('custom5') == false))
     assertEquals('obj2.getAttribute(camelCaseName) == "camelCaseValue"', 
                  'camelCaseValue', obj2.getAttribute('camelCaseName'));
+                 
+    // Do tests for removing inline event handlers here instead of in 
+    // testEventHandlers(). We remove the inline event handlers from the SVG
+    // root for the second and third dynamic object (dynamic2 and dynamic3)
+    svg = obj2.contentDocument.rootElement;
+    assertExists('dynamic2 should exist', svg);
+    doc = obj2.contentDocument;
+    assertExists("dynamic2's document should exist", doc);
+    // remove event handlers in various ways
+    svg.onclick = null;
+    svg.onmouseover = undefined;
+    // NOTE: "delete svg.onmouseout" doesn't work in native browsers
+    svg.removeAttribute('onmouseout');
+    svg.setAttribute('onmousedown', null);
+    svg.setAttribute('onmouseup', undefined);
+    // NOTE: FF and Safari Native 'zero out' event handlers differently below,
+    // sometimes having the value be null and other times having it be undefined
+    assertTrue('svg.onclick == null || undefined', 
+               (svg.onclick === null || svg.onclick === undefined));
+    assertTrue('svg.onmouseover == null || undefined',
+               (svg.onmouseover === null || svg.onmouseover === undefined));
+    assertTrue('svg.onmouseout == undefined || empty function',
+               (svg.onmouseout === undefined 
+                  || svg.onmouseout.toString().replace(/\n/g, '')
+                        .replace(/\{\s*\}/, '{}')
+                        == 'function onmouseout(evt) {}'));
+                        console.log('svg.onmousedown='+svg.onmousedown);
+    assertTrue('svg.onmousedown == undefined || empty function',
+               (svg.onmousedown === undefined 
+                  || svg.onmousedown.toString().replace(/\n/g, '')
+                        == 'function onmousedown(evt) { null;}'));
+    assertTrue('svg.onmouseup == undefined || empty function',
+               (svg.onmouseup === undefined 
+                  || svg.onmouseup.toString().replace(/\n/g, '')
+                        .replace(/\{\s*\}/, '{}')
+                        == 'function onmouseup(evt) { undefined;}'));
     
     // indicate that this onload and its tests ran
     svgweb._dynamicObjOnloads++;
@@ -5175,6 +5273,10 @@ function testCreateSVGObject() {
     
     // make sure 'this' points to the right thing
     assertEquals('this == SVG OBJECT', obj3, this);
+    
+    // Do tests for removing inline event handlers here instead of in 
+    // testEventHandlers(). We remove the inline event handlers from the SVG
+    // root for the second and third dynamic object (dynamic2 and dynamic3)
     
     // indicate that this onload and its tests ran
     svgweb._dynamicObjOnloads++;
@@ -5603,6 +5705,7 @@ function testDocumentFragment() {
   for (var i = 1; i <= 4; i++) {
     // have a circle with a small text value on it, all together in a group
     group = getDoc('svg11242').createElementNS(svgns, 'g');
+    group.setAttribute('id', 'blueCircle' + i);
     group.setAttribute('transform', 'scale(0.75) '
                        + 'translate(470, ' + (65 + (i * 50)) + ')');
     group.style.fill = 'orange';
@@ -5680,6 +5783,7 @@ function testDocumentFragment() {
   for (var i = 1; i <= 4; i++) {
     // have a circle with a small text value on it, all together in a group
     group = getDoc('svg11242').createElementNS(svgns, 'g');
+    group.setAttribute('id', 'redCircle' + i);
     group.setAttribute('transform', 'scale(0.75) '
                        + 'translate(555, ' + (46 + (i * 50)) + ')');
     group.style.fill = 'black';
@@ -5778,6 +5882,7 @@ function testDocumentFragment() {
   for (var i = 1; i <= 4; i++) {
     // have a circle with a small text value on it, all together in a group
     group = getDoc('svg11242').createElementNS(svgns, 'g');
+    group.setAttribute('id', 'purpleCircle' + i);
     group.setAttribute('transform', 'scale(0.75) '
                        + 'translate(600, ' + (46 + (i * 50)) + ')');
     group.style.fill = 'black';
@@ -6368,6 +6473,150 @@ function testDocumentFragment() {
   }
 }
 
+function testEventHandlers() {
+  // Test working with event handlers, such as <rect onclick="func()">
+  console.log('Testing event handlers...');
+  
+  // Test on* handlers (click, mouseup, mousedown, moveover, mouseout)
+  // in the markup on page load; test on g, svg root, circle, and text node; 
+  // make sure event object is received and 'this' is correct inside
+  // the event handler; make sure that the event handler can be 'seen' through
+  // getAttribute and someElement.on* style access.
+  
+  // make a 'template' function that can stamp out functions to test the
+  // various on* event handlers to make testing easier
+  makeEventHandler = function(handlerName, idName, correctInstanceVar,
+                              targetNameArray, currentTargetNameArray) {
+    return function(evt, thisVar) {
+      //console.log('Event handler for ' + handlerName+', evt='+evt+', thisVar='+thisVar);
+      assertExists('Event object for ' + handlerName + ' should exist', evt);
+      assertExists('This variable for ' + handlerName + ' should exist', 
+                   thisVar);
+      assertEquals('This variable for ' + handlerName + ' should point '
+                   + 'to the ' + idName + ' DOM node',
+                   correctInstanceVar, thisVar);
+      // make sure event properties are present
+      assertExists('evt.altKey should exist', evt.altKey);
+      assertFalse('evt.altKey == false', evt.altKey);
+      assertExists('evt.ctrlKey should exist', evt.ctrlKey);
+      assertFalse('evt.ctrlKey == false', evt.ctrlKey);
+      assertExists('evt.shiftKey should exist', evt.shiftKey);
+      assertFalse('evt.shiftKey == false', evt.shiftKey);
+      assertExists('evt.target should exist', evt.target);
+      assertEqualsAny('evt.target.nodeName == ' + targetNameArray, 
+                   targetNameArray,
+                   evt.target.nodeName.toLowerCase());
+      assertExists('evt.currentTarget should exist', evt.currentTarget);
+      assertEquals('evt.currentTarget.nodeName == ' + currentTargetNameArray,
+                   currentTargetNameArray,
+                   evt.currentTarget.nodeName.toLowerCase());
+      assertExists('evt.clientX should exist', evt.clientX);
+      assertExists('evt.clientY should exist', evt.clientY);
+      assertExists('evt.screenX should exist', evt.screenX);
+      assertExists('evt.screenY should exist', evt.screenY);
+      assertTrue('isNaN(evt.clientX) === false', !isNaN(evt.clientX));
+      assertTrue('isNaN(evt.clientY) === false', !isNaN(evt.clientY));
+      assertTrue('isNaN(evt.screenX) === false', !isNaN(evt.screenX));
+      assertTrue('isNaN(evt.screenY) === false', !isNaN(evt.screenY));
+    };
+  }
+  
+  // group element
+  g11138 = getDoc('svg11242').getElementById('g11138');
+  assertExists('g11138 should exist', g11138);
+  // add these to the window object so they are 'visible' from inside the
+  // markup
+  doc = getDoc('svg11242');
+  doc.g11138OnClick = makeEventHandler('onclick', 'g11138', g11138, 
+                                       ['path'], ['g']);
+  doc.g11138OnMouseDown = makeEventHandler('onmousedown', 'g11138', g11138, 
+                                       ['path'], ['g']);
+  doc.g11138OnMouseUp = makeEventHandler('onmouseup', 'g11138', g11138, 
+                                       ['path'], ['g']);
+  doc.g11138OnMouseOver = makeEventHandler('onmouseover', 'g11138', g11138, 
+                                       ['path'], ['g']);
+  doc.g11138OnMouseOut = makeEventHandler('onmouseout', 'g11138', g11138, 
+                                       ['path'], ['g']);
+  // make sure these event handlers 'show up' using getAttribute and
+  // someElement.on* syntax
+  assertExists('g11138.onclick should exist', g11138.onclick);
+  assertEquals('typeof g11138.onclick == function', 'function',
+               typeof g11138.onclick);
+  assertEquals('g11138.onclick == '
+                  + 'function onclick(evt){'
+                  + 'document.g11138OnClick(evt, this);'
+                  + '}',
+                  'function onclick(evt){'
+                  + 'document.g11138OnClick(evt,this);'
+                  + '}',
+                  g11138.onclick.toString()
+                          .replace(/\s/g, '')
+                          .replace(/functiononclick/g, 'function onclick'));
+  assertExists('g11138.onmousedown should exist', g11138.onmousedown);
+  assertEquals('typeof g11138.onmousedown == function', 'function',
+               typeof g11138.onmousedown);
+  assertEquals('g11138.onmousedown == '
+                  + 'function onmousedown(evt){'
+                  + 'document.g11138OnMouseDown(evt, this);'
+                  + '}',
+                  'function onmousedown(evt){'
+                  + 'document.g11138OnMouseDown(evt,this);'
+                  + '}',
+                  g11138.onmousedown.toString()
+                          .replace(/\s/g, '')
+                          .replace(/functiononmousedown/g, 
+                                   'function onmousedown'));
+  assertExists('g11138.getAttribute(onclick) should exist', 
+               g11138.getAttribute('onclick'));
+  assertEquals('typeof g11138.getAttribute(onclick) == string', 'string',
+               typeof g11138.getAttribute('onclick'));
+  assertEquals('g11138.getAttribute(onclick) == '
+                  + 'document.g11138OnClick(evt, this)',
+                  'document.g11138OnClick(evt, this)',
+                  g11138.getAttribute('onclick'));
+  console.log('THIRD IMAGE: Run your mouse into and out of the scimitar; also '
+              + 'click the mouse button');
+              
+  // NOTE: the test for on* event handlers on the SVG root element happens
+  // inside of the dynamic1 SVG OBJECT onload callback inside of 
+  // testCreateSVGObject()
+  
+  // NOTE: the test for removing on* event handlers from inline markup on the
+  // SVG root element happens inside of the dynamic2 and dynamic3 SVG OBJECT 
+  // onload callbacks inside of testCreateSVGObject()
+  
+  // test having event handlers inside the markup, but don't pass in 'evt'
+  // object as first argument but rather a custom variable, a string, and 
+  // no arguments
+  
+
+  // remove a node with an on* handler from the page that was in the markup
+  // and make sure that its event handlers go away; repeat for keydown listener
+  
+  // add an inline event handler using someElement.onclick = foobar() syntax;
+  // make sure event object received and 'this' is correct inside the event
+  // handler
+  
+  // create a group with nested elements; use various ways to add event
+  // handlers:
+  // * setAttribute('onclick', someFunction) - make sure getAttribute returns
+  // the function as well
+  // * someElement.onclick = someFunction - make sure that calling
+  // someElement.onclick as well returns the function
+  // Make sure that calling someElement.on* returns correct null value before
+  // being set.
+  // Remove one of these elements and make sure that it's event handler is
+  // removed. Also remove a nested group element that has children with event
+  // handlers and make sure these are removed as well.
+  // Remove the event handler using:
+  // * someElement.onclick = null/undefined/delete someElement.onclick
+  // * setAttribute('onclick', null/undefined);
+  // * removeAttribute('onclick')
+  // * removeEventListener
+  
+  // TODO: test bubbling, which we don't support yet
+}
+
 function testBugFixes() {
   // Test assertions for bug fixes
   console.log('Testing bug fixes...');
@@ -6465,9 +6714,10 @@ function testBugFixes() {
 
 function testUnload() {
   // manually call unload listener to make sure no exceptions fire;
-  // on browsers other than Internet Explorer this is a no-op 
+  // on browsers other than Internet Explorer this is a no-op
   
   console.log('Testing window.unload listener...');
+  
   if (svgweb.getHandlerType() == 'flash') {
     exp = null;
     try {
@@ -6475,11 +6725,9 @@ function testUnload() {
     } catch (e) {
       exp = e;
     }
-
     if (exp) {
       console.log(exp.message);
     }
-
     assertNull('Window.unload should run without an exception', exp);
   }
 }
