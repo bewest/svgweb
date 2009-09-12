@@ -340,6 +340,7 @@ var score;
 var nextShape; 
 var gameState; // "stopped", "running", "finished"
 var tickTime;
+var ticker;
 function startNewGame() {
   // XXX clear grids
   score = 0;
@@ -386,7 +387,10 @@ function tick() {
     }
   }
   
-  setTimeout("tick()", tickTime);
+  if (ticker) {
+    clearTimeout(ticker);
+  }
+  ticker = setTimeout("tick()", tickTime);
 }
 
 function time(tickTime) {
@@ -418,6 +422,17 @@ function keyHandler(event) {
       break;
     case 72: /* h */
       pause();
+      alert("Help:\n"+
+            "-------------------------------------\n\n"+
+            "Score : "+score+"\n"+
+            "Lines : "+lines+"\n"+
+            "h : Display this help\n"+
+            "p : Toggle pause game\n"+
+            "up    : Rotate piece counterclockwise\n"+
+            "down  : Rotate piece clocwise\n"+
+            "left  : Move piece left\n"+
+            "right : Move piece right\n"+
+            "space : Drop piece\n");
       resume();
       break;
     case 80: /* p */
