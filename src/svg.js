@@ -724,19 +724,6 @@ extend(SVGWeb, {
         }
       }
       
-      // remove window resize listener; do this before removing the SVG OBJECT
-      // from the page or else we will get an error on IE below since the 
-      // object is 'resized' when removed and onWindowResize will incorrectly
-      // get called
-      if (this.getHandlerType() == 'flash') {
-        if (isIE) {
-          window.detachEvent('onresize', objHandler._svgObject._resizeFunc);
-        } else {
-          window.removeEventListener('resize', 
-                                     objHandler._svgObject._resizeFunc, false);
-        }  
-      }
-              
       // remove from the page
       node.parentNode.removeChild(node);
 
@@ -999,9 +986,68 @@ extend(SVGWeb, {
       // handler._svgObjects array
       this._svgObjects[i]._objID = objID;
     }
+
+    if (this.config.use == 'flash') {
+      // Attach window resize listener to adjust svg size when % is used.
+      this._createResizeListener();
+      this._attachResizeListener();
+    }
     //end('DOMContentLoaded');
     
     // wait until all of them have done their work, then fire onload
+  },
+
+  _createResizeListener: function() {
+    var self = this;
+    if (isIE) {
+      this._resizeFunc =
+          (function(self) {
+            return function() {
+              self._onWindowResize();
+            };
+          })(this); // prevent IE memory leaks
+    } else {
+      this._resizeFunc = hitch(this, function() {
+          this._onWindowResize();
+      });
+    }
+  },
+
+  _attachResizeListener: function() {
+    if (isIE) {
+      window.attachEvent('onresize', this._resizeFunc);
+    } else {
+      window.addEventListener('resize', this._resizeFunc, false);
+    }
+  },
+
+  _detachResizeListener: function() {
+    if (isIE) {
+      window.detachEvent('onresize', this._resizeFunc);
+    } else {
+      window.removeEventListener('resize', this._resizeFunc, false);
+    }  
+  },
+
+  _onWindowResize: function() {
+    if (!this.pageLoaded) {
+      return;
+    }
+    this._detachResizeListener();
+    for (var i = 0; i < this.handlers.length; i++) {
+      var handler = this.handlers[i];
+
+      var size = handler._inserter._determineSize();
+      //console.log("svg #"+i+": flash resize: " 
+      //            + size.width + "," + size.height + " "
+      //            + size.pixelsWidth + "," + size.pixelsHeight);
+      handler.flash.width = size.width;
+      handler.flash.height = size.height;
+      handler.sendToFlash('jsHandleResize',
+                          [ /* objectWidth */ size.pixelsWidth,
+                            /* objectHeight */ size.pixelsHeight ]);
+    }
+    this._attachResizeListener();
   },
   
   /** Gets any SVG SCRIPT blocks on the page. */
@@ -2638,15 +2684,6 @@ extend(FlashHandler, {
     }
   },
 
-  _onWindowResize: function() {
-    var size = this._inserter._determineSize();
-    this.flash.width = size.width;
-    this.flash.height = size.height;
-    this.sendToFlash('jsHandleResize',
-                       [ /* objectWidth */ size.pixelsWidth,
-                         /* objectHeight */ size.pixelsHeight ]);
-  },
-  
   _getElementByGuid: function(guid) {
     var node = svgweb._guidLookup['_' + guid];
     if (node) {
@@ -5808,27 +5845,6 @@ extend(_SVGObject, {
   _onEverythingLoaded: function() {
     //console.log('_SVGObject, onEverythingLoaded');
 
-    // Attach window resize listener to adjust
-    // object size when % is used.
-    if (isIE) {
-      this._resizeFunc = 
-          (function(self) {
-            return function() {
-              if (self._handler) {
-                self._handler._onWindowResize();
-              }
-            };
-          })(this); // prevent IE memory leaks
-      window.attachEvent('onresize', this._resizeFunc);
-    } else {
-      this._resizeFunc = hitch(this, function() {
-        if (this._handler) {
-          this._handler._onWindowResize();
-        }
-      });
-      window.addEventListener('resize', this._resizeFunc, false);
-    }
-
     var size = this._handler._inserter._determineSize();
     this._handler.sendToFlash('jsHandleLoad',
                               [ /* objectURL */ this._getRelativeTo('object'),
@@ -6355,19 +6371,43 @@ extend(FlashInserter, {
 
     var parentWidth = this._parentNode.clientWidth;
     var parentHeight = this._parentNode.clientHeight;
+    /* IE7 quirk */
+    if (parentWidth == 0) {
+        parentWidth = this._parentNode.offsetWidth;
+    }
 
-    var grandParent = this._parentNode;
-    while (grandParent && grandParent.style) {
-      // If a grandparent is a div, the parent height is ok.
-      if (grandParent.nodeName.toLowerCase() == 'div') {
-        break;
+    /** In the case of script or where an svg object has a height percent
+        and the svg image has a height percent, then the height of the parent
+        is not used and the viewBox aspect resolution is used.
+        However, in certain circumstances, the % of the parent height
+        is used. That circumstance is when the embed type is script
+        and parentHeight is > 0 and if it is in a div with height.
+        Here, we look for a parent div, and if we do not find one,
+        then we default to clientHeight.
+    */
+    if (this._embedType == 'script') {
+      var grandParent = this._parentNode;
+      while (grandParent && grandParent.style) {
+        // If a grandparent is a div, the parent height is ok.
+        if (grandParent.nodeName.toLowerCase() == 'div') {
+          // ?? may need to check for valid height
+          break;
+        }
+        // If we get to the body without div, ignore parent height.
+        if (grandParent.nodeName.toLowerCase() == 'body') {
+          if (window.innerHeight && window.innerHeight > 0) {
+            parentHeight = window.innerHeight;
+          } else if (document.documentElement &&
+                     document.documentElement.clientHeight &&
+                     document.documentElement.clientHeight > 0) {
+            parentHeight = document.documentElement.clientHeight;
+          } else {
+            parentHeight = document.body.clientHeight;
+          }
+          break;
+        }
+        grandParent = grandParent.parentNode;
       }
-      // If we get to the body without div, ignore parent height.
-      if (grandParent.nodeName.toLowerCase() == 'body') {
-        parentHeight = 0;
-        break;
-      }
-      grandParent = grandParent.parentNode;
     }
 
     if (!isSafari) {
@@ -6399,7 +6439,13 @@ extend(FlashInserter, {
 
       // calculate height in pixels
       if (objHeight.indexOf('%') != -1) {
-        pixelsHeight = parentHeight * parseInt(objHeight) / 100;
+        if (parentHeight > 0) {
+          pixelsHeight = parentHeight * parseInt(objHeight) / 100;
+        }
+        else {
+          console.log('SVGWeb: unhandled resize scenario.');
+          parentHeight = 200;
+        }
       } else {
         pixelsHeight = objHeight;
       }
@@ -7057,25 +7103,7 @@ extend(_SVGSVGElement, {
     //start('firstSendToFlash');
     //start('jsHandleLoad');
 
-    // Attach window resize listener to adjust
-    // object size when % is used.
-    // FIXME: Need to remove these event handlers on unload.
-    var self = this;
-    if (isIE) {
-      window.attachEvent('onresize', function() {
-        if (self._handler) {
-          self._handler._onWindowResize();
-        }
-      });
-    } else {
-      window.addEventListener('resize', function(evt) {
-        if (self._handler) {
-          self._handler._onWindowResize();
-        }
-      }, false);
-    }
-
-    var size = self._handler._inserter._determineSize();
+    var size = this._handler._inserter._determineSize();
     this._handler.sendToFlash('jsHandleLoad',
                               [ /* objectURL */ this._getRelativeTo('object'),
                                 /* pageURL */ this._getRelativeTo('page'),
