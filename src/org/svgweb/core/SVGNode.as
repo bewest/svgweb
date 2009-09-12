@@ -548,6 +548,8 @@ package org.svgweb.core
                 if (transformSprite.mask is Shape) {
                     Shape(transformSprite.mask).graphics.clear();
                     Shape(transformSprite.mask).graphics.beginFill(0x000000);
+                    drawSprite.graphics.clear();
+                    drawSprite.graphics.beginFill(0x000000, 0);
                     var canvasWidth:Number;
                     var canvasHeight:Number;
                     if (this.parent is SVGViewerWeb) {
@@ -581,6 +583,10 @@ package org.svgweb.core
                     Shape(transformSprite.mask).graphics.drawRect(drawSprite.x, drawSprite.y,
                                                                   canvasWidth, canvasHeight);
                     Shape(transformSprite.mask).graphics.endFill();
+                    // Draw an invisible rect to receive mouse events.
+                    drawSprite.graphics.drawRect(drawSprite.x, drawSprite.y,
+                                                 canvasWidth, canvasHeight);
+                    drawSprite.graphics.endFill();
                 }
             }
         }
