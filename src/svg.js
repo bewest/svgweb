@@ -6574,8 +6574,13 @@ extend(FlashInserter, {
       // The height is a % or missing. Check for viewBox.
       if (this._nodeXML.getAttribute('viewBox')) {
         if (this._embedType == 'script'
-            && xmlHeight.indexOf('%') != -1 && parentHeight > 0) {
-          objHeight = xmlHeight;
+            && (xmlHeight == null || xmlHeight.indexOf('%') != -1) && parentHeight > 0) {
+          if (xmlHeight == null) {
+            xmlHeight = "100%";
+          }
+          if (objHeight == null) {
+            objHeight = "100%";
+          }
           pixelsHeight = parentHeight * parseInt(xmlHeight) / 100;
           return {width: objWidth, height: objHeight,
                   pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight, clipMode: 'neither'};
