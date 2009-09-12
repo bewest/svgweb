@@ -1144,7 +1144,7 @@ extend(SVGWeb, {
     var allLoaded = true;
     for (var i = 0; i < this.handlers.length; i++) {
       var h = this.handlers[i];
-      if (h.type == 'object' && !h._loaded) {
+      if (!h._loaded) {
         allLoaded = false;
         break;
       }
@@ -1396,7 +1396,13 @@ extend(SVGWeb, {
     var rootOnload = xml.documentElement.getAttribute('onload');
     if (rootOnload) {
       // turn the textual onload handler into a real function
-      rootOnload = new Function(rootOnload);
+      var defineEvtCode =
+        'var evt = { target: document.getElementById("' + rootID + '") ,' +
+                    'currentTarget: document.getElementById("' + rootID + '") ,' +
+                    'preventDefault: function() { this.returnValue=false; }' +
+                  '};';
+      rootOnload = new Function(defineEvtCode + rootOnload);
+
       
       // return a function that makes the 'this' keyword apply to
       // the SVG root; wrap in another anonymous closure as well to prevent
@@ -5909,7 +5915,12 @@ extend(_SVGObject, {
       // we want 'this' inside of the onload handler to point to our
       // SVG root; the 'document.documentElement' will get rewritten later by
       // the _executeScript() method to point to our fake SVG root instead
-      onload = '(function(){' + onload + '}).apply(document.documentElement);';
+      var defineEvtCode = 
+        'var evt = { target: document.getElementById("' + root.getAttribute('id') + '") ,' +
+                    'currentTarget: document.getElementById("' + root.getAttribute('id') + '") ,' +
+                    'preventDefault: function() { this.returnValue=false; }' +
+                  '};';
+      onload = '(function(){' + defineEvtCode + onload + '}).apply(document.documentElement);';
       this._scriptsToExec.push(onload);
     }
     
@@ -7134,6 +7145,7 @@ extend(_SVGSVGElement, {
     }
     
     var elementId = this._nodeXML.getAttribute('id');
+    this._handler._loaded = true;
     //end('onRenderingFinished');
     this._handler.fireOnLoad(elementId, 'script');
   },
