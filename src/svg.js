@@ -2682,9 +2682,34 @@ extend(FlashHandler, {
     }
     if (msg.scriptCode != null) {
       if (this.type == 'object') {
-        this._svgObject._executeScript(msg.scriptCode);
-      } 
-      else {
+        var defineEvtCode = 
+        'var evt = { target: document.getElementById("' + 
+                      target._getProxyNode().getAttribute('id') + '") ,\n' +
+                    'currentTarget:document.getElementById("' +
+                      currentTarget._getProxyNode().getAttribute('id') + '") ,\n' +
+                    'clientX: ' + new Number(msg.stageX) + ',\n' +
+                    'clientY: ' + new Number(msg.stageY) + ',\n' +
+                    'screenX: ' + new Number(msg.stageX) + ',\n' +
+                    'screenY: ' + new Number(msg.stageY) + ',\n' +
+                    'altKey: ' + msg.altKey + ',\n' +
+                    'ctrlKey: ' + msg.ctrlKey + ',\n' +
+                    'shiftKey: ' + msg.shiftKey + ',\n' +
+                    'preventDefault: function() { this.returnValue=false; }\n' +
+                  '};\n';
+
+        // Use double quotes unles the script has that.
+        // If the script has both types of quotes it probably is invalid anyway.
+        var quote = '"';
+        if (msg.scriptCode.indexOf('"') != -1) {
+          quote = "'";
+        }
+        // Prepare the code for the correct object context.
+        var executeInContext = "var scriptFunc = new Function(" +
+                             quote + msg.scriptCode + quote +");\n" +
+                             "scriptFunc.apply(evt.target);\n";
+        // Execute the code within the correct window context.
+        this.sandbox_eval(this._svgObject._sandboxedScript(defineEvtCode + executeInContext));
+      } else {
         // TODO
       }
     }
@@ -2696,7 +2721,12 @@ extend(FlashHandler, {
         return node;
     }
     
-    var results = xpath(this._xml, null, '//*[@__guid="' + guid + '"]');
+    var results;
+    if (this.type == 'script') {
+      results = xpath(this._xml, null, '//*[@__guid="' + guid + '"]');
+    } else if (this.type == 'object') {
+      results = xpath(this._svgObject._xml, null, '//*[@__guid="' + guid + '"]');
+    }
 
     var nodeXML, node;
     
@@ -5973,6 +6003,49 @@ extend(_SVGObject, {
       
       @param script String with script to execute. */
   _executeScript: function(script) {
+    // Create an iframe that we will use to 'silo' and execute our
+    // code, which will act as a place for globals to be defined without
+    // clobbering globals on the HTML document's window or from other
+    // embedded SVG files. This is necessary so that setTimeouts and
+    // setIntervals will work later on, for example.
+                
+    // create an iframe and attach it offscreen
+    var iframe = document.createElement('iframe');
+    iframe.setAttribute('src', 'about:blank');
+    iframe.style.position = 'absolute';
+    iframe.style.top = '-1000px';
+    iframe.style.left = '-1000px';
+    var body = document.getElementsByTagName('body')[0];
+    body.appendChild(iframe);
+    
+    // get the iframes document object; IE differs on how to get this
+    var iframeDoc = (iframe.contentDocument) ? 
+                iframe.contentDocument : iframe.contentWindow.document;
+
+    // set the document.defaultView to the iframe's real Window object;
+    // note that IE doesn't support defaultView
+    var iframeWin = iframe.contentWindow;
+    this._handler.document.defaultView = iframeWin;
+
+    // Create a script with the proper environment.
+    script = this._sandboxedScript(script);
+
+    // Add code to set back an eval function we can use for further execution.
+    // Code adapted from blog post by YuppY:
+    // http://dean.edwards.name/weblog/2006/11/sandbox/
+    script = script + '__svgHandler.sandbox_eval=top.isIE ? this.eval'
+                    + '                      : function(scriptCode) { return window.eval(scriptCode) };';
+
+    // now insert the script into the iframe to execute it in a siloed way
+    iframeDoc.write('<script>' + script + '</script>');
+    iframeDoc.close();
+    
+    // execute any addEventListener(onloads) that might have been
+    // registered
+    this._handler.window._fireOnload();
+  },
+
+  _sandboxedScript: function(script) {
     // expose the handler as a global object at the top of the script; 
     // expose the svgns and xlinkns variables; and override the setTimeout
     // and setInterval functions for the iframe where we will execute things
@@ -6035,39 +6108,10 @@ extend(_SVGObject, {
     // wouldn't incorrectly transform them)
     script = script.replace(/top\.DOCUMENT/g, 'top.document');
     script = script.replace(/top\.WINDOW/g, 'top.window');
-                
-    // Now create an iframe that we will use to 'silo' and execute our
-    // code, which will act as a place for globals to be defined without
-    // clobbering globals on the HTML document's window or from other
-    // embedded SVG files. This is necessary so that setTimeouts and
-    // setIntervals will work later on, for example.
-                
-    // create an iframe and attach it offscreen
-    var iframe = document.createElement('iframe');
-    iframe.setAttribute('src', 'about:blank');
-    iframe.style.position = 'absolute';
-    iframe.style.top = '-1000px';
-    iframe.style.left = '-1000px';
-    var body = document.getElementsByTagName('body')[0];
-    body.appendChild(iframe);
-    
-    // get the iframes document object; IE differs on how to get this
-    var iframeDoc = (iframe.contentDocument) ? 
-                iframe.contentDocument : iframe.contentWindow.document;
 
-    // set the document.defaultView to the iframe's real Window object;
-    // note that IE doesn't support defaultView
-    var iframeWin = iframe.contentWindow;
-    this._handler.document.defaultView = iframeWin;
-
-    // now insert the script into the iframe to execute it in a siloed way
-    iframeDoc.write('<script>' + script + '</script>');
-    iframeDoc.close();
-    
-    // execute any addEventListener(onloads) that might have been
-    // registered
-    this._handler.window._fireOnload();
+    return script;
   },
+
   
   /** Developers can nest custom PARAM tags inside our SVG OBJECT in order
       to pass parameters into their SVG file. This function gets these,
