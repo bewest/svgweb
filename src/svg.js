@@ -3030,6 +3030,7 @@ extend(NativeHandler, {
     this._processSVGScript(this._xml, this._svgString, this._scriptNode);
     
     // indicate that we are done
+    this._loaded = true;
     this._finishedCallback(this.id, 'script');
   },
   
