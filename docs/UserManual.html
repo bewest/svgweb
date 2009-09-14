@@ -193,6 +193,8 @@ query string to tell them to use your different HTC file:</p>
 
 <pre><code>http://example.com/svgweb/samples/demo.html?<b>svg.htcFilename=svg-htc.php</b></code></pre>
 
+<p>Note that it is possible to host much of the bulk of SVG Web on a different domain than the page it is being used on; see the section <a href="#cross_domain">"Cross Domain SVG Web"</a> for details.</p>
+
 <h1 id="renderer">Flash SVG Renderer Versus Native SVG Rendering</h1>
 
 <p>By default, the Flash renderer will be used on Internet Explorer 6+; versions
@@ -900,6 +902,24 @@ containerDiv.parentNode.removeChild(mySVGObject); // bad!!</code></pre>
   <li>You <em>must</em> provide the <code>true</code> argument to <code>document.createDocumentFragment(<b>true</b>)</code> when using DocumentFragments with SVG. This is an extra, non-standard argument necessary for SVG Web.</li>
   <li>You can not nest HTML elements inside of an SVG DocumentFragment; you can also not create a root &lt;svg&gt; tag with children inside of a DocumentFragment. Neither of these will work.</li>
 </ul>
+
+<h1 id="cross_domain">Cross Domain SVG Web</h1>
+
+<p>Many web sites store their static files on a different domain than where many of their pages reside, such as <code>static.example.com</code>. To accomodate this use case SVG Web has a special set of <code>data-</code> attributes that can be used on your script tag.</p>
+
+<p>Before diving into this, please note that SVG Web basically consists of a JavaScript file (<code>svg.js</code>); a Flash SWF file (<code>svg.swf</code>); and a Microsoft Behavior HTC file (<code>svg.htc</code>). Due to limitations in Internet Explorer you can safely place the <code>svg.js</code> and <code>svg.swf</code> files on third-party domains, but the <code>svg.htc</code> file <em>must</em> be on the same domain as your web page itself. The HTC file is quite small, however, so hosting it on the same domain as the page itself is not a serious limitation.</p>
+
+<p>To host things separately, simply point the <code>src</code> attribute on your <code>script</code> tag that pulls in <code>svg.js</code> to the full URL. SVG Web will automatically detect that you are pulling things in cross-domain and will grab the <code>svg.swf</code> from the same location as the <code>svg.js</code> file. You must still provide the <code>data-path</code> attribute however; in this case you should provide the absolute or relative path to where the <code>svg.htc</code> is located on the same domain as the page, such as <code>../../../src</code> or </code>/src/</code>.</p>
+
+</p>As an example, if we are serving the page from <code>example.com</code> with the <code>svg.htc</code> file at <code>example.com/src/svg.htc</code> but have the SVG Web library over on <code>http://codinginparadise.org/projects/svgweb/src/</code> you would provide the following <code>script</code> tag:</p>
+
+<pre><code>  
+&lt;script
+   type="text/javascript"
+   src="http://codinginparadise.org/projects/svgweb/src/svg.js"
+   data-path="/src/"&gt;
+&lt;/script&gt;
+</code></pre>
 
 <h1 id="known_issues">Known Issues and Errata</h1>
 
