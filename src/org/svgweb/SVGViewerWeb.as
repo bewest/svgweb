@@ -37,6 +37,7 @@ package org.svgweb
     import org.svgweb.nodes.SVGDOMTextNode;
     import org.svgweb.events.SVGEvent;
     import org.svgweb.utils.SVGUnits;
+    import org.svgweb.utils.SVGColors;
     
     import flash.display.DisplayObject;
     import flash.display.Sprite;
@@ -776,7 +777,22 @@ package org.svgweb
             var element:SVGNode = this.svgRoot.getNodeByGUID(elementGUID);
 
             if (element) {
-                var m:Matrix = element.viewBoxSprite.transform.concatenatedMatrix;
+                var m:Matrix = element.viewBoxSprite.transform.concatenatedMatrix.clone();
+
+                // screenCTM counts the object position as part of its
+                // transform, but flash does not, so we have to correct that.
+                m.invert();
+                var xStr:String = element.getStyleOrAttr('x');
+                var yStr:String = element.getStyleOrAttr('y');
+                m.translate(SVGColors.cleanNumber2(xStr, element.getWidth()),
+                            SVGColors.cleanNumber2(yStr, element.getHeight()));
+                m.invert();
+
+                // native getScreenCTM ignores zoom and so shall we.
+                var rootMatrix:Matrix = this.svgRoot.transformSprite.transform.concatenatedMatrix.clone();
+                rootMatrix.invert();
+                m.concat(rootMatrix);
+
                 return this.msgToString({ type: 'matrix',
                                           a: m.a, b: m.b,
                                           c: m.c, d: m.d,
