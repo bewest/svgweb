@@ -168,7 +168,7 @@ function doDebugging() {
   var debug = false;
   var scripts = document.getElementsByTagName('script');
   for (var i = 0; i < scripts.length; i++) {
-    if (scripts[i].src.indexOf('svg.js') != -1) {
+    if (/svg(?:\-uncompressed)?\.js/.test(scripts[i].src)) {
       var debugSetting = scripts[i].getAttribute('data-debug');
       debug = (debugSetting === 'true' || debugSetting === true) ? true : false;
     }
@@ -494,6 +494,9 @@ function guid() {
 */
 function SVGWeb() {
   //start('SVGWeb_constructor');
+  // is SVG Web being hosted cross-domain?
+  this._setXDomain();
+  
   // grab any configuration that might exist on where our library resources
   // are
   this.libraryPath = this._getLibraryPath();
@@ -843,15 +846,47 @@ extend(SVGWeb, {
     }
   },
   
+  /** Determines whether SVG Web is being hosted cross-domain (Issue 285,
+      "For Wikipedia: Be able to host bulk of SVG Web on a different domain",
+      http://code.google.com/p/svgweb/issues/detail?id=285). We determine
+      this by seeing if the svg.js or svg-uncompressed.js files are being
+      hosted on a different domain than the current page. */
+  _setXDomain: function() {
+    var scripts = document.getElementsByTagName('script');
+    for (var i = 0; i < scripts.length; i++) {
+      if (/svg(?:\-uncompressed)?\.js/.test(scripts[i].src)
+          && /^https?/.test(scripts[i].src)) {
+        // strip out svg.js filename
+        var url = scripts[i].src.replace(/svg(?:\-uncompressed)?\.js/, '');
+        
+        // get just protocol/hostname/port portion
+        var loc = url.match(/https?\:\/\/[^\/]*/)[0];
+        
+        // get the protocol/hostname/port portion of our current web page
+        var ourLoc = window.location.protocol.replace(/:|\//g, '') + '://' 
+                     + window.location.host;
+      
+        // are they different?
+        if (loc != ourLoc) {
+          this.xDomainURL = url;
+          this._isXDomain = true;
+          return;
+        }
+      }
+    }
+    
+    this._isXDomain = false;
+  },
+  
   /** Gets any data-path value that might exist on the SCRIPT tag
-      that pulls in our svg.js library to configure where to find
-      library resources like SWF files, HTC files, etc. */
+      that pulls in our svg.js or svg-uncompressed.js library to configure 
+      where to find library resources like SWF files, HTC files, etc. */
   _getLibraryPath: function() {
     // determine the path to our HTC and Flash files
     var libraryPath = './';
     var scripts = document.getElementsByTagName('script');
     for (var i = 0; i < scripts.length; i++) {
-      if (scripts[i].src.indexOf('svg.js') != -1 
+      if (/svg(?:\-uncompressed)?\.js/.test(scripts[i].src)
           && scripts[i].getAttribute('data-path')) {
         libraryPath = scripts[i].getAttribute('data-path');
         break;
@@ -888,7 +923,7 @@ extend(SVGWeb, {
     
     var scripts = document.getElementsByTagName('script');
     for (var i = 0; i < scripts.length; i++) {
-      if (scripts[i].src.indexOf('svg.js') != -1 
+      if (/svg(?:\-uncompressed)?\.js/.test(scripts[i].src)
           && scripts[i].getAttribute('data-htc-filename')) {
         htcFilename = scripts[i].getAttribute('data-htc-filename');
         break;
@@ -6936,7 +6971,13 @@ extend(FlashInserter, {
         + '&clipMode=' + size.clipMode
         + '&debug=true'
         + '&svgId=' + encodeURIComponent(elementID);
-    var src = svgweb.libraryPath + 'svg.swf';
+    var src;
+    if (this._isXDomain) {
+      src = svgweb.xDomainURL + 'svg.swf';
+    } else {
+      src = svgweb.libraryPath + 'svg.swf';
+    }
+
     var protocol = window.location.protocol;
     if (protocol.charAt(protocol.length - 1) == ':') {
       protocol = protocol.substring(0, protocol.length - 1);
