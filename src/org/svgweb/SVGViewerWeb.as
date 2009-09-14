@@ -51,6 +51,7 @@ package org.svgweb
     import flash.events.ContextMenuEvent;
     import flash.external.ExternalInterface;
     import flash.geom.Matrix;
+    import flash.geom.Point;
     import flash.net.URLLoader;
     import flash.net.URLRequest;
     import flash.ui.ContextMenu;
@@ -894,6 +895,13 @@ package org.svgweb
                             break;
                     }
 
+                    var mousePoint:Point = new Point(event.stageX, event.stageY);
+                    // native getScreenCTM ignores zoom and so shall we.
+                    var rootMatrix:Matrix = this.svgRoot.transformSprite.transform.concatenatedMatrix.clone();
+                    rootMatrix.invert();
+                    mousePoint = rootMatrix.transformPoint(mousePoint);
+
+
                     try {
                         ExternalInterface.call(this.js_handler + "onMessage",
                            this.msgToString(
@@ -904,8 +912,8 @@ package org.svgweb
                                      eventType: event.type.toLowerCase(),
                                      localX: event.localX,
                                      localY: event.localY,
-                                     stageX: event.stageX,
-                                     stageY: event.stageY,
+                                     stageX: mousePoint.x,
+                                     stageY: mousePoint.y,
                                      altKey: event.altKey,
                                      ctrlKey: event.ctrlKey,
                                      shiftKey: event.shiftKey,
