@@ -515,7 +515,7 @@ package org.svgweb.core
             //this.dbg('setVisibility, this='+this.xml.localName()+', visible='+visible+', recursive='+recursive);
             // ignore if we have our own visibility value and we are a recursive
             // call
-            if (this.getStyleOrAttr('visibility') == null 
+            if (this.getStyleOrAttr('visibility', null, false) == null 
                 || recursive == false) {
                 if (visible == 'visible') {
                     drawSprite.alpha = SVGColors.cleanNumber(this.getStyleOrAttr('opacity'));

@@ -357,9 +357,7 @@ package org.svgweb.nodes
                         break;
                 }
                 
-                if (this.getStyleOrAttr('visibility') == 'hidden') {
-                    this.setVisibility('hidden');
-                }
+                this.setVisibility(this.getStyleOrAttr('visibility'));
                 
                 // SVG Text elements position y attribute as baseline of text,
                 // not the top
@@ -379,8 +377,13 @@ package org.svgweb.nodes
                 var filter:GlowFilter = new GlowFilter(0x000000, .1, 16, 16, 
                                                        0, 3, false, false);
                 this.filters = new Array(filter);
-                this.alpha = 0;
+                this.drawSprite.alpha = 0;
             }
+            else {
+                this.filters = new Array();
+                super.setVisibility(visible);
+            }
+
         }
         
         override protected function draw():void {
