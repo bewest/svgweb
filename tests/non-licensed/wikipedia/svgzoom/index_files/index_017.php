@@ -1118,6 +1118,7 @@ var ImageAnnotator =
     
     function img_check (img)
     {
+      return; // added by Brad Neuberg
       var w = img.offsetWidth;
       var h = img.offsetHeight;
       // Don't do anything on extremely small previews. We need some minimum extent to be able to place

@@ -9,6 +9,10 @@ var svgSrcURL = 'http://brad.com:8080/src/svg.js';
 // whether the pan and zoom UI is initialized
 var svgUIReady = false;
 
+// the URL to the proxy from which we can fetch SVG images within the same
+// domain as this page is served from
+// TODO: define
+
 // the location of our images
 /*var imageBundle = {
   'searchtool': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/searchtool.png',
@@ -45,7 +49,8 @@ function isSVGPage() {
 // inserts the SVG Web library for IE into the page
 function insertSVGWeb() {
    document.write('<script type="text/javascript" '
-                  + 'src="' + svgSrcURL + '"'
+                  + 'src="' + svgSrcURL + '" '
+                  + 'data-path="../../../../src" ' /* Note: remove before production */
                   + 'data-debug="' + svgDebug + '"></script>');
 }
 
@@ -85,13 +90,36 @@ function initUI() {
   var startButton = document.getElementById('SVGZoom.startButton');
   startButton.parentNode.removeChild(startButton);
   
-  // make the container element slightly smaller again now that the
-  // magnifying glass icon is gone
+  // get the thumbnail container and remove it
   var info = getSVGInfo();
   var thumbnail = info.fileNode.childNodes[0].childNodes[0];
-  thumbnail.style.width = (Number(info.width.replace('px', '')) - 30) + 'px';
+  var removeMe = thumbnail.childNodes[0];
+  removeMe.style.visibility = 'hidden';
+  removeMe.parentNode.removeChild(removeMe);
   
-  // create the controls
+  // create the SVG OBJECT that will replace our thumbnail container
+  var obj = document.createElement('object', true);
+  obj.setAttribute('type', 'image/svg+xml');
+  obj.setAttribute('data', info.url);
+  obj.setAttribute('width', info.width);
+  obj.setAttribute('height', info.height);
+  obj.addEventListener('load', function() {
+    console.log('object loaded!');
+    
+    // create the controls
+    var controls = createControls();
+    
+    // now place the controls on top of the SVG object
+    thumbnail.appendChild(controls);
+    
+    // prevent IE memory leaks
+    thumbnail = obj = startButton = removeMe = null;
+  }, false);
+  svgweb.appendChild(obj, thumbnail);
+}
+
+// Returns a DIV ready to append to the page with our zoom and pan controls
+function createControls() {
   var controls = document.createElement('div');
   controls.id = 'SVGZoom.controls';
   controls.innerHTML = 
@@ -125,9 +153,8 @@ function initUI() {
           + 'src="' + imageBundle['controls-zoom-minus-mini'] + '"/>'
     + '</div>'
     + '</div>';
-    
-    // now place the controls on top of the SVG object
-    thumbnail.appendChild(controls);
+  
+  return controls;
 }
 
 // Returns a data structure that has info about the SVG file on this page, including:
@@ -141,11 +168,14 @@ function getSVGInfo() {
   if (!fileNode) {
     return null;
   }
+  
+  var url = fileNode.childNodes[0].childNodes[0].childNodes[0].href;
   var imgNode = fileNode.getElementsByTagName('img')[0];
   var width = imgNode.getAttribute('width');
   var height = imgNode.getAttribute('height');
 
-  return { fileNode: fileNode, imgNode: imgNode, width: width, height: height };
+  return { url: url, fileNode: fileNode, imgNode: imgNode, 
+           width: width, height: height };
 }
   
 
