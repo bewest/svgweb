@@ -284,7 +284,7 @@ package org.svgweb.core
                     childNode = new SVGStopNode(this.svgRoot, childXML);            
                     break;
                 case "svg":
-                    childNode = new SVGSVGNode(this.svgRoot, childXML, this.svgRoot.viewer);
+                    childNode = new SVGSVGNode(this.svgRoot, childXML, null, this.svgRoot.viewer);
                     break;                        
                 case "symbol":
                     childNode = new SVGSymbolNode(this.svgRoot, childXML);

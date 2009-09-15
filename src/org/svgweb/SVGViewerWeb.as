@@ -169,7 +169,7 @@ package org.svgweb
             while(this.numChildren) {
                 this.removeChildAt(0);
             }
-            svgRoot = new SVGSVGNode(null, dataXML, this, null, objectURL, pageURL);
+            svgRoot = new SVGSVGNode(null, dataXML, null, this, objectURL, pageURL);
             // See comment in handleRootSVGLoad()
             if (   (this.xmlString.indexOf("<animate") != -1)
                 || (this.xmlString.indexOf("<set") != -1) ) {

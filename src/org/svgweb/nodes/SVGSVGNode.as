@@ -56,8 +56,8 @@ package org.svgweb.nodes
         public var pageURL:String = '';
         
         public function SVGSVGNode(svgRoot:SVGSVGNode = null, xml:XML = null, 
-                                   viewer:SVGViewer = null,
-                                   original:SVGNode = null, objectURL:String = '',
+                                   original:SVGNode = null,
+                                   viewer:SVGViewer = null, objectURL:String = '',
                                    pageURL:String = ''):void {
             this.viewer = viewer;
             this.objectURL = objectURL;

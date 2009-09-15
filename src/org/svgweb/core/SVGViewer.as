@@ -68,7 +68,7 @@ package org.svgweb.core
             if (svgRoot != null) {
                 this.removeChild(svgRoot);
             }
-            svgRoot = new SVGSVGNode(null, value);
+            svgRoot = new SVGSVGNode(null, value, null, this);
             this.addChild(svgRoot);
         }
 
