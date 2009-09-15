@@ -635,12 +635,12 @@ extend(SVGWeb, {
           if (!attr.nodeValue && attr.nodeValue !== 'true') {
             continue;
           }
-          
+
           div.setAttribute(attr.nodeName, attr.nodeValue);
         }
 
         parent.appendChild(div);
-      
+
         // copy over internal event listener info
         div._listeners = node._listeners;
         
@@ -1198,28 +1198,31 @@ extend(SVGWeb, {
     //console.log('Total JS plus Flash startup time: ' 
     //                + (this._endTime - this._startTime) + 'ms');
     
-    // we do a slight timeout so that if exceptions get thrown inside the
-    // developers onload methods they will correctly show up and get reported
-    // to the developer; otherwise since the fireOnLoad method is called 
-    // from Flash and an exception gets called it can get 'squelched'
-    var self = this;
-    window.setTimeout(function() {
-      // make a copy of our listeners and then clear them out _before_ looping
-      // and calling each one; this is to handle the following edge condition: 
-      // one of the listeners might dynamically create an SVG OBJECT _inside_ 
-      // of it, which would then add a new listener, and we would then 
-      // incorrectly get it in our list of listeners as we loop below!
-      var listeners = self._loadListeners;
-      self._loadListeners = [];
-      this.totalLoaded = 0;
-      for (var i = 0; i < listeners.length; i++) {
-        try {
-          listeners[i]();
-        } catch (exp) {
-          console.log('Error while firing onload: ' + (exp.message || exp));
+    if (this._loadListeners.length) {
+      // we do a slight timeout so that if exceptions get thrown inside the
+      // developers onload methods they will correctly show up and get reported
+      // to the developer; otherwise since the fireOnLoad method is called 
+      // from Flash and an exception gets called it can get 'squelched'
+      var self = this;
+      window.setTimeout(function() {
+        //console.log('svgweb._fireOnLoad timeout');
+        // make a copy of our listeners and then clear them out _before_ looping
+        // and calling each one; this is to handle the following edge condition: 
+        // one of the listeners might dynamically create an SVG OBJECT _inside_ 
+        // of it, which would then add a new listener, and we would then 
+        // incorrectly get it in our list of listeners as we loop below!
+        var listeners = self._loadListeners;
+        self._loadListeners = [];
+        this.totalLoaded = 0;
+        for (var i = 0; i < listeners.length; i++) {
+          try {
+            listeners[i]();
+          } catch (exp) {
+            console.log('Error while firing onload: ' + (exp.message || exp));
+          }
         }
-      }
-    }, 1);
+      }, 1);
+    }
   },
   
   /** Cleans up some SVG in various ways (adding IDs, etc.)
@@ -1506,6 +1509,7 @@ extend(SVGWeb, {
     // create the correct handler
     var finishedCallback = (function(self) {
       return function(id, type) {
+        //console.log('anonymous inner finishedCallback, id='+id+', type='+type);
         self._handleDone(id, type);
       };
     })(this); // prevent IE memory leaks
@@ -1688,7 +1692,9 @@ extend(SVGWeb, {
     for (var i = 0; i < svgweb.handlers.length; i++) {      
       if (svgweb.handlers[i].type == 'object') {
         var removeMe = svgweb.handlers[i].flash;
-        svgweb.removeChild(removeMe, removeMe.parentNode);
+        if (removeMe.parentNode) { // attachment may have been interrupted
+          svgweb.removeChild(removeMe, removeMe.parentNode);
+        }
       } else {
         // null out reference to root
         svgweb.handlers[i].document.documentElement = null;
@@ -5715,6 +5721,7 @@ function _SVGObject(svgNode, handler) {
     // OBJECT rather than the global window object
     var wrappedListener = (function(handler, listener) {
       return function() {
+        //console.log('_SVGObject, wrappedListener, handler='+handler+', listener='+listener);
         listener.apply(handler.flash);
       };
     })(this._handler, this._svgNode._listeners[i]); // pass values into function
@@ -6447,14 +6454,12 @@ extend(FlashInserter, {
       if necessary).
     */
   _determineSize: function() {
-
     if (isStandardsMode) {
         return this._getStandardsSize();
     }
     else {
         return this._getQuirksSize();
     }
-
   },
 
   _getQuirksSize: function() {
@@ -6895,10 +6900,19 @@ extend(FlashInserter, {
       @returns Style string ready to copy over to Flash object. */
   _determineStyle: function() {
     var style = this._nodeXML.getAttribute('style');
+    if (!style && this._embedType == 'object') {
+      style = this._replaceMe.getAttribute('style');
+    }
+    
     if (!style) {
       style = '';
     }
     
+    // IE sometimes leaves off trailing semicolon of style values
+    if (style.length > 0 && style.charAt(style.length - 1) != ';') {
+      style += ';';
+    }
+        
     // SVG spec says default display value for SVG root element is 
     // inline
     if (this._embedType == 'script' && style.indexOf('display:') == -1) {
@@ -7006,7 +7020,7 @@ extend(FlashInserter, {
       customAttrStr += ' ' + customAttrs[i].attrName + '="'
                             + customAttrs[i].attrValue + '"';
     }
-    
+
     var flash =
           '<object\n '
             + 'classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"\n '
