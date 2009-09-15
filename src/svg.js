@@ -6696,6 +6696,16 @@ extend(FlashInserter, {
 
     var parentWidth = this._parentNode.clientWidth;
     var parentHeight = this._parentNode.clientHeight;
+    // If parentHeight is zero, then the object was sized with a %
+    // object height and the parent height is not known.
+    // We should use aspect ratio for sizing the object height.
+    // Subsequent resizing of the object may result in a valid
+    // parent height, but in this case, we should stick to our earlier
+    // determination that the image should rely on aspect ratio to size
+    // the object height.
+    if (parentHeight == 0) {
+      this.invalidParentHeight = true;
+    }
 
     if (!isSafari) {
       parentWidth -= this._getMargin(this._parentNode, 'margin-left');
@@ -6804,22 +6814,30 @@ extend(FlashInserter, {
           return {width: objWidth, height: pixelsHeight,
                   pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight, clipMode: 'neither'};
         } else {
-          // Default to viewbox aspect resolution
-          if (this._nodeXML.getAttribute('viewBox')) {
-            viewBox = this._nodeXML.getAttribute('viewBox').split(/\s+|,/);
-            boxWidth = viewBox[2];
-            boxHeight = viewBox[3];
-            objHeight = pixelsWidth * (boxHeight / boxWidth);
-            return {width: objWidth, height: objHeight,
-                    pixelsWidth: pixelsWidth, pixelsHeight: objHeight, clipMode: 'neither'};
-          } else {
-            if (xmlHeight && xmlHeight.indexOf('%') == -1) {
-              pixelsHeight = xmlHeight;
-            } else {
-              pixelsHeight = 150;
-            }
+          if (!this.invalidParentHeight) {
+            // If parent height is "valid", use it.
+            pixelsHeight = parentHeight * parseInt(objHeight) / 100;
             return {width: objWidth, height: pixelsHeight,
-                    pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight, clipMode: 'both'};
+                    pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight, clipMode: 'neither'};
+          }
+          else {
+            // Default to viewbox aspect resolution
+            if (this._nodeXML.getAttribute('viewBox')) {
+              viewBox = this._nodeXML.getAttribute('viewBox').split(/\s+|,/);
+              boxWidth = viewBox[2];
+              boxHeight = viewBox[3];
+              objHeight = pixelsWidth * (boxHeight / boxWidth);
+              return {width: objWidth, height: objHeight,
+                      pixelsWidth: pixelsWidth, pixelsHeight: objHeight, clipMode: 'neither'};
+            } else {
+              if (xmlHeight && xmlHeight.indexOf('%') == -1) {
+                pixelsHeight = xmlHeight;
+              } else {
+                pixelsHeight = 150;
+              }
+              return {width: objWidth, height: pixelsHeight,
+                      pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight, clipMode: 'both'};
+            }
           }
         }
       }
