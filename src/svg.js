@@ -1073,7 +1073,11 @@ extend(SVGWeb, {
     this._detachResizeListener();
     for (var i = 0; i < this.handlers.length; i++) {
       var handler = this.handlers[i];
-
+      if (!handler._inserter) {
+        // Flash still being rendered
+        continue;
+      }
+      
       var size = handler._inserter._determineSize();
       //console.log("svg #"+i+": flash resize: " 
       //            + size.width + "," + size.height + " "
