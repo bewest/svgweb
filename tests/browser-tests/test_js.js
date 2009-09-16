@@ -111,7 +111,7 @@ var myRect, mySVG, rects, sodipodi, rdf, div, dc, bad, root, rect,
     image, images, line, doTests, styleReturned, use, regExp, split, doc,
     orig, rect1, rect2, obj1, obj2, obj3, handler, elem, suspendID1,
     suspendID2, i, anim, frag, frag2, frag3, nodes, eventHandlers,
-    makeEventHandler, g11138;
+    makeEventHandler;
     
 var allStyles = [
   'font', 'fontFamily', 'fontSize', 'fontSizeAdjust', 'fontStretch', 'fontStyle',
@@ -6529,26 +6529,26 @@ function testEventHandlers() {
   }
   
   // group element
-  g11138 = getDoc('svg11242').getElementById('g11138');
-  assertExists('g11138 should exist', g11138);
+  group = getDoc('svg11242').getElementById('g11138');
+  assertExists('g11138 should exist', group);
   // add these to the window object so they are 'visible' from inside the
   // markup
   doc = getDoc('svg11242');
-  doc.g11138OnClick = makeEventHandler('onclick', 'g11138', g11138, 
+  doc.g11138OnClick = makeEventHandler('onclick', 'g11138', group, 
                                        ['path'], ['g']);
-  doc.g11138OnMouseDown = makeEventHandler('onmousedown', 'g11138', g11138, 
+  doc.g11138OnMouseDown = makeEventHandler('onmousedown', 'g11138', group, 
                                        ['path'], ['g']);
-  doc.g11138OnMouseUp = makeEventHandler('onmouseup', 'g11138', g11138, 
+  doc.g11138OnMouseUp = makeEventHandler('onmouseup', 'g11138', group, 
                                        ['path'], ['g']);
-  doc.g11138OnMouseOver = makeEventHandler('onmouseover', 'g11138', g11138, 
+  doc.g11138OnMouseOver = makeEventHandler('onmouseover', 'g11138', group, 
                                        ['path'], ['g']);
-  doc.g11138OnMouseOut = makeEventHandler('onmouseout', 'g11138', g11138, 
+  doc.g11138OnMouseOut = makeEventHandler('onmouseout', 'g11138', group, 
                                        ['path'], ['g']);
   // make sure these event handlers 'show up' using getAttribute and
   // someElement.on* syntax
-  assertExists('g11138.onclick should exist', g11138.onclick);
+  assertExists('g11138.onclick should exist', group.onclick);
   assertEquals('typeof g11138.onclick == function', 'function',
-               typeof g11138.onclick);
+               typeof group.onclick);
   assertEquals('g11138.onclick == '
                   + 'function onclick(evt){'
                   + 'document.g11138OnClick(evt, this);'
@@ -6556,12 +6556,12 @@ function testEventHandlers() {
                   'function onclick(evt){'
                   + 'document.g11138OnClick(evt,this);'
                   + '}',
-                  g11138.onclick.toString()
+                  group.onclick.toString()
                           .replace(/\s/g, '')
                           .replace(/functiononclick/g, 'function onclick'));
-  assertExists('g11138.onmousedown should exist', g11138.onmousedown);
+  assertExists('g11138.onmousedown should exist', group.onmousedown);
   assertEquals('typeof g11138.onmousedown == function', 'function',
-               typeof g11138.onmousedown);
+               typeof group.onmousedown);
   assertEquals('g11138.onmousedown == '
                   + 'function onmousedown(evt){'
                   + 'document.g11138OnMouseDown(evt, this);'
@@ -6569,18 +6569,18 @@ function testEventHandlers() {
                   'function onmousedown(evt){'
                   + 'document.g11138OnMouseDown(evt,this);'
                   + '}',
-                  g11138.onmousedown.toString()
+                  group.onmousedown.toString()
                           .replace(/\s/g, '')
                           .replace(/functiononmousedown/g, 
                                    'function onmousedown'));
   assertExists('g11138.getAttribute(onclick) should exist', 
-               g11138.getAttribute('onclick'));
+               group.getAttribute('onclick'));
   assertEquals('typeof g11138.getAttribute(onclick) == string', 'string',
-               typeof g11138.getAttribute('onclick'));
+               typeof group.getAttribute('onclick'));
   assertEquals('g11138.getAttribute(onclick) == '
                   + 'document.g11138OnClick(evt, this)',
                   'document.g11138OnClick(evt, this)',
-                  g11138.getAttribute('onclick'));
+                  group.getAttribute('onclick'));
   console.log('THIRD IMAGE: Run your mouse into and out of the scimitar; also '
               + 'click the mouse button');
               
@@ -6595,6 +6595,8 @@ function testEventHandlers() {
   // test having event handlers inside the markup, but don't pass in 'evt'
   // object as first argument but rather a custom variable, a string, and 
   // no arguments
+  // everything on g4337 element
+  
 
   // remove a node with an on* handler from the page that was in the markup
   // and make sure that its event handlers go away; repeat for keydown listener
