@@ -121,6 +121,15 @@ function initUI() {
   svgObject.style.top = '0px';
   svgObject.style.left = '0px';
   svgControls.style.display = 'block';
+  
+  // make the cursor a hand when over the SVG
+  var root = svgObject.contentDocument.rootElement;
+  root.setAttribute('cursor', 'pointer');
+  // TODO: Get hand cursor showing up in Flash
+  
+  // add drag listeners on the SVG root
+  root.addEventListener('mousedown', mouseDown, false);
+  root.addEventListener('mouseup', mouseUp, false);
 }
 
 // Creates the SVG OBJECT during page load so that when we swap the PNG
@@ -262,6 +271,66 @@ function modifyViewBox(modFunc) {
     viewBox = Math.round(vbvals[0]) + ' ' + Math.round(vbvals[1]) + ' ' + 
               Math.round(vbvals[2]) + ' ' + Math.round(vbvals[3]);
     svgObject.contentDocument.rootElement.setAttribute('viewBox', viewBox);
+}
+
+// variables used for dragging
+var mouseOffsetX = 0;
+var mouseOffsetY = 0;
+var dragX = 0;
+var dragY = 0;
+var inverseRootCTM;
+ 
+function mouseDown(evt) {
+  console.log('mousedown');
+  var root = svgObject.contentDocument.rootElement;
+  root.addEventListener('mousemove', mouseMove, false);
+
+  var p = root.createSVGPoint();
+  p.x = evt.clientX;
+  p.y = evt.clientY;
+     
+  var rootCTM = root.getScreenCTM();
+  inverseRootCTM = rootCTM.inverse();
+
+  p = p.matrixTransform(inverseRootCTM);
+         
+  mouseOffsetX = p.x - dragX;
+  mouseOffsetY = p.y - dragY;
+}
+
+function mouseMove(evt) { 
+  console.log('mousemove');
+  // hack until removeEventListener is implemented in SVG Web
+  // TODO: FIXME: Remove when removeEventListener implemented
+  if (mouseOffsetX == 0) {
+     return;
+  }
+  var root = svgObject.contentDocument.rootElement;
+  var p = root.createSVGPoint();
+  p.x = evt.clientX;
+  p.y = evt.clientY;
+
+  p = p.matrixTransform(inverseRootCTM);
+  p.x -= mouseOffsetX;
+  p.y -= mouseOffsetY;
+
+  dragX = p.x;
+  dragY = p.y;
+
+  modifyViewBox(function(vb) {
+    vb[0] = -p.x;
+    vb[1] = -p.y;
+    
+    root = null; // prevent IE memory leaks
+  }); 
+}
+
+function mouseUp(evt) { 
+  console.log('mouseup');
+  var root = svgObject.contentDocument.rootElement;
+  root.removeEventListener('mousemove', mouseMove, false);
+  mouseOffsetX = 0;
+  mouseOffsetY = 0;
 }
 
 // Returns a data structure that has info about the SVG file on this page, including:
