@@ -1,40 +1,59 @@
+(function(){ // hide everything externally to avoid name collisions
+
 // whether to display debugging output
 var svgDebug = true;
 
+// whether we are locally debugging (i.e. the page is downloaded to our
+// hard drive and served from a local server to ease development)
+var localDebug = true;
+
 // the full URL to where svg.js is located
-//var svgSrcURL = 'http://codinginparadise.org/projects/svgweb-staging/src/svg.js';
-// for debugging
-var svgSrcURL = 'http://brad.com:8080/src/svg.js';
+var svgSrcURL;
+if (localDebug) {
+  svgSrcURL = 'http://brad.com:8080/src/svg.js';
+} else {
+  svgSrcURL = 'http://codinginparadise.org/projects/svgweb-staging/src/svg.js';
+}
 
 // whether the pan and zoom UI is initialized
 var svgUIReady = false;
+
+// a reference to the SVG OBJECT on the page
+var svgObject;
+
+// a reference to our zoom and pan controls
+var svgControls;
 
 // the URL to the proxy from which we can fetch SVG images within the same
 // domain as this page is served from
 // TODO: define
 
 // the location of our images
-/*var imageBundle = {
-  'searchtool': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/searchtool.png',
-  'controls-north-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-north-mini.png',
-  'controls-west-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-west-mini.png',
-  'controls-east-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-east-mini.png',
-  'controls-south-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-south-mini.png',
-  'controls-zoom-plus-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-zoom-plus-mini.png',
-  'controls-zoom-world-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-zoom-world-mini.png',
-  'controls-minus-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-minus-mini.png'
-};*/
-// for debugging
-var imageBundle = {
-  'searchtool': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/searchtool.png',
-  'controls-north-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/north-mini.png',
-  'controls-west-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/west-mini.png',
-  'controls-east-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/east-mini.png',
-  'controls-south-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/south-mini.png',
-  'controls-zoom-plus-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/zoom-plus-mini.png',
-  'controls-zoom-world-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/zoom-world-mini.png',
-  'controls-zoom-minus-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/zoom-minus-mini.png'
-};
+var imageBundle;
+if (localDebug) {
+  // for local debugging
+  imageBundle = {
+    'searchtool': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/searchtool.png',
+    'controls-north-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/north-mini.png',
+    'controls-west-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/west-mini.png',
+    'controls-east-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/east-mini.png',
+    'controls-south-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/south-mini.png',
+    'controls-zoom-plus-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/zoom-plus-mini.png',
+    'controls-zoom-world-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/zoom-world-mini.png',
+    'controls-zoom-minus-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/zoom-minus-mini.png'
+  };
+} else {
+  imageBundle = {
+    'searchtool': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/searchtool.png',
+    'controls-north-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-north-mini.png',
+    'controls-west-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-west-mini.png',
+    'controls-east-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-east-mini.png',
+    'controls-south-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-south-mini.png',
+    'controls-zoom-plus-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-zoom-plus-mini.png',
+    'controls-zoom-world-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-zoom-world-mini.png',
+    'controls-minus-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-minus-mini.png'
+  };
+}
 
 // determines if we are at a Wikimedia Commons detail page for an SVG file?
 function isSVGPage() {
@@ -97,23 +116,43 @@ function initUI() {
   removeMe.style.visibility = 'hidden';
   removeMe.parentNode.removeChild(removeMe);
   
+  // reveal the SVG object and controls
+  svgObject.style.position = 'relative';
+  svgObject.style.top = '0px';
+  svgObject.style.left = '0px';
+  svgControls.style.display = 'block';
+}
+
+// Creates the SVG OBJECT during page load so that when we swap the PNG
+// thumbnail and the SVG OBJECT it happens much faster
+function createSVGObject() {
+  var info = getSVGInfo();
+  var thumbnail = info.fileNode.childNodes[0].childNodes[0];
+  
   // create the SVG OBJECT that will replace our thumbnail container
   var obj = document.createElement('object', true);
   obj.setAttribute('type', 'image/svg+xml');
   obj.setAttribute('data', info.url);
   obj.setAttribute('width', info.width);
   obj.setAttribute('height', info.height);
+  // make object invisible initially
+  obj.setAttribute('style', 'position: absolute; top: -1000px; left: -1000px;');
   obj.addEventListener('load', function() {
-    console.log('object loaded!');
+    // store a reference to the SVG OBJECT
+    svgObject = this;
+    
+    // add our magnification icon
+    addStartButton();
     
     // create the controls
-    var controls = createControls();
+    svgControls = createControls();
+    svgControls.style.display = 'none';
     
     // now place the controls on top of the SVG object
-    thumbnail.appendChild(controls);
+    thumbnail.appendChild(svgControls);
     
     // prevent IE memory leaks
-    thumbnail = obj = startButton = removeMe = null;
+    thumbnail = obj = null;
   }, false);
   svgweb.appendChild(obj, thumbnail);
 }
@@ -153,8 +192,76 @@ function createControls() {
           + 'src="' + imageBundle['controls-zoom-minus-mini'] + '"/>'
     + '</div>'
     + '</div>';
+    
+  // attach event handlers
+  controls.childNodes[0].childNodes[0].onclick = panUp;
+  controls.childNodes[0].childNodes[1].onclick = panLeft;
+  controls.childNodes[0].childNodes[2].onclick = panRight;
+  controls.childNodes[0].childNodes[3].onclick = panDown;
+  controls.childNodes[0].childNodes[4].onclick = zoomIn;
+  controls.childNodes[0].childNodes[5].onclick = zoomWorld;
+  controls.childNodes[0].childNodes[6].onclick = zoomOut;
   
   return controls;
+}
+
+function panUp() {
+  modifyViewBox(function(vb) {
+    vb[1] = parseFloat(vb[1]) + 25.0;
+  });
+}
+
+function panLeft() {
+  modifyViewBox(function(vb) {
+    vb[0] = parseFloat(vb[0]) + 25.0;
+  });
+}
+
+function panRight() {
+  modifyViewBox(function(vb) {
+    vb[0] = parseFloat(vb[0]) - 25.0;
+  });
+}
+
+function panDown() {
+  modifyViewBox(function(vb) {
+    vb[1] = parseFloat(vb[1]) - 25.0;
+  });
+}
+
+function zoomIn() {
+  modifyViewBox(function(vb) {
+    vb[2] = parseFloat(vb[2]) / 1.1;
+    vb[3]=parseFloat(vb[3]) / 1.1;
+  });
+}
+
+function zoomWorld() {
+  // TODO: Implement
+}
+
+function zoomOut() {
+  modifyViewBox(function(vb) {
+    vb[2] = parseFloat(vb[2]) * 1.1;
+    vb[3] = parseFloat(vb[3]) * 1.1;
+  });
+}
+
+function modifyViewBox(modFunc) {
+    var viewBox = svgObject.contentDocument.documentElement.getAttribute('viewBox');
+    if (typeof(viewBox) != 'string' 
+        || !viewBox.match(/\s*\S+\s*\S+\s*\S+\s*\S+\s*/)) {
+        var width = svgObject.getAttribute('width');
+        var height = svgObject.getAttribute('height');
+        viewBox = '0 0 ' + Math.round(width) + ' ' + Math.round(height);
+    }
+    
+    viewBox = viewBox.replace(/^\s+/, '');
+    var vbvals = viewBox.split(/\s+/);
+    modFunc(vbvals);
+    viewBox = Math.round(vbvals[0]) + ' ' + Math.round(vbvals[1]) + ' ' + 
+              Math.round(vbvals[2]) + ' ' + Math.round(vbvals[3]);
+    svgObject.contentDocument.rootElement.setAttribute('viewBox', viewBox);
 }
 
 // Returns a data structure that has info about the SVG file on this page, including:
@@ -187,7 +294,7 @@ function pageLoaded() {
     function() {
       if (document.getElementById('ImageAnnotationAddButton')) {
         window.clearInterval(intervalID);
-        addStartButton();
+        createSVGObject();
       }
     }, 50);
 }
@@ -196,3 +303,6 @@ if (isSVGPage()) {
   insertSVGWeb();
   addOnloadHook(pageLoaded);
 }
+
+// hide internal implementation details inside of a closure
+})();
