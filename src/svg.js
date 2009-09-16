@@ -4021,6 +4021,10 @@ extend(_Node, {
                           this._handler);
   },
 
+  getCTM: function() {
+    return this.getScreenCTM();
+  },
+
   toString: function() {
     if (this.namespaceURI == svgns) {
       return '[_SVG' + this.localName.charAt(0).toUpperCase()
@@ -5136,6 +5140,14 @@ extend(_Element, {
   _getHeight: function() { /* SVGAnimatedLength */
     var value = this._trimMeasurement(this.getAttribute('height'));
     return new _SVGAnimatedLength(new _SVGLength(new Number(value)));
+  },
+
+  _getCurrentScale: function() { /* float */
+    return 1;
+  },
+
+  _getCurrentTranslate: function() { /* SVGPoint */
+    return new _SVGPoint(0, 0);
   },
   
   /** Extracts the unit value and trims off the measurement type. For example, 
@@ -7172,7 +7184,6 @@ extend(_SVGSVGElement, {
   // TODO: Implement the following methods
   
   getBBox: function() /* SVGRect */ {},
-  getCTM: function() /* SVGMatrix */ {},
   getTransformToElement: function(element /* SVGElement */) /* SVGMatrix */ {
     /* throws SVGException */
   },

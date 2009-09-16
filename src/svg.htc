@@ -44,6 +44,8 @@ The 'lightWeight' attribute below is important for two reasons:
     <property name="y" get="_getY" />
     <property name="width" get="_getWidth" />
     <property name="height" get="_getHeight" />
+    <property name="currentScale" get="_getCurrentScale"/ >
+    <property name="currentTranslate" get="_getCurrentTranslate" />
     
     <!-- A flag for someone to query whether a DOM node is one of our
          own fake ones or a real browser native one. Useful for someone
@@ -63,6 +65,7 @@ The 'lightWeight' attribute below is important for two reasons:
     <method name="addEventListener" />
     <method name="removeEventListener" />
     <method name="getScreenCTM" />
+    <method name="getCTM" />
     <method name="createSVGPoint" />
     
     <defaults tabStop="false" contentEditable="false"
@@ -89,6 +92,7 @@ The 'lightWeight' attribute below is important for two reasons:
   function addEventListener(t, l, u) { return this._fakeNode.addEventListener(t, l, u); }
   function removeEventListener(t, l, u) { return this._fakeNode.removeEventListener(t, l, u); }
   function getScreenCTM() { return this._fakeNode.getScreenCTM(); }
+  function getCTM() { return this._fakeNode.getCTM(); }
   function createSVGPoint() { return this._fakeNode.createSVGPoint(); }
 
   function _getNodeName() { return this._fakeNode.nodeName; }
@@ -130,6 +134,8 @@ The 'lightWeight' attribute below is important for two reasons:
   function _getY() { return this._fakeNode._getY(); }  
   function _getWidth() { return this._fakeNode._getWidth(); }
   function _getHeight() { return this._fakeNode._getHeight(); }
+  function _getCurrentScale() { return this._fakeNode._getCurrentScale(); }
+  function _getCurrentTranslate() { return this._fakeNode._getCurrentTranslate(); }
 </script>
 
 <!-- IE has a bug where if a JScript portion is greater than 512 bytes,
