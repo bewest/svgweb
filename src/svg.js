@@ -2738,16 +2738,9 @@ extend(FlashHandler, {
                     'preventDefault: function() { this.returnValue=false; }\n' +
                   '};\n';
 
-        // Use double quotes unles the script has that.
-        // If the script has both types of quotes it probably is invalid anyway.
-        var quote = '"';
-        if (msg.scriptCode.indexOf('"') != -1) {
-          quote = "'";
-        }
         // Prepare the code for the correct object context.
-        var executeInContext = "var scriptFunc = new Function(" +
-                             quote + msg.scriptCode + quote +");\n" +
-                             "scriptFunc.apply(evt.target);\n";
+        var executeInContext = ';(function (evt) { ' + msg.scriptCode + '; }' +
+                                    ').call(evt.target, evt);\n';
         // Execute the code within the correct window context.
         this.sandbox_eval(this._svgObject._sandboxedScript(defineEvtCode + executeInContext));
       } else {
@@ -6076,8 +6069,9 @@ extend(_SVGObject, {
     // Add code to set back an eval function we can use for further execution.
     // Code adapted from blog post by YuppY:
     // http://dean.edwards.name/weblog/2006/11/sandbox/
-    script = script + '__svgHandler.sandbox_eval=top.isIE ? this.eval'
-                    + '                      : function(scriptCode) { return window.eval(scriptCode) };';
+    script = script + ';__svgHandler.sandbox_eval = ' +
+             (isIE ? 'window.eval;'
+                   : 'function(scriptCode) { return window.eval(scriptCode) };');
 
     // now insert the script into the iframe to execute it in a siloed way
     iframeDoc.write('<script>' + script + '</script>');
