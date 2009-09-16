@@ -999,6 +999,14 @@ extend(SVGWeb, {
     // patch the document and style objects with bug fixes for the 
     // NativeHandler and actual implementations for the FlashHandler
     this.renderer._patchBrowserObjects(window, document);
+
+    // There may be objects added later. Add the listener before
+    // checking for whether there is any svg content.
+    if (this.config.use == 'flash') {
+      // Attach window resize listener to adjust svg size when % is used.
+      this._createResizeListener();
+      this._attachResizeListener();
+    }
     
     // no SVG - we're done
     if (this.totalSVG === 0) {
@@ -1020,12 +1028,6 @@ extend(SVGWeb, {
       // the node in order to remove the SVG OBJECT from our
       // handler._svgObjects array
       this._svgObjects[i]._objID = objID;
-    }
-
-    if (this.config.use == 'flash') {
-      // Attach window resize listener to adjust svg size when % is used.
-      this._createResizeListener();
-      this._attachResizeListener();
     }
     //end('DOMContentLoaded');
     
@@ -6460,23 +6462,42 @@ extend(FlashInserter, {
       if necessary).
     */
   _determineSize: function() {
-    if (isStandardsMode) {
-        return this._getStandardsSize();
-    }
-    else {
-        return this._getQuirksSize();
-    }
-  },
-
-  _getQuirksSize: function() {
-    var pixelsWidth, pixelsHeight;
 
     var parentWidth = this._parentNode.clientWidth;
     var parentHeight = this._parentNode.clientHeight;
+
+    // If parentHeight is zero, then the object was sized with a %
+    // object height and the parent height is not known.
+    // We should use aspect ratio for sizing the object height.
+    // Subsequent resizing of the object may result in a valid
+    // parent height, but in this case, we should stick to our earlier
+    // determination that the image should rely on aspect ratio to size
+    // the object height.
+    if (parentHeight == 0) {
+      this.invalidParentHeight = true;
+    }
     /* IE7 quirk */
     if (parentWidth == 0) {
         parentWidth = this._parentNode.offsetWidth;
     }
+
+    if (!isSafari) {
+      parentWidth -= this._getMargin(this._parentNode, 'margin-left');
+      parentWidth -= this._getMargin(this._parentNode, 'margin-right');
+      parentHeight -= this._getMargin(this._parentNode, 'margin-top');
+      parentHeight -= this._getMargin(this._parentNode, 'margin-bottom');
+    }
+
+    if (isStandardsMode) {
+      return this._getStandardsSize(parentWidth, parentHeight);
+    }
+    else {
+      return this._getQuirksSize(parentWidth, parentHeight);
+    }
+  },
+
+  _getQuirksSize: function(parentWidth, parentHeight) {
+    var pixelsWidth, pixelsHeight;
 
     /** In the case of script or where an svg object has a height percent
         and the svg image has a height percent, then the height of the parent
@@ -6510,13 +6531,6 @@ extend(FlashInserter, {
         }
         grandParent = grandParent.parentNode;
       }
-    }
-
-    if (!isSafari) {
-      parentWidth -= this._getMargin(this._parentNode, 'margin-left');
-      parentWidth -= this._getMargin(this._parentNode, 'margin-right');
-      parentHeight -= this._getMargin(this._parentNode, 'margin-top');
-      parentHeight -= this._getMargin(this._parentNode, 'margin-bottom');
     }
 
     // Calculate the object width and size starting with
@@ -6676,7 +6690,7 @@ extend(FlashInserter, {
       // The height is a % or missing. Check for viewBox.
       if (this._nodeXML.getAttribute('viewBox')) {
         if (this._embedType == 'script'
-            && (xmlHeight == null || xmlHeight.indexOf('%') != -1) && parentHeight > 0) {
+            && (xmlHeight == null || xmlHeight.indexOf('%') != -1) && !this.invalidParentHeight) {
           if (xmlHeight == null) {
             xmlHeight = "100%";
           }
@@ -6702,28 +6716,8 @@ extend(FlashInserter, {
 
   },
 
-  _getStandardsSize: function() {
+  _getStandardsSize: function(parentWidth, parentHeight) {
     var pixelsWidth, pixelsHeight;
-
-    var parentWidth = this._parentNode.clientWidth;
-    var parentHeight = this._parentNode.clientHeight;
-    // If parentHeight is zero, then the object was sized with a %
-    // object height and the parent height is not known.
-    // We should use aspect ratio for sizing the object height.
-    // Subsequent resizing of the object may result in a valid
-    // parent height, but in this case, we should stick to our earlier
-    // determination that the image should rely on aspect ratio to size
-    // the object height.
-    if (parentHeight == 0) {
-      this.invalidParentHeight = true;
-    }
-
-    if (!isSafari) {
-      parentWidth -= this._getMargin(this._parentNode, 'margin-left');
-      parentWidth -= this._getMargin(this._parentNode, 'margin-right');
-      parentHeight -= this._getMargin(this._parentNode, 'margin-top');
-      parentHeight -= this._getMargin(this._parentNode, 'margin-bottom');
-    }
 
     // Calculate the object width and size starting with
     // the width and height from the object tag.
@@ -6738,11 +6732,11 @@ extend(FlashInserter, {
     var xmlHeight = this._nodeXML.getAttribute('height');
 
     if (objWidth && !objHeight) {
-      return this._getQuirksSize();
+      return this._getQuirksSize(parentWidth, parentHeight);
     }
 
     if (!objWidth && !objHeight) {
-      return this._getQuirksSize();
+      return this._getQuirksSize(parentWidth, parentHeight);
     }
 
     if (!objWidth && objHeight) {
