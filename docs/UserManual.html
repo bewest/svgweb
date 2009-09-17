@@ -927,7 +927,7 @@ containerDiv.parentNode.removeChild(mySVGObject); // bad!!</code></pre>
 you won't run into often, but they are documented here for reference if
 you find that you are running into an issue:</p>
 
-<p>* If you use the Flash viewer, and embed some SVG into a SCRIPT tag, the Flash will show up directly in the DOM as an EMBED tag (non-IE browsers) or an OBJECT tag (IE) with the 'class' set to 'embedssvg'. You can get the SVG root element by calling 'documentElement' on the EMBED tag (this is non-standard and is not part of the SVG 1.1 spec). </p>
+<p id="known_issues1">* If you use the Flash viewer, and embed some SVG into a SCRIPT tag, the Flash will show up directly in the DOM as an EMBED tag (non-IE browsers) or an OBJECT tag (IE) with the 'class' set to 'embedssvg'. You can get the SVG root element by calling 'documentElement' on the EMBED tag (this is non-standard and is not part of the SVG 1.1 spec). </p>
 
 <p>For example, if your page had an SVG SCRIPT block right under the BODY tag, 
 this would get transformed into an EMBED tag with the Flash viewer:</p>
@@ -944,22 +944,22 @@ if (embed.className &amp;&amp; embed.className.indexOf('embedssvg') != -1) {
   // now have root SVG element and can manipulate it as normal
 }</code></pre>
 
-<p>* Scoping getElementsByTagNameNS on elements other than the document element is
+<p id="known_issues2">* Scoping getElementsByTagNameNS on elements other than the document element is
 not implemented yet. For example, you can not currently do
 document.body.getElementsByTagNameNS(svgns, 'rect') or
 myDiv.getElementsByTagNameNS(svgns, 'ellipse').</p>
 
-<p>* If you have no HTML TITLE element on the page when using the native
+<p id="known_issues3">* If you have no HTML TITLE element on the page when using the native
 renderer, Safari 3 will incorrectly pick up the first SVG TITLE element 
 instead and set the page title at the top of the browser. To correct this, 
 if you have no HTML TITLE, we automatically place an empty HTML TITLE into 
 the HEAD of the page, which fixes the issue.</p>
 
-<p>* DOM Mutation Events are not supported and will not fire for SVG nodes 
+<p id="known_issues4">* DOM Mutation Events are not supported and will not fire for SVG nodes 
 when the Flash viewer is used (i.e. if you create an SVG circle and then 
 attach it to the document, a DOM Mutation event will not fire).</p>
 
-<p>* You should declare all of the namespaces you want to use on one of your 
+<p id="known_issues5">* You should declare all of the namespaces you want to use on one of your 
 SVG root elements before calling createElementNS; unknown namespaces will
 not work afterwards. For example, if you have the following SVG:</p>
 
@@ -985,7 +985,7 @@ documents that want to use createElementNS for their own purposes. This is
 also a limitation imposed by the XML namespace model itself rather than a
 limitation of the SVG Web framework.</p>
 
-<p>* On Internet Explorer we don't support wildcarding a given tag name
+<p id="known_issues6">* On Internet Explorer we don't support wildcarding a given tag name
 across known namespaces and a given tag:</p>
 
 <pre><code>getElementsByTagNameNS(*, 'someTag');</code></pre>
@@ -996,14 +996,14 @@ across known namespaces and a given tag:</p>
 getElementsByTagNameNS('someNameSpace', '*');
 getElementsByTagNameNS(null, 'someTag');</code></pre>
 
-<p>* insertBefore and replaceChild only accepts DOM element nodes for now, not 
+<p id="known_issues7">* insertBefore and replaceChild only accepts DOM element nodes for now, not 
 DOM text nodes</p>
 
-<p>* Only DOM element, text, and document type nodes are supported across the
+<p id="known_issues8">* Only DOM element, text, and document type nodes are supported across the
 framework; this means you can't dynamically work and insert processing
 instructions, comments, attributes, etc.</p>
 
-<p>* The isSupported() method on SVG DOM Nodes is not natively supported by 
+<p id="known_issues9">* The isSupported() method on SVG DOM Nodes is not natively supported by 
 Firefox, so therefore doesn't work when the Native Handler is being used
 on that platform:</p>
 
@@ -1011,7 +1011,7 @@ on that platform:</p>
 
 <p>It works on Safari and when the Flash Handler is being used on all browsers.</p>
 
-<p>* On Internet Explorer, DOM text nodes created through document.createTextNode
+<p id="known_issues10">* On Internet Explorer, DOM text nodes created through document.createTextNode
 with the second argument given as 'true':</p>
 
 <pre><code>document.createTextNode('some text', true)</code></pre>
@@ -1020,13 +1020,13 @@ with the second argument given as 'true':</p>
 various things internally. Changing this will have no affect. Technically
 DOM text nodes should not have a .style property.</p>
 
-<p>* On Internet Explorer, the cssText property on an SVG node's style object
+<p id="known_issues11">* On Internet Explorer, the cssText property on an SVG node's style object
 should not be set or retrieved; it will have unreliable results. For example,
 calling myCircle.style.cssText will not correctly return the SVG CSS of that
 node; you will instead see some custom internal properties that we use to
 support some of the framework magic on Internet Explorer.</p>
 
-<p>* The Firefox 3's native implementation of SVG doesn't correctly mirror
+<p id="known_issues12">* The Firefox 3's native implementation of SVG doesn't correctly mirror
 inline style="" attributes into element.style.* values. For example,
 if I have the following SVG element:</p>
 
@@ -1041,27 +1041,27 @@ console.log(myPath.style.fill); // does not print 'red' on Firefox!</code></pre>
 native SVG renderer on Safari does not have this issue. We correctly parse 
 and expose our style properties for the above case for the Flash renderer.</p>
 
-<p>* By default the SVG root element has an overflow of hidden. If you make the
+<p id="known_issues13">* By default the SVG root element has an overflow of hidden. If you make the
 overflow visible, when using the Flash renderer elements will not overflow
 outside of the containing Flash movie as we can't support rendering things
 outside of the Flash movie.</p>
 
-<p>* If you are using the Flash renderer on a browser that has native SVG
+<p id="known_issues14">* If you are using the Flash renderer on a browser that has native SVG
 support, and use the OBJECT tag to embed an SVG file, the browser's native
 support might render the OBJECT tag first before we can get to it, followed 
 by our Flash renderer taking over and then rendering things. This might result 
 in a slight flash, or your embedded SVG file having it's onload() event fired 
 twice.</p>
 
-<p>* If you dynamically change the data attribute of an SVG OBJECT element after
+<p id="known_issues15">* If you dynamically change the data attribute of an SVG OBJECT element after
 page load, the updated SVG will not load for the Flash Handler and certain
 patched functions for the Native Handler will no longer work.</p>
 
-<p>* You should avoid IDs on your OBJECT, SVG root, or SVG elements that start
+<p id="known_issues16">* You should avoid IDs on your OBJECT, SVG root, or SVG elements that start
 with numbers, such as "32MyElement". The SVG Web framework will not work
 correctly with such IDs.</p>
 
-<p>* If you are using OBJECT tags to embed your SVG into the page while using
+<p id="known_issues17">* If you are using OBJECT tags to embed your SVG into the page while using
 the Flash handler support:</p>
 
 <pre><code>&lt;!--[if IE]&gt;
@@ -1083,7 +1083,7 @@ to enumerate all the SVG OBJECTs on the page.</p>
 
 <p>TODO: FIXME: Check to make sure this is still true.</p>
 
-<p>* The 'this' keyword in an external SVG file when brought in with an SVG OBJECT
+<p id="known_issues18">* The 'this' keyword in an external SVG file when brought in with an SVG OBJECT
 tag when using the Flash renderer isn't always correct. For example, if you
 have the following SVG file:</p>
 
@@ -1134,7 +1134,7 @@ JavaScript development:</p>
     var instance = new SomeClass();
   ]]&gt;&lt;/script&gt;</code></pre>
   
-<p>* If you are dynamically creating an SVG OBJECT with the Flash handler, after 
+<p id="known_issues19">* If you are dynamically creating an SVG OBJECT with the Flash handler, after 
 creation the SVG OBJECT will not correctly point to a reference to that 
 OBJECT that might have been captured outside of a closure. For example, if you 
 have the following code:</p>
@@ -1178,22 +1178,65 @@ obj.addEventListener('load', function() {
 }, false);
 svgweb.appendChild(obj, myParentNode);</code></pre>
 
-<p>* Inside of an SVG OBJECT for the Flash handler, if you access the 
+<p id="known_issues20">* Inside of an SVG OBJECT for the Flash handler, if you access the 
 window.location value for that file and try to change it, nothing will happen.
 You can, however, read the values off this object and they will correctly
 represent the URL of the object as given in the data or src attribute of the
 OBJECT. You could use this to pass parameters into your SVG file, for example.</p>
 
-<p>* XML Comments (such as &lt;!-- Hello World --&gt;) will not show up in the DOM
+<p id="known_issues21">* XML Comments (such as &lt;!-- Hello World --&gt;) will not show up in the DOM
 when using the Flash handler.</p>
 
-<p>* If you have nested SVG elements (i.e. having an &lt;svg&gt; element nested in 
+<p id="known_issues22">* If you have nested SVG elements (i.e. having an &lt;svg&gt; element nested in 
 your document), these don't currently show up in the DOM correctly.</p>
 
-<p>* On some installations of Internet Explorer depending on what patches might
+<p id="known_issues23">* On some installations of Internet Explorer depending on what patches might
 be present, if you have "Disable Script Debugging" unchecked, you might see
 the Eolas "Click to activate" box around your Flash movies before users can
 interact with them. This will only happen once. It is rare for computers to
 have this box unchecked plus not having the right patches (this issue was fixed
 in later patches by Microsoft). The issue is documented here:
 http://code.google.com/p/svgweb/issues/detail?id=153</p>
+
+<p id="known_issues24">* Be careful doing complicated styling directly on an SVG OBJECT during creation when using the Flash handler, as the values might not get correctly copied over on Internet Explorer or can cause unusual glitches on Firefox/Flash. Avoid this:</p>
+
+<pre><code>
+var obj = document.createElement('object', true);
+obj.setAttribute('type', 'image/svg+xml');
+obj.setAttribute('data', someURL);
+obj.setAttribute('width', 300);
+obj.setAttribute('height', 300);
+obj.addEventListener('load', myObjLoaded, false);
+
+<b>// avoid this
+obj.setAttribute('style', 'position: absolute; z-index: -1000; top: 0px; right: 0px')
+// or this
+obj.style.position = 'absolute';
+obj.style.zIndex = -1000;
+obj.style.top = '0px';
+obj.style.right = '0px';</b>
+
+svgweb.appendChild(obj, myPage);  
+</code></pre> 
+
+<p>Instead, you should do your advanced styling on a <code>div</code> or <code>span</code> container and place the SVG OBJECT inside of that container:</p>
+
+<pre><code>
+var obj = document.createElement('object', true);
+obj.setAttribute('type', 'image/svg+xml');
+obj.setAttribute('data', someURL);
+obj.setAttribute('width', 300);
+obj.setAttribute('height', 300);
+obj.addEventListener('load', myObjLoaded, false);
+
+<b>// position object using a DIV container to avoid 
+// strange style + OBJECT interactions
+var container = document.createElement('div');
+container.style.position = 'absolute';
+container.style.zIndex = 1000;
+container.style.top = '0px';
+container.style.left = '0px';
+
+myPage.appendChild(container);
+svgweb.appendChild(obj, container);</b>
+</code></pre>
