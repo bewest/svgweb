@@ -6522,14 +6522,24 @@ extend(FlashInserter, {
         }
         // If we get to the body without div, ignore parent height.
         if (grandParent.nodeName.toLowerCase() == 'body') {
-          if (window.innerHeight && window.innerHeight > 0) {
-            parentHeight = window.innerHeight;
-          } else if (document.documentElement &&
-                     document.documentElement.clientHeight &&
-                     document.documentElement.clientHeight > 0) {
-            parentHeight = document.documentElement.clientHeight;
+          // See Issue 276. Images with position: fixed
+          // scale into the viewport.
+          if (this._nodeXML.getAttribute('style') &&
+              this._nodeXML.getAttribute('style').indexOf('fixed') != -1) {
+            if (window.innerHeight && window.innerHeight > 0) {
+              parentHeight = window.innerHeight;
+            } else if (document.documentElement &&
+                       document.documentElement.clientHeight &&
+                       document.documentElement.clientHeight > 0) {
+              parentHeight = document.documentElement.clientHeight;
+            } else {
+              parentHeight = document.body.clientHeight;
+            }
+            this.invalidParentHeight = false;
           } else {
-            parentHeight = document.body.clientHeight;
+            // Issue 233: Default to viewBox
+            this.invalidParentHeight = true;
+            parentHeight = 0;
           }
           break;
         }
@@ -6693,6 +6703,7 @@ extend(FlashInserter, {
     } else {
       // The height is a % or missing. Check for viewBox.
       if (this._nodeXML.getAttribute('viewBox')) {
+        // Issue 276
         if (this._embedType == 'script'
             && (xmlHeight == null || xmlHeight.indexOf('%') != -1) && !this.invalidParentHeight) {
           if (xmlHeight == null) {
@@ -6702,7 +6713,7 @@ extend(FlashInserter, {
             objHeight = "100%";
           }
           pixelsHeight = parentHeight * parseInt(xmlHeight) / 100;
-          return {width: objWidth, height: objHeight,
+          return {width: objWidth, height: pixelsHeight,
                   pixelsWidth: pixelsWidth, pixelsHeight: pixelsHeight, clipMode: 'neither'};
         }
         var viewBox = this._nodeXML.getAttribute('viewBox').split(/\s+|,/);
