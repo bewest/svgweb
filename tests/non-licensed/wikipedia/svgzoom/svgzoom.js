@@ -84,7 +84,8 @@ function addStartButton() {
    var info = getSVGInfo();
    var thumbnail = info.fileNode.childNodes[0].childNodes[0];
    // make the container element we will go into a bit larger to accommodate the icon
-   thumbnail.style.width = (Number(info.width.replace('px', '')) + 30) + 'px';
+   var infoWidth = Number(String(info.width).replace('px', ''));
+   thumbnail.style.width = (infoWidth + 30) + 'px';
    var img = document.createElement('img');
    img.id = 'SVGZoom.startButton';
    img.src = imageBundle['searchtool'];
@@ -109,17 +110,15 @@ function initUI() {
   var startButton = document.getElementById('SVGZoom.startButton');
   startButton.parentNode.removeChild(startButton);
   
-  // get the thumbnail container and remove it
+  // get the thumbnail container and make it invisible
   var info = getSVGInfo();
   var thumbnail = info.fileNode.childNodes[0].childNodes[0];
-  var removeMe = thumbnail.childNodes[0];
-  removeMe.style.visibility = 'hidden';
-  removeMe.parentNode.removeChild(removeMe);
+  var oldPNG = thumbnail.childNodes[0];
+  oldPNG.style.visibility = 'hidden';
+  oldPNG.style.zIndex = -1000;
   
   // reveal the SVG object and controls
-  svgObject.style.position = 'relative';
-  svgObject.style.top = '0px';
-  svgObject.style.left = '0px';
+  svgObject.parentNode.style.zIndex = 1000;
   svgControls.style.display = 'block';
   
   // make the cursor a hand when over the SVG
@@ -144,8 +143,6 @@ function createSVGObject() {
   obj.setAttribute('data', info.url);
   obj.setAttribute('width', info.width);
   obj.setAttribute('height', info.height);
-  // make object invisible initially
-  obj.setAttribute('style', 'position: absolute; top: -1000px; left: -1000px;');
   obj.addEventListener('load', function() {
     // store a reference to the SVG OBJECT
     svgObject = this;
@@ -163,7 +160,15 @@ function createSVGObject() {
     // prevent IE memory leaks
     thumbnail = obj = null;
   }, false);
-  svgweb.appendChild(obj, thumbnail);
+  // position object behind the PNG image; do it in a DIV to avoid any
+  // strange style + OBJECT interactions
+  var container = document.createElement('div');
+  container.style.zIndex = -1000;
+  container.style.position = 'absolute';
+  container.style.top = '0px';
+  container.style.left = '0px';
+  thumbnail.appendChild(container);
+  svgweb.appendChild(obj, container);
 }
 
 // Returns a DIV ready to append to the page with our zoom and pan controls
@@ -281,7 +286,6 @@ var dragY = 0;
 var inverseRootCTM;
  
 function mouseDown(evt) {
-  console.log('mousedown');
   var root = svgObject.contentDocument.rootElement;
   root.addEventListener('mousemove', mouseMove, false);
 
@@ -299,7 +303,6 @@ function mouseDown(evt) {
 }
 
 function mouseMove(evt) { 
-  console.log('mousemove');
   // hack until removeEventListener is implemented in SVG Web
   // TODO: FIXME: Remove when removeEventListener implemented
   if (mouseOffsetX == 0) {
@@ -326,7 +329,6 @@ function mouseMove(evt) {
 }
 
 function mouseUp(evt) { 
-  console.log('mouseup');
   var root = svgObject.contentDocument.rootElement;
   root.removeEventListener('mousemove', mouseMove, false);
   mouseOffsetX = 0;
