@@ -24,6 +24,9 @@ var svgObject;
 // a reference to our zoom and pan controls
 var svgControls;
 
+// a reference to our SVG root tag
+var svgRoot;
+
 // the URL to the proxy from which we can fetch SVG images within the same
 // domain as this page is served from
 // TODO: define
@@ -121,14 +124,17 @@ function initUI() {
   svgObject.parentNode.style.zIndex = 1000;
   svgControls.style.display = 'block';
   
+  // store a reference to the SVG root to make subsequent accesses faster
+  svgRoot = svgObject.contentDocument.rootElement;
+  
   // make the cursor a hand when over the SVG
-  var root = svgObject.contentDocument.rootElement;
-  root.setAttribute('cursor', 'pointer');
+  svgRoot.setAttribute('cursor', 'pointer');
   // TODO: Get hand cursor showing up in Flash
   
   // add drag listeners on the SVG root
-  root.addEventListener('mousedown', mouseDown, false);
-  root.addEventListener('mouseup', mouseUp, false);
+  svgRoot.addEventListener('mousedown', mouseDown, false);
+  svgRoot.addEventListener('mousemove', mouseMove, false);
+  svgRoot.addEventListener('mouseup', mouseUp, false);
 }
 
 // Creates the SVG OBJECT during page load so that when we swap the PNG
@@ -284,16 +290,16 @@ var mouseOffsetY = 0;
 var dragX = 0;
 var dragY = 0;
 var inverseRootCTM;
+var dragging = false; 
  
 function mouseDown(evt) {
-  var root = svgObject.contentDocument.rootElement;
-  root.addEventListener('mousemove', mouseMove, false);
-
-  var p = root.createSVGPoint();
+  dragging = true;
+  
+  var p = svgRoot.createSVGPoint();
   p.x = evt.clientX;
   p.y = evt.clientY;
      
-  var rootCTM = root.getScreenCTM();
+  var rootCTM = svgRoot.getScreenCTM();
   inverseRootCTM = rootCTM.inverse();
 
   p = p.matrixTransform(inverseRootCTM);
@@ -302,14 +308,12 @@ function mouseDown(evt) {
   mouseOffsetY = p.y - dragY;
 }
 
-function mouseMove(evt) { 
-  // hack until removeEventListener is implemented in SVG Web
-  // TODO: FIXME: Remove when removeEventListener implemented
-  if (mouseOffsetX == 0) {
+function mouseMove(evt) {
+  if (!dragging) {
      return;
   }
-  var root = svgObject.contentDocument.rootElement;
-  var p = root.createSVGPoint();
+  
+  var p = svgRoot.createSVGPoint();
   p.x = evt.clientX;
   p.y = evt.clientY;
 
@@ -329,10 +333,9 @@ function mouseMove(evt) {
 }
 
 function mouseUp(evt) { 
-  var root = svgObject.contentDocument.rootElement;
-  root.removeEventListener('mousemove', mouseMove, false);
   mouseOffsetX = 0;
   mouseOffsetY = 0;
+  dragging = false;
 }
 
 // Returns a data structure that has info about the SVG file on this page, including:
