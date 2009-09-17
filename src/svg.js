@@ -631,12 +631,15 @@ extend(SVGWeb, {
         var div = document._createElement('div');
         for (var j = 0; j < node.attributes.length; j++) {
           var attr = node.attributes[j];
+          var attrName = attr.nodeName;
+          var attrValue = attr.nodeValue;
+          
           // trim out 'empty' attributes with no value
-          if (!attr.nodeValue && attr.nodeValue !== 'true') {
+          if (!attrValue && attrValue !== 'true') {
             continue;
           }
-
-          div.setAttribute(attr.nodeName, attr.nodeValue);
+          
+          div.setAttribute(attrName, attrValue);
         }
 
         parent.appendChild(div);
@@ -1073,7 +1076,7 @@ extend(SVGWeb, {
     this._detachResizeListener();
     for (var i = 0; i < this.handlers.length; i++) {
       var handler = this.handlers[i];
-      if (!handler._inserter) {
+      if (!handler._inserter || !handler.flash) {
         // Flash still being rendered
         continue;
       }
@@ -2575,6 +2578,7 @@ extend(FlashHandler, {
       @param invoke Flash method to invoke, such as jsSetAttribute. 
       @param args Array of values to pass to the Flash method. */
   sendToFlash: function(invoke, args) {
+    //console.log('sendToFlash, invoke='+invoke);
     // Performance testing found that Flash/JS communication is one of the
     // primary bottlenecks. Two workarounds were found to make this faster:
     // 1) Send over giant strings instead of Objects and 2) minimize
@@ -6915,9 +6919,6 @@ extend(FlashInserter, {
       @returns Style string ready to copy over to Flash object. */
   _determineStyle: function() {
     var style = this._nodeXML.getAttribute('style');
-    if (!style && this._embedType == 'object') {
-      style = this._replaceMe.getAttribute('style');
-    }
     
     if (!style) {
       style = '';
