@@ -27,12 +27,6 @@ var svgControls;
 // a reference to our SVG root tag
 var svgRoot;
 
-// parsed viewBox as an object literal, with x, y, width, and height
-var viewBox = {};
-
-// the original viewBox to reset the values if the user wants to
-var origViewBox = {};
-
 // the URL to the proxy from which we can fetch SVG images within the same
 // domain as this page is served from
 // TODO: define
@@ -128,9 +122,6 @@ function initUI() {
   
   // store a reference to the SVG root to make subsequent accesses faster
   svgRoot = svgObject.contentDocument.rootElement;
-  
-  // parse the viewBox to make subsequent viewBox changes faster
-  parseViewBox();
   
   // reveal the SVG object and controls
   svgObject.parentNode.style.zIndex = 1000;
@@ -235,76 +226,32 @@ function createControls() {
 }
 
 function panUp() {
-  viewBox.y = parseFloat(viewBox.y) + 25.0;
-  updateViewBox();
+  svgRoot.currentTranslate.setY(svgRoot.currentTranslate.getY() - 25);
 }
 
 function panLeft() {
-  viewBox.x = parseFloat(viewBox.x) + 25.0;
-  updateViewBox();
+  svgRoot.currentTranslate.setX(svgRoot.currentTranslate.getX() - 25);
 }
 
 function panRight() {
-  viewBox.x = parseFloat(viewBox.x) - 25.0;
-  updateViewBox();
+  svgRoot.currentTranslate.setX(svgRoot.currentTranslate.getX() + 25);
 }
 
 function panDown() {
-  viewBox.y = parseFloat(viewBox.y) - 25.0;
-  updateViewBox();
+  svgRoot.currentTranslate.setY(svgRoot.currentTranslate.getY() + 25);
 }
 
 function zoomIn() {
-  viewBox.width = parseFloat(viewBox.width) / 1.1;
-  viewBox.height = parseFloat(viewBox.height) / 1.1;
-  updateViewBox();
+  svgRoot.currentScale = svgRoot.currentScale * 1.1;
 }
 
 function zoomWorld() {
-  viewBox.x = origViewBox.x;
-  viewBox.y = origViewBox.y;
-  viewBox.width = origViewBox.width;
-  viewBox.height = origViewBox.height;
-  updateViewBox();
+  svgRoot.currentScale = 1;
+  svgRoot.currentTranslate.setXY(0, 0);
 }
 
 function zoomOut() {
-  viewBox.width = parseFloat(viewBox.width) * 1.1;
-  viewBox.height = parseFloat(viewBox.height) * 1.1;
-  updateViewBox();
-}
-
-// We parse the viewBox into an object literal x, y, width, and height in
-// order to make modifying the viewBox faster
-function parseViewBox() {
-  var doc = svgObject.contentDocument.documentElement;
-  var parseMe = doc.getAttribute('viewBox');
-  if (typeof(parseMe) != 'string' 
-      || !parseMe.match(/\s*\S+\s*\S+\s*\S+\s*\S+\s*/)) {
-      var width = svgObject.getAttribute('width');
-      var height = svgObject.getAttribute('height');
-      parseMe = '0 0 ' + Math.round(width) + ' ' + Math.round(height);
-  }
-  
-  parseMe = parseMe.replace(/^\s+/, '');
-  var vbvals = parseMe.split(/\s+/);
-  viewBox.x = vbvals[0];
-  viewBox.y = vbvals[1];
-  viewBox.width = vbvals[2];
-  viewBox.height = vbvals[3];
-  
-  // save original viewBox value in case the user wants to reset the viewport
-  origViewBox.x = viewBox.x;
-  origViewBox.y = viewBox.y;
-  origViewBox.width = viewBox.width;
-  origViewBox.height = viewBox.height;
-}
-
-function updateViewBox() {
-  svgRoot.setAttribute('viewBox', Math.round(viewBox.x) + ' ' 
-                                  + Math.round(viewBox.y) + ' '
-                                  + Math.round(viewBox.width) + ' ' 
-                                  + Math.round(viewBox.height));
+  svgRoot.currentScale = svgRoot.currentScale / 1.1;
 }
 
 // variables used for dragging
@@ -327,8 +274,10 @@ function mouseDown(evt) {
 
   p = p.matrixTransform(inverseRootCTM);
          
-  mouseOffsetX = p.x - dragX;
-  mouseOffsetY = p.y - dragY;
+  mouseOffsetX = p.x - dragX - svgRoot.currentTranslate.getX();
+  mouseOffsetY = p.y - dragY - svgRoot.currentTranslate.getY();
+  
+  evt.preventDefault(true);
 }
 
 function mouseMove(evt) {
@@ -346,16 +295,18 @@ function mouseMove(evt) {
 
   dragX = p.x;
   dragY = p.y;
+    
+  svgRoot.currentTranslate.setXY(p.x, p.y);
   
-  viewBox.x = -p.x;
-  viewBox.y = -p.y;  
-  updateViewBox();
+  evt.preventDefault(true);
 }
 
 function mouseUp(evt) { 
   mouseOffsetX = 0;
   mouseOffsetY = 0;
   dragging = false;
+  
+  evt.preventDefault(true);
 }
 
 // Returns a data structure that has info about the SVG file on this page, including:
