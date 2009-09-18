@@ -1412,8 +1412,8 @@ package org.svgweb.core
                     }
                 }
             }
-            if (discreteString) {
-                return discreteString;
+            if (discreteStringVal) {
+                return discreteStringVal;
             } else {
                 return String(animVal);
             }
