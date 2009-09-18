@@ -1406,11 +1406,17 @@ package org.svgweb.core
                     }
                     else {
                         animVal = SVGUnits.cleanNumber(animation.getAnimValue());
-                        discreteStringVal = animation.getAnimValue();
+                        if (isNaN(animVal)) {
+                           discreteStringVal = animation.getAnimValue();
+                        }
                     }
                 }
             }
-            return String(animVal);
+            if (discreteString) {
+                return discreteString;
+            } else {
+                return String(animVal);
+            }
         }
 
         // process all transform animations

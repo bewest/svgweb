@@ -81,6 +81,8 @@ package org.svgweb.nodes
                 toString = toParameter;
             }
             var keyTimeSpline:String = getKeyTimeSpline(keyTimeIndex);
+            fromString = fromString.replace(/,/sg," "); //Replace commas with spaces
+            toString = toString.replace(/,/sg," "); //Replace commas with spaces
             if (typeParameter == "translate") {
                 // Parse From
                 parts = SVGColors.trim(fromString).split(/\s+/);
