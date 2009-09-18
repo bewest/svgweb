@@ -606,12 +606,16 @@ package org.svgweb.core
             this.loadAttribute('x');    
             this.loadAttribute('y');
 
-            // XXX hack because tspan x,y apparently replaces
-            // the parent text x,y instead of offsetting the
-            // parent like every other node.
+            // Tspan x,y replaces the parent text x,y instead of
+            // offsetting the parent like every other node.
+            // However, if the x or y is not specified, then use the parent.
             if (this is SVGTspanNode) {
-                this.x = this.x - this.getSVGParent().getAttribute('x',0);
-                this.y = this.y - this.getSVGParent().getAttribute('y',0);
+                if (this.getAttribute('x',null) != null) {
+                    this.x = this.x - this.getSVGParent().getAttribute('x',0);
+                }
+                if (this.getAttribute('y',null) != null) {
+                    this.y = this.y - this.getSVGParent().getAttribute('y',0);
+                }
             }
             
             this.loadAttribute('rotate', 'rotation');
