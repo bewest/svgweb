@@ -27,6 +27,12 @@ var svgControls;
 // a reference to our SVG root tag
 var svgRoot;
 
+// parsed viewBox as an object literal, with x, y, width, and height
+var viewBox = {};
+
+// the original viewBox to reset the values if the user wants to
+var origViewBox = {};
+
 // the URL to the proxy from which we can fetch SVG images within the same
 // domain as this page is served from
 // TODO: define
@@ -120,12 +126,15 @@ function initUI() {
   oldPNG.style.visibility = 'hidden';
   oldPNG.style.zIndex = -1000;
   
+  // store a reference to the SVG root to make subsequent accesses faster
+  svgRoot = svgObject.contentDocument.rootElement;
+  
+  // parse the viewBox to make subsequent viewBox changes faster
+  parseViewBox();
+  
   // reveal the SVG object and controls
   svgObject.parentNode.style.zIndex = 1000;
   svgControls.style.display = 'block';
-  
-  // store a reference to the SVG root to make subsequent accesses faster
-  svgRoot = svgObject.contentDocument.rootElement;
   
   // make the cursor a hand when over the SVG
   svgRoot.setAttribute('cursor', 'pointer');
@@ -226,62 +235,76 @@ function createControls() {
 }
 
 function panUp() {
-  modifyViewBox(function(vb) {
-    vb[1] = parseFloat(vb[1]) + 25.0;
-  });
+  viewBox.y = parseFloat(viewBox.y) + 25.0;
+  updateViewBox();
 }
 
 function panLeft() {
-  modifyViewBox(function(vb) {
-    vb[0] = parseFloat(vb[0]) + 25.0;
-  });
+  viewBox.x = parseFloat(viewBox.x) + 25.0;
+  updateViewBox();
 }
 
 function panRight() {
-  modifyViewBox(function(vb) {
-    vb[0] = parseFloat(vb[0]) - 25.0;
-  });
+  viewBox.x = parseFloat(viewBox.x) - 25.0;
+  updateViewBox();
 }
 
 function panDown() {
-  modifyViewBox(function(vb) {
-    vb[1] = parseFloat(vb[1]) - 25.0;
-  });
+  viewBox.y = parseFloat(viewBox.y) - 25.0;
+  updateViewBox();
 }
 
 function zoomIn() {
-  modifyViewBox(function(vb) {
-    vb[2] = parseFloat(vb[2]) / 1.1;
-    vb[3]=parseFloat(vb[3]) / 1.1;
-  });
+  viewBox.width = parseFloat(viewBox.width) / 1.1;
+  viewBox.height = parseFloat(viewBox.height) / 1.1;
+  updateViewBox();
 }
 
 function zoomWorld() {
-  // TODO: Implement
+  viewBox.x = origViewBox.x;
+  viewBox.y = origViewBox.y;
+  viewBox.width = origViewBox.width;
+  viewBox.height = origViewBox.height;
+  updateViewBox();
 }
 
 function zoomOut() {
-  modifyViewBox(function(vb) {
-    vb[2] = parseFloat(vb[2]) * 1.1;
-    vb[3] = parseFloat(vb[3]) * 1.1;
-  });
+  viewBox.width = parseFloat(viewBox.width) * 1.1;
+  viewBox.height = parseFloat(viewBox.height) * 1.1;
+  updateViewBox();
 }
 
-function modifyViewBox(modFunc) {
-    var viewBox = svgObject.contentDocument.documentElement.getAttribute('viewBox');
-    if (typeof(viewBox) != 'string' 
-        || !viewBox.match(/\s*\S+\s*\S+\s*\S+\s*\S+\s*/)) {
-        var width = svgObject.getAttribute('width');
-        var height = svgObject.getAttribute('height');
-        viewBox = '0 0 ' + Math.round(width) + ' ' + Math.round(height);
-    }
-    
-    viewBox = viewBox.replace(/^\s+/, '');
-    var vbvals = viewBox.split(/\s+/);
-    modFunc(vbvals);
-    viewBox = Math.round(vbvals[0]) + ' ' + Math.round(vbvals[1]) + ' ' + 
-              Math.round(vbvals[2]) + ' ' + Math.round(vbvals[3]);
-    svgObject.contentDocument.rootElement.setAttribute('viewBox', viewBox);
+// We parse the viewBox into an object literal x, y, width, and height in
+// order to make modifying the viewBox faster
+function parseViewBox() {
+  var doc = svgObject.contentDocument.documentElement;
+  var parseMe = doc.getAttribute('viewBox');
+  if (typeof(parseMe) != 'string' 
+      || !parseMe.match(/\s*\S+\s*\S+\s*\S+\s*\S+\s*/)) {
+      var width = svgObject.getAttribute('width');
+      var height = svgObject.getAttribute('height');
+      parseMe = '0 0 ' + Math.round(width) + ' ' + Math.round(height);
+  }
+  
+  parseMe = parseMe.replace(/^\s+/, '');
+  var vbvals = parseMe.split(/\s+/);
+  viewBox.x = vbvals[0];
+  viewBox.y = vbvals[1];
+  viewBox.width = vbvals[2];
+  viewBox.height = vbvals[3];
+  
+  // save original viewBox value in case the user wants to reset the viewport
+  origViewBox.x = viewBox.x;
+  origViewBox.y = viewBox.y;
+  origViewBox.width = viewBox.width;
+  origViewBox.height = viewBox.height;
+}
+
+function updateViewBox() {
+  svgRoot.setAttribute('viewBox', Math.round(viewBox.x) + ' ' 
+                                  + Math.round(viewBox.y) + ' '
+                                  + Math.round(viewBox.width) + ' ' 
+                                  + Math.round(viewBox.height));
 }
 
 // variables used for dragging
@@ -323,13 +346,10 @@ function mouseMove(evt) {
 
   dragX = p.x;
   dragY = p.y;
-
-  modifyViewBox(function(vb) {
-    vb[0] = -p.x;
-    vb[1] = -p.y;
-    
-    root = null; // prevent IE memory leaks
-  }); 
+  
+  viewBox.x = -p.x;
+  viewBox.y = -p.y;  
+  updateViewBox();
 }
 
 function mouseUp(evt) { 
