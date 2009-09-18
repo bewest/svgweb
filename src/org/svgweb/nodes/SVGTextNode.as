@@ -376,11 +376,11 @@ package org.svgweb.nodes
             if (visible == 'hidden') {
                 var filter:GlowFilter = new GlowFilter(0x000000, .1, 16, 16, 
                                                        0, 3, false, false);
-                this.filters = new Array(filter);
+                this.drawSprite.filters = new Array(filter);
                 this.drawSprite.alpha = 0;
             }
             else {
-                this.filters = new Array();
+                this.drawSprite.filters = new Array();
                 super.setVisibility(visible);
             }
 
