@@ -923,7 +923,7 @@ containerDiv.parentNode.removeChild(mySVGObject); // bad!!</code></pre>
 
 <h1 id="zoomAndPan">Zooming and Panning with currentTranslate and currentScale</h1>
 
-<p>SVG Web supports the <code>currentTranslate</code> and <code>currentScale</code> attributes on the SVG root tag. These can make it much easier to do scripted zooming and panning of the entire SVG image. To use <code>currentScale</code>, simply change the value to a number greater than 1 to zoom in and a number smaller than one to zoom in:
+<p>SVG Web supports the <code>currentTranslate</code> and <code>currentScale</code> attributes on the SVG root tag. These can make it much easier to do scripted zooming and panning of the entire SVG image. To use <code>currentScale</code>, simply change the value to a number greater than 1 to zoom in and a number smaller than one to zoom out:
   
 <pre><code>svgRoot.currentScale = 0.5; // zoom out
 svgRoot.currentScale = 1.5; // zoom in
