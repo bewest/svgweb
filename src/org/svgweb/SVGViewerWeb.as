@@ -243,6 +243,8 @@ package org.svgweb
                 ExternalInterface.addCallback("jsAppendChild", js_appendChild);
                 ExternalInterface.addCallback("jsGetScreenCTM", js_getScreenCTM);
                 ExternalInterface.addCallback("jsMatrixInvert", js_matrixInvert);
+                ExternalInterface.addCallback("jsSetCurrentScale", js_setCurrentScale);
+                ExternalInterface.addCallback("jsSetCurrentTranslate", js_setCurrentTranslate);
             }
             catch(error:SecurityError) {
                 var debugstr:String = "Security Error on ExternalInterface.addCallback(...). ";
@@ -562,6 +564,7 @@ package org.svgweb
         }
         
         public function js_addEventListener(msg:String):void {
+            //this.debug('js_addEventListener, msg='+msg);
             // msg is a string delimited by __SVG__DELIMIT with fields in
             // the following order: elementGUID, eventType
             var args:Array = msg.split(DELIMITER);
@@ -826,6 +829,34 @@ package org.svgweb
                                       c: m.c, d: m.d,
                                       e: m.tx, f: m.ty
                                     });
+        }
+        
+        public function js_setCurrentScale(msg:String):void {
+            // msg is a string with only one value, the new scale
+            var newValue:Number = Number(msg);
+            
+            this.svgRoot.currentScale = newValue;
+            this.svgRoot.zoomAndPan();
+        }
+        
+        public function js_setCurrentTranslate(msg:String):void {
+          // msg is a string delimited by __SVG__DELIMIT with fields in
+          // the following order: the string 'x', 'y', or 'xy' on which to set,
+          // followed by the new value. If 'xy' then followed by another
+          // value.
+           var args:Array = msg.split(DELIMITER);
+           var setMe:String = args[0];
+           var newValue:Number = Number(args[1]);
+           var newValue2:Number;
+           if (setMe == 'xy') {
+             newValue2 = Number(args[2]);
+             this.svgRoot.currentTranslate.x = newValue;
+             this.svgRoot.currentTranslate.y = newValue2;
+           } else {
+             this.svgRoot.currentTranslate[setMe] = newValue;
+           }
+           
+           this.svgRoot.zoomAndPan();
         }
 
         override public function addActionListener(eventType:String, target:Sprite):void {

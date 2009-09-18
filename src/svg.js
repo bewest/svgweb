@@ -2748,10 +2748,10 @@ extend(FlashHandler, {
                     'preventDefault: function() { this.returnValue=false; }\n' +
                   '};\n';
 
-        // Prepare the code for the correct object context.
+        // prepare the code for the correct object context.
         var executeInContext = ';(function (evt) { ' + msg.scriptCode + '; }' +
                                     ').call(evt.target, evt);\n';
-        // Execute the code within the correct window context.
+        // execute the code within the correct window context.
         this.sandbox_eval(this._svgObject._sandboxedScript(defineEvtCode + executeInContext));
       } else {
         // TODO
@@ -2783,6 +2783,7 @@ extend(FlashHandler, {
     // create or get an _Element for this XML DOM node for node
     node = FlashHandler._getNode(nodeXML, this);
     node._passThrough = true;
+    
     return node;
   },
 
@@ -3142,6 +3143,11 @@ extend(NativeHandler, {
     var doc = win.document;    
     NativeHandler._patchBrowserObjects(win, doc);
     
+    // make the SVG root currentTranslate property work like the FlashHandler,
+    // which slightly diverges from the standard due to limitations of IE
+    var root = doc.rootElement;
+    this._patchCurrentTranslate(root);
+    
     // expose the svgns and xlinkns variables inside in the SVG files 
     // Window object
     win.svgns = svgns;
@@ -3166,6 +3172,10 @@ extend(NativeHandler, {
    var importedSVG = document.importNode(xml.documentElement, true);
    scriptNode.parentNode.replaceChild(importedSVG, scriptNode);
    this._svgRoot = importedSVG;
+   
+   // make the SVG root currentTranslate property work like the FlashHandler,
+   // which slightly diverges from the standard due to limitations of IE
+   this._patchCurrentTranslate(this._svgRoot);
   },
   
   /** Extracts any namespaces we might have, creating a prefix/namespaceURI
@@ -3207,7 +3217,40 @@ extend(NativeHandler, {
     }
     
     return results;
+  },
+  
+  /** We patch native browsers to use our getter/setter syntax for 
+      currentTranslate (we have to use formal methods like
+      currentTranslate.setX() for the Flash renderer instead of 
+      currentTranslate.x = 3 due to limitations in Internet Explorer)
+
+      @root The SVG Root on which we are going to patch the 
+      currentTranslate property. */
+  _patchCurrentTranslate: function(root) {
+    // we have to unfortunately do this at runtime for each SVG OBJECT
+    // since for Firefox/Native the SVGPoint prototype doesn't seem to correctly
+    // extend the currentTranslate property; Safari likes us to extend
+    // the prototype which DOES work there (and FF doesn't), while FF wants
+    // us to extend the actual currentTranslate instance (which Safari
+    // doesn't like)
+    var t;
+    if (typeof SVGRoot != 'undefined') { // FF
+      t = root.currentTranslate;
+    } else { // Safari et al
+      t = root.currentTranslate.__proto__;
+    }
+    
+    t.setX = function(newValue) { return this.x = newValue; }
+    t.getX = function() { return this.x; }
+    t.setY = function(newValue) { return this.y = newValue; }
+    t.getY = function() { return this.y; }
+    // custom extension in SVG Web to aid performance for Flash renderer
+    t.setXY = function(newValue1, newValue2) {
+      this.x = newValue1;
+      this.y = newValue2;
+    }
   }
+  
 });
 
 /** Utility class that helps us keep track of any suspendRedraw operations
@@ -4845,6 +4888,11 @@ extend(_Node, {
           = this._getY
           = this._getWidth
           = this._getHeight
+          = this._getCurrentScale
+          = this._setCurrentScale
+          = this._getCurrentTranslate
+          = this.createSVGRect
+          = this.createSVGPoint
           = function() { return undefined; };
     }
   },
@@ -5153,11 +5201,31 @@ extend(_Element, {
   },
 
   _getCurrentScale: function() { /* float */
-    return 1;
+    return this._currentScale;
+  },
+  
+  _setCurrentScale: function(newScale /* float */) {
+    if (newScale !== this._currentScale) {
+      this._currentScale = newScale;
+      
+      this._handler.sendToFlash('jsSetCurrentScale', [ newScale ]);
+    }
+    
+    return newScale;
   },
 
   _getCurrentTranslate: function() { /* SVGPoint */
+    // TODO: at some point we probably want to call over to Flash on this one,
+    // since I believe it can be animated through SMIL
+    return this._currentTranslate;
+  },
+  
+  createSVGPoint: function() {
     return new _SVGPoint(0, 0);
+  },
+  
+  createSVGRect: function() {
+    return new _SVGRect(0, 0, 0, 0);
   },
   
   /** Extracts the unit value and trims off the measurement type. For example, 
@@ -5246,6 +5314,21 @@ extend(_Element, {
       this.__defineGetter__('y', function() { return self._getY(); });
       this.__defineGetter__('width', function() { return self._getWidth(); });
       this.__defineGetter__('height', function() { return self._getHeight(); });
+    }
+    
+    if (this.nodeName == 'svg') {
+      // TODO: Ensure that currentTranslate and currentScale only show up
+      // on root SVG node and not nested SVG nodes
+      this.__defineGetter__('currentTranslate', function() {
+        return self._getCurrentTranslate();
+      });
+      
+      this.__defineGetter__('currentScale', function() {
+        return self._getCurrentScale();
+      });
+      this.__defineSetter__('currentScale', function(newScale) {
+        return self._setCurrentScale(newScale);
+      });
     }
     
     // id property
@@ -7117,6 +7200,9 @@ function _SVGSVGElement(nodeXML, svgString, scriptNode, handler) {
     doc._nodeById['_' + rootID] = this;
   }
   
+  this._currentScale = 1;
+  this._currentTranslate = this._createCurrentTranslate();
+  
   // when being embedded by a SCRIPT element, the _SVGSVGElement class
   // takes over inserting the Flash and HTC elements so that we have 
   // something visible on the screen; when being embedded by an SVG OBJECT
@@ -7317,6 +7403,23 @@ extend(_SVGSVGElement, {
     this._htcNode.forceRedraw = (function() { 
       return function() { return this._fakeNode.forceRedraw(); };
     })();
+  },
+  
+  /** Sets up our currentTranslate property to pass over any changes on the
+      X and Y values over to Flash. */ 
+  _createCurrentTranslate: function() {
+    var p = new _SVGPoint(0, 0, true /* formalAccessor */,
+                          hitch(this, this._updateCurrentTranslate));
+    return p;
+  },
+  
+  _updateCurrentTranslate: function(type, newValue1, newValue2) {
+    if (type != 'xy') {
+      this._handler.sendToFlash('jsSetCurrentTranslate', [ type, newValue1 ]);
+    } else {
+      this._handler.sendToFlash('jsSetCurrentTranslate', [ 'xy', newValue1, 
+                                newValue2 ]);
+    }
   }
 });
 
@@ -7653,38 +7756,60 @@ extend(_SVGTransform, {
 });
 
 
-function _SVGPoint(x, y) {
+/** SVGPoint class.
+    @formalAccessors - Optional boolean that controls whether we force
+    the class to have formal get and set method to handle limitations in
+    IE, such as getX. Defaults to false. 
+    @callback - Optional Function. Called when a setter is called. Given
+    the following arguments: 'x', 'y', or 'xy' on what is being set followed
+    by the new value(s) */
+function _SVGPoint(x, y, formalAccessors, callback) {
+  if (formalAccessors === undefined) {
+    formalAccessors = false;
+  }
+  
+  this._formalAccessors = formalAccessors;
+  
   this.x = x;
   this.y = y;
+  
+  if (formalAccessors) {
+    this.setX = hitch(this, function(newValue) {
+      this.x = newValue;
+      callback('x', newValue);
+    });
+    this.getX = hitch(this, function() {
+      return this.x;
+    });
+    this.setY = hitch(this, function(newValue) {
+      this.y = newValue;
+      callback('y', newValue);
+    });
+    this.getY = hitch(this, function() {
+      return this.y;
+    });
+    this.setXY = hitch(this, function(newX, newY) {
+      callback('xy', newX, newY);
+    });
+  }
 }
 
 extend(_SVGPoint, {
   matrixTransform: function(m) {
     return new _SVGPoint(
                 m.a * this.x + m.c * this.y + m.e,
-                m.b * this.x + m.d * this.y + m.f);
+                m.b * this.x + m.d * this.y + m.f,
+                this._formalAccessors);
   }
 });
 
-// SVGPoint
-function createSVGPoint() {
-  return new _SVGPoint(0,0);
-}
-
-// the following just return object literals or other basic
-// JS types for simplicity instead of having full classes
-
 // SVGRect
-function createSVGRect() {
-  return {x: 0, y: 0, width: 0, height: 0};
+function _SVGRect(x, y, width, height) {
+  this.x = x;
+  this.y = y;
+  this.width = width;
+  this.height = height;
 }
-
-
-
-extend(_Node, {
-    createSVGPoint: createSVGPoint,
-    createSVGRect: createSVGRect
-});
      
 // end SVG DOM interfaces
 

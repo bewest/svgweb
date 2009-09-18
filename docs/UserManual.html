@@ -921,6 +921,40 @@ containerDiv.parentNode.removeChild(mySVGObject); // bad!!</code></pre>
 &lt;/script&gt;
 </code></pre>
 
+<h1 id="zoomAndPan">Zooming and Panning with currentTranslate and currentScale</h1>
+
+<p>SVG Web supports the <code>currentTranslate</code> and <code>currentScale</code> attributes on the SVG root tag. These can make it much easier to do scripted zooming and panning of the entire SVG image. To use <code>currentScale</code>, simply change the value to a number greater than 1 to zoom in and a number smaller than one to zoom in:
+  
+<pre><code>svgRoot.currentScale = 0.5; // zoom out
+svgRoot.currentScale = 1.5; // zoom in
+</code></pre>
+
+<p>When using <code>currentTranslate</code>, we have to diverge slightly from the SVG 1.1 standard to accomodate limitations in Internet Explorer. The standard supports setting and getting the translation x and y value directly as <code>x</code> and <code>y</code> attributes; we don't support this syntax:</p>
+
+<pre><code>// not supported
+svgRoot.currentTranslate.x = 5;
+svgRoot.currentTranslate.y = -10;
+</code></pre>
+
+<p>Instead, these have to be formal getters and setters, as follows:</p>
+
+<pre><code>
+svgRoot.currentTranslate.setX(5);
+svgRoot.currentTranslate.setY(-10);
+alert(svgRoot.currentTranslate.getX()); // should print 5
+alert(svgRoot.currentTranslate.getY()); // should print -10
+</code></pre>
+
+<p>We also supported a small non-standard extension to set both the X and Y values at once, which can give a slight performance speedup when using the SVG Web renderer with Flash:</p>
+
+<pre><code>
+svgRoot.currentTranslate.setXY(5 /* x */, -10 /* y */);
+</code></pre>
+
+<p>Note that we patch these methods into the native SVG environment for consistency, so the above will be available even when using SVG Web in a native environment on Firefox, Safari, etc.</p>
+
+<p id="known_issues25">* <code>currentTranslate</code> is supported on the SVG root tag (see the section <a href="#zoomAndPan">"Zooming and Panning with currentTranslate and currentScale"</a> for details). However, due to limitations in Internet Explorer the way to work with this is slightly different when using SVG Web than the SVG 1.1 standard. See the <a href="#zoomAndPan">section</a> for
+
 <h1 id="known_issues">Known Issues and Errata</h1>
 
 <p>Most of the known issues are pretty minor and tend to affect edge conditions
@@ -1240,3 +1274,5 @@ container.style.left = '0px';
 myPage.appendChild(container);
 svgweb.appendChild(obj, container);</b>
 </code></pre>
+
+<p id="known_issues25">* <code>currentTranslate</code> is supported on the SVG root tag (see the section <a href="#zoomAndPan">"Zooming and Panning with currentTranslate and currentScale"</a> for details). However, due to limitations in Internet Explorer the way to work with this is slightly different when using SVG Web than the SVG 1.1 standard. See the <a href="#zoomAndPan">section</a> for details.

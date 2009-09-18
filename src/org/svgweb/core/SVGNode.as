@@ -76,6 +76,10 @@ package org.svgweb.core
         
         protected var animations:Array = new Array();
         
+        // cache the matrix to aid any zooming and panning operations
+        // later
+        protected var _lastVBMatrix:Matrix;
+        
         /**
          *
          * To handle certain flash quirks, and to support certain SVG features,
@@ -1077,6 +1081,20 @@ package org.svgweb.core
                     }
                     newMatrix.translate(translateX, translateY);
                 }
+                
+                // cache the matrix to efficiently aid any zooming and 
+                // panning operations later
+                this._lastVBMatrix = newMatrix.clone();
+                
+                // apply any zoom and pan values that might be in effect
+                // if we are the SVG root tag
+                if (this is SVGSVGNode && this.getSVGParent() == null) {
+                  newMatrix.translate(this.svgRoot.currentTranslate.x, 
+                                      this.svgRoot.currentTranslate.y);
+                  newMatrix.scale(this.svgRoot.currentScale, 
+                                  this.svgRoot.currentScale);
+                }
+                
                 viewBoxSprite.transform.matrix = newMatrix;
             }
         }

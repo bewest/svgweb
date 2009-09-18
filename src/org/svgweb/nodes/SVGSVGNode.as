@@ -46,6 +46,9 @@ package org.svgweb.nodes
         
         public var viewer:SVGViewer;
         
+        public var currentScale:Number = 1;
+        public var currentTranslate:Object = {x: 1, y: 1};
+        
         /** If this file was loaded from a URL, such as samples/scimitar.svg,
             then objectURL points to the relative path from which it was
             fetched, such as 'samples/' */
@@ -468,6 +471,22 @@ package org.svgweb.nodes
             else if (this.parent is SVGViewer) {
                 SVGViewer(this.parent).removeActionListener(eventType, target);
             }
+        }
+        
+        public function zoomAndPan():void {
+          var m:Matrix;
+          
+          // do we have a cached viewBox matrix that we've already applied?
+          if (this._lastVBMatrix) {
+            m = this._lastVBMatrix.clone();
+          } else {
+            m = new Matrix();
+          }
+          
+          m.translate(this.currentTranslate.x, this.currentTranslate.y);
+          m.scale(this.currentScale, this.currentScale);
+                                    
+          viewBoxSprite.transform.matrix = m;
         }
 
         public function debug(debugString:String):void {
