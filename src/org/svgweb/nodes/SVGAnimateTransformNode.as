@@ -115,7 +115,6 @@ package org.svgweb.nodes
                 //return parseTransform("translate("+animX+","+animY+")");
             }
 
-            // XXX not implemented
             if (typeParameter == "scale") {
                 // Parse From
                 parts = SVGColors.trim(fromString).split(/\s+/);
@@ -146,7 +145,6 @@ package org.svgweb.nodes
                 return transformMatrix;
             }
 
-            // XXX not implemented
             if (typeParameter == "rotate") {
                 var toCX:String = "0";
                 var toCY:String = "0";

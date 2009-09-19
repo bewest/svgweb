@@ -1496,12 +1496,13 @@ package org.svgweb.core
                     }
                 }
             }
+            // This order determined empirically.  See Issue 254.
             var animTransform:Matrix= new Matrix();
-            animTransform.concat(rotateTransform);
             animTransform.concat(scaleTransform);
             animTransform.concat(skewXTransform);
             animTransform.concat(skewYTransform);
             animTransform.concat(translateTransform);
+            animTransform.concat(rotateTransform);
             return animTransform;
         }
 
