@@ -1449,7 +1449,20 @@ extend(SVGWeb, {
       @param script SCRIPT node to get the SVG from. */
   _processSVGScript: function(script) {
     //console.log('processSVGScript, script='+script);
-    var origSVG = script.innerHTML;
+    var origSVG;
+    if (!isXHTML) {
+      origSVG = script.innerHTML;
+    } else { // XHTML document
+      // Safari/Native has an unusual bug; sometimes, when fetching the
+      // SVG text content inside of a SCRIPT tag, it will break it up into
+      // multiple CDATA sections, corrupting the source if we fetch it
+      // with innerHTML above. Instead loop through and get the CDATA text.
+      origSVG = '';
+      for (var i = 0; i < script.childNodes.length; i++) {
+        origSVG += script.childNodes[i].textContent;
+      }
+    }
+
     var results = this._cleanSVG(origSVG, true, true);
     var svg = results.svg;
     var xml = results.xml;
