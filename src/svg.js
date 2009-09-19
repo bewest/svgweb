@@ -7144,7 +7144,6 @@ extend(FlashInserter, {
     }
 
     var flash;
-    console.log('isXHTML='+isXHTML);
     if (isXHTML) {
       // XHTML environments have no innerHTML
       flash = document.createElement('embed');
@@ -7378,7 +7377,7 @@ extend(_SVGSVGElement, {
     //end('SWFLoading');
     //start('onFlashLoaded');
     // the Flash object is done loading
-    console.log('_onFlashLoaded');
+    //console.log('_onFlashLoaded');
     
     // store a reference to our Flash object
     this._handler.flash = document.getElementById(this._handler.flashID);
@@ -7416,7 +7415,7 @@ extend(_SVGSVGElement, {
   _onRenderingFinished: function(msg) {
     //end('firstSendToFlash');
     //start('onRenderingFinished');
-    console.log('onRenderingFinished');
+    //console.log('onRenderingFinished');
     
     if (this._handler.type == 'script') {
       // expose the root SVG element as 'documentElement' on the EMBED
