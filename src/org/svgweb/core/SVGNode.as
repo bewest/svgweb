@@ -631,11 +631,17 @@ package org.svgweb.core
                                                             transformSprite.transform.matrix.clone());
             }
             
-            var animMatrix:Matrix = this.getAllAnimsTransform();
+            var animResult:Array = this.getAllAnimsTransform();
+            var animMatrix:Matrix = animResult[0];
+            var isAdditive:Boolean = animResult[1];
             if (animMatrix != null) {
-                var newMatrix:Matrix = transformSprite.transform.matrix.clone();
-                newMatrix.concat(animMatrix);
-                transformSprite.transform.matrix = newMatrix;
+                // See Issue 311: Tranforms must be applied in correct order
+                // and must account for additive attribute.
+                if (isAdditive) {
+                  var newMatrix:Matrix = transformSprite.transform.matrix.clone();
+                  animMatrix.concat(newMatrix);
+                }
+                transformSprite.transform.matrix = animMatrix;
             }
         }
 
@@ -1439,7 +1445,8 @@ package org.svgweb.core
 
         // process all transform animations
         // xxx not fully implemented
-        public function getAllAnimsTransform():Matrix {
+        public function getAllAnimsTransform():Array {
+            var isAdditive:Boolean = true;
             var rotateTransform:Matrix = new Matrix();
             var scaleTransform:Matrix = new Matrix();
             var skewXTransform:Matrix = new Matrix();
@@ -1471,6 +1478,7 @@ package org.svgweb.core
                         }
                     }
                     else {
+                        isAdditive = false;
                         rotateTransform = new Matrix();
                         scaleTransform = new Matrix();
                         skewXTransform = new Matrix();
@@ -1503,7 +1511,7 @@ package org.svgweb.core
             animTransform.concat(skewYTransform);
             animTransform.concat(translateTransform);
             animTransform.concat(rotateTransform);
-            return animTransform;
+            return [ animTransform, isAdditive ];
         }
 
         public function setAttribute(name:String, value:String):void {
