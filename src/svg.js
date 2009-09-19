@@ -118,7 +118,7 @@ svgnsFake = 'urn:__fake__internal__namespace';
  
 // browser detection adapted from Dojo
 var isOpera = false, isSafari = false, isMoz = false, isIE = false, 
-    isAIR = false, isKhtml = false, isFF = false;
+    isAIR = false, isKhtml = false, isFF = false, isXHTML = false;
     
 function _detectBrowsers() {
   var n = navigator,
@@ -154,7 +154,14 @@ function _detectBrowsers() {
   } else {
     isStandardsMode = (document.compatMode == 'CSS1Compat');
   }
-
+  
+  // are we in an XHTML page?
+  if (document.contentType == 'application/xhtml+xml') { /* FF */
+    isXHTML = true;
+  } else if (typeof XMLDocument != 'undefined' 
+             && document.constructor == XMLDocument) { /* Safari */
+    isXHTML = true;
+  }
 }
 
 _detectBrowsers();
@@ -1252,6 +1259,13 @@ extend(SVGWeb, {
         xml: parsed SVG as an XML object
   */
   _cleanSVG: function(svg, addMissing, normalizeWhitespace) {
+    // if this was directly embedded SVG into a SCRIPT block on an XHTML page,
+    // but on IE, then it will be surrounded with a CDATA block; remove this
+    if (/^\s*<\!\[CDATA\[/.test(svg)) {
+      svg = svg.replace(/^\s*<\!\[CDATA\[/, '');
+      svg = svg.replace(/\]\]>\s*/, '');
+    }
+
     if (addMissing) {
       // add any missing things (XML declaration, SVG namespace, etc.)
       if (/\<\?xml/m.test(svg) == false) { // XML declaration
@@ -6491,32 +6505,45 @@ extend(FlashInserter, {
   
   /** Inserts the Flash object into the page.
   
-      @param flash Flash HTML string.
+      @param flash Flash HTML string. If this is an XHTML page, then this is
+      an EMBED object already instantiated and ready to insert into the page.
       
       @returns The Flash DOM object. */
   _insertFlash: function(flash) {
     if (!isIE) {
-      // do a trick to turn the Flash HTML string into an actual DOM object
-      // unfortunately this doesn't work on IE; on IE the Flash is immediately
-      // loaded when we do div.innerHTML even though we aren't attached
-      // to the document!
-      var div = document.createElement('div');
-      div.innerHTML = flash;
-      var flashObj = div.childNodes[0];
-      div.removeChild(flashObj);
+      var flashObj;
+      if (!isXHTML) { // no innerHTML in XHTML land
+        // do a trick to turn the Flash HTML string into an actual DOM object
+        // unfortunately this doesn't work on IE; on IE the Flash is immediately
+        // loaded when we do div.innerHTML even though we aren't attached
+        // to the document!
+        var div = document.createElement('div');
+        div.innerHTML = flash;
+        flashObj = div.childNodes[0];
+        div.removeChild(flashObj);
     
-      // at this point we have the OBJECT tag; ExternalInterface communication
-      // won't work on Firefox unless we get the EMBED tag itself
-      for (var i = 0; i < flashObj.childNodes.length; i++) {
-        var check = flashObj.childNodes[i];
-        if (check.nodeName.toUpperCase() == 'EMBED') {
-          flashObj = check;
-          break;
+        // at this point we have the OBJECT tag; ExternalInterface communication
+        // won't work on Firefox unless we get the EMBED tag itself
+        for (var i = 0; i < flashObj.childNodes.length; i++) {
+          var check = flashObj.childNodes[i];
+          if (check.nodeName.toUpperCase() == 'EMBED') {
+            flashObj = check;
+            break;
+          }
         }
+      } else if (isXHTML) { /* XHTML */
+        // 'flash' is an EMBED object already created for us by createFlash();
+        // no innerHTML in this environment so we can't instantiate from
+        // a string:
+        // Issue 312: Odd error when using within XHTML document: 
+        // works with Firefox, does not work with any other browser
+        // http://code.google.com/p/svgweb/issues/detail?id=312
+        flashObj = flash;
       }
+      
       // now insert the EMBED tag into the document
       this._replaceMe.parentNode.replaceChild(flashObj, this._replaceMe);
-    
+  
       return flashObj;
     } else { // IE
       // NOTE 1: as _soon_ as we make this call the Flash will load, even
@@ -7093,7 +7120,9 @@ extend(FlashInserter, {
       have put on their SVG OBJECT; each entry in the array is an object
       literal with attrName and attrValue as the keys.
       
-      @returns Flash object as HTML string. */ 
+      @returns Flash object as HTML string. If the page is an XHTML 
+      page, then we return an EMBED tag already instantiated and ready to
+      insert; this is because we do not have innerHTML on XHTML pages. */ 
   _createFlash: function(size, elementID, background, style, className,
                          customAttrs) {
     var flashVars = 
@@ -7113,14 +7142,46 @@ extend(FlashInserter, {
     if (protocol.charAt(protocol.length - 1) == ':') {
       protocol = protocol.substring(0, protocol.length - 1);
     }
-    
-    var customAttrStr = '';
-    for (var i = 0; i < customAttrs.length; i++) {
-      customAttrStr += ' ' + customAttrs[i].attrName + '="'
-                            + customAttrs[i].attrValue + '"';
-    }
 
-    var flash =
+    var flash;
+    console.log('isXHTML='+isXHTML);
+    if (isXHTML) {
+      // XHTML environments have no innerHTML
+      flash = document.createElement('embed');
+      flash.setAttribute('src', src);
+      flash.setAttribute('quality', 'high');
+      // FIXME: Will this logic test break if the color is black?
+      if (background.color) {
+        flash.setAttribute('bgcolor', background.color);
+      }
+      if (background.transparent) {
+        flash.setAttribute('wmode', 'transparent');
+      }
+      flash.setAttribute('width', size.width);
+      flash.setAttribute('height', size.height);
+      flash.setAttribute('id', this._handler.flashID);
+      flash.setAttribute('name', this._handler.flashID);
+      flash.setAttribute('swLiveConnect', 'true');
+      flash.setAttribute('allowScriptAccess', 'always');
+      flash.setAttribute('type', 'application/x-shockwave-flash');
+      flash.setAttribute('FlashVars', flashVars);
+      flash.setAttribute('pluginspage', protocol
+                       + '://www.macromedia.com/go/getflashplayer');
+      flash.setAttribute('style', style);
+      flash.setAttribute('className', className);
+      flash.setAttribute
+      for (var i = 0; i < customAttrs.length; i++) {
+        flash.setAttribute(customAttrs[i].attrName,
+                         customAttrs[i].attrValue);
+      }
+    } else { // normal text/html environment
+      var customAttrStr = '';
+      for (var i = 0; i < customAttrs.length; i++) {
+        customAttrStr += ' ' + customAttrs[i].attrName + '="'
+                              + customAttrs[i].attrValue + '"';
+      }
+      
+      flash =
           '<object\n '
             + 'classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"\n '
             + 'codebase="'
@@ -7139,6 +7200,7 @@ extend(FlashInserter, {
             + '<param name="movie" value="' + src + '"></param>\n '
             + '<param name="quality" value="high"></param>\n '
             + '<param name="FlashVars" value="' + flashVars + '"></param>\n '
+            // FIXME: Will this logic test break if the color is black?
             + (background.color ? '<param name="bgcolor" value="' 
                                     + background.color + '"></param>\n ' : '')
             + (background.transparent ? 
@@ -7166,6 +7228,7 @@ extend(FlashInserter, {
               + customAttrStr + '\n'
               + ' />'
           + '</object>';
+    }
 
     return flash;
   }
@@ -7315,7 +7378,7 @@ extend(_SVGSVGElement, {
     //end('SWFLoading');
     //start('onFlashLoaded');
     // the Flash object is done loading
-    //console.log('_onFlashLoaded');
+    console.log('_onFlashLoaded');
     
     // store a reference to our Flash object
     this._handler.flash = document.getElementById(this._handler.flashID);
@@ -7353,7 +7416,7 @@ extend(_SVGSVGElement, {
   _onRenderingFinished: function(msg) {
     //end('firstSendToFlash');
     //start('onRenderingFinished');
-    //console.log('onRenderingFinished');
+    console.log('onRenderingFinished');
     
     if (this._handler.type == 'script') {
       // expose the root SVG element as 'documentElement' on the EMBED

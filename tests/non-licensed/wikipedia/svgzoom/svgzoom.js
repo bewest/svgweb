@@ -127,6 +127,13 @@ function initUI() {
   svgObject.parentNode.style.zIndex = 1000;
   svgControls.style.display = 'block';
   
+  // DELETE ME!!!
+  svgRoot._handler.flash.testZoomAndPan();
+  
+  // END DELETE ME!!!
+  
+  // UNCOMMENT ME!!!
+  /*
   // make the cursor a hand when over the SVG
   svgRoot.setAttribute('cursor', 'pointer');
   // TODO: Get hand cursor showing up in Flash
@@ -134,7 +141,7 @@ function initUI() {
   // add drag listeners on the SVG root
   svgRoot.addEventListener('mousedown', mouseDown, false);
   svgRoot.addEventListener('mousemove', mouseMove, false);
-  svgRoot.addEventListener('mouseup', mouseUp, false);
+  svgRoot.addEventListener('mouseup', mouseUp, false);*/
 }
 
 // Creates the SVG OBJECT during page load so that when we swap the PNG
