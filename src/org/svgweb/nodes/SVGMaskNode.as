@@ -31,7 +31,7 @@ package org.svgweb.nodes
             //Node should not be visible
             //Only acts as a data holder
             
-            this.visible = false;
+            topSprite.visible = false;
         }
         
     }

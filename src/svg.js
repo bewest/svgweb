@@ -1309,7 +1309,7 @@ extend(SVGWeb, {
     while ((match = entityRE.exec(svg)) != null) {
       var entityName = RegExp.$1;
       var entityValue = RegExp.$2;
-      svg = svg.replace('&' + entityName + ';', entityValue);
+      svg = svg.split('&' + entityName + ';').join(entityValue);
     }
     
     if (normalizeWhitespace) {

@@ -36,16 +36,16 @@ package org.svgweb.nodes
             this._graphicsCommands = new  Array();
             
             var x1String:String = this.getAttribute('x1', '0');
-            var x1:Number = SVGColors.cleanNumber2(x1String, SVGNode(this.getSVGParent()).getWidth());
+            var x1:Number = SVGColors.cleanNumber2(x1String, this.svgParent.getWidth());
 
             var y1String:String = this.getAttribute('y1', '0');
-            var y1:Number = SVGColors.cleanNumber2(y1String, SVGNode(this.getSVGParent()).getHeight());
+            var y1:Number = SVGColors.cleanNumber2(y1String, this.svgParent.getHeight());
 
             var x2String:String = this.getAttribute('x2', '0');
-            var x2:Number = SVGColors.cleanNumber2(x2String, SVGNode(this.getSVGParent()).getWidth());
+            var x2:Number = SVGColors.cleanNumber2(x2String, this.svgParent.getWidth());
 
             var y2String:String = this.getAttribute('y2', '0');
-            var y2:Number = SVGColors.cleanNumber2(y2String, SVGNode(this.getSVGParent()).getHeight());
+            var y2:Number = SVGColors.cleanNumber2(y2String, this.svgParent.getHeight());
             
              //Width/height calculations for gradients
             this.setXMinMax(x1);

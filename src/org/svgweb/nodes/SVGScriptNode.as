@@ -31,7 +31,7 @@ package org.svgweb.nodes {
         }
 
         override protected function drawNode(event:Event = null):void {
-            this.removeEventListener(Event.ENTER_FRAME, drawNode);
+            this.topSprite.removeEventListener(Event.ENTER_FRAME, drawNode);
 
             //Don't reset _invalidDisplay
             //This way drawNode is only called once
@@ -43,7 +43,7 @@ package org.svgweb.nodes {
                 this.svgRoot.handleScript(content);
             }
             
-            this.visible = false;
+            this.topSprite.visible = false;
 
             this.svgRoot.renderFinished();
         }

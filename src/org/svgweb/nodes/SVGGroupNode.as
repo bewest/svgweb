@@ -30,7 +30,7 @@ package org.svgweb.nodes
     {
         public function SVGGroupNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
             super(svgRoot, xml, original);
-            this.blendMode = BlendMode.LAYER;
+            topSprite.blendMode = BlendMode.LAYER;
         }  
 
         // The <g> node does not use the x and y attributes.  (However, it does honor the transform attribute.)
@@ -38,7 +38,7 @@ package org.svgweb.nodes
         // an equivalent transform.
         override protected function loadAttribute(name:String, field:String = null,
                                                   useStyle:Boolean = false):void {
-            if ( (name == 'x' || name == 'y') && !(this.getSVGParent() is SVGUseNode) ) {
+            if ( (name == 'x' || name == 'y') && !(this.svgParent is SVGUseNode) ) {
                 return;
             }
             else {

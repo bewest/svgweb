@@ -31,7 +31,7 @@ package org.svgweb.nodes
         }
 
         override protected function drawNode(event:Event = null):void {
-            if ( (this.parent != null) && (this._invalidDisplay) ) {
+            if ( (topSprite.parent != null) && (this._invalidDisplay) ) {
                 this._invalidDisplay = false;
                 if (this._xml != null) {
                     drawSprite.graphics.clear();
@@ -45,7 +45,8 @@ package org.svgweb.nodes
                                 this.parseChildren();
                                 this._parsedChildren = true;
                                 node = node.clone();
-                                viewBoxSprite.addChild(node);
+                                viewBoxSprite.addChild(node.topSprite);
+                                node.svgParent = this;
                                 this.svgRoot.renderPending();
                                 this.svgRoot.deleteReference(this, name);
                             }
@@ -59,7 +60,7 @@ package org.svgweb.nodes
                     this.setAttributes();
 
                     if (this.getStyleOrAttr('display') == 'none') {
-                        this.visible = false;
+                        topSprite.visible = false;
                     }
                     else {
                         this.generateGraphicsCommands();
@@ -73,9 +74,9 @@ package org.svgweb.nodes
     
                 }
 
-                this.removeEventListener(Event.ENTER_FRAME, drawNode);
+                topSprite.removeEventListener(Event.ENTER_FRAME, drawNode);
             }
-            if (!this._initialRenderDone && this.parent) {
+            if (!this._initialRenderDone && topSprite.parent) {
                 this._initialRenderDone = true;
                 this.svgRoot.renderFinished();
             }

@@ -37,9 +37,9 @@ package org.svgweb.nodes
         }
 
         public function getParentFont():SVGFontNode {
-            var node:DisplayObject = this;
+            var node:SVGNode = this;
             while (node && !(node is SVGSVGNode)) {
-                node=node.parent;
+                node=node.svgParent;
                 if (node is SVGFontNode)
                     return SVGFontNode(node);
             }

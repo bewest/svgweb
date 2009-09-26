@@ -55,8 +55,8 @@ package org.svgweb.nodes {
             super.drawNode(event);
             // If this is a instantiated glyph, then notify the text node parent
             // that we have rendered (and are ready to be displayed).
-            if (original && getSVGParent()) {
-                SVGTextNode(getSVGParent()).onDrawGlyph(this);
+            if (original && this.svgParent) {
+                SVGTextNode(this.svgParent).onDrawGlyph(this);
             }
         }
 
@@ -65,9 +65,9 @@ package org.svgweb.nodes {
         }
 
         public function getParentFont():SVGFontNode {
-            var node:DisplayObject = this;
+            var node:SVGNode = this;
             while (node && !(node is SVGSVGNode)) {
-                node=node.parent;
+                node=node.svgParent;
                 if (node && node is SVGFontNode)
                     return SVGFontNode(node);
             }

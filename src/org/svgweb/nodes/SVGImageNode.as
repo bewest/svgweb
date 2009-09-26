@@ -48,9 +48,9 @@ package org.svgweb.nodes
         }
 
         override protected function drawNode(event:Event=null):void {
-            if ( (this.parent != null) && (this._invalidDisplay) ) {
+            if ( (topSprite.parent != null) && (this._invalidDisplay) ) {
                 this._invalidDisplay = false;
-                this.removeEventListener(Event.ENTER_FRAME, drawNode);
+                topSprite.removeEventListener(Event.ENTER_FRAME, drawNode);
                 if (!this._parsedChildren) {
                     this.parseChildren();
                     this._parsedChildren = true;
@@ -71,7 +71,7 @@ package org.svgweb.nodes
             this.applyDefaultMask();
 
             this._invalidDisplay = false;
-            if (!this._initialRenderDone && this.parent) {
+            if (!this._initialRenderDone && topSprite.parent) {
                 this.attachEventListeners();
                 this._initialRenderDone = true;
                 this.svgRoot.renderFinished();

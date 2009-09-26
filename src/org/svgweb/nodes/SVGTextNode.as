@@ -133,8 +133,8 @@ package org.svgweb.nodes
                 var textAnchor:String = this.getStyleOrAttr('text-anchor');
                 var currentNode:SVGNode = this;
                 while (textAnchor == 'inherit') {
-                    if (currentNode.getSVGParent() != null) {
-                        currentNode = currentNode.getSVGParent();
+                    if (currentNode.svgParent != null) {
+                        currentNode = currentNode.svgParent;
                         textAnchor = currentNode.getStyleOrAttr('text-anchor');
                     }
                     else {
@@ -190,9 +190,9 @@ package org.svgweb.nodes
                     glyphClone.setAttribute('y', String(glyphY));
                     var offsetX:Number = SVGUnits.cleanNumber(glyph.getAttribute('horiz-adv-x'));
                     glyphX = glyphX + offsetX;
-                    glyphClone.visible=false;
+                    glyphClone.topSprite.visible=false;
                     newGlyphs.push(glyphClone);
-                    SVGNode.addSVGChild(viewBoxSprite, glyphClone);
+                    addSVGChild(glyphClone);
                     lastGlyph=glyphClone;
                 }
             }
@@ -208,14 +208,14 @@ package org.svgweb.nodes
             // when they are ready, unhide the new characters,
             // and remove the old
             if (glyph == lastGlyph && newGlyphs != null) {
-                for (var i:int=0; i < viewBoxSprite.numChildren; i++) {
-                    if (viewBoxSprite.getChildAt(i) is SVGGlyphNode
-                        && newGlyphs.indexOf(viewBoxSprite.getChildAt(i)) == -1) {
-                        viewBoxSprite.removeChildAt(i);
+                for (var i:uint=0; i < this.svgChildren.length; i++) {
+                    if (this.svgChildren[i] is SVGGlyphNode
+                        && newGlyphs.indexOf(this.svgChildren[i]) == -1) {
+                        removeSVGChild(this.svgChildren[i]);
                         i--;
                     }
                     else {
-                        viewBoxSprite.getChildAt(i).visible=true;
+                        this.svgChildren[i].topSprite.visible=true;
                     }
                 }
                 newGlyphs = null;
@@ -306,8 +306,8 @@ package org.svgweb.nodes
                 // only bold/no bold supported for now (SVG has many levels of bold)
                 var currentNode:SVGNode = this;
                 while (fontWeight == 'inherit') {                    
-                    if (currentNode.getSVGParent() != null) {
-                        currentNode = currentNode.getSVGParent();
+                    if (currentNode.svgParent != null) {
+                        currentNode = currentNode.svgParent;
                         fontWeight = currentNode.getStyleOrAttr('font-weight');
                     }
                     else {
@@ -324,8 +324,8 @@ package org.svgweb.nodes
                 
                 currentNode = this;
                 while (textAnchor == 'inherit') {                    
-                    if (currentNode.getSVGParent() != null) {
-                        currentNode = currentNode.getSVGParent();
+                    if (currentNode.svgParent != null) {
+                        currentNode = currentNode.svgParent;
                         textAnchor = currentNode.getStyleOrAttr('text-anchor');
                     }
                     else {
@@ -390,7 +390,7 @@ package org.svgweb.nodes
             super.draw();
 
             if (this._textField != null) {
-                viewBoxSprite.addChild(this._textField);         
+                drawSprite.addChild(this._textField);         
             }            
         }             
     }

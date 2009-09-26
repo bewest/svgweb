@@ -36,13 +36,13 @@ package org.svgweb.nodes
             this._graphicsCommands = new  Array();
             
             var cxString:String = this.getAttribute('cx', '0');
-            var cx:Number = SVGColors.cleanNumber2(cxString, SVGNode(this.getSVGParent()).getWidth());
+            var cx:Number = SVGColors.cleanNumber2(cxString, svgParent.getWidth());
 
             var cyString:String = this.getAttribute('cy', '0');
-            var cy:Number = SVGColors.cleanNumber2(cyString, SVGNode(this.getSVGParent()).getHeight());
+            var cy:Number = SVGColors.cleanNumber2(cyString, svgParent.getHeight());
 
             var rString:String = this.getAttribute('r','0');
-            var r:Number = SVGColors.cleanNumber2(rString, SVGNode(this.getSVGParent()).getWidth());
+            var r:Number = SVGColors.cleanNumber2(rString, svgParent.getWidth());
 
             //Width/height calculations for gradients
             this.setXMinMax(cx - r);

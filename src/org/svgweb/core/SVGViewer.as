@@ -6,6 +6,7 @@ package org.svgweb.core
     import flash.display.Sprite;
     import flash.events.ContextMenuEvent;
     import flash.events.Event;
+    import flash.events.EventDispatcher;
     import flash.events.IOErrorEvent;
     import flash.events.SecurityErrorEvent;
     import flash.net.URLLoader;
@@ -66,10 +67,10 @@ package org.svgweb.core
 
         public function set xml(value:XML):void {
             if (svgRoot != null) {
-                this.removeChild(svgRoot);
+                this.removeChild(svgRoot.topSprite);
             }
             svgRoot = new SVGSVGNode(null, value, null, this);
-            this.addChild(svgRoot);
+            this.addChild(svgRoot.topSprite);
         }
 
         public function get xml():XML {
@@ -80,11 +81,11 @@ package org.svgweb.core
 
         }
 
-        public function addActionListener(eventType:String, target:Sprite):void {
+        public function addActionListener(eventType:String, target:EventDispatcher):void {
 
         }
 
-        public function removeActionListener(eventType:String, target:Sprite):void {
+        public function removeActionListener(eventType:String, target:EventDispatcher):void {
 
         } 
         

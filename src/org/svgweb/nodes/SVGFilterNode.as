@@ -60,7 +60,7 @@ package org.svgweb.nodes
                     if (svgNode is SVGSVGNode) {
                         break;
                     }
-                    svgNode = SVGNode(svgNode.getSVGParent());
+                    svgNode = svgNode.svgParent;
                 }
 
                 var stdDeviation:String = this._xml.svg::feGaussianBlur.@stdDeviation.toString();

@@ -41,8 +41,8 @@ package org.svgweb.nodes
             }
             else {
                 // If the symbol is just a definition, then it should not be drawn.
-                this.visible = false;
-                if ( (this.parent != null) && (this._invalidDisplay) ) {
+                topSprite.visible = false;
+                if ( (topSprite.parent != null) && (this._invalidDisplay) ) {
                     this._invalidDisplay = false;
     
                     if (this._xml != null) {
@@ -52,10 +52,10 @@ package org.svgweb.nodes
                         }
                     }
     
-                    this.removeEventListener(Event.ENTER_FRAME, drawNode);
+                    topSprite.removeEventListener(Event.ENTER_FRAME, drawNode);
                 }
     
-                if (!this._initialRenderDone && this.parent) {
+                if (!this._initialRenderDone && topSprite.parent) {
                     this._initialRenderDone = true;
                     this.svgRoot.renderFinished();
                 }

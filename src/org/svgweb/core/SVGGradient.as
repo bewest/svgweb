@@ -79,11 +79,11 @@ package org.svgweb.core
             var ratioNum:Number;
 
             var match:Array;
-            var child:DisplayObject;
+            var child:SVGNode;
             var currentRatio:Number;
 
-            for (var i:uint = 0; i < viewBoxSprite.numChildren; i++) {
-                child = viewBoxSprite.getChildAt(i);
+            for (var i:uint = 0; i < svgChildren.length; i++) {
+                child = svgChildren[i];
                 if (child is SVGStopNode) {
                     color = SVGStopNode(child).getStyleOrAttr('stop-color', 'black');
                     if (color == 'currentColor') {

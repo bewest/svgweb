@@ -93,11 +93,11 @@ package org.svgweb.nodes
         
         protected override function onAddedToStage(event:Event):void {
             super.onAddedToStage(event);
-            addEventListener(Event.ENTER_FRAME, updateAnimations);
+            topSprite.addEventListener(Event.ENTER_FRAME, updateAnimations);
         }
 
         protected override function onRemovedFromStage(event:Event):void {
-            removeEventListener(Event.ENTER_FRAME, updateAnimations);
+            topSprite.removeEventListener(Event.ENTER_FRAME, updateAnimations);
             super.onRemovedFromStage(event);
         }
 
@@ -180,9 +180,8 @@ package org.svgweb.nodes
                 return defaultValue;
             }
 
-            if (inherit && (this.getSVGParent() != null))  {
-                return SVGNode(this.getSVGParent()).getAttribute(name, defaultValue, inherit, applyAnimations,
-                                                                 useStyle);
+            if (inherit && (this.svgParent != null))  {
+                return this.svgParent.getAttribute(name, defaultValue, inherit, applyAnimations, useStyle);
             }
 
             if ((name == 'opacity') 
@@ -210,7 +209,7 @@ package org.svgweb.nodes
         override protected function loadAttribute(name:String, field:String = null,
                                          applyStyle:Boolean = false):void {
             // Issue 226: Topmost <svg> tag ignores x and y
-            if (this.parent is SVGViewer && 
+            if (topSprite.parent is SVGViewer && 
                 (name == 'x' || name == 'y') ) {
                 return;
             } else {
@@ -439,8 +438,8 @@ package org.svgweb.nodes
             if (this.parentSVGRoot) {
                 this.parentSVGRoot.handleScript(script);
             }
-            else if (this.parent is SVGViewer) {
-                SVGViewer(this.parent).handleScript(script);
+            else if (topSprite.parent is SVGViewer) {
+                SVGViewer(topSprite.parent).handleScript(script);
             }
         }
 
@@ -459,8 +458,8 @@ package org.svgweb.nodes
             if (this.parentSVGRoot) {
                 this.parentSVGRoot.addActionListener(eventType, target);
             }
-            else if (this.parent is SVGViewer) {
-                SVGViewer(this.parent).addActionListener(eventType, target);
+            else if (topSprite.parent is SVGViewer) {
+                SVGViewer(topSprite.parent).addActionListener(eventType, target);
             }
         }
 
@@ -468,8 +467,8 @@ package org.svgweb.nodes
             if (this.parentSVGRoot) {
                 this.parentSVGRoot.removeActionListener(eventType, target);
             }
-            else if (this.parent is SVGViewer) {
-                SVGViewer(this.parent).removeActionListener(eventType, target);
+            else if (topSprite.parent is SVGViewer) {
+                SVGViewer(topSprite.parent).removeActionListener(eventType, target);
             }
         }
         
@@ -493,8 +492,8 @@ package org.svgweb.nodes
             if (this.parentSVGRoot) {
                 this.parentSVGRoot.debug(debugString);
             }
-            else if (this.parent is SVGViewer) {
-                SVGViewer(this.parent).debug(debugString);
+            else if (topSprite.parent is SVGViewer) {
+                SVGViewer(topSprite.parent).debug(debugString);
             }
         }
 
@@ -502,8 +501,8 @@ package org.svgweb.nodes
             if (this.parentSVGRoot) {
                 this.parentSVGRoot.error(message);
             }
-            else if (this.parent is SVGViewer) {
-                SVGViewer(this.parent).error(message);
+            else if (topSprite.parent is SVGViewer) {
+                SVGViewer(topSprite.parent).error(message);
             }
         }
         
@@ -512,8 +511,8 @@ package org.svgweb.nodes
             if (this.parentSVGRoot) {
                 this.parentSVGRoot.start(subject, subjectStarted);
             }
-            else if (this.parent is SVGViewer) {
-                SVGViewer(this.parent).start(subject, subjectStarted);
+            else if (topSprite.parent is SVGViewer) {
+                SVGViewer(topSprite.parent).start(subject, subjectStarted);
             }
         }
         
@@ -522,8 +521,8 @@ package org.svgweb.nodes
             if (this.parentSVGRoot) {
                 this.parentSVGRoot.end(subject, subjectStarted);
             }
-            else if (this.parent is SVGViewer) {
-                SVGViewer(this.parent).end(subject, subjectStarted);
+            else if (topSprite.parent is SVGViewer) {
+                SVGViewer(topSprite.parent).end(subject, subjectStarted);
             }
         }
         
@@ -532,8 +531,8 @@ package org.svgweb.nodes
             if (this.parentSVGRoot) {
                 this.parentSVGRoot.increment(subject, amount);
             }
-            else if (this.parent is SVGViewer) {
-                SVGViewer(this.parent).increment(subject, amount);
+            else if (topSprite.parent is SVGViewer) {
+                SVGViewer(topSprite.parent).increment(subject, amount);
             }
         }
     }

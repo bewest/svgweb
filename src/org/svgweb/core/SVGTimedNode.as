@@ -290,7 +290,7 @@ package org.svgweb.core
                 if (timeSpec is EventTimeSpec) {
                     var targetNode:SVGNode = this.svgRoot.getNode(EventTimeSpec(timeSpec).nodeID);
                     if (targetNode) {
-                        targetNode.addEventListener(EventTimeSpec(timeSpec).eventType, handleEvent);
+                        targetNode.topSprite.addEventListener(EventTimeSpec(timeSpec).eventType, handleEvent);
                     }
                 }
                 timeSpecIndex++;

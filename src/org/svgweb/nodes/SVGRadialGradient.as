@@ -42,8 +42,10 @@ package org.svgweb.nodes
             var matrix:Matrix = this.getMatrix(node);
 
             if (stopData.colors.length > 0) { //Don't fill if there are no stops
-                node.drawSprite.graphics.beginGradientFill(GradientType.RADIAL, stopData.colors, stopData.alphas, stopData.ratios,
-                                                           matrix, spreadMethod, InterpolationMethod.RGB, this.focalLen);
+                node.drawSprite.graphics.beginGradientFill(GradientType.RADIAL, stopData.colors,
+                                                           stopData.alphas, stopData.ratios,
+                                                           matrix, spreadMethod,
+                                                           InterpolationMethod.RGB, this.focalLen);
             }
         }
 
@@ -53,8 +55,9 @@ package org.svgweb.nodes
             var matrix:Matrix = this.getMatrix(node);
 
             if (stopData.colors.length > 0) { //Don't fill if there are no stops
-                node.drawSprite.graphics.lineGradientStyle(GradientType.RADIAL, stopData.colors, stopData.alphas, stopData.ratios,
-                                                matrix, spreadMethod, InterpolationMethod.RGB);
+                node.drawSprite.graphics.lineGradientStyle(GradientType.RADIAL, stopData.colors,
+                                                           stopData.alphas, stopData.ratios,
+                                                           matrix, spreadMethod, InterpolationMethod.RGB);
             }
         }
 
@@ -66,9 +69,9 @@ package org.svgweb.nodes
             var gradientUnits:String = this.getAttribute('gradientUnits', 'objectBoundingBox', false);
 
             var xString:Number = node.getAttribute('x', '0', false);
-            var objectX:Number = Math.round(SVGColors.cleanNumber2(xString, SVGNode(node.getSVGParent()).getWidth()));
+            var objectX:Number = Math.round(SVGColors.cleanNumber2(xString, node.svgParent.getWidth()));
             var yString:Number = node.getAttribute('y', '0', false);
-            var objectY:Number = Math.round(SVGColors.cleanNumber2(yString, SVGNode(node.getSVGParent()).getHeight()));
+            var objectY:Number = Math.round(SVGColors.cleanNumber2(yString, node.svgParent.getHeight()));
 
             var cxString:String = this.getAttribute('cx', '50%', false);
             var cyString:String = this.getAttribute('cy', '50%', false);
@@ -83,11 +86,11 @@ package org.svgweb.nodes
             var matr:Matrix= new Matrix();
 
             if (gradientUnits == 'userSpaceOnUse') {
-                var cx:Number = Math.round(SVGColors.cleanNumber2(cxString, SVGNode(node.getSVGParent()).getWidth()));
-                var cy:Number = Math.round(SVGColors.cleanNumber2(cyString, SVGNode(node.getSVGParent()).getHeight()));
-                var fx:Number = Math.round(SVGColors.cleanNumber2(fxString, SVGNode(node.getSVGParent()).getWidth()));
-                var fy:Number = Math.round(SVGColors.cleanNumber2(fyString, SVGNode(node.getSVGParent()).getHeight()));
-                var r:Number  = Math.round(SVGColors.cleanNumber2(rString, SVGNode(node.getSVGParent()).getWidth()));
+                var cx:Number = Math.round(SVGColors.cleanNumber2(cxString, node.svgParent.getWidth()));
+                var cy:Number = Math.round(SVGColors.cleanNumber2(cyString, node.svgParent.getHeight()));
+                var fx:Number = Math.round(SVGColors.cleanNumber2(fxString, node.svgParent.getWidth()));
+                var fy:Number = Math.round(SVGColors.cleanNumber2(fyString, node.svgParent.getHeight()));
+                var r:Number  = Math.round(SVGColors.cleanNumber2(rString, node.svgParent.getWidth()));
 
                 var sx:Number = r*2 / 1638.4;
                 var sy:Number = r*2 / 1638.4;

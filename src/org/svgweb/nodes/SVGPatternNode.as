@@ -34,8 +34,8 @@ package org.svgweb.nodes {
 
         override protected function drawNode(event:Event = null):void {
 
-            this.visible = false;
-            if ( (this.parent != null) && (this._invalidDisplay) ) {
+            topSprite.visible = false;
+            if ( (topSprite.parent != null) && (this._invalidDisplay) ) {
                 this._invalidDisplay = false;
 
                 if (this._xml != null) {
@@ -45,18 +45,18 @@ package org.svgweb.nodes {
                     }
                 }
 
-                this.removeEventListener(Event.ENTER_FRAME, drawNode);
+                topSprite.removeEventListener(Event.ENTER_FRAME, drawNode);
             }
 
-            if (!this._initialRenderDone && this.parent) {
+            if (!this._initialRenderDone && topSprite.parent) {
                 this._initialRenderDone = true;
                 this.svgRoot.renderFinished();
             }
         }
 
         public function beginPatternFill(node:SVGNode):void {
-            var patternWidth:int = this.width;
-            var patternHeight:int = this.height;
+            var patternWidth:int = topSprite.width;
+            var patternHeight:int = topSprite.height;
 
             var tmp:String = this.getAttribute('width');
             if (tmp) {
@@ -91,7 +91,7 @@ package org.svgweb.nodes {
 
             if ( (patternWidth > 0) && (patternHeight > 0) ) {
                 var bitmapData:BitmapData = new BitmapData(patternWidth, patternHeight);
-                bitmapData.draw(this.targetPattern());
+                bitmapData.draw(this.targetPattern().topSprite);
                 node.drawSprite.graphics.beginBitmapFill(bitmapData, matrix); 
             }
 

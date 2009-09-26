@@ -31,6 +31,7 @@
 package org.svgweb
 {    
     import org.svgweb.core.SVGNode;
+    import org.svgweb.core.SVGSprite;
     import org.svgweb.core.SVGViewer;
     import org.svgweb.nodes.SVGSVGNode;
     import org.svgweb.nodes.SVGGroupNode;
@@ -39,12 +40,12 @@ package org.svgweb
     import org.svgweb.utils.SVGUnits;
     import org.svgweb.utils.SVGColors;
     
-    import flash.display.DisplayObject;
     import flash.display.Sprite;
     import flash.display.StageScaleMode;
     import flash.display.StageAlign;
     import flash.display.LoaderInfo;
     import flash.events.Event;
+    import flash.events.EventDispatcher;
     import flash.events.MouseEvent;
     import flash.events.IOErrorEvent;
     import flash.events.SecurityErrorEvent;
@@ -176,7 +177,7 @@ package org.svgweb
                 this.visible = false;
             }
             this.addActionListener(SVGEvent.SVGLoad, svgRoot);
-            this.addChild(svgRoot);
+            this.addChild(svgRoot.topSprite);
             //end('setSVGString');
         }
 
@@ -335,6 +336,13 @@ package org.svgweb
             }
             catch(error:SecurityError) {
             }
+
+            //var counts:Array = this.svgRoot.countTree();
+            //this.debug(" Nodes: " + counts[0] +
+            //           " DOMText Nodes: " + counts[2] +
+            //           " Sprites: " + counts[1] + 
+            //           " Avg Sprites: " + counts[1]/counts[0]);
+
         }
 
         override public function handleScript(script:String):void {
@@ -420,7 +428,7 @@ package org.svgweb
                            + elementGUID);
             }
             
-            element.getSVGParent().removeSVGChild(element);
+            element.svgParent.removeSVGChild(element);
         }
         
         public function js_addChildAt(msg:String):void {
@@ -576,22 +584,22 @@ package org.svgweb
 
             if (element) {
                 if (eventType == 'click') {
-                    element.addEventListener(MouseEvent.CLICK, handleAction);
+                    element.topSprite.addEventListener(MouseEvent.CLICK, handleAction);
                 }
                 if (eventType == 'mouseup') {
-                    element.addEventListener(MouseEvent.MOUSE_UP, handleAction);
+                    element.topSprite.addEventListener(MouseEvent.MOUSE_UP, handleAction);
                 }
                 if (eventType == 'mousedown') {
-                    element.addEventListener(MouseEvent.MOUSE_DOWN, handleAction);
+                    element.topSprite.addEventListener(MouseEvent.MOUSE_DOWN, handleAction);
                 }
                 if (eventType == 'mousemove') {
-                    element.addEventListener(MouseEvent.MOUSE_MOVE, handleAction);
+                    element.topSprite.addEventListener(MouseEvent.MOUSE_MOVE, handleAction);
                 }
                 if (eventType == 'mouseover') {
-                    element.addEventListener(MouseEvent.MOUSE_OVER, handleAction);
+                    element.topSprite.addEventListener(MouseEvent.MOUSE_OVER, handleAction);
                 }
                 if (eventType == 'mouseout') {
-                    element.addEventListener(MouseEvent.MOUSE_OUT, handleAction);
+                    element.topSprite.addEventListener(MouseEvent.MOUSE_OUT, handleAction);
                 }
             }
             else {
@@ -793,7 +801,7 @@ package org.svgweb
                 m.invert();
 
                 // native getScreenCTM ignores zoom and so shall we.
-                var rootMatrix:Matrix = this.svgRoot.transformSprite.transform.concatenatedMatrix.clone();
+                var rootMatrix:Matrix = this.svgRoot.topSprite.transform.concatenatedMatrix.clone();
                 rootMatrix.invert();
                 m.concat(rootMatrix);
 
@@ -859,13 +867,13 @@ package org.svgweb
            this.svgRoot.zoomAndPan();
         }
 
-        override public function addActionListener(eventType:String, target:Sprite):void {
+        override public function addActionListener(eventType:String, target:EventDispatcher):void {
             if (!target.hasEventListener(eventType)) {
                 target.addEventListener(eventType, handleAction);
             } 
         }
 
-        override public function removeActionListener(eventType:String, target:Sprite):void {
+        override public function removeActionListener(eventType:String, target:EventDispatcher):void {
             if (target.hasEventListener(eventType)) {
                 target.removeEventListener(eventType, handleAction);
             } 
@@ -896,10 +904,10 @@ package org.svgweb
         }
 
         public function js_sendMouseEvent(event:MouseEvent):void {
-            if (   ( event.target is DisplayObject ) 
-                && ( event.currentTarget is DisplayObject ) ) {
-                var targetNode:SVGNode = SVGNode.targetToSVGNode(DisplayObject(event.target));
-                var currentTargetNode:SVGNode = SVGNode.targetToSVGNode(DisplayObject(event.currentTarget));
+            if (   ( event.target is SVGSprite ) 
+                && ( event.currentTarget is SVGSprite ) ) {
+                var targetNode:SVGNode = SVGSprite(event.target).svgNode;
+                var currentTargetNode:SVGNode = SVGSprite(event.currentTarget).svgNode;
                 var scriptCode:String;
 
                 if ( (targetNode != null) &&
@@ -928,7 +936,7 @@ package org.svgweb
 
                     var mousePoint:Point = new Point(event.stageX, event.stageY);
                     // native getScreenCTM ignores zoom and so shall we.
-                    var rootMatrix:Matrix = this.svgRoot.transformSprite.transform.concatenatedMatrix.clone();
+                    var rootMatrix:Matrix = this.svgRoot.topSprite.transform.concatenatedMatrix.clone();
                     rootMatrix.invert();
                     mousePoint = rootMatrix.transformPoint(mousePoint);
 

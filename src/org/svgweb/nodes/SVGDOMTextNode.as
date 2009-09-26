@@ -1,6 +1,8 @@
 /*
 Copyright (c) 2009 Google Inc.
 
+Portions Copyright (c) 2009 Rick Masters
+
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
 files (the "Software"), to deal in the Software without
@@ -12,7 +14,7 @@ conditions:
 
 The above copyright notice and this permission notice shall be
 included in all copies or substantial portions of the Software.
-
+ 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -44,8 +46,14 @@ package org.svgweb.nodes
             super(svgRoot, xml);
             
             this.nodeValue = xml.text();
+            // Since we are not added to stage, register here.
+            this.registerSelf();
         }
-        
+
+        override public function createSVGSprites():void {
+            //Do Nothing
+        }
+
         override protected function draw():void {
             //Do Nothing
         }

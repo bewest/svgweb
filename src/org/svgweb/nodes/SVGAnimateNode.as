@@ -377,7 +377,7 @@ package org.svgweb.nodes
                     targetNode = this.svgRoot.getNode(targetID);
                 }
                 else {
-                    targetNode = this.getSVGParent();
+                    targetNode = this.svgParent;
                 }
             }
         }

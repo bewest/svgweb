@@ -45,10 +45,13 @@ package org.svgweb.nodes
             var matrix:Matrix = this.getMatrix(node);
 
             if (stopData.colors.length == 1) { //Solid color fill
-                node.drawSprite.graphics.beginFill(stopData.colors[stopData.colors.length-1], stopData.alphas[stopData.colors.length-1]);
+                node.drawSprite.graphics.beginFill(stopData.colors[stopData.colors.length-1],
+                                                   stopData.alphas[stopData.colors.length-1]);
             }
             else if (stopData.colors.length > 0) { //Don't fill if there are no stops
-                node.drawSprite.graphics.beginGradientFill(GradientType.LINEAR, stopData.colors, stopData.alphas, stopData.ratios, matrix, spreadMethod, InterpolationMethod.RGB);
+                node.drawSprite.graphics.beginGradientFill(GradientType.LINEAR, stopData.colors,
+                                                           stopData.alphas, stopData.ratios, matrix,
+                                                           spreadMethod, InterpolationMethod.RGB);
             }
 
         }
@@ -59,10 +62,14 @@ package org.svgweb.nodes
             var matrix:Matrix = this.getMatrix(node);
 
             if (stopData.colors.length == 1) { //Solid color fill
-                node.drawSprite.graphics.lineStyle(node.getStyleOrAttr('stroke-width'), stopData.colors[stopData.colors.length-1], stopData.alphas[stopData.colors.length-1]);
+                node.drawSprite.graphics.lineStyle(node.getStyleOrAttr('stroke-width'),
+                                                   stopData.colors[stopData.colors.length-1],
+                                                   stopData.alphas[stopData.colors.length-1]);
             }
             else if (stopData.colors.length > 0) { //Don't fill if there are no stops
-                node.drawSprite.graphics.lineGradientStyle(GradientType.LINEAR, stopData.colors, stopData.alphas, stopData.ratios, matrix, spreadMethod, InterpolationMethod.RGB);
+                node.drawSprite.graphics.lineGradientStyle(GradientType.LINEAR, stopData.colors,
+                                                           stopData.alphas, stopData.ratios, matrix,
+                                                           spreadMethod, InterpolationMethod.RGB);
             }
 
         }
@@ -81,8 +88,8 @@ package org.svgweb.nodes
             var x2String:String = this.getAttribute('x2', '100%', false);         
             var y1String:String = this.getAttribute('y1', '0%', false);
             var y2String:String = this.getAttribute('y2', '0%', false);
-            var objectX:Number = Math.round(SVGColors.cleanNumber2(xString, SVGNode(node.getSVGParent()).getWidth()));
-            var objectY:Number = Math.round(SVGColors.cleanNumber2(yString, SVGNode(node.getSVGParent()).getHeight()));
+            var objectX:Number = Math.round(SVGColors.cleanNumber2(xString, node.svgParent.getWidth()));
+            var objectY:Number = Math.round(SVGColors.cleanNumber2(yString, node.svgParent.getHeight()));
 
             /*
                Flash requires us to pass it a matrix that converts from virtual flash gradient
@@ -130,10 +137,10 @@ package org.svgweb.nodes
             var matr:Matrix= new Matrix();
 
             if (gradientUnits == 'userSpaceOnUse') {
-                var x1:Number = Math.round(SVGColors.cleanNumber2(x1String, SVGNode(node.getSVGParent()).getWidth()));
-                var y1:Number = Math.round(SVGColors.cleanNumber2(y1String, SVGNode(node.getSVGParent()).getHeight()));
-                var x2:Number = Math.round(SVGColors.cleanNumber2(x2String, SVGNode(node.getSVGParent()).getWidth()));
-                var y2:Number = Math.round(SVGColors.cleanNumber2(y2String, SVGNode(node.getSVGParent()).getHeight()));
+                var x1:Number = Math.round(SVGColors.cleanNumber2(x1String, node.svgParent.getWidth()));
+                var y1:Number = Math.round(SVGColors.cleanNumber2(y1String, node.svgParent.getHeight()));
+                var x2:Number = Math.round(SVGColors.cleanNumber2(x2String, node.svgParent.getWidth()));
+                var y2:Number = Math.round(SVGColors.cleanNumber2(y2String, node.svgParent.getHeight()));
 
                 var gradientWidth:Number = Math.abs(x2 - x1);
                 var gradientHeight:Number = Math.abs(y2 - y1);
