@@ -5869,10 +5869,10 @@ function _SVGObject(svgNode, handler) {
   if (!this.url) {
     this.url = this._svgNode.getAttribute('data');
   }
-  
-  this._fetchURL(this.url, 
-    // success function
-    hitch(this, function(svgStr) {
+
+  // success function
+  var successFunc = hitch(this,
+    function(svgStr) {
       // clean up and parse our SVG
       this._handler._origSVG = svgStr;
       var results = svgweb._cleanSVG(svgStr, true, false);
@@ -5895,10 +5895,15 @@ function _SVGObject(svgNode, handler) {
 
       // wait for Flash to finish loading; see _onFlashLoaded() in this class
       // for further execution after the Flash asynchronous process is done
-    }),
-    // failure function
-    hitch(this, this._fallback)
-  );
+    });
+
+  if (this.url.substring(0, 5) == 'data:') {
+      svgStr=this.url.substring(this.url.indexOf(',')+1);
+      successFunc(svgStr);
+  }
+  else {
+     this._fetchURL(this.url, successFunc, hitch(this, this._fallback));
+  }
 }
 
 extend(_SVGObject, {

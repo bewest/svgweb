@@ -66,6 +66,7 @@
         <option value="radial2">radialGradient2
         <option value="smile">smile
         <option value="clippath">clip-path
+        <option value="inlineobject">inline object data
         <option value="001">animate-elem-02-t.svg
         <option value="002">animate-elem-03-t.svg
         <option value="003">animate-elem-04-t.svg
@@ -572,6 +573,12 @@
                     { name: 'radial2', svgURL: "svg-files/radialgradient2.svg" },
                     { name: 'smile', svgURL: "svg-files/smile.svg" },
                     { name: 'clippath', svgURL: "svg-files/clippath.svg" },
+                    { name: 'inlineobject', width: 300, height: 200,
+                                       svgURL: 'data:image/svg+xml,' + 
+                                               '<svg xmlns="http://www.w3.org/2000/svg">' +
+                                               '  <rect height="100" width="100" fill="blue"/>' +
+                                               '</svg>'
+                    },
                     { name: '001', svgURL: "../tests/svggen/animate-elem-02-t.svg", width:800, height:600},
                     { name: '002', svgURL: "../tests/svggen/animate-elem-03-t.svg", width:800, height:600},
                     { name: '003', svgURL: "../tests/svggen/animate-elem-04-t.svg", width:800, height:600},
@@ -1262,6 +1269,10 @@
         if (typeof(viewBox) != "string" || !viewBox.match(/\s*\S+\s*\S+\s*\S+\s*\S+\s*/)) {
             var width = currentSVGObject.getAttribute('width');
             var height = currentSVGObject.getAttribute('height');
+            if (!width || width.indexOf("%") != -1 || !height || height.indexOf("%") != -1) {
+                width = 800;
+                height = 600;
+            }
             viewBox = "0 0 " + Math.round(width) + ' ' + Math.round(height);
         }
         viewBox = viewBox.replace(/^\s+/, '');
