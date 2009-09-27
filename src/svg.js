@@ -5898,11 +5898,10 @@ function _SVGObject(svgNode, handler) {
     });
 
   if (this.url.substring(0, 5) == 'data:') {
-      svgStr=this.url.substring(this.url.indexOf(',')+1);
-      successFunc(svgStr);
+    successFunc(this.url.substring(this.url.indexOf(',')+1));
   }
   else {
-     this._fetchURL(this.url, successFunc, hitch(this, this._fallback));
+    this._fetchURL(this.url, successFunc, hitch(this, this._fallback));
   }
 }
 
