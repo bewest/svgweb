@@ -6369,6 +6369,15 @@ extend(_SVGWindow, {
       windowLocation = window.location;
     }
     
+    // Bypass parsing data: URLs.
+    if (/^data:/.test(url)) {
+      loc.href = url;
+      loc.toString = function() {
+        return this.href;
+      };
+      return loc;
+    }
+     
     // expand URL
     
     // first, see if this url is fully expanded already
