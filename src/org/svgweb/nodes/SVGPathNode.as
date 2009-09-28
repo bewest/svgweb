@@ -56,7 +56,7 @@ package org.svgweb.nodes
             
             //var totalTime:int = new Date().getTime();
             
-            var data:String = this._xml.@d;
+            var data:String = this.getAttribute('d');
             data = StringUtil.trim(data);
             
             // In the algorithm below, we are doing a few things. It is
