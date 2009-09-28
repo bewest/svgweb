@@ -163,6 +163,7 @@ function initUI() {
 // Creates the SVG OBJECT during page load so that when we swap the PNG
 // thumbnail and the SVG OBJECT it happens much faster
 function createSVGObject() {
+  console.log('createSVGObject');
   var info = getSVGInfo();
   var thumbnail = info.fileNode;
   if (hasAnnotation()) {
@@ -209,8 +210,13 @@ function createSVGObject() {
   var container = document.createElement('div');
   container.style.zIndex = -1000;
   container.style.position = 'absolute';
-  container.style.top = '-1px';
-  container.style.left = '-1px';
+  if (hasAnnotation()) {
+    container.style.top = '0px';
+    container.style.left = '0px';
+  } else {
+    container.style.top = '-1px';
+    container.style.left = '-1px';
+  }
   if (thumbnail.lastChild.nodeType == 1 
       && thumbnail.lastChild.nodeName.toLowerCase() == 'br') {
     thumbnail.insertBefore(container, thumbnail.lastChild);
@@ -364,8 +370,12 @@ function getSVGInfo() {
     return null;
   }
   
-  //var url = fileNode.childNodes[0].childNodes[0].childNodes[0].href;
-  var url = fileNode.childNodes[0].href;
+  var url;
+  if (hasAnnotation()) {
+    url = fileNode.childNodes[0].childNodes[0].childNodes[0].href;
+  } else {
+    url = fileNode.childNodes[0].href;
+  }
   var imgNode = fileNode.getElementsByTagName('img')[0];
   var width = imgNode.getAttribute('width');
   var height = imgNode.getAttribute('height');
