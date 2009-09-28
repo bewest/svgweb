@@ -54,6 +54,8 @@
         fetch('../svg.swf', 'application/x-shockwave-flash', 
               'swfResult', fetchCallback);
         fetch('../svg.htc', 'text/x-component', 'htcResult', fetchCallback);
+        fetch('../../samples/svg-files/helloworld.svg', 'image/svg+xml',
+              'svgResult', fetchCallback);
       }
       
       function fetch(fileName, correctMimeType, resultsID, callback) {
@@ -95,7 +97,7 @@
       function fetchCallback(success) {
         results.push(success);
         
-        if (results.length == 2) {
+        if (results.length == 3) {
           var finalResults = true;
           for (var i = 0; i < results.length; i++) {
             if (!results[i]) {
@@ -141,6 +143,13 @@
         <td>text/x-component</td>
         <td>svg.htc</td>
         <td id="htcResult" class="important">Checking...</td>
+      </tr>
+      
+      <tr>
+        <td>SVG files</td>
+        <td>image/svg+xml</td>
+        <td>helloworld.svg</td>
+        <td id="svgResult" class="important">Checking...</td>
       </tr>
     </table>
   </body>
