@@ -68,6 +68,18 @@ function isSVGPage() {
   }
 }
 
+// Determines whether this page has image annotation enabled (i.e. the
+// Add Note button). If this is enabled the DOM changes slightly and we have
+// to account for it. Some SVG images have this (Tux.svg); others don't
+// (Commons-logo.svg, for example).
+function hasAnnotation() {
+  if (document.getElementById('ImageAnnotationAddButton')) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 // inserts the SVG Web library for IE into the page
 function insertSVGWeb() {
    document.write('<script type="text/javascript" '
@@ -85,7 +97,10 @@ function addStartButton() {
 
    // insert ourselves beside the SVG thumbnail area
    var info = getSVGInfo();
-   var thumbnail = info.fileNode.childNodes[0].childNodes[0];
+   var thumbnail = info.fileNode;
+   if (hasAnnotation()) {
+     thumbnail = thumbnail.childNodes[0].childNodes[0];
+   }
    // make the container element we will go into a bit larger to accommodate the icon
    var infoWidth = Number(String(info.width).replace('px', ''));
    thumbnail.style.width = (infoWidth + 30) + 'px';
@@ -97,12 +112,17 @@ function addStartButton() {
    img.style.position = 'absolute';
    img.style.cursor = 'pointer';
    img.onclick = initUI;
-   thumbnail.appendChild(img);
+   // some SVG pages have a spurious <br/> element; add before that
+   if (thumbnail.lastChild.nodeType == 1 
+       && thumbnail.lastChild.nodeName.toLowerCase() == 'br') {
+      thumbnail.insertBefore(img, thumbnail.lastChild);
+   } else {
+      thumbnail.appendChild(img);
+   }
 }
 
 // adds the pan and zoom UI and turns the PNG into an SVG object
 function initUI() {
-  console.log('initUI');
   if (svgUIReady) { // already initialized
     return;
   }
@@ -115,7 +135,10 @@ function initUI() {
   
   // get the thumbnail container and make it invisible
   var info = getSVGInfo();
-  var thumbnail = info.fileNode.childNodes[0].childNodes[0];
+  var thumbnail = info.fileNode;
+  if (hasAnnotation()) {
+    thumbnail = thumbnail.childNodes[0].childNodes[0];
+  }
   var oldPNG = thumbnail.childNodes[0];
   oldPNG.style.visibility = 'hidden';
   oldPNG.style.zIndex = -1000;
@@ -126,14 +149,7 @@ function initUI() {
   // reveal the SVG object and controls
   svgObject.parentNode.style.zIndex = 1000;
   svgControls.style.display = 'block';
-  
-  // DELETE ME!!!
-  svgRoot._handler.flash.testZoomAndPan();
-  
-  // END DELETE ME!!!
-  
-  // UNCOMMENT ME!!!
-  /*
+
   // make the cursor a hand when over the SVG
   svgRoot.setAttribute('cursor', 'pointer');
   // TODO: Get hand cursor showing up in Flash
@@ -141,14 +157,17 @@ function initUI() {
   // add drag listeners on the SVG root
   svgRoot.addEventListener('mousedown', mouseDown, false);
   svgRoot.addEventListener('mousemove', mouseMove, false);
-  svgRoot.addEventListener('mouseup', mouseUp, false);*/
+  svgRoot.addEventListener('mouseup', mouseUp, false);
 }
 
 // Creates the SVG OBJECT during page load so that when we swap the PNG
 // thumbnail and the SVG OBJECT it happens much faster
 function createSVGObject() {
   var info = getSVGInfo();
-  var thumbnail = info.fileNode.childNodes[0].childNodes[0];
+  var thumbnail = info.fileNode;
+  if (hasAnnotation()) {
+    thumbnail = thumbnail.childNodes[0].childNodes[0];
+  }
   
   // create the SVG OBJECT that will replace our thumbnail container
   var obj = document.createElement('object', true);
@@ -168,19 +187,36 @@ function createSVGObject() {
     svgControls.style.display = 'none';
     
     // now place the controls on top of the SVG object
-    thumbnail.appendChild(svgControls);
+    if (thumbnail.lastChild.nodeType == 1 
+        && thumbnail.lastChild.nodeName.toLowerCase() == 'br') {
+       thumbnail.insertBefore(svgControls, thumbnail.lastChild);
+    } else {
+       thumbnail.appendChild(svgControls);
+    }
+    
+    // set up the mouse scroll wheel
+    hookEvent('file', 'mousewheel', MouseWheel);    
     
     // prevent IE memory leaks
     thumbnail = obj = null;
   }, false);
+  // ensure that the thumbnail container has relative positioning; this will
+  // reset our absolutely positioned elements to be relative to our parent
+  // so we have correct coordinates
+  thumbnail.style.position = 'relative';
   // position object behind the PNG image; do it in a DIV to avoid any
   // strange style + OBJECT interactions
   var container = document.createElement('div');
   container.style.zIndex = -1000;
   container.style.position = 'absolute';
-  container.style.top = '0px';
-  container.style.left = '0px';
-  thumbnail.appendChild(container);
+  container.style.top = '-1px';
+  container.style.left = '-1px';
+  if (thumbnail.lastChild.nodeType == 1 
+      && thumbnail.lastChild.nodeName.toLowerCase() == 'br') {
+    thumbnail.insertBefore(container, thumbnail.lastChild);
+  } else {
+    thumbnail.appendChild(container);
+  }
   svgweb.appendChild(obj, container);
 }
 
@@ -328,7 +364,8 @@ function getSVGInfo() {
     return null;
   }
   
-  var url = fileNode.childNodes[0].childNodes[0].childNodes[0].href;
+  //var url = fileNode.childNodes[0].childNodes[0].childNodes[0].href;
+  var url = fileNode.childNodes[0].href;
   var imgNode = fileNode.getElementsByTagName('img')[0];
   var width = imgNode.getAttribute('width');
   var height = imgNode.getAttribute('height');
@@ -336,19 +373,46 @@ function getSVGInfo() {
   return { url: url, fileNode: fileNode, imgNode: imgNode, 
            width: width, height: height };
 }
+
+// Mousewheel Scrolling thanks to
+// http://blog.paranoidferret.com/index.php/2007/10/31/javascript-tutorial-the-scroll-wheel/
+function hookEvent(element, eventName, callback) {
+  if (typeof(element) == 'string') {
+    element = document.getElementById(element);
+  }
   
+  if (element == null) {
+    return;
+  }
+  
+  if (element.addEventListener) {
+    if (eventName == 'mousewheel') {
+      element.addEventListener('DOMMouseScroll', 
+        callback, false);  
+    }
+    element.addEventListener(eventName, callback, false);
+  } else if (element.attachEvent) {
+    element.attachEvent("on" + eventName, callback);
+  }
+}
+
+function MouseWheel(e) {
+  e = e ? e : window.event;
+  var wheelData = e.detail ? e.detail * -1 : e.wheelDelta;
+  
+  if (wheelData > 0) {
+    zoomIn();
+  } else {
+    zoomOut();
+  }
+  
+  return false;
+} 
 
 // called when the page is loaded and ready to be manipulated
 function pageLoaded() {
-  // the Image Annotation Gadget needs to load before us, since it modifies the
-  // DOM in a similar location
-  var intervalID = window.setInterval(
-    function() {
-      if (document.getElementById('ImageAnnotationAddButton')) {
-        window.clearInterval(intervalID);
-        createSVGObject();
-      }
-    }, 50);
+  // TODO: This is dangerous; modify SVG Web to add a manual addOnLoad handler
+  window.setTimeout(createSVGObject, 1500);
 }
 
 if (isSVGPage()) {
