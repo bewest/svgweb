@@ -3173,7 +3173,9 @@ extend(NativeHandler, {
     // make the SVG root currentTranslate property work like the FlashHandler,
     // which slightly diverges from the standard due to limitations of IE
     var root = doc.rootElement;
-    this._patchCurrentTranslate(root);
+    if (root) {
+      this._patchCurrentTranslate(root);
+    }
     
     // expose the svgns and xlinkns variables inside in the SVG files 
     // Window object
