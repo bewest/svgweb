@@ -5,7 +5,7 @@ var svgDebug = true;
 
 // whether we are locally debugging (i.e. the page is downloaded to our
 // hard drive and served from a local server to ease development)
-var localDebug = true;
+var localDebug = false;
 
 // the full URL to where svg.js is located
 var svgSrcURL;
@@ -27,6 +27,14 @@ var svgControls;
 // a reference to our SVG root tag
 var svgRoot;
 
+var isSafari = (Math.max(navigator.appVersion.indexOf('WebKit'), 
+                         navigator.appVersion.indexOf('Safari'), 0));
+
+var isFF = false;
+if (navigator.userAgent.indexOf('Gecko') >= 0) {
+  isFF = parseFloat(navigator.userAgent.split('Firefox/')[1]) || undefined;
+}                         
+
 // the URL to the proxy from which we can fetch SVG images within the same
 // domain as this page is served from
 // TODO: define
@@ -35,26 +43,28 @@ var svgRoot;
 var imageBundle;
 if (localDebug) {
   // for local debugging
+  var imageRoot = 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/';
   imageBundle = {
-    'searchtool': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/searchtool.png',
-    'controls-north-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/north-mini.png',
-    'controls-west-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/west-mini.png',
-    'controls-east-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/east-mini.png',
-    'controls-south-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/south-mini.png',
-    'controls-zoom-plus-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/zoom-plus-mini.png',
-    'controls-zoom-world-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/zoom-world-mini.png',
-    'controls-zoom-minus-mini': 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/zoom-minus-mini.png'
+    'searchtool': imageRoot + 'searchtool.png',
+    'controls-north-mini': imageRoot + 'north-mini.png',
+    'controls-west-mini': imageRoot + 'west-mini.png',
+    'controls-east-mini': imageRoot + 'east-mini.png',
+    'controls-south-mini': imageRoot + 'south-mini.png',
+    'controls-zoom-plus-mini': imageRoot + 'zoom-plus-mini.png',
+    'controls-zoom-world-mini': imageRoot + 'zoom-world-mini.png',
+    'controls-zoom-minus-mini': imageRoot + 'zoom-minus-mini.png'
   };
 } else {
+  var imageRoot = 'http://codinginparadise.org/projects/svgweb-staging/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/';
   imageBundle = {
-    'searchtool': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/searchtool.png',
-    'controls-north-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-north-mini.png',
-    'controls-west-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-west-mini.png',
-    'controls-east-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-east-mini.png',
-    'controls-south-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-south-mini.png',
-    'controls-zoom-plus-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-zoom-plus-mini.png',
-    'controls-zoom-world-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-zoom-world-mini.png',
-    'controls-minus-mini': 'http://codinginparadise.org/projects/svgzoom/svgzoom-images/controls-minus-mini.png'
+    'searchtool': imageRoot + 'searchtool.png',
+    'controls-north-mini': imageRoot + 'north-mini.png',
+    'controls-west-mini': imageRoot + 'west-mini.png',
+    'controls-east-mini': imageRoot + 'east-mini.png',
+    'controls-south-mini': imageRoot + 'south-mini.png',
+    'controls-zoom-plus-mini': imageRoot + 'zoom-plus-mini.png',
+    'controls-zoom-world-mini': imageRoot + 'zoom-world-mini.png',
+    'controls-zoom-minus-mini': imageRoot + 'zoom-minus-mini.png'
   };
 }
 
@@ -149,8 +159,6 @@ function initUI() {
   // Safari/Native has a bug where it doesn't respect the height/width of 
   // the OBJECT when scaling the size of some objects (commons-logo.svg, 
   // for example). A workaround is to manually set the size inside the SVG.
-  var isSafari = (Math.max(navigator.appVersion.indexOf('WebKit'), 
-                           navigator.appVersion.indexOf('Safari'), 0));
   if (isSafari) {
     svgRoot.setAttribute('width', info.width);
     svgRoot.setAttribute('height', info.height);
@@ -204,8 +212,15 @@ function createSVGObject() {
     // add our magnification icon
     addStartButton();
     
-    // set up the mouse scroll wheel
-    hookEvent('file', 'mousewheel', MouseWheel);    
+    // set up the mouse scroll wheel; FF 3.5/Native has an annoying bug
+    // where DOMMouseScroll events do not propagate to OBJECTs under
+    // some situations!
+    if (isFF) {
+      hookEvent(svgObject.contentDocument.rootElement, 'mousewheel',
+                MouseWheel);
+    } else {
+      hookEvent('file', 'mousewheel', MouseWheel);
+    }
     
     // prevent IE memory leaks
     thumbnail = obj = null;
@@ -217,6 +232,7 @@ function createSVGObject() {
   // position object behind the PNG image; do it in a DIV to avoid any
   // strange style + OBJECT interactions
   var container = document.createElement('div');
+  container.id = 'SVGZoom.container';
   container.style.zIndex = -1000;
   container.style.position = 'absolute';
   // FIXME: This is a hack; figure out why the Flash version of Commons-logo.svg
@@ -408,8 +424,7 @@ function hookEvent(element, eventName, callback) {
   
   if (element.addEventListener) {
     if (eventName == 'mousewheel') {
-      element.addEventListener('DOMMouseScroll', 
-        callback, false);  
+      element.addEventListener('DOMMouseScroll', callback, false);  
     }
     element.addEventListener(eventName, callback, false);
   } else if (element.attachEvent) {
@@ -419,6 +434,7 @@ function hookEvent(element, eventName, callback) {
 
 function MouseWheel(e) {
   e = e ? e : window.event;
+
   var wheelData = e.detail ? e.detail * -1 : e.wheelDelta;
   
   if (wheelData > 0) {
@@ -430,6 +446,7 @@ function MouseWheel(e) {
   if (e.preventDefault) {
     e.preventDefault();
   }
+  
   return false;
 } 
 
