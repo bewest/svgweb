@@ -1,3 +1,66 @@
-<b>TODO: Document the architecture</b>
+<h1>Developer Notes</h1>
+<p>
+To build, you will have to pull from Subversion.
+
+
+<pre><code>
+svn checkout http://svgweb.googlecode.com/svn/trunk/ svgweb-read-only
+</code></pre>
+
+<p>Building is currently done consistently on Mac OS X and Linux.</p>
+<p>Windows XP is reported to build, but with some issues,
+using "MingW and msys" (see Issue 176 comment #4).</p>
+
+<p>
+You need the flex/flash SDK, the java runtime*, and the java sdk**.
+</p>
+<p>
+Respectively, that means mxmlc, java, and javac should be in your path.
+</p>
+
+<p>
+*If you do not compress the javascript, you do not need the java
+runtime</p>
+<p>**You can comment out the webserver.jar target if you have a web server
+and then you do not need the java sdk.</p>
+
+
+<p>Change to the top level directory where the Makefile is.</p>
+
+<p>
+To clobber the build:</p>
+
+<pre><code>
+make clean</code></pre>
+
+<p>
+To make a build:</p>
+
+<pre><code>
+make all</code></pre>
+
+<p>To control whether the JS is compressed (by default it is not):</p>
+
+<pre><code>
+make all COMPRESS=1</code></pre>
+
+<p>
+To control whether tests are copied into the build/ directory (not copied by default;
+these are located in tests/).</p>
+
+<pre><code>
+make all COPY_TESTS=1</code></pre>
+
+<p>
+Once building you will need to access things using the local web server as normal in
+build/. See the Quick Start guide for details on running the 
+provided java webserver.</p>
+
+<p>If you have your own web server, you can run the following command, which will copy
+files to your web server directory. Substitute the appropriate directory for your system below.</p>
+
+
+<pre><code>
+make install SVGSRV=/var/www/html</code></pre>
 
 
