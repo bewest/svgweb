@@ -215,7 +215,7 @@ function createSVGObject() {
     // set up the mouse scroll wheel; FF 3.5/Native has an annoying bug
     // where DOMMouseScroll events do not propagate to OBJECTs under
     // some situations!
-    if (isFF) {
+    if (isFF && svgweb.getHandlerType() == 'native') {
       hookEvent(svgObject.contentDocument.rootElement, 'mousewheel',
                 MouseWheel);
     } else {
@@ -364,20 +364,34 @@ function mouseMove(evt) {
   var p = svgRoot.createSVGPoint();
   p.x = evt.clientX;
   p.y = evt.clientY;
-
+  
   p = p.matrixTransform(inverseRootCTM);
   p.x -= mouseOffsetX;
   p.y -= mouseOffsetY;
-
+  
   dragX = p.x;
   dragY = p.y;
+  
+  p.x *= svgRoot.currentScale;
+  p.y *= svgRoot.currentScale;
     
   svgRoot.currentTranslate.setXY(p.x, p.y);
   
   evt.preventDefault(true);
 }
 
-function mouseUp(evt) { 
+function mouseUp(evt) {
+  var p = svgRoot.createSVGPoint();
+  p.x = evt.clientX;
+  p.y = evt.clientY;
+  
+  p = p.matrixTransform(inverseRootCTM);
+  p.x -= mouseOffsetX;
+  p.y -= mouseOffsetY;
+  
+  dragX = p.x;
+  dragY = p.y;
+    
   mouseOffsetX = 0;
   mouseOffsetY = 0;
   dragging = false;
