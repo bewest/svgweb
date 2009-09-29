@@ -146,6 +146,16 @@ function initUI() {
   // store a reference to the SVG root to make subsequent accesses faster
   svgRoot = svgObject.contentDocument.rootElement;
   
+  // Safari/Native has a bug where it doesn't respect the height/width of 
+  // the OBJECT when scaling the size of some objects (commons-logo.svg, 
+  // for example). A workaround is to manually set the size inside the SVG.
+  var isSafari = (Math.max(navigator.appVersion.indexOf('WebKit'), 
+                           navigator.appVersion.indexOf('Safari'), 0));
+  if (isSafari) {
+    svgRoot.setAttribute('width', info.width);
+    svgRoot.setAttribute('height', info.height);
+  }
+  
   // reveal the SVG object and controls
   svgObject.parentNode.style.zIndex = 1000;
   svgControls.style.display = 'block';
@@ -163,7 +173,6 @@ function initUI() {
 // Creates the SVG OBJECT during page load so that when we swap the PNG
 // thumbnail and the SVG OBJECT it happens much faster
 function createSVGObject() {
-  console.log('createSVGObject');
   var info = getSVGInfo();
   var thumbnail = info.fileNode;
   if (hasAnnotation()) {
@@ -180,9 +189,6 @@ function createSVGObject() {
     // store a reference to the SVG OBJECT
     svgObject = this;
     
-    // add our magnification icon
-    addStartButton();
-    
     // create the controls
     svgControls = createControls();
     svgControls.style.display = 'none';
@@ -194,6 +200,9 @@ function createSVGObject() {
     } else {
        thumbnail.appendChild(svgControls);
     }
+    
+    // add our magnification icon
+    addStartButton();
     
     // set up the mouse scroll wheel
     hookEvent('file', 'mousewheel', MouseWheel);    
@@ -210,12 +219,14 @@ function createSVGObject() {
   var container = document.createElement('div');
   container.style.zIndex = -1000;
   container.style.position = 'absolute';
-  if (hasAnnotation()) {
-    container.style.top = '0px';
-    container.style.left = '0px';
-  } else {
+  // FIXME: This is a hack; figure out why the Flash version of Commons-logo.svg
+  // is off by one 1 pixel on x and y
+  if (!hasAnnotation() && svgweb.getHandlerType() == 'flash') {
     container.style.top = '-1px';
     container.style.left = '-1px';
+  } else {
+    container.style.top = '0px';
+    container.style.left = '0px';
   }
   if (thumbnail.lastChild.nodeType == 1 
       && thumbnail.lastChild.nodeName.toLowerCase() == 'br') {
@@ -416,13 +427,15 @@ function MouseWheel(e) {
     zoomOut();
   }
   
+  if (e.preventDefault) {
+    e.preventDefault();
+  }
   return false;
 } 
 
 // called when the page is loaded and ready to be manipulated
 function pageLoaded() {
-  // TODO: This is dangerous; modify SVG Web to add a manual addOnLoad handler
-  window.setTimeout(createSVGObject, 1500);
+  svgweb.addOnLoad(createSVGObject);
 }
 
 if (isSVGPage()) {
