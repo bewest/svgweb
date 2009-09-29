@@ -769,7 +769,7 @@ not currently supported due to technical limitations (it is impossible to
 support on Firefox); you should use contentDocument instead.</p>
 
 <h1 id="dynamic">Dynamically Creating and Removing SVG OBJECTs and SVG Roots</h1>
-<h2>Dynamically Creating an SVG OBJECT</h2>
+<h2 id="dynamic_object">Dynamically Creating an SVG OBJECT</h2>
 
 <p>If you want to dynamically create a new SVG OBJECT on your page, you must
 do the following. First, when you create your object, you must pass in the
@@ -809,7 +809,7 @@ argument, and the parent to attach it to as its second argument.</p>
 <p>Note that our svgweb.appendChild method is a divergence from the standard 
 necessary for SVG Web to do its magic.</p>
 
-<h3>Object data: URL Scheme</h3>
+<h3 id="data_scheme">Object data: URL Scheme</h3>
 <p>The 'data:' URL scheme is supported by SVG Web. Therefore, you can directly
 specify the content of the SVG object instead of specifying a source file.
 This could be done when creating an SVG image from scratch or from dynamic
@@ -844,7 +844,7 @@ alternative to the above is to create an SVG root element on the fly
 (NOTE: Neither of those features is implemented at this time, although
 there are plans to do so.)</p>
 
-<h2>Dynamically Creating an SVG Root</h2>
+<h2 id="dynamic_root">Dynamically Creating an SVG Root</h2>
 <p>Dynamically creating an SVG Root element is similar for direct embedding into
 a web page (NOTE: this is just documented here but is not yet implemented). 
 You don't have to create a SCRIPT tag like you would if you were direct
