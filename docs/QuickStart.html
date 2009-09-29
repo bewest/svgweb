@@ -243,7 +243,7 @@ an <a href="http://code.google.com/p/svgweb/issues/list">Issue</a>.</b></p>
 
 <p>The other files in the ZIP are optional; some are utilities that can help with deployment.</p>
 
-<p id="same_domain">Note that all of the SVG Web files must be on the same domain as any web pages that might use the library. For example, if you have <code>http://example.com/mypage.html</code>, then you should ensure the files above are also on <code>http://example.com</code>. Putting them on a <code>static.example.com</code> would not work. This arises from limitations in Flash and the Microsoft HTC (<code>svg.htc</code>) file that are used by SVG Web.</p>
+<p id="same_domain">Note that all of the SVG Web files by default must be on the same domain as any web pages that might use the library. For example, if you have <code>http://example.com/mypage.html</code>, then you should ensure the files above are also on <code>http://example.com</code>. Putting them on a <code>static.example.com</code> would not work. This arises from limitations in Flash and the Microsoft HTC (<code>svg.htc</code>) file that are used by SVG Web. SVG Web has partial support for hosting many of its files on a different domain however; see the <a href="UserManual.html#cross_domain">User Manual</a> for details.</p>
 
 <p id="correct_mime">You must ensure that your web server has the correct MIME settings for Flash SWF files (<code>application/x-shockwave-flash</code>), Microsoft HTC files (<code>text/x-component</code>), and SVG files (<code>image/svg+xml</code>). Since many developers don't know what MIME types are or don't have the ability to change this setting on their web server, SVG Web comes with a number of utilities to make this easier.</p>
 
