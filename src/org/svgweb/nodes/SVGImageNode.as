@@ -114,6 +114,13 @@ package org.svgweb.nodes
             }
         }
 
+        override public function setAttribute(name:String, value:String):void {
+            super.setAttribute(name, value);
+            if (name == 'x' || name == 'y') {
+                this.applyDefaultMask();
+            }
+        }
+
         override public function applyViewBox():void {
 
             var canvasWidth:Number = this.getWidth();

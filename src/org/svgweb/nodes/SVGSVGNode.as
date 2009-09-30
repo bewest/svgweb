@@ -206,6 +206,13 @@ package org.svgweb.nodes
             return defaultValue;
         }
 
+        override public function setAttribute(name:String, value:String):void {
+            super.setAttribute(name, value);
+            if (name == 'x' || name == 'y') {
+                this.applyDefaultMask();
+            }
+        }
+
         override protected function loadAttribute(name:String, field:String = null,
                                          applyStyle:Boolean = false):void {
             // Issue 226: Topmost <svg> tag ignores x and y
