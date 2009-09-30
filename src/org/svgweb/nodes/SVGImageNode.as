@@ -71,6 +71,9 @@ package org.svgweb.nodes
             this.applyDefaultMask();
 
             this._invalidDisplay = false;
+            if (getPatternAncestor() != null) {
+                this.svgRoot.invalidateReferers(getPatternAncestor().id);
+            }
             if (!this._initialRenderDone && topSprite.parent) {
                 this.attachEventListeners();
                 this._initialRenderDone = true;
