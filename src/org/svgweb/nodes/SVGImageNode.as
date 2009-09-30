@@ -58,9 +58,10 @@ package org.svgweb.nodes
     
                 this.setAttributes();
                 this.transformNode();
-                //this.generateGraphicsCommands();
                 if (this.bitmap == null && urlLoader == null) {
                     this.loadImage();
+                } else {
+                    finishDrawNode();
                 }
             }
         }
@@ -125,6 +126,10 @@ package org.svgweb.nodes
         }
 
         override public function applyViewBox():void {
+            // applyViewBox should not happen until the image is loaded.
+            if (this.bitmap == null) {
+                return;
+            }
 
             var canvasWidth:Number = this.getWidth();
             var canvasHeight:Number = this.getHeight();

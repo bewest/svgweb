@@ -5519,9 +5519,6 @@ function testSuspendRedraw() {
                   ['568.43536'], rect.getAttribute('width'));
   svg.unsuspendRedrawAll();
 
-  // commented out until Issue 207 is addressed:
-  // http://code.google.com/p/svgweb/issues/detail?id=207
-  /*
   // do transforms on an image while in a suspendRedraw
   svg = getRoot('svg11242');
   suspendID1 = svg.suspendRedraw(500);
@@ -5536,7 +5533,7 @@ function testSuspendRedraw() {
   image.setAttribute('transform', 'translate(450, 100) rotate(90)');
   svg.unsuspendRedraw(suspendID1);
   console.log('SECOND IMAGE: You should see an image of balloons rotated 90 '
-              + 'degrees near the end of the sword');*/
+              + 'degrees near the end of the sword');
   
   // do getElementsByTagNameNS inside suspendRedraw
   svg = getRoot('svg11242');
