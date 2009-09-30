@@ -581,6 +581,7 @@ package org.svgweb.core
                 if (topSprite.mask is Shape) {
                     Shape(topSprite.mask).graphics.clear();
                     Shape(topSprite.mask).graphics.beginFill(0x000000);
+                    Shape(topSprite.mask).transform.matrix=topSprite.transform.matrix.clone();
                     drawSprite.graphics.clear();
                     drawSprite.graphics.beginFill(0x000000, 0);
                     var canvasWidth:Number;
