@@ -1398,7 +1398,19 @@ package org.svgweb.core
                     return value;
                 }
             }
-            
+
+            // If node is the top level of a clone,
+            // check for an override value from the parent.
+            if (this.original && (this.svgParent is SVGUseNode)) {
+                // <use> node already implements x, y, and transform
+                if (name != 'x' && name != 'y' && name != 'transform') {
+                    value = this.svgParent._getAttribute(name, null, false, true, true);
+                    if (value !== null) {
+                        return value;
+                    }
+                }
+            }
+           
             if (applyStyle && _styles.hasOwnProperty(name)) {
                 return (_styles[name]);
             }

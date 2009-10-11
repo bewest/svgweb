@@ -82,6 +82,12 @@ package org.svgweb.nodes
             }
         }
 
+        override protected function setAttributes():void {
+            this.loadAttribute('x');
+            this.loadAttribute('y');
+            // Other attribute should be inherited by children
+        }
+
         override public function setAttribute(name:String, value:String):void {
             super.setAttribute(name, value);
             this.invalidateChildren();
