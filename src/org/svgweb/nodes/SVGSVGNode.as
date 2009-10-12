@@ -27,6 +27,7 @@ package org.svgweb.nodes
     import flash.display.Sprite;
     import flash.events.Event;
     import flash.utils.getTimer;
+    import org.svgweb.utils.ImageLoader;
 
     public class SVGSVGNode extends SVGNode
     {
@@ -48,6 +49,8 @@ package org.svgweb.nodes
         
         public var currentScale:Number = 1;
         public var currentTranslate:Object = {x: 1, y: 1};
+
+        public var imageCache:Object = new Object();
         
         /** If this file was loaded from a URL, such as samples/scimitar.svg,
             then objectURL points to the relative path from which it was
@@ -449,6 +452,19 @@ package org.svgweb.nodes
                 SVGViewer(topSprite.parent).handleScript(script);
             }
         }
+
+        public function loadImage(imageHref:String, imageNode:SVGImageNode):void {
+            if (this.parentSVGRoot) {
+                this.parentSVGRoot.loadImage(imageHref, imageNode);
+            }
+            else {
+                if (!this.imageCache[imageHref]) {
+                    this.imageCache[imageHref] = new ImageLoader(imageHref);
+                }
+                this.imageCache[imageHref].addListener(imageNode);
+            }
+        }
+
 
         public function handleOnLoad():void {
             if (this.parentSVGRoot) {

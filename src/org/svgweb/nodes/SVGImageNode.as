@@ -39,6 +39,7 @@ package org.svgweb.nodes
     public class SVGImageNode extends SVGNode {
         private var urlLoader:URLLoader;
         private var bitmap:Bitmap;
+        private var bitmapData:BitmapData;
 
         public var imageWidth:Number = 0;
         public var imageHeight:Number = 0;
@@ -89,10 +90,6 @@ package org.svgweb.nodes
             if (!imageHref) {
                 return;
             }
-            var xmlBase:String = this.getAttribute('base');
-            if (xmlBase && xmlBase != '') {
-                imageHref = xmlBase + imageHref;
-            }
 
             // For data: href, decode the base 64 image and load it
             if (imageHref.match(/^data:[a-z\/]*;base64,/)) {
@@ -102,20 +99,48 @@ package org.svgweb.nodes
                 return;
             }
 
+            var xmlBase:String = this.getAttribute('base');
+            if (xmlBase && xmlBase != '') {
+                imageHref = xmlBase + imageHref;
+            }
+
             // must have width and height to create bitmap
             if ( (this.getAttribute('width') != null) && (this.getAttribute('height') != null) ) {
-                urlLoader = new URLLoader();
-                urlLoader.dataFormat = URLLoaderDataFormat.BINARY;
-
-                urlLoader.addEventListener(Event.COMPLETE, onURLLoaderComplete);
-
-                urlLoader.addEventListener(IOErrorEvent.IO_ERROR, onError);
-                urlLoader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, onError);
-
-                urlLoader.load(new URLRequest(imageHref));
-
-                return;
+                this.svgRoot.loadImage(imageHref, this);
             }
+        }
+
+        /**
+         * Load image byte array
+         * Used to support data: href.
+         **/
+        private function loadBytes(byteArray:ByteArray):void {
+            var loader:Loader = new Loader();
+            loader.contentLoaderInfo.addEventListener( Event.COMPLETE, onBytesLoaded );
+            loader.loadBytes( byteArray );
+        }
+
+        /**
+         * Display image bitmap once bytes have loaded
+         * Used to support data: href.
+         **/
+        private function onBytesLoaded(event:Event):void
+        {
+            var content:DisplayObject = LoaderInfo( event.target ).content;
+            bitmapData = new BitmapData( content.width, content.height, true, 0x00000000 );
+            bitmapData.draw( content );
+            this.onImageLoaded(bitmapData);
+        }
+
+        public function onImageLoaded(bitmapData:BitmapData):void {
+            this.imageWidth = bitmapData.width;
+            this.imageHeight = bitmapData.height;
+
+            bitmap = new Bitmap( bitmapData );
+            bitmap.opaqueBackground = null;
+
+            drawSprite.addChild(bitmap);
+            this.finishDrawNode();
         }
 
         override public function setAttribute(name:String, value:String):void {
@@ -230,48 +255,5 @@ package org.svgweb.nodes
 
         }
 
-
-        private function onError(event:IOErrorEvent):void {
-            this.dbg("IOError: " + event.text);
-            this.finishDrawNode();
-            urlLoader = null;
-        }
-
-        private function onURLLoaderComplete( event:Event ):void {
-            this.loadBytes(ByteArray(urlLoader.data));
-            urlLoader = null;
-        }
-
-        /**
-         * Load image byte array
-         * Used to support data: href.
-         **/
-        private function loadBytes(byteArray:ByteArray):void {
-            var loader:Loader = new Loader();
-            loader.contentLoaderInfo.addEventListener( Event.COMPLETE, onBytesLoaded );
-            loader.loadBytes( byteArray );
-        }
-
-
-        /**
-         * Display image bitmap once bytes have loaded 
-         * Used to support data: href.
-         **/
-        private function onBytesLoaded( event:Event ) :void
-        {
-            var content:DisplayObject = LoaderInfo( event.target ).content;
-            var bitmapData:BitmapData = new BitmapData( content.width, content.height, true, 0x00000000 );
-            bitmapData.draw( content );
-
-            this.imageWidth = bitmapData.width;
-            this.imageHeight = bitmapData.height;
-
-            bitmap = new Bitmap( bitmapData );
-            bitmap.opaqueBackground = null;
-            drawSprite.addChild(bitmap);
-
-            this.finishDrawNode();
-            
-        }
     }
 }
