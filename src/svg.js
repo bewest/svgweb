@@ -823,8 +823,8 @@ extend(SVGWeb, {
       // id is set to be __ie__svg__onload rather than __ie_onload so
       // we don't have name collisions with other scripts using this
       // code as well
-      document.write('<script id=__ie__svg__onload defer '
-                      + 'src=javascript:void(0)><\/script>');
+      document.write('<script id="__ie__svg__onload" defer '
+                      + 'src=//0><\/script>');
       var script = document.getElementById('__ie__svg__onload');
       script.onreadystatechange = function() {
         // Save any window.onload listener that might be registered so we can
