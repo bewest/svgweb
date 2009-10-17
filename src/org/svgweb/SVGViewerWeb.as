@@ -76,9 +76,6 @@ package org.svgweb
         protected var renderStartTime:Number;
         protected var debugEnabled:Boolean = true;
         
-        protected var firstObjectWidth:Number;
-        protected var firstObjectHeight:Number;
-
         protected var objectWidth:Number;
         protected var objectHeight:Number;
 
@@ -384,10 +381,8 @@ package org.svgweb
             var objectURL:String = args[0];
             var pageURL:String = args[1];
             // Flash/JS bridge transforms nulls/undefined into '' empty strings
-            this.firstObjectWidth = SVGUnits.cleanNumber(args[2]);
-            this.firstObjectHeight = SVGUnits.cleanNumber(args[3]);
-            this.objectWidth = this.firstObjectWidth;
-            this.objectHeight = this.firstObjectHeight;
+            this.objectWidth = SVGUnits.cleanNumber(args[2]);
+            this.objectHeight = SVGUnits.cleanNumber(args[3]);
             var ignoreWhiteSpace:Boolean = (args[4] === 'true') ? true : false;
             var svgString:String = this.decodeFlashData(args[5]);
             
@@ -409,10 +404,13 @@ package org.svgweb
             var args:Array = msg.split(DELIMITER);
             this.objectWidth = SVGUnits.cleanNumber(args[0]);
             this.objectHeight = SVGUnits.cleanNumber(args[1]);
+            //this.debug("js_handlResize: object size: " + objectWidth + "," + objectHeight);
             this.scaleX = (this.stage.stageWidth/this.objectWidth)
                            * (this.objectWidth / this.getWidth());
             this.scaleY = (this.stage.stageHeight/this.objectHeight)
                            * (this.objectHeight / this.getHeight());
+            this.svgRoot.applyViewBox();
+            this.svgRoot.applyDefaultMask();
         }
         
         
@@ -968,11 +966,11 @@ package org.svgweb
         }
 
         override public function getWidth():Number {
-            return this.firstObjectWidth;
+            return this.objectWidth;
         }
 
         override public function getHeight():Number {
-            return this.firstObjectHeight;
+            return this.objectHeight;
         }
 
         public function getClipMode():String {
