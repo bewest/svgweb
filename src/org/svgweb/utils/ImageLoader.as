@@ -66,8 +66,12 @@ package org.svgweb.utils {
     
                 urlLoader.addEventListener(IOErrorEvent.IO_ERROR, onError);
                 urlLoader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, onError);
-    
-                urlLoader.load(new URLRequest(imageHref));
+
+                try {
+                    urlLoader.load(new URLRequest(imageHref));
+                } catch (e:Error) {
+                    listener.dbg("svgweb:flash:URLLoader.load:"+e);
+                }
 
                 return;
             }

@@ -28,16 +28,10 @@ package org.svgweb.nodes
     import flash.display.Loader;
     import flash.display.LoaderInfo;
     import flash.events.Event;
-    import flash.events.IOErrorEvent;
-    import flash.events.SecurityErrorEvent;
     import flash.geom.Matrix;
-    import flash.net.URLLoader;
-    import flash.net.URLLoaderDataFormat;
-    import flash.net.URLRequest;
-    import flash.utils.*;
+    import flash.utils.ByteArray;
 
     public class SVGImageNode extends SVGNode {
-        private var urlLoader:URLLoader;
         private var bitmap:Bitmap;
         private var bitmapData:BitmapData;
 
@@ -59,7 +53,7 @@ package org.svgweb.nodes
     
                 this.setAttributes();
                 this.transformNode();
-                if (this.bitmap == null && urlLoader == null) {
+                if (this.bitmap == null) {
                     this.loadImage();
                 } else {
                     finishDrawNode();
