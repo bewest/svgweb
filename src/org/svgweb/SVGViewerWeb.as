@@ -409,8 +409,10 @@ package org.svgweb
                            * (this.objectWidth / this.getWidth());
             this.scaleY = (this.stage.stageHeight/this.objectHeight)
                            * (this.objectHeight / this.getHeight());
-            this.svgRoot.applyViewBox();
-            this.svgRoot.applyDefaultMask();
+            if (this.svgRoot) {
+                this.svgRoot.applyViewBox();
+                this.svgRoot.applyDefaultMask();
+            }
         }
         
         
