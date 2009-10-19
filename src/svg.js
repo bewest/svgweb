@@ -2648,6 +2648,9 @@ extend(FlashHandler, {
     } else if (msg.type == 'viewsource') {
       this._onViewSource();
       return;
+    } else if (msg.type == 'viewsourceDynamic') {
+      this._onViewSourceDynamic(msg);
+      return;
     } else if (msg.type == 'error') {
       this._onFlashError(msg);
     }
@@ -2846,9 +2849,37 @@ extend(FlashHandler, {
     var w = window.open('', '_blank');
     w.document.write('<html><body><pre>' + origSVG + '</pre></body></html>');
     w.document.close();
-  }
-});
+  },
 
+  _onViewSourceDynamic: function(msg) {
+
+    // Add xml tag if not present
+    if (msg.source.indexOf('<?xml') == -1) {
+      msg.source='<?xml version="1.0"?>\n' + msg.source;
+    }
+
+    // Remove svg web artifacts
+    msg.source=msg.source.replace(/<svg:([^ ]+) /g,'<$1 ');
+    msg.source=msg.source.replace(/<\/svg:([^>]+)>/g,'<\/$1>');
+    msg.source=msg.source.replace(/\n\s*<__text[^\/]*\/>/gm,'');
+    msg.source=msg.source.replace(/<__text[^>]*>([^<]*)<\/__text>/gm,'$1');
+    msg.source=msg.source.replace(/<__text[^>]*>/g,'');
+    msg.source=msg.source.replace(/<\/__text>/g,'');
+    msg.source=msg.source.replace(/ __guid="[^"]*"/g,'');
+    msg.source=msg.source.replace(/ id="__svg__random__[^"]*"/g,'');
+    msg.source=msg.source.replace(/>\n\n/g,'>\n');
+    
+    // Escape tags
+    msg.source=msg.source.replace(/>/g,'&gt;');
+    msg.source=msg.source.replace(/</g,'&lt;');
+    
+    // Place source in a new window
+    var w = window.open('', '_blank');
+    w.document.write('<body><pre>' + msg.source + '</pre></body>');
+    w.document.close();
+  }
+
+});
 
 /** Creates a NativeHandler that will embed the given SVG into the page using
     native SVG support. Pass in an object literal with the correct arguments. 

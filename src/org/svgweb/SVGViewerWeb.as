@@ -254,12 +254,13 @@ package org.svgweb
         }
 
         override public function customizeContextMenu():void {
+            var outerthis:SVGViewerWeb = this;
             super.customizeContextMenu();
+
+            // View Source Custom Menu Item
             var itemViewSource:ContextMenuItem = new ContextMenuItem("View SVG Source");
             itemViewSource.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, viewSource);
             this.contextMenu.customItems.push(itemViewSource);
-
-            var outerthis:SVGViewerWeb = this;
             function viewSource():void {
                 try {
                     ExternalInterface.call(outerthis.js_handler + "onMessage",
@@ -269,6 +270,28 @@ package org.svgweb
                 catch(error:SecurityError) {
                 }
             }
+
+            // View Source Dynamic Custom Menu Item
+            var itemViewSourceDynamic:ContextMenuItem = new ContextMenuItem("View SVG Source - Dynamic");
+            itemViewSourceDynamic.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, viewSourceDynamic);
+            this.contextMenu.customItems.push(itemViewSourceDynamic);
+            function viewSourceDynamic():void {
+                try {
+                    var dynamicXMLString:String = outerthis.svgRoot.getXMLTree(0, true);
+                    // backslashes seem to interfere with flash to javascript interface. escape them.
+                    dynamicXMLString=dynamicXMLString.replace(/\\/g, '&amp;#92;');
+                    ExternalInterface.call(outerthis.js_handler + "onMessage",
+                                           outerthis.msgToString(
+                                                         { type: 'viewsourceDynamic',
+                                                           source: dynamicXMLString
+                                                         } 
+                                           ));
+                }
+                catch(error:SecurityError) {
+                }
+
+            }
+
         }
        
         /**

@@ -2088,6 +2088,116 @@ package org.svgweb.core
             return this._xml.@__guid;
         }
 
+
+        public function nsQualify(name:String, nameNS:Namespace):String {
+            var n:int;
+            var scopeNS:Namespace;
+            for (n = 0; n < this.svgRoot._xml.inScopeNamespaces().length; n++) {
+                scopeNS = this.svgRoot._xml.inScopeNamespaces()[n];
+                if (scopeNS.prefix == "" && scopeNS.uri == nameNS.uri) {
+                    return name;
+                }
+            }
+            for (n = 0; n < this.svgRoot._xml.inScopeNamespaces().length; n++) {
+                scopeNS = this.svgRoot._xml.inScopeNamespaces()[n];
+                if (scopeNS.uri == nameNS.uri) {
+                    return (scopeNS.prefix + ":" + name);
+                }
+            }
+            return name;
+        }
+
+        public function getAttrs():String {
+            var attrsString:String ="";
+            var attrsNamesList:XMLList = xml.@*;
+            for (var i:int = 0; i < attrsNamesList.length(); i++) {
+                attrsString=attrsString.concat(' ', nsQualify(attrsNamesList[i].localName(),Namespace(attrsNamesList[i].namespace())), '=',
+                                               '"',this._xml.@[attrsNamesList[i].name()],'"');
+            }
+            return attrsString;
+        }
+
+        public function getNameSpaces():String {
+            var namespString:String ="";
+            for (var i:int = 0; i < this._xml.inScopeNamespaces().length; i++) {
+                var namesp:Namespace = this._xml.inScopeNamespaces()[i];
+                if (namesp.prefix == "") {
+                    namespString=namespString.concat(' xmlns', '=', '"',namesp.uri,'"');
+                }
+                else {
+                    namespString=namespString.concat(' xmlns:', namesp.prefix, '=', '"',namesp.uri,'"');
+                }
+            }
+            return namespString;
+        }
+
+        public function getXMLTree(indent:uint, includeOuterTag:Boolean):String {
+            var i:uint;
+            var xmlString:String="";
+            var myTag:String="";
+
+            // Cloned glyphs are artificial. Skip them.
+            if (this is SVGGlyphNode && this.original) {
+                return "";
+            }
+
+            myTag = nsQualify(this._xml.localName(), this._xml.namespace());
+
+            if (this.svgChildren.length > 0) {
+                // Open Outer tag
+                if (includeOuterTag && !(this is SVGDOMTextNode)) {
+                    for (i = 0; i < indent; i++) {
+                       xmlString=xmlString.concat(' ');
+                    }
+                    if (this.topSprite.parent is SVGViewer) {
+                        xmlString = xmlString.concat('<', myTag, this.getNameSpaces(), this.getAttrs(), '>\n');
+                    }
+                    else {
+                        xmlString = xmlString.concat('<', myTag, this.getAttrs(), '>\n');
+                    }
+                }
+                // Children
+                for (i = 0; i < this.svgChildren.length; i++) {
+                    xmlString = xmlString.concat(this.svgChildren[i].getXMLTree(indent+
+                         (includeOuterTag ? 2 : 0), true));
+                }
+                // Close Outer Tag
+                if (includeOuterTag && !(this is SVGDOMTextNode)) {
+                    for (i = 0; i < indent; i++) {
+                       xmlString=xmlString.concat(' ');
+                    }
+                    xmlString = xmlString.concat('</', myTag, '>\n');
+                }
+            }
+            else {
+                if (this is SVGDOMTextNode) {
+                    if (SVGDOMTextNode(this).nodeValue) {
+                        xmlString = xmlString.concat(SVGDOMTextNode(this).nodeValue);
+                    }
+                }
+                else if (this is SVGScriptNode) {
+                    var content:String;
+                    if (this._xml.children().length() > 0) {
+                        content = this._xml.children()[0].text().toString();
+                        xmlString = xmlString.concat('<', myTag, this.getAttrs(), '><![CDATA[\n', content, ']]></', myTag, '>\n');
+                    }
+                    else {
+                        xmlString = xmlString.concat('<', myTag, this.getAttrs(), '/>\n');
+                    }
+                }
+                else {
+                    if (includeOuterTag) {
+                        for (i = 0; i < indent; i++) {
+                           xmlString=xmlString.concat(' ');
+                        }
+                        xmlString = xmlString.concat('<', myTag, this.getAttrs(), '/>\n');
+                    }
+                }
+            }
+            return xmlString;
+        }
+
+
         public function get invalidDisplay():Boolean {
             return this._invalidDisplay;
         }

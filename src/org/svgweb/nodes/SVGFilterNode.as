@@ -34,14 +34,7 @@ package org.svgweb.nodes
         public function SVGFilterNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
             super(svgRoot, xml, original);
         }
-        
-        override protected function parseChildren():void {
-                
-        }
-        
-        /**
-         * 
-         **/
+ 
         public function getFilters(objectToFilter:SVGNode):Array {
             var nodeFilters:Array = new Array();
             var list:XMLList = this._xml.svg::feGaussianBlur;
@@ -90,7 +83,6 @@ package org.svgweb.nodes
             
             return nodeFilters;
         } 
-        
         
     }
 }
