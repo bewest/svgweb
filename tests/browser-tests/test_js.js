@@ -64,6 +64,10 @@ svgweb._validateOnloads = function() {
 // for the onload event when dynamically creating SVG OBJECT tags works
 svgweb._dynamicObjOnloads = 0;
 
+// a variable that we use to ensure that dynamically creating SVG root
+// elements in testCreateSVGRoot() fire their onloads correctly.
+svgweb._dynamicRootOnloads = 0;
+
 // a global variable that we set to ensure we don't incorrectly see it
 // over in embed2; checked in testScope() inside of embed2.svg
 var shouldNotClash = 'set globally in test_js.js';
@@ -178,6 +182,7 @@ function runTests(embedTypes) {
   testIsSupported();
   testStyle();
   testCreateSVGObject();
+  testCreateSVGRoot();
   testSuspendRedraw();
   testDocumentFragment();
   //testEventHandlers();
@@ -317,6 +322,10 @@ function runTests(embedTypes) {
     // onload function that we want to check for
     assertEquals('onload should have fired for our 3 listeners for dynamic '
                  + 'objects', 3, svgweb._dynamicObjOnloads);
+                 
+    // make sure that our dynamic SVG roots fired their onloads correctly
+    assertEquals('onload should have fired for our 3 listeners for dynamic '
+                 + 'root', 3, svgweb._dynamicRootOnloads);
        
     if (_hasObjects) {
       // make sure that all of our timing functions inside of embed2.svg
@@ -5081,6 +5090,7 @@ function testCreateSVGObject() {
     assertEquals('this.id == dynamic1', 'dynamic1', this.id);
     
     /*
+    // TODO: Get inline event handlers working and uncomment this
     // do inline event handler tests for inline on* event handlers on the 
     // SVG root tag here rather than in testEventHandlers()
     // svg root element
@@ -5211,6 +5221,8 @@ function testCreateSVGObject() {
                  'camelCaseValue', obj2.getAttribute('camelCaseName'));
                  
     /*
+    // TODO: Get inline event handlers working and uncomment these
+    
     // Do tests for removing inline event handlers here instead of in 
     // testEventHandlers(). We remove the inline event handlers from the SVG
     // root for the second and third dynamic object (dynamic2 and dynamic3)
@@ -5277,6 +5289,8 @@ function testCreateSVGObject() {
     assertEquals('this == SVG OBJECT', obj3, this);
     
     /*
+    // TODO: Get inline event handlers working and uncomment these
+    
     // remove inline event handlers
     svg = obj3.contentDocument.rootElement;
     assertExists('dynamic3 should exist', svg);
@@ -5307,6 +5321,163 @@ function testCreateSVGObject() {
   
   // TODO: have more tests with CDATA content, including setting it, getting
   // it, working with append/remove DOM operations, etc.
+}
+
+function testCreateSVGRoot() {
+  // Tests for dynamically creating an SVG root
+  console.log('Testing dynamically creating an SVG root...');
+
+  // Simplest use case; create SVG root, wait for it to load, then add some 
+  // stuff. Use addEventListener.
+  svg = document.createElementNS(svgns, 'svg');
+  svg.setAttribute('width', 100);
+  svg.setAttribute('height', 100);
+  svg.style.display = 'block';
+  svg.style.border = '2px solid black';
+  svg.id = 'dynamicRoot1';
+  svg.addEventListener('SVGLoad', function(evt) {
+    // now run our tests for this root
+    
+    // make sure we have event object
+    assertExists('Event object should exist', evt);
+    
+    // make sure new SVG root exists
+    svg = document.getElementById('dynamicRoot1');
+    assertExists('dynamicRoot1 should exist', svg);
+    assertEquals('svg.id == dynamicRoot1', 'dynamicRoot1', svg.id);
+    
+    // make sure 'this' points to the right thing
+    assertEquals('this == dynamic SVG root', svg, this);
+    
+    // add our circle now
+    circle = document.createElementNS(svgns, 'circle');
+    circle.setAttribute('cx', 20);
+    circle.setAttribute('cy', 20);
+    circle.setAttribute('r', 10);
+    circle.setAttribute('fill', 'brown');
+    circle.id = 'dynamicRootCircle2';
+    circle.style.stroke = 'orange';
+    svg.appendChild(circle);
+    
+    // make sure our circle is present
+    circle = document.getElementById('dynamicRootCircle2');
+    assertExists('dynamicRootCircle2 should exist', circle);
+    assertEquals('dynamicRootCircle2.nodeName == circle', 'circle',
+                 circle.nodeName.toLowerCase());
+    assertEquals('dynamicSVGRoot.childNodes.length == 1', 1,
+                 svg.childNodes.length);
+    circle = svg.childNodes[0];
+    assertEquals('circle.nodeName == circle', 'circle',
+                 circle.nodeName.toLowerCase());
+    assertEquals('circle.getAttribute(cx) == 20', 20,
+                 circle.getAttribute('cx'));
+    assertEquals('circle.getAttribute(cy) == 20', 20,
+                 circle.getAttribute('cy'));
+    assertEqualsAny('circle.getAttribute(fill) == brown',
+                 ['brown'],
+                 circle.getAttribute('fill'));
+    assertEqualsAny('circle.style.stroke == orange', 
+                 ['orange'],
+                 circle.style.stroke);
+                 
+    // make sure our parent is correct
+    parent = svg.parentNode;
+    assertExists('dynamic SVG root parent node should exist', parent);
+    assertEquals('dynamic SVG root parent node should be document BODY',
+                 'body', parent.parentNode.toLowerCase());
+    assertEquals('dynamic SVG root parent node == document.body',
+                 document.body, parent.parentNode);
+    
+    console.log('SEVENTH IMAGE: You should see a small brown circle with '
+                + 'an orange outline as the whole XML image. The XML image '
+                + 'itself should be display: block and with a 2 pixel '
+                + 'solid black outline.');
+                
+    // indicate that this onload and its tests ran
+    svgweb._dynamicRootOnloads++;
+  });
+  svgweb.appendChild(svg, document.body);
+  
+  // Create SVG root and immediately add stuff to it, then wait for onload
+  // handler. Use .onload to add onload event handler. Have no ID on the SVG
+  // root.
+  svg = document.createElementNS(svgns, 'svg');
+  svg.setAttribute('width', 100);
+  svg.setAttribute('height', 100);
+  svg.style.display = 'inline';
+  svg.style.border = '4px solid yellow';
+  svg.onload = function(evt) {
+    // now run our tests for this root
+    
+    assertExists('Event object should exist', evt);
+    
+    matches = document.getElementsByTagNameNS(svgns, 'svg');
+    assertExists('getElementsByTagNameNS should return something for '
+                 + 'svg roots', matches.length);
+    assertTrue('getElementsByTagNameNS should have more than zero svg roots',
+               (matches.length > 0));
+    if (_hasObjects) {
+      svg = matches[1];
+    } else {
+      svg = matches[4];
+    }
+    assertExists('SVG root should exist', svg);
+    assertExists('SVG root should have an id', svg.id);
+    assertTrue('SVG root should have a random id',
+               (svg.id.indexOf('random') != -1));
+    
+    // make sure 'this' points to the right thing
+    assertEquals('this == dynamic SVG root', svg, this);
+    
+    // make sure our circle is present
+    circle = document.getElementById('dynamicRootCircle1');
+    assertExists('dynamicRootCircle1 should exist', circle);
+    assertEquals('dynamicRootCircle1.nodeName == circle', 'circle',
+                 circle.nodeName.toLowerCase());
+    assertEquals('dynamicSVGRoot.childNodes.length == 1', 1,
+                 svg.childNodes.length);
+    circle = svg.childNodes[0];
+    assertEquals('circle.nodeName == circle', 'circle',
+                 circle.nodeName.toLowerCase());
+    assertEquals('circle.getAttribute(cx) == 20', 20,
+                 circle.getAttribute('cx'));
+    assertEquals('circle.getAttribute(cy) == 20', 20,
+                 circle.getAttribute('cy'));
+    assertEqualsAny('circle.getAttribute(fill) == orange',
+                 ['orange'],
+                 circle.getAttribute('fill'));
+    assertEqualsAny('circle.style.stroke == brown', 
+                 ['brown'],
+                 circle.style.stroke);
+                 
+    // make sure our parent is correct
+    parent = svg.parentNode;
+    assertExists('dynamic SVG root parent node should exist', parent);
+    assertEquals('dynamic SVG root parent node should be document BODY',
+                 'body', parent.parentNode.toLowerCase());
+    assertEquals('dynamic SVG root parent node == document.body',
+                 document.body, parent.parentNode);
+    
+    console.log('EIGHTH IMAGE: You should see a small orange circle with '
+                + 'a brown outline as the whole XML image. The XML image '
+                + 'itself should be display: inline and with a 4 pixel '
+                + 'solid yellow outline.');
+                
+    // indicate that this onload and its tests ran
+    svgweb._dynamicRootOnloads++;
+  }
+  circle = document.createElementNS(svgns, 'circle');
+  circle.setAttribute('cx', 20);
+  circle.setAttribute('cy', 20);
+  circle.setAttribute('r', 10);
+  circle.setAttribute('fill', 'orange');
+  circle.id = 'dynamicRootCircle1';
+  circle.style.stroke = 'brown';
+  svg.appendChild(circle);
+  svgweb.appendChild(svg, document.body);
+  
+  // Create an SVG root, remove it, then reattach it. Add some more elements to
+  // it.
 }
 
 function testSuspendRedraw() {
