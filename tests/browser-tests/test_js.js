@@ -5325,7 +5325,7 @@ function testCreateSVGObject() {
 
 function testCreateSVGRoot() {
   // Tests for dynamically creating an SVG root
-  console.log('Testing dynamically creating an SVG root...');
+  console.log('Testing dynamically creating an SVG Root...');
 
   // Simplest use case; create SVG root, wait for it to load, then add some 
   // stuff. Use addEventListener.
@@ -5395,7 +5395,7 @@ function testCreateSVGRoot() {
                 
     // indicate that this onload and its tests ran
     svgweb._dynamicRootOnloads++;
-  });
+  }, false);
   svgweb.appendChild(svg, document.body);
   
   // Create SVG root and immediately add stuff to it, then wait for onload
@@ -5478,6 +5478,81 @@ function testCreateSVGRoot() {
   
   // Create an SVG root, remove it, then reattach it. Add some more elements to
   // it.
+  svg = document.createElementNS(svgns, 'svg');
+  svg.setAttribute('width', 100);
+  svg.setAttribute('height', 100);
+  svg.id = 'dynamicRoot2';
+  svg.addEventListener('SVGLoad', function() {
+    svg = this;
+    svgweb.removeChild(svg, svg.parentNode);
+    
+    // make sure it's gone
+    assertNull('document.getElementById(dynamicRoot2) == undefined',
+                document.getElementById('dynamicRoot2'));
+    assertNull('document.getElementById(dynamicRootCircle2) == undefined',
+                document.getElementById('dynamicRootCircle2'));
+    temp = document.body.childNodes[document.body.childNodes.length - 1];
+    assertTrue('temp.id != dynamicRoot2',
+               (temp.id != 'dynamicRoot2'));
+    assertEquals('svg.childNodes.length == 1', 1, svg.childNodes.length);
+    assertEquals('svg.childNodes[0].nodeName == circle', 'circle',
+                 svg.childNodes[0].nodeName);
+    
+    // now re-attach
+    svg.childNodes[0].setAttribute('fill', 'red'); // change color
+    svg.onload = function(evt) {
+      assertExists('Event object should exist', evt);
+
+      svg = document.getElementById('dynamicRoot2');
+      assertExists('SVG root should exist', svg);
+      assertExists('SVG root should have an id', svg.id);
+      assertTrue('SVG root should have a random id',
+                 (svg.id.indexOf('random') != -1));
+
+      // make sure 'this' points to the right thing
+      assertEquals('this == dynamic SVG root', svg, this);
+
+      // make sure our circle is present
+      circle = document.getElementById('dynamicRootCircle2');
+      assertExists('dynamicRootCircle2 should exist', circle);
+      assertEquals('dynamicRootCircle2.nodeName == circle', 'circle',
+                   circle.nodeName.toLowerCase());
+      assertEquals('dynamicSVGRoot.childNodes.length == 1', 1,
+                   svg.childNodes.length);
+      circle = svg.childNodes[0];
+      assertEquals('circle.nodeName == circle', 'circle',
+                   circle.nodeName.toLowerCase());
+      assertEquals('circle.getAttribute(cx) == 20', 20,
+                   circle.getAttribute('cx'));
+      assertEquals('circle.getAttribute(cy) == 20', 20,
+                   circle.getAttribute('cy'));
+      assertEqualsAny('circle.getAttribute(fill) == red',
+                   ['red'],
+                   circle.getAttribute('fill'));
+
+      // make sure our parent is correct
+      parent = svg.parentNode;
+      assertExists('dynamic SVG root parent node should exist', parent);
+      assertEquals('dynamic SVG root parent node should be document BODY',
+                   'body', parent.parentNode.toLowerCase());
+      assertEquals('dynamic SVG root parent node == document.body',
+                   document.body, parent.parentNode);
+
+      console.log('NINTH IMAGE: You should see a small red circle with '
+                  + 'as the whole XML image (it should _not_ be purple)');
+      
+      // indicate that this onload and its tests ran
+      svgweb._dynamicRootOnloads++;
+    };
+  }, false);
+  circle = document.createElementNS(svgns, 'circle');
+  circle.setAttribute('cx', 20);
+  circle.setAttribute('cy', 20);
+  circle.setAttribute('r', 10);
+  circle.setAttribute('fill', 'purple');
+  circle.setAttribute('id', 'dynamicRootCircle2')
+  svg.appendChild(circle);
+  svgweb.appendChild(svg, document.body);
 }
 
 function testSuspendRedraw() {
@@ -5710,12 +5785,9 @@ function testSuspendRedraw() {
   svg = getRoot('svg11242');
   suspendID1 = svg.suspendRedraw(500);
   images = getDoc('svg11242').getElementsByTagNameNS(svgns, 'image');
-  // uncomment when Issue 207 is addressed above
-  //assertEquals('There should be 2 images in svg11242', 2, images.length);
-  assertEquals('There should be 1 image in svg11242', 1, images.length);
+  assertEquals('There should be 2 images in svg11242', 2, images.length);
   assertEquals('images[0].nodeName == image', 'image', images[0].nodeName);
-  // uncomment when Issue 207 is addressed above
-  //assertEquals('images[1].nodeName == image', 'image', images[1].nodeName);
+  assertEquals('images[1].nodeName == image', 'image', images[1].nodeName);
   svg.unsuspendRedraw(suspendID1);
   
   // modify the contents _inside_ of an object in the middle of a suspendRedraw
