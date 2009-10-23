@@ -217,9 +217,13 @@ package org.svgweb.core
         // These are hooks that animations can use to trigger a redraw that would
         // not otherwise occur when there are no remaining active animations.
         protected function timeIntervalStarted():void {
+            var svgEvent:SVGEvent = new SVGEvent(SVGEvent._SVGAnimBegin);
+            this.dispatchEvent(svgEvent);
         }
         
         protected function timeIntervalEnded():void {
+            var svgEvent:SVGEvent = new SVGEvent(SVGEvent._SVGAnimEnd);
+            this.dispatchEvent(svgEvent);
         }
 
         public function getActiveInterval(docTime:Number):TimeInterval {
@@ -239,6 +243,10 @@ package org.svgweb.core
         }
 
         protected function repeatIntervalStarted():void {
+            if (currentRepeatIndex > 0) {
+                var svgEvent:SVGEvent = new SVGEvent(SVGEvent._SVGAnimRepeat);
+                this.dispatchEvent(svgEvent);
+            }
         }
 
         protected function repeatIntervalEnded():void {
@@ -290,7 +298,16 @@ package org.svgweb.core
                 if (timeSpec is EventTimeSpec) {
                     var targetNode:SVGNode = this.svgRoot.getNode(EventTimeSpec(timeSpec).nodeID);
                     if (targetNode) {
-                        targetNode.topSprite.addEventListener(EventTimeSpec(timeSpec).eventType, handleEvent);
+                        switch (EventTimeSpec(timeSpec).eventType) {
+                            case "begin":
+                            case "end":
+                            case "repeatEvent":
+                               targetNode.addEventListener(EventTimeSpec(timeSpec).eventType, handleEvent);
+                               break;
+                            default: 
+                               targetNode.topSprite.addEventListener(EventTimeSpec(timeSpec).eventType, handleEvent);
+                               break;
+                        }
                     }
                 }
                 timeSpecIndex++;

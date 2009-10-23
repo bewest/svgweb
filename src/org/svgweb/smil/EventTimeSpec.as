@@ -60,7 +60,7 @@ package org.svgweb.smil
                 case "end":
                     this.eventType = SVGEvent._SVGAnimEnd;
                     break;
-                case "repeat":
+                case "repeatEvent":
                     this.eventType = SVGEvent._SVGAnimRepeat;
                     break;
                 case "accessKey":
