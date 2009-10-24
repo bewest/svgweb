@@ -665,43 +665,6 @@ extend(SVGWeb, {
       // the node in order to remove the SVG OBJECT from our
       // handler._svgObjects array
       node._objID = objID;
-    } else if (node.nodeName.toLowerCase() == 'svg') {
-      // dynamic SVG root
-      this.totalSVG++;
-      
-      // serialize SVG into a string
-      var svgStr;
-      if (typeof XMLSerializer != 'undefined') {
-        var nodeXML = (node._nodeXML /* flash renderer */ || node /* native */);
-        svgStr = (new XMLSerializer()).serializeToString(nodeXML);
-      } else { // IE
-        svgStr = parseXML(node._nodeXML, false)
-      }
-      
-      // nest the SVG into a SCRIPT tag and add to the page; we do this
-      // so that we hit the same code path for dynamic SVG roots as you would
-      // get if the SCRIPT + SVG were already in the page on page load
-      var svgScript = document.createElement('script');
-      if (!isXHTML) { 
-        svgScript.innerHTML = svgStr;
-      } else { // XHTML; no innerHTML here
-        svgScript.appendChild(document.createTextNode(svgStr));
-      }
-      this._svgScripts.push(svgScript);
-      parent.appendChild(svgScript);
-      
-      // copy over any node.onload listener
-      if (node.onload) {
-        node.addEventListener('SVGLoad', node.onload, false);
-      }
-      
-      // preserve our SVGLoad addEventListeners on the script object
-      svgScript._onloadListeners = node._detachedListeners /* flash renderer */
-                                      || node._onloadListeners /* native */;
-      
-      // now process the SVG as we would normal SVG embedded into the page
-      // with a SCRIPT tag
-      this._processSVGScript(svgScript);
     }
   },
   
@@ -713,41 +676,36 @@ extend(SVGWeb, {
       @node OBJECT or EMBED tag for the SVG OBJECT to remove.
       @parent The parent of the node to remove. */
   removeChild: function(node, parent) {
-    var name = node.nodeName.toLowerCase();
-    
-    var nodeID, nodeHandler;
-    
-    if (name == 'object' || name == 'embed' || name == 'svg') {
+    if (node.nodeName.toLowerCase() == 'object' 
+        || node.nodeName.toLowerCase() == 'embed') {
       this.totalSVG = this.totalSVG == 0 ? 0 : this.totalSVG - 1;
       this.totalLoaded = this.totalLoaded == 0 ? 0 : this.totalLoaded - 1;
       
       // remove from our list of handlers
-      nodeID = node.getAttribute('id');
-      nodeHandler = this.handlers[nodeID];
+      var objID = node.getAttribute('id');
+      var objHandler = this.handlers[objID];
       var newHandlers = [];
       for (var i = 0; i < this.handlers.length; i++) {
         var currentHandler = this.handlers[i];
-        if (currentHandler != nodeHandler) {
+        if (currentHandler != objHandler) {
           newHandlers[currentHandler.id] = currentHandler;
           newHandlers.push(currentHandler);
         } 
       }
       this.handlers = newHandlers;
-    }
-    
-    if (name == 'object' || name == 'embed') {
-      // nodeHandler might not have a fake 'document' object; this can happen
+      
+      // ObjHandler might not have a fake 'document' object; this can happen
       // if loading of the SVG OBJECT is 'interrupted' by a rapid removeChild
       // before it ever had a chance to even finish loading. If there is no
       // fake document then skip trying to remove timing functions and event
       // handlers below
       if (this.getHandlerType() == 'flash' 
-          && nodeHandler.document
-          && nodeHandler.document.defaultView) {
+          && objHandler.document
+          && objHandler.document.defaultView) {
         // remove any setTimeout or setInterval functions that might have
         // been registered inside this object; see _SVGWindow.setTimeout
         // for details
-        var iframeWin = nodeHandler.document.defaultView;
+        var iframeWin = objHandler.document.defaultView;
         for (var i = 0; i < iframeWin._intervalIDs.length; i++) {
           iframeWin.clearInterval(iframeWin._intervalIDs[i]);
         }
@@ -757,8 +715,8 @@ extend(SVGWeb, {
       
         // remove keyboard event handlers; we added a record of these for
         // exactly this reason in _Node.addEventListener()
-        for (var i = 0; i < nodeHandler._keyboardListeners.length; i++) {
-          var l = nodeHandler._keyboardListeners[i];
+        for (var i = 0; i < objHandler._keyboardListeners.length; i++) {
+          var l = objHandler._keyboardListeners[i];
           if (isIE) {
             document.detachEvent('onkeydown', l);
           } else {
@@ -790,7 +748,7 @@ extend(SVGWeb, {
           for (var i = 0; i < container.childNodes.length; i++) {
             var child = container.childNodes[i];
             if (typeof child.ownerDocument != 'undefined'
-                && child.ownerDocument == nodeHandler._svgObject.document) {
+                && child.ownerDocument == objHandler._svgObject.document) {
               if (typeof child._fakeNode != 'undefined'
                   && typeof child._fakeNode._htcNode != 'undefined') {
                 child._fakeNode._htcNode = null;
@@ -806,23 +764,24 @@ extend(SVGWeb, {
         // SVG OBJECT
         for (var guid in svgweb._guidLookup) {
           var child = svgweb._guidLookup[guid];
-          if (child._fake && child.ownerDocument === nodeHandler.document) {
+          if (child._fake && child.ownerDocument === objHandler.document) {
             delete svgweb._guidLookup[guid];
           }
         }
 
         // remove various properties to prevent IE memory leaks
-        nodeHandler.flash.contentDocument = null;
-        nodeHandler.flash = null;
-        nodeHandler._xml = null;
-        // nodeHandler.window might not be present if this SVG OBJECT is being
+        objHandler._finishedCallback = null;
+        objHandler.flash.contentDocument = null;
+        objHandler.flash = null;
+        objHandler._xml = null;
+        // objHandler.window might not be present if this SVG OBJECT is being
         // removed before it was even finished loading
-        if (nodeHandler.window) {
-          nodeHandler.window._scope = null;
-          nodeHandler.window = null;
+        if (objHandler.window) {
+          objHandler.window._scope = null;
+          objHandler.window = null;
         }
 
-        var svgObj = nodeHandler._svgObject;
+        var svgObj = objHandler._svgObject;
         var svgDoc = svgObj.document;
         svgDoc._nodeById = null;
         svgDoc._xml = null;
@@ -841,44 +800,12 @@ extend(SVGWeb, {
           iframeWin.setInterval = null;
         }
 
-        nodeHandler._svgObject = null;
+        objHandler._svgObject = null;
         svgObj = null;
-        nodeHandler = null;
+        objHandler = null;
         iframeWin = null;
       } // end if (this.getHandlerType() == 'flash')
-    } else if (name == 'svg') {
-      // dynamicly created SVG roots
-      
-      // remove the original SVG SCRIPT node from our handlers._svgScripts
-      // array
-      for (var i = 0; i < svgweb._svgScripts.length; i++) {
-        if (svgweb._svgScripts[i] == nodeHandler._scriptNode) {
-          svgweb._svgScripts.splice(i, 1);
-          break;
-        }
-      }
-      
-      // remove from the page
-      node.parentNode.removeChild(node);
-      
-      if (this.getHandlerType() == 'flash') {
-        // clear out the guidLookup table for nodes that belong to this
-        // SVG root
-        for (var guid in svgweb._guidLookup) {
-          var child = svgweb._guidLookup[guid];
-          if (child._fake && child._getFakeNode() === nodeHandler) {
-            delete svgweb._guidLookup[guid];
-          }
-        }
-
-        // remove various properties to prevent IE memory leaks
-        nodeHandler._scriptNode = null;
-        nodeHandler.flash.documentElement = null;
-        nodeHandler.flash = null;
-        nodeHandler._xml = null;
-        nodeHandler = null;
-      } // end if (this.getHandlerType() == 'flash')
-    }
+    } // SVG OBJECT handling
   },
   
   /** Sets up an onContentLoaded listener */
@@ -1549,6 +1476,7 @@ extend(SVGWeb, {
                     'preventDefault: function() { this.returnValue=false; }' +
                   '};';
       rootOnload = new Function(defineEvtCode + rootOnload);
+
       
       // return a function that makes the 'this' keyword apply to
       // the SVG root; wrap in another anonymous closure as well to prevent
@@ -1577,20 +1505,27 @@ extend(SVGWeb, {
     }
     
     // create the correct handler
+    var self = this;
+    var finishedCallback = function(id, type) {
+      // prevent IE memory leaks
+      script = null;
+      xml = null;
+
+      self._handleDone(id, type);
+    };
+
     var handler = new this.renderer({type: 'script', 
                                      svgID: rootID,
                                      xml: xml, 
                                      svgString: svg,
                                      origSVG: origSVG,
-                                     scriptNode: script});
+                                     scriptNode: script,
+                                     finishedCallback: finishedCallback});
 
     // NOTE: FIXME: If someone chooses a rootID that starts with a number
     // this will break
     this.handlers[rootID] = handler;
-    this.handlers.push(handler);
-    
-    // have the handler do its thing
-    handler.start();   
+    this.handlers.push(handler);      
   },
   
   /** Extracts or autogenerates an ID for the object and then creates the
@@ -1608,9 +1543,17 @@ extend(SVGWeb, {
     }
 
     // create the correct handler
+    var finishedCallback = (function(self) {
+      return function(id, type) {
+        //console.log('anonymous inner finishedCallback, id='+id+', type='+type);
+        self._handleDone(id, type);
+      };
+    })(this); // prevent IE memory leaks
+    
     var handler = new this.renderer({type: 'object', 
                                      objID: objID,
-                                     objNode: obj});
+                                     objNode: obj,
+                                     finishedCallback: finishedCallback});
                                       
     // NOTE: FIXME: If someone chooses an objID that starts with a number
     // this will break
@@ -2161,8 +2104,7 @@ FlashInfo.prototype = {
 
 
 /** Creates a FlashHandler that will embed the given SVG into the page using
-    Flash. Pass in an object literal with the correct arguments. Once the
-    handler is setup call start() to have it kick off doing its work.
+    Flash. Pass in an object literal with the correct arguments. 
     
     If dealing with an SVG SCRIPT tag these arguments are:
     
@@ -2174,15 +2116,22 @@ FlashInfo.prototype = {
     provide the original SVG for 'View Source' functionality. Only used
     by the FlashHandler.
     scriptNode - The DOM element for the SVG SCRIPT block.
+    finishedCallback - Called when we are done loading and rendering the
+    SVG inside of the Flash player; called with two arguments, the svgID
+    that was just rendered and type set to 'script'.
     
     If dealing with an SVG OBJECT tag these arguments are:
     
     type - The string 'object'.
     objID - A unique ID for the SVG OBJECT tag.
     objNode - DOM OBJECT pointing to an SVG URL to handle.
+    finishedCallback - Called when we are done loading and rendering the
+    SVG inside of the Flash player; called with two arguments, the svgID
+    that was just rendered and type set to 'object'. 
   */
 function FlashHandler(args) {
   this.type = args.type;
+  this._finishedCallback = args.finishedCallback;
   
   // we keep a record of all keyboard listeners added by any of our nodes;
   // this is necessary so that if the containing SVG document is removed from
@@ -2199,9 +2148,11 @@ function FlashHandler(args) {
     this._svgString = args.svgString;
     this._origSVG = args.origSVG;
     this._scriptNode = args.scriptNode;
+    this._handleScript();
   } else if (this.type == 'object') {
     this.id = args.objID;
     this._objNode = args.objNode;
+    this._handleObject();
   }
 }
 
@@ -2597,15 +2548,6 @@ extend(FlashHandler, {
   /** The Flash object; set by _SVGSVGElement. */
   flash: null,
   
-  /** Has this handler kick off doing its work. */
-  start: function() {
-    if (this.type == 'script') {
-      this._handleScript();
-    } else if (this.type == 'object') {
-      this._handleObject();
-    }
-  },
-  
   /** Turns the string results from Flash back into an Object. The HTC
       still returns an Object, so we detect that and simply return it if so. */
   _stringToMsg: function(msg) {
@@ -2721,24 +2663,7 @@ extend(FlashHandler, {
       either 'script' or 'object'. */
   fireOnLoad: function(id, type) {
     //console.log('FlashHandler.fireOnLoad');
-    
-    // fire any onload listeners that were registered with a dynamically
-    // created SVG root
-    if (type == 'script' && this._scriptNode._onloadListeners) {
-      for (var i = 0; i < this._scriptNode._onloadListeners.length; i++) {
-        try {
-          var root = this.document.documentElement._getProxyNode();
-          this._scriptNode._onloadListeners[i].apply(root);
-        } catch (exp) {
-          console.log('Error while firing onload listener: ' 
-                      + exp.message || exp);
-        }
-      }
-      this._scriptNode.onloadListeners = [];
-    }
-    
-    // indicate that we are done with this handler
-    svgweb._handleDone(id, type);
+    this._finishedCallback(id, type);
   },
   
   /** Handles SVG embedded into the page with a SCRIPT tag. */
@@ -2957,8 +2882,7 @@ extend(FlashHandler, {
 });
 
 /** Creates a NativeHandler that will embed the given SVG into the page using
-    native SVG support. Pass in an object literal with the correct arguments.
-    Once the handler is setup call start() to have it kick off doing its work.
+    native SVG support. Pass in an object literal with the correct arguments. 
     
     If dealing with an SVG SCRIPT tag these arguments are:
     
@@ -2970,15 +2894,22 @@ extend(FlashHandler, {
     provide the original SVG for 'View Source' functionality. Only used
     by the FlashHandler.
     scriptNode - The DOM element for the SVG SCRIPT block.
+    finishedCallback - Called when we are done loading and rendering the
+    SVG; called with two arguments, the svgID that was just rendered and 
+    type set to 'script'.
     
     If dealing with an SVG OBJECT tag these arguments are:
     
     type - The string 'object'.
     objID - A unique ID for the SVG OBJECT tag.
     objNode - DOM OBJECT pointing to an SVG URL to handle.
+    finishedCallback - Called when we are done loading and rendering the
+    SVG; called with two arguments, the svgID that was just rendered and 
+    type set to 'object'.
   */
 function NativeHandler(args) {
   this.type = args.type;
+  this._finishedCallback = args.finishedCallback;
   
   this._xml = args.xml;
   
@@ -2986,10 +2917,12 @@ function NativeHandler(args) {
     // these are mostly handled by the browser
     this.id = args.objID;
     this._objNode = args.objNode;
+    this._handleObject();
   } else if (this.type == 'script') {
     this.id = args.svgID;
     this._svgString = args.svgString;
     this._scriptNode = args.scriptNode;
+    this._handleScript();
   }
 }
 
@@ -3130,35 +3063,6 @@ NativeHandler._patchBrowserObjects = function(win, doc) {
     return createNodeList();
   };
   
-  // When dynamically creating SVG roots that we add to a page, we need to
-  // have them fire an onload event to handle the asynchronous nature of the
-  // Flash handler. In order to have similar code we patch the Native Handler
-  // as well. In a sane world we could just change 
-  // SVGSVGElement.prototype.addEventListener when working with this, but
-  // Firefox doesn't seem to allow us to over ride that (Safari does). To
-  // get around this we do a small patch to createElementNS to slightly
-  // patch addEventListener.
-  doc._createElementNS = doc.createElementNS;
-  doc.createElementNS = function(ns, localName) {
-    if (ns != svgns || localName != 'svg') {
-      return doc._createElementNS(ns, localName);
-    }
-    
-    // svg root
-    var svg = doc._createElementNS(ns, localName);
-    svg._onloadListeners = [];
-    svg._addEventListener = svg.addEventListener;
-    svg.addEventListener = function(type, f, useCapture) {
-      if (type == 'SVGLoad') {
-        this._onloadListeners.push(f);
-      }
-      
-      return this._addEventListener(type, f, useCapture);
-    }
-    
-    return svg;
-  }
-  
   // Firefox/Native needs some help around svgElement.style.* access; see
   // NativeHandler._patchStyleObject for details
   if (isFF) {
@@ -3182,10 +3086,8 @@ NativeHandler._patchStyleObject = function(win) {
   // custom object that then defines all of our getters and setters doesn't
   // work; somehow that is a 'magical' prototype that doesn't stick. Instead,
   // the trick we have to use is to modify the CSSStyleDeclaration prototype.
-  
-  // TODO: Test whether adding extra members to CSSStyleDeclaration has
-  // a memory impact because it also affects HTML elements; probably not since
-  // prototypes are singletons shared by all instances
+  // TODO: Document whether adding extra members to CSSStyleDeclaration has
+  // a memory impact because it also affects HTML elements.
   
   // prototype definitions are 'window' specific
   var patchMe = win.CSSStyleDeclaration;
@@ -3222,15 +3124,6 @@ NativeHandler._patchStyleObject = function(win) {
 
 // methods that every NativeHandler instance has
 extend(NativeHandler, {
-  /** Has this handler kick off its work. */
-  start: function() {
-    if (this.type == 'object') {
-      this._handleObject();
-    } else if (this.type == 'script') {
-      this._handleScript();
-    }
-  },
-  
   /** Handles SVG embedded into the page with a SCRIPT tag. */
   _handleScript: function() {
     // build up a list of namespaces, used by our patched getElementsByTagNameNS
@@ -3239,28 +3132,9 @@ extend(NativeHandler, {
     // replace the SCRIPT node with some actual SVG
     this._processSVGScript(this._xml, this._svgString, this._scriptNode);
     
-    // fire any onload listeners that were registered with a dynamically
-    // created SVG root
-    // NOTE: FIXME: Technically it's wrong of us to fire the onload handler
-    // here before any asynchronous resources might be done inside the SVG,
-    // such as images. However, we don't have any hooks at this point to truly
-    // know when async SVG elements are done loading.
-    if (this.type == 'script' && this._scriptNode._onloadListeners) {
-      for (var i = 0; i < this._scriptNode._onloadListeners.length; i++) {
-        try {
-          // have 'this' inside function refer to SVG root node
-          this._scriptNode._onloadListeners[i].apply(this._svgRoot);
-        } catch (exp) {
-          console.log('Error while firing onload listener: ' 
-                      + exp.message || exp);
-        }
-      }
-      this._scriptNode.onloadListeners = [];
-    }
-    
     // indicate that we are done
     this._loaded = true;
-    svgweb._handleDone(this.id, 'script');
+    this._finishedCallback(this.id, 'script');
   },
   
   /** Handles SVG embedded into the page with an OBJECT tag. */
