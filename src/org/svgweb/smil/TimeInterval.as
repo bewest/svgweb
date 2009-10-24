@@ -95,6 +95,12 @@ package org.svgweb.smil
                      return false;
                 }
             }
+            else {
+                if (   (docTime >= currentBeginStartTime) 
+                    && (docTime >= currentBeginStartTime + scheduledDuration) ) {
+                    return true;
+                }
+            }
 
             return false;
         }
@@ -124,6 +130,7 @@ package org.svgweb.smil
         }
 
         public function getRepeatIndex(docTime:Number,node:SVGNode):Number {
+            // If we are past the end time then set time to the end
             docTime = Math.min(docTime, this.currentBeginStartTime + scheduledDuration);
             var repeatIndex:Number = Math.floor( (docTime - currentBeginStartTime) / this.eachRepeatDuration);
             var currentRepeatStartTime:Number = this.currentBeginStartTime + repeatIndex * this.eachRepeatDuration;

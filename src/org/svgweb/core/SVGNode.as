@@ -1488,74 +1488,32 @@ package org.svgweb.core
             }
         }
 
-        // process all transform animations
-        // xxx not fully implemented
+        /** 
+         * Compute cumulative animation transform.
+         **/
         public function getAllAnimsTransform():Array {
+            var animTransform:Matrix= new Matrix();
             var isAdditive:Boolean = true;
-            var rotateTransform:Matrix = new Matrix();
-            var scaleTransform:Matrix = new Matrix();
-            var skewXTransform:Matrix = new Matrix();
-            var skewYTransform:Matrix = new Matrix();
-            var translateTransform:Matrix = new Matrix();
 
-            // XXX This should sort by priority (activation order) 
+            // Issues 254, 311 and 331 are relevant to transform ordering.
+            // The additive attribute is processed in order of appearance.
+            var animsToApply:Array = new Array();
             for each(var animation:SVGAnimateNode in animations) {
-                if (animation is SVGAnimateTransformNode
-                    && animation.isEffective()) {
-
-                    if (animation.isAdditive()) {
-                        switch (SVGAnimateTransformNode(animation).getTransformType() ) {
-                            case "rotate":
-                                rotateTransform.concat(SVGAnimateTransformNode(animation).getAnimTransform());
-                                break;
-                            case "scale":
-                                scaleTransform.concat(SVGAnimateTransformNode(animation).getAnimTransform());
-                                break;
-                            case "skewX":
-                                skewXTransform.concat(SVGAnimateTransformNode(animation).getAnimTransform());
-                                break;
-                            case "skewY":
-                                skewYTransform.concat(SVGAnimateTransformNode(animation).getAnimTransform());
-                                break;
-                            case "translate":
-                                translateTransform.concat(SVGAnimateTransformNode(animation).getAnimTransform());
-                                break;
-                        }
+                if (animation is SVGAnimateTransformNode && animation.isEffective()) {
+                    var transAnim:SVGAnimateTransformNode = SVGAnimateTransformNode(animation);
+                    if (!transAnim.isAdditive()) {
+                        isAdditive=false;
+                        animsToApply = new Array();
                     }
-                    else {
-                        isAdditive = false;
-                        rotateTransform = new Matrix();
-                        scaleTransform = new Matrix();
-                        skewXTransform = new Matrix();
-                        skewYTransform = new Matrix();
-                        translateTransform = new Matrix();
-                        switch (SVGAnimateTransformNode(animation).getTransformType() ) {
-                            case "rotate":
-                                rotateTransform = SVGAnimateTransformNode(animation).getAnimTransform();
-                                break;
-                            case "scale":
-                                scaleTransform = SVGAnimateTransformNode(animation).getAnimTransform();
-                                break;
-                            case "skewX":
-                                skewXTransform = SVGAnimateTransformNode(animation).getAnimTransform();
-                                break;
-                            case "skewY":
-                                skewYTransform = SVGAnimateTransformNode(animation).getAnimTransform();
-                                break;
-                            case "translate":
-                                translateTransform = SVGAnimateTransformNode(animation).getAnimTransform();
-                                break;
-                        }
-                    }
+                    animsToApply.push(transAnim);
                 }
             }
-            // This order determined empirically.  See Issue 254.
-            var animTransform:Matrix= new Matrix();
-            animTransform.concat(scaleTransform);
-            animTransform.concat(skewXTransform);
-            animTransform.concat(skewYTransform);
-            animTransform.concat(translateTransform);
-            animTransform.concat(rotateTransform);
+            // Transform animations are applied in reverse order of appearance.
+            var animReverse:Array=animsToApply.reverse();
+            for each (transAnim in animReverse) {
+                animTransform.concat(transAnim.getAnimTransform());
+            }
+
             return [ animTransform, isAdditive ];
         }
 
