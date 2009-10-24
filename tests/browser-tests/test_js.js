@@ -5335,11 +5335,8 @@ function testCreateSVGRoot() {
   svg.style.display = 'block';
   svg.style.border = '2px solid black';
   svg.id = 'dynamicRoot1';
-  svg.addEventListener('SVGLoad', function(evt) {
+  svg.addEventListener('SVGLoad', function() {
     // now run our tests for this root
-    
-    // make sure we have event object
-    assertExists('Event object should exist', evt);
     
     // make sure new SVG root exists
     svg = document.getElementById('dynamicRoot1');
@@ -5377,16 +5374,16 @@ function testCreateSVGRoot() {
                  ['brown'],
                  circle.getAttribute('fill'));
     assertEqualsAny('circle.style.stroke == orange', 
-                 ['orange'],
+                 ['orange', '#FFA500'],
                  circle.style.stroke);
                  
     // make sure our parent is correct
     parent = svg.parentNode;
     assertExists('dynamic SVG root parent node should exist', parent);
     assertEquals('dynamic SVG root parent node should be document BODY',
-                 'body', parent.parentNode.toLowerCase());
+                 'body', parent.nodeName.toLowerCase());
     assertEquals('dynamic SVG root parent node == document.body',
-                 document.body, parent.parentNode);
+                 document.body, parent);
     
     console.log('SEVENTH IMAGE: You should see a small brown circle with '
                 + 'an orange outline as the whole XML image. The XML image '
@@ -5408,8 +5405,6 @@ function testCreateSVGRoot() {
   svg.style.border = '4px solid yellow';
   svg.onload = function(evt) {
     // now run our tests for this root
-    
-    assertExists('Event object should exist', evt);
     
     matches = document.getElementsByTagNameNS(svgns, 'svg');
     assertExists('getElementsByTagNameNS should return something for '
@@ -5447,16 +5442,16 @@ function testCreateSVGRoot() {
                  ['orange'],
                  circle.getAttribute('fill'));
     assertEqualsAny('circle.style.stroke == brown', 
-                 ['brown'],
+                 ['brown', '#A52A2A'],
                  circle.style.stroke);
                  
     // make sure our parent is correct
     parent = svg.parentNode;
     assertExists('dynamic SVG root parent node should exist', parent);
     assertEquals('dynamic SVG root parent node should be document BODY',
-                 'body', parent.parentNode.toLowerCase());
+                 'body', parent.nodeName.toLowerCase());
     assertEquals('dynamic SVG root parent node == document.body',
-                 document.body, parent.parentNode);
+                 document.body, parent);
     
     console.log('EIGHTH IMAGE: You should see a small orange circle with '
                 + 'a brown outline as the whole XML image. The XML image '
@@ -5478,6 +5473,7 @@ function testCreateSVGRoot() {
   
   // Create an SVG root, remove it, then reattach it. Add some more elements to
   // it.
+  console.log('adding than removing than adding!!!');
   svg = document.createElementNS(svgns, 'svg');
   svg.setAttribute('width', 100);
   svg.setAttribute('height', 100);
@@ -5489,8 +5485,8 @@ function testCreateSVGRoot() {
     // make sure it's gone
     assertNull('document.getElementById(dynamicRoot2) == undefined',
                 document.getElementById('dynamicRoot2'));
-    assertNull('document.getElementById(dynamicRootCircle2) == undefined',
-                document.getElementById('dynamicRootCircle2'));
+    assertNull('document.getElementById(dynamicRootCircle3) == undefined',
+                  document.getElementById('dynamicRootCircle3'));
     temp = document.body.childNodes[document.body.childNodes.length - 1];
     assertTrue('temp.id != dynamicRoot2',
                (temp.id != 'dynamicRoot2'));
@@ -5513,9 +5509,9 @@ function testCreateSVGRoot() {
       assertEquals('this == dynamic SVG root', svg, this);
 
       // make sure our circle is present
-      circle = document.getElementById('dynamicRootCircle2');
-      assertExists('dynamicRootCircle2 should exist', circle);
-      assertEquals('dynamicRootCircle2.nodeName == circle', 'circle',
+      circle = document.getElementById('dynamicRootCircle3');
+      assertExists('dynamicRootCircle3 should exist', circle);
+      assertEquals('dynamicRootCircle3.nodeName == circle', 'circle',
                    circle.nodeName.toLowerCase());
       assertEquals('dynamicSVGRoot.childNodes.length == 1', 1,
                    svg.childNodes.length);
@@ -5544,13 +5540,14 @@ function testCreateSVGRoot() {
       // indicate that this onload and its tests ran
       svgweb._dynamicRootOnloads++;
     };
+    svgweb.appendChild(svg, document.body);
   }, false);
   circle = document.createElementNS(svgns, 'circle');
   circle.setAttribute('cx', 20);
   circle.setAttribute('cy', 20);
   circle.setAttribute('r', 10);
   circle.setAttribute('fill', 'purple');
-  circle.setAttribute('id', 'dynamicRootCircle2')
+  circle.setAttribute('id', 'dynamicRootCircle3')
   svg.appendChild(circle);
   svgweb.appendChild(svg, document.body);
 }
