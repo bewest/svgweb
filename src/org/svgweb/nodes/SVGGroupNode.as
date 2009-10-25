@@ -20,6 +20,7 @@
 package org.svgweb.nodes
 {
     import org.svgweb.core.SVGNode;
+    import org.svgweb.utils.SVGColors;
     import flash.display.BlendMode;
 
 
@@ -30,7 +31,6 @@ package org.svgweb.nodes
     {
         public function SVGGroupNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
             super(svgRoot, xml, original);
-            topSprite.blendMode = BlendMode.LAYER;
         }  
 
         // The <g> node does not use the x and y attributes.  (However, it does honor the transform attribute.)
@@ -38,6 +38,16 @@ package org.svgweb.nodes
         // an equivalent transform.
         override protected function loadAttribute(name:String, field:String = null,
                                                   useStyle:Boolean = false):void {
+            // Group nodes with opacity need to use the layer blend mode to make it work.
+            // We only do this when necessary because this consumes resources.
+            if (name == 'opacity') {
+                if (SVGColors.cleanNumber(this.getStyleOrAttr(name)) < 1.0) {
+                    topSprite.blendMode = BlendMode.LAYER;
+                }
+                else {
+                    topSprite.blendMode = BlendMode.NORMAL;
+                }
+            }
             if ( (name == 'x' || name == 'y') && !(this.svgParent is SVGUseNode) ) {
                 return;
             }

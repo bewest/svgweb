@@ -51,6 +51,9 @@ package org.svgweb.nodes
         public var currentTranslate:Object = {x: 1, y: 1};
 
         public var imageCache:Object = new Object();
+        private var lastFrameTime:uint = getTimer();
+        private var totalFrameTime:uint = 0;
+        private var frameCount:uint = 0;
         
         /** If this file was loaded from a URL, such as samples/scimitar.svg,
             then objectURL points to the relative path from which it was
@@ -114,6 +117,23 @@ package org.svgweb.nodes
         }
 
         protected function updateAnimations(event:Event):void {
+        /* Frame Counter
+            if (this.lastFrameTime > 0) {
+                this.totalFrameTime += (getTimer() - this.lastFrameTime);
+                this.frameCount++;
+                if (this.frameCount % 10 == 0) {
+                    this.dbg("last frame time: " + (getTimer() - this.lastFrameTime) +
+                         "ms, avg time: " + (this.totalFrameTime/this.frameCount) +
+                         "ms avg rate: " + (1000.0/(this.totalFrameTime/this.frameCount)) + " frames/sec");
+                }
+                if (this.frameCount % 100 == 0) {
+                    this.totalFrameTime = 0;
+                    this.frameCount = 0;
+                }
+            }
+            this.lastFrameTime=getTimer();
+        */
+
             if (this.parentSVGRoot) {
                 this.parentSVGRoot.updateAnimations(event);
             }
