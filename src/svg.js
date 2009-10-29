@@ -429,6 +429,66 @@ function parseXML(xml, preserveWhiteSpace) {
   return xmlDoc;
 }
 
+/** Transforms the given node and all of its children into an XML string,
+    suitable for us to send over to Flash for adding to the document. 
+    
+    @param node Either a real DOM node to turn into a string or one of our
+    fake _Node or _Elements.
+    @param namespaces Optional. A namespace lookup table that we will use to 
+    add our namespace declarations onto the serialized XML.
+    
+    @returns XML String suitable for sending to Flash. */
+function xmlToStr(node, namespaces) {
+  var nodeXML = (node._nodeXML || node);
+  var xml;
+  
+  if (typeof XMLSerializer != 'undefined') { // non-IE browsers
+    xml = (new XMLSerializer().serializeToString(nodeXML));
+  } else {
+    xml = nodeXML.xml;
+  }
+  
+  // Firefox and Safari will incorrectly turn our internal parsed XML
+  // for the Flash Handler into actual SVG nodes, causing issues. We added
+  // a fake SVG namespace earlier to prevent this from happening; remove that
+  // now
+  xml = xml.replace(/urn\:__fake__internal__namespace/g, svgns);
+  
+  // add our namespace declarations
+  var nsString = '';
+  if (xml.indexOf('xmlns=') == -1) {
+    nsString = 'xmlns="' + svgns + '" ';
+  }
+  if (namespaces) {
+    for (var i = 0; i < namespaces.length; i++) {
+      var uri = namespaces[i];
+      var prefix = namespaces['_' + uri];
+    
+      // ignore our fake SVG namespace string
+      if (uri == svgnsFake) {
+        uri = svgns;
+      }
+    
+      var newNS;
+      if (prefix != 'xmlns') {
+        newNS = 'xmlns:' + prefix + '="' + uri + '"';
+      } else {
+        newNS = 'xmlns' + '="' + uri + '"';
+      }
+      
+      // FIXME: Will this break if single quotes are used around namespace
+      // declaration?
+      if (xml.indexOf(newNS) == -1) {
+        nsString += newNS + ' ';
+      }
+    }
+  }
+
+  xml = xml.replace(/<([^ ]+)/, '<$1 ' + nsString + ' ');
+  
+  return xml;
+}
+
 /*
   Useful for closures and event handlers. Instead of having to do
   this:
@@ -613,6 +673,7 @@ extend(SVGWeb, {
       @parent An HTML DOM parent to attach our SVG OBJECT or SVG root to.
       This DOM parent must already be attached to the visible DOM. */
   appendChild: function(node, parent) {
+    //console.log('appendChild, node='+node+', parent='+parent);
     if (node.nodeName.toLowerCase() == 'object'
         && node.getAttribute('type') == 'image/svg+xml') {
       // dynamically created OBJECT tag for an SVG file
@@ -665,6 +726,44 @@ extend(SVGWeb, {
       // the node in order to remove the SVG OBJECT from our
       // handler._svgObjects array
       node._objID = objID;
+    } else if (node.nodeName.toLowerCase() == 'svg') {
+      // dynamic SVG root
+      this.totalSVG++;
+      
+      // copy over any node.onload listener
+      if (node.onload) {
+        node.addEventListener('SVGLoad', node.onload, false);
+      }
+      
+      if (isIE && node._fakeNode) {
+        node = node._fakeNode;
+      }
+      
+      // serialize SVG into a string
+      var svgStr = xmlToStr(node);
+      
+      // nest the SVG into a SCRIPT tag and add to the page; we do this
+      // so that we hit the same code path for dynamic SVG roots as you would
+      // get if the SCRIPT + SVG were already in the page on page load
+      var svgScript = document.createElement('script');
+      svgScript.type = 'image/svg+xml';
+      if (!isXHTML) { 
+        // Note: only script.text works for IE; other ways of changing value
+        // throws 'Unknown Runtime Error' on that wonderful browser
+        svgScript.text = svgStr;
+      } else { // XHTML; no innerHTML here
+        svgScript.appendChild(document.createTextNode(svgStr));
+      }
+      this._svgScripts.push(svgScript);
+      parent.appendChild(svgScript);
+      
+      // preserve our SVGLoad addEventListeners on the script object
+      svgScript._onloadListeners = node._detachedListeners /* flash renderer */
+                                      || node._onloadListeners /* native */;
+      
+      // now process the SVG as we would normal SVG embedded into the page
+      // with a SCRIPT tag
+      this._processSVGScript(svgScript);
     }
   },
   
@@ -676,36 +775,42 @@ extend(SVGWeb, {
       @node OBJECT or EMBED tag for the SVG OBJECT to remove.
       @parent The parent of the node to remove. */
   removeChild: function(node, parent) {
-    if (node.nodeName.toLowerCase() == 'object' 
-        || node.nodeName.toLowerCase() == 'embed') {
+    //console.log('svgweb.removeChild, node='+node.nodeName+', parent='+parent.nodeName);
+    var name = node.nodeName.toLowerCase();
+
+    var nodeID, nodeHandler;
+    
+    if (name == 'object' || name == 'embed' || name == 'svg') {
       this.totalSVG = this.totalSVG == 0 ? 0 : this.totalSVG - 1;
       this.totalLoaded = this.totalLoaded == 0 ? 0 : this.totalLoaded - 1;
       
       // remove from our list of handlers
-      var objID = node.getAttribute('id');
-      var objHandler = this.handlers[objID];
+      nodeID = node.getAttribute('id');
+      nodeHandler = this.handlers[nodeID];
       var newHandlers = [];
       for (var i = 0; i < this.handlers.length; i++) {
         var currentHandler = this.handlers[i];
-        if (currentHandler != objHandler) {
+        if (currentHandler != nodeHandler) {
           newHandlers[currentHandler.id] = currentHandler;
           newHandlers.push(currentHandler);
         } 
       }
       this.handlers = newHandlers;
-      
-      // ObjHandler might not have a fake 'document' object; this can happen
+    }
+    
+    if (name == 'object' || name == 'embed') {
+      // nodeHandler might not have a fake 'document' object; this can happen
       // if loading of the SVG OBJECT is 'interrupted' by a rapid removeChild
       // before it ever had a chance to even finish loading. If there is no
       // fake document then skip trying to remove timing functions and event
       // handlers below
       if (this.getHandlerType() == 'flash' 
-          && objHandler.document
-          && objHandler.document.defaultView) {
+          && nodeHandler.document
+          && nodeHandler.document.defaultView) {
         // remove any setTimeout or setInterval functions that might have
         // been registered inside this object; see _SVGWindow.setTimeout
         // for details
-        var iframeWin = objHandler.document.defaultView;
+        var iframeWin = nodeHandler.document.defaultView;
         for (var i = 0; i < iframeWin._intervalIDs.length; i++) {
           iframeWin.clearInterval(iframeWin._intervalIDs[i]);
         }
@@ -715,8 +820,8 @@ extend(SVGWeb, {
       
         // remove keyboard event handlers; we added a record of these for
         // exactly this reason in _Node.addEventListener()
-        for (var i = 0; i < objHandler._keyboardListeners.length; i++) {
-          var l = objHandler._keyboardListeners[i];
+        for (var i = 0; i < nodeHandler._keyboardListeners.length; i++) {
+          var l = nodeHandler._keyboardListeners[i];
           if (isIE) {
             document.detachEvent('onkeydown', l);
           } else {
@@ -730,6 +835,16 @@ extend(SVGWeb, {
       
       // remove the original SVG OBJECT node from our handlers._svgObjects
       // array
+      var objID;
+      if (typeof node._objID != 'undefined') { // native handler
+        objID = node._objID;
+      } else if (typeof node.contentDocument != 'undefined') { // IE
+        // node is a Flash node; get a reference to our fake _Document
+        // and then use that to get our Flash Handler
+        objID = node.contentDocument._handler.id;
+      } else {
+        objID = node._handler.id;
+      }
       for (var i = 0; i < svgweb._svgObjects.length; i++) {
         if (svgweb._svgObjects[i]._objID === objID) {
           svgweb._svgObjects.splice(i, 1);
@@ -738,7 +853,7 @@ extend(SVGWeb, {
       }
       
       // remove from the page
-      node.parentNode.removeChild(node);
+      parent.removeChild(node);
 
       if (this.getHandlerType() == 'flash') {
         // delete the HTC container and all HTC nodes that belong to this
@@ -748,7 +863,7 @@ extend(SVGWeb, {
           for (var i = 0; i < container.childNodes.length; i++) {
             var child = container.childNodes[i];
             if (typeof child.ownerDocument != 'undefined'
-                && child.ownerDocument == objHandler._svgObject.document) {
+                && child.ownerDocument == nodeHandler._svgObject.document) {
               if (typeof child._fakeNode != 'undefined'
                   && typeof child._fakeNode._htcNode != 'undefined') {
                 child._fakeNode._htcNode = null;
@@ -764,24 +879,23 @@ extend(SVGWeb, {
         // SVG OBJECT
         for (var guid in svgweb._guidLookup) {
           var child = svgweb._guidLookup[guid];
-          if (child._fake && child.ownerDocument === objHandler.document) {
+          if (child._fake && child.ownerDocument === nodeHandler.document) {
             delete svgweb._guidLookup[guid];
           }
         }
 
         // remove various properties to prevent IE memory leaks
-        objHandler._finishedCallback = null;
-        objHandler.flash.contentDocument = null;
-        objHandler.flash = null;
-        objHandler._xml = null;
-        // objHandler.window might not be present if this SVG OBJECT is being
+        nodeHandler.flash.contentDocument = null;
+        nodeHandler.flash = null;
+        nodeHandler._xml = null;
+        // nodeHandler.window might not be present if this SVG OBJECT is being
         // removed before it was even finished loading
-        if (objHandler.window) {
-          objHandler.window._scope = null;
-          objHandler.window = null;
+        if (nodeHandler.window) {
+          nodeHandler.window._scope = null;
+          nodeHandler.window = null;
         }
 
-        var svgObj = objHandler._svgObject;
+        var svgObj = nodeHandler._svgObject;
         var svgDoc = svgObj.document;
         svgDoc._nodeById = null;
         svgDoc._xml = null;
@@ -800,12 +914,72 @@ extend(SVGWeb, {
           iframeWin.setInterval = null;
         }
 
-        objHandler._svgObject = null;
+        nodeHandler._svgObject = null;
         svgObj = null;
-        objHandler = null;
+        nodeHandler = null;
         iframeWin = null;
       } // end if (this.getHandlerType() == 'flash')
-    } // SVG OBJECT handling
+    } else if (name == 'svg') {
+      // dynamicly created SVG roots
+      
+      // remove the original SVG SCRIPT node from our handlers._svgScripts
+      // array
+      for (var i = 0; i < svgweb._svgScripts.length; i++) {
+        if (svgweb._svgScripts[i] == nodeHandler._scriptNode) {
+          svgweb._svgScripts.splice(i, 1);
+          break;
+        }
+      }
+      
+      if (isIE && this.getHandlerType() == 'flash' && node._fakeNode) {
+        node = node._fakeNode;
+      }
+      
+      // remove from the page
+      var removeMe;
+      if (this.getHandlerType() == 'native') {
+        removeMe = node;
+      } else {
+        removeMe = node._handler.flash;
+      }
+      // IE will sometimes throw an exception if we don't do this on a timeout
+      if (!isIE) {
+        parent.removeChild(removeMe);
+      } else {
+        // FIXME: Analyze whether this will sometimes lead to race conditions;
+        // I haven't found any and could not find another workaround on IE
+        window.setTimeout(
+          function(parent, removeMe) {
+            return function() { 
+              parent.removeChild(removeMe);
+              // IE memory leaks
+              parent = null;
+              removeMe = null;
+            }
+          }(parent, removeMe) /* prevent IE closure memory leaks */, 1);
+      }
+      
+      if (this.getHandlerType() == 'flash') {
+        // indicate we are unattached
+        node._setUnattached();
+        
+        // clear out the guidLookup table for nodes that belong to this
+        // SVG root
+        for (var guid in svgweb._guidLookup) {
+          var child = svgweb._guidLookup[guid];
+          if (child._fake && child._getFakeNode() === nodeHandler) {
+            delete svgweb._guidLookup[guid];
+          }
+        }
+
+        // remove various properties to prevent IE memory leaks
+        nodeHandler._scriptNode = null;
+        nodeHandler.flash.documentElement = null;
+        nodeHandler.flash = null;
+        nodeHandler._xml = null;
+        nodeHandler = null;
+      } // end if (this.getHandlerType() == 'flash')
+    }
   },
   
   /** Sets up an onContentLoaded listener */
@@ -1476,7 +1650,6 @@ extend(SVGWeb, {
                     'preventDefault: function() { this.returnValue=false; }' +
                   '};';
       rootOnload = new Function(defineEvtCode + rootOnload);
-
       
       // return a function that makes the 'this' keyword apply to
       // the SVG root; wrap in another anonymous closure as well to prevent
@@ -1505,27 +1678,20 @@ extend(SVGWeb, {
     }
     
     // create the correct handler
-    var self = this;
-    var finishedCallback = function(id, type) {
-      // prevent IE memory leaks
-      script = null;
-      xml = null;
-
-      self._handleDone(id, type);
-    };
-
     var handler = new this.renderer({type: 'script', 
                                      svgID: rootID,
                                      xml: xml, 
                                      svgString: svg,
                                      origSVG: origSVG,
-                                     scriptNode: script,
-                                     finishedCallback: finishedCallback});
+                                     scriptNode: script});
 
     // NOTE: FIXME: If someone chooses a rootID that starts with a number
     // this will break
     this.handlers[rootID] = handler;
-    this.handlers.push(handler);      
+    this.handlers.push(handler);
+    
+    // have the handler do its thing
+    handler.start();   
   },
   
   /** Extracts or autogenerates an ID for the object and then creates the
@@ -1543,22 +1709,17 @@ extend(SVGWeb, {
     }
 
     // create the correct handler
-    var finishedCallback = (function(self) {
-      return function(id, type) {
-        //console.log('anonymous inner finishedCallback, id='+id+', type='+type);
-        self._handleDone(id, type);
-      };
-    })(this); // prevent IE memory leaks
-    
     var handler = new this.renderer({type: 'object', 
                                      objID: objID,
-                                     objNode: obj,
-                                     finishedCallback: finishedCallback});
+                                     objNode: obj});
                                       
     // NOTE: FIXME: If someone chooses an objID that starts with a number
     // this will break
     this.handlers[objID] = handler;
     this.handlers.push(handler);
+    
+    // have the handler do its thing
+    handler.start();
     
     return objID;
   },
@@ -1659,10 +1820,33 @@ extend(SVGWeb, {
       the SVG OBJECT that has finished loading.
       @param type Either 'script' for an SVG SCRIPT or 'object' for an
       SVG OBJECT.
+      @param handler The Flash or Native Handler that is done loading.
       */
-  _handleDone: function(id, type) {
+  _handleDone: function(id, type, handler) {
+    //console.log('svgweb._handleDone, id='+id+', type='+type);
     this.totalLoaded++;
     
+    // fire any onload listeners that were registered with a dynamically
+    // created SVG root
+    if (type == 'script' && handler._scriptNode._onloadListeners) {
+      for (var i = 0; i < handler._scriptNode._onloadListeners.length; i++) {
+        var f = handler._scriptNode._onloadListeners[i];
+        if (svgweb.getHandlerType() == 'flash') {
+          f = f.listener;
+        }
+
+        try {
+          var root = handler.document.documentElement._getProxyNode();
+          f.apply(root);
+        } catch (exp) {
+          console.log('Error while firing onload listener: ' 
+                      + exp.message || exp);
+        }
+      }
+      handler._scriptNode.onloadListeners = [];
+    }
+    
+    // page-level onload listeners or dynamically created SVG OBJECTs
     if (this.totalLoaded >= this.totalSVG) {
       // we are finished
       this._fireOnLoad();
@@ -2104,7 +2288,8 @@ FlashInfo.prototype = {
 
 
 /** Creates a FlashHandler that will embed the given SVG into the page using
-    Flash. Pass in an object literal with the correct arguments. 
+    Flash. Pass in an object literal with the correct arguments. Once the
+    handler is setup call start() to have it kick off doing its work.
     
     If dealing with an SVG SCRIPT tag these arguments are:
     
@@ -2116,22 +2301,15 @@ FlashInfo.prototype = {
     provide the original SVG for 'View Source' functionality. Only used
     by the FlashHandler.
     scriptNode - The DOM element for the SVG SCRIPT block.
-    finishedCallback - Called when we are done loading and rendering the
-    SVG inside of the Flash player; called with two arguments, the svgID
-    that was just rendered and type set to 'script'.
     
     If dealing with an SVG OBJECT tag these arguments are:
     
     type - The string 'object'.
     objID - A unique ID for the SVG OBJECT tag.
     objNode - DOM OBJECT pointing to an SVG URL to handle.
-    finishedCallback - Called when we are done loading and rendering the
-    SVG inside of the Flash player; called with two arguments, the svgID
-    that was just rendered and type set to 'object'. 
   */
 function FlashHandler(args) {
   this.type = args.type;
-  this._finishedCallback = args.finishedCallback;
   
   // we keep a record of all keyboard listeners added by any of our nodes;
   // this is necessary so that if the containing SVG document is removed from
@@ -2148,11 +2326,9 @@ function FlashHandler(args) {
     this._svgString = args.svgString;
     this._origSVG = args.origSVG;
     this._scriptNode = args.scriptNode;
-    this._handleScript();
   } else if (this.type == 'object') {
     this.id = args.objID;
     this._objNode = args.objNode;
-    this._handleObject();
   }
 }
 
@@ -2548,6 +2724,15 @@ extend(FlashHandler, {
   /** The Flash object; set by _SVGSVGElement. */
   flash: null,
   
+  /** Has this handler kick off doing its work. */
+  start: function() {
+    if (this.type == 'script') {
+      this._handleScript();
+    } else if (this.type == 'object') {
+      this._handleObject();
+    }
+  },
+  
   /** Turns the string results from Flash back into an Object. The HTC
       still returns an Object, so we detect that and simply return it if so. */
   _stringToMsg: function(msg) {
@@ -2663,7 +2848,9 @@ extend(FlashHandler, {
       either 'script' or 'object'. */
   fireOnLoad: function(id, type) {
     //console.log('FlashHandler.fireOnLoad');
-    this._finishedCallback(id, type);
+    
+    // indicate that we are done with this handler
+    svgweb._handleDone(id, type, this);
   },
   
   /** Handles SVG embedded into the page with a SCRIPT tag. */
@@ -2882,7 +3069,8 @@ extend(FlashHandler, {
 });
 
 /** Creates a NativeHandler that will embed the given SVG into the page using
-    native SVG support. Pass in an object literal with the correct arguments. 
+    native SVG support. Pass in an object literal with the correct arguments.
+    Once the handler is setup call start() to have it kick off doing its work.
     
     If dealing with an SVG SCRIPT tag these arguments are:
     
@@ -2894,22 +3082,15 @@ extend(FlashHandler, {
     provide the original SVG for 'View Source' functionality. Only used
     by the FlashHandler.
     scriptNode - The DOM element for the SVG SCRIPT block.
-    finishedCallback - Called when we are done loading and rendering the
-    SVG; called with two arguments, the svgID that was just rendered and 
-    type set to 'script'.
     
     If dealing with an SVG OBJECT tag these arguments are:
     
     type - The string 'object'.
     objID - A unique ID for the SVG OBJECT tag.
     objNode - DOM OBJECT pointing to an SVG URL to handle.
-    finishedCallback - Called when we are done loading and rendering the
-    SVG; called with two arguments, the svgID that was just rendered and 
-    type set to 'object'.
   */
 function NativeHandler(args) {
   this.type = args.type;
-  this._finishedCallback = args.finishedCallback;
   
   this._xml = args.xml;
   
@@ -2917,12 +3098,10 @@ function NativeHandler(args) {
     // these are mostly handled by the browser
     this.id = args.objID;
     this._objNode = args.objNode;
-    this._handleObject();
   } else if (this.type == 'script') {
     this.id = args.svgID;
     this._svgString = args.svgString;
     this._scriptNode = args.scriptNode;
-    this._handleScript();
   }
 }
 
@@ -3063,11 +3242,51 @@ NativeHandler._patchBrowserObjects = function(win, doc) {
     return createNodeList();
   };
   
+  // When dynamically creating SVG roots that we add to a page, we need to
+  // have them fire an onload event to handle the asynchronous nature of the
+  // Flash handler. In order to have similar code we patch the Native Handler
+  // as well. In a sane world we could just change 
+  // SVGSVGElement.prototype.addEventListener when working with this, but
+  // Firefox doesn't seem to allow us to over ride that (Safari does). To
+  // get around this we do a small patch to createElementNS to slightly
+  // patch addEventListener.
+  doc._createElementNS = doc.createElementNS;
+  doc.createElementNS = function(ns, localName) {
+    if (ns != svgns || localName != 'svg') {
+      return doc._createElementNS(ns, localName);
+    }
+    
+    // svg root
+    var svg = doc._createElementNS(ns, localName);
+    return NativeHandler._patchAddEventListener(svg);
+  }
+  
   // Firefox/Native needs some help around svgElement.style.* access; see
   // NativeHandler._patchStyleObject for details
   if (isFF) {
     NativeHandler._patchStyleObject(win);
   }
+};
+
+/** Adds a bit of magic we need on addEventListener so we can
+    fire SVGLoad events for dynamically created SVG nodes. Unfortunately
+    Firefox has a frustrating bug where we can't simple override the
+    prototype for addEventListener:
+    https://bugzilla.mozilla.org/show_bug.cgi?id=456151
+    As a workaround, we have to patch each individual SVG root instance.
+*/
+NativeHandler._patchAddEventListener = function(root) {
+  root._onloadListeners = [];
+  root._addEventListener = root.addEventListener;
+  root.addEventListener = function(type, f, useCapture) {
+    if (type == 'SVGLoad') {
+      this._onloadListeners.push(f);
+    }
+    
+    return this._addEventListener(type, f, useCapture);
+  }
+  
+  return root;
 };
 
 /** Surprisingly, Firefox doesn't work when setting svgElement.style.property! 
@@ -3086,8 +3305,10 @@ NativeHandler._patchStyleObject = function(win) {
   // custom object that then defines all of our getters and setters doesn't
   // work; somehow that is a 'magical' prototype that doesn't stick. Instead,
   // the trick we have to use is to modify the CSSStyleDeclaration prototype.
-  // TODO: Document whether adding extra members to CSSStyleDeclaration has
-  // a memory impact because it also affects HTML elements.
+  
+  // TODO: Test whether adding extra members to CSSStyleDeclaration has
+  // a memory impact because it also affects HTML elements; probably not since
+  // prototypes are singletons shared by all instances
   
   // prototype definitions are 'window' specific
   var patchMe = win.CSSStyleDeclaration;
@@ -3124,6 +3345,15 @@ NativeHandler._patchStyleObject = function(win) {
 
 // methods that every NativeHandler instance has
 extend(NativeHandler, {
+  /** Has this handler kick off its work. */
+  start: function() {
+    if (this.type == 'object') {
+      this._handleObject();
+    } else if (this.type == 'script') {
+      this._handleScript();
+    }
+  },
+  
   /** Handles SVG embedded into the page with a SCRIPT tag. */
   _handleScript: function() {
     // build up a list of namespaces, used by our patched getElementsByTagNameNS
@@ -3132,9 +3362,37 @@ extend(NativeHandler, {
     // replace the SCRIPT node with some actual SVG
     this._processSVGScript(this._xml, this._svgString, this._scriptNode);
     
+    // fire any onload listeners that were registered with a dynamically
+    // created SVG root
+    // NOTE: FIXME: Technically it's wrong of us to fire the onload handler
+    // here before any asynchronous resources might be done inside the SVG,
+    // such as images. However, we don't have any hooks at this point to truly
+    // know when async SVG elements are done loading.
+    if (this.type == 'script' && this._scriptNode._onloadListeners) {
+      for (var i = 0; i < this._scriptNode._onloadListeners.length; i++) {
+        try {
+          // Firefox has a frustrating bug around addEventListener (see
+          // NativeHandler._patchAddEventListener for details). Repatch
+          // addEventListener on our SVG Root element if our changes have 
+          // been lost.
+          var methodStr = this._svgRoot.addEventListener.toString();
+          if (methodStr.indexOf('[native code]') != -1) {
+            NativeHandler._patchAddEventListener(this._svgRoot);
+          }
+          
+          // have 'this' inside function refer to our SVG root node
+          this._scriptNode._onloadListeners[i].apply(this._svgRoot);
+        } catch (exp) {
+          console.log('Error while firing onload listener: ' 
+                      + exp.message || exp);
+        }
+      }
+      this._scriptNode.onloadListeners = [];
+    }
+    
     // indicate that we are done
     this._loaded = true;
-    this._finishedCallback(this.id, 'script');
+    svgweb._handleDone(this.id, 'script', this);
   },
   
   /** Handles SVG embedded into the page with an OBJECT tag. */
@@ -3170,6 +3428,10 @@ extend(NativeHandler, {
       // http://code.google.com/p/svgweb/issues/detail?id=219
       var self = this;
       this._objNode.addEventListener('load', function() {
+        // svgweb.removeChild might have been called before we are fired
+        if (!self._objNode.contentDocument) {
+          return;
+        }
         var win = self._objNode.contentDocument.defaultView;
         self._onObjectLoad(self._objNode._svgFunc, win);
       }, false);
@@ -3691,7 +3953,9 @@ extend(_Node, {
     
     // inform Flash about the change
     if (this._attached && this._passThrough) {
-      var xmlString = FlashHandler._encodeFlashData(this._toXML(newChild));
+      var xmlString = FlashHandler._encodeFlashData(
+                          xmlToStr(newChild, 
+                                   this._handler.document._namespaces));
       this._handler.sendToFlash('jsInsertBefore',
                                 [ refChild._guid, this._guid, position,
                                   xmlString ]);
@@ -3801,7 +4065,9 @@ extend(_Node, {
     
     // tell Flash about the newly inserted child
     if (this._attached && this._passThrough) {
-      var xmlString = FlashHandler._encodeFlashData(this._toXML(newChild));
+      var xmlString = FlashHandler._encodeFlashData(
+                            xmlToStr(newChild, 
+                                     this._handler.document._namespaces));
       this._handler.sendToFlash('jsAddChildAt',
                                 [ this._guid, position, xmlString ]);
     }
@@ -3967,7 +4233,9 @@ extend(_Node, {
       // note that if the child is a DocumentFragment that we simply send
       // the <__document__fragment> tag over to Flash so it knows what it is
       // dealing with
-      var xmlString = FlashHandler._encodeFlashData(this._toXML(child));
+      var xmlString = FlashHandler._encodeFlashData(
+                        xmlToStr(child, 
+                                 this._handler.document._namespaces));
       this._handler.sendToFlash('jsAppendChild', [ this._guid, xmlString ]);
     }
 
@@ -4060,7 +4328,7 @@ extend(_Node, {
   addEventListener: function(type, listener /* Function */, useCapture, 
                              _adding /* Internal -- Boolean */) {
     //console.log('addEventListener, type='+type+', listener='+listener+', useCapture='+useCapture+', _adding='+_adding);
-    // Note: capturing not supported
+    // NOTE: capturing not supported
     
     if (this.nodeType != _Node.ELEMENT_NODE
         && this.nodeType != _Node.TEXT_NODE) {
@@ -4544,13 +4812,17 @@ extend(_Node, {
   /** For functions like appendChild, insertBefore, removeChild, etc.
       outside callers can pass in DOM nodes, etc. This function turns
       this into something we can work with, such as a _Node or _Element. */
-  _getFakeNode: function(child) {
-    // Was an HTC node passed in for IE? If so, get its _Node
-    if (isIE && child._fakeNode) {
-      child = child._fakeNode;
+  _getFakeNode: function(node) {
+    if (!node) {
+      node = this;
     }
     
-    return child;
+    // Was an HTC node passed in for IE? If so, get its _Node
+    if (isIE && node._fakeNode) {
+      node = node._fakeNode;
+    }
+    
+    return node;
   },
   
   /** We do a bunch of work in this method in order to append a child to
@@ -4667,52 +4939,6 @@ extend(_Node, {
         && attached && passThrough) {
       this._handler._redrawManager.unsuspendRedraw(suspendID);
     }
-  },
-  
-  /** Transforms the given node and all of its children into an XML string,
-      suitable for us to send over to Flash for adding to the document. 
-      
-      @param node The _Element or _Node to transform into XML. 
-      
-      @returns XML String suitable for sending to Flash. */
-  _toXML: function(node) {
-    var nodeXML = node._nodeXML;
-    var xml;
-    
-    if (typeof XMLSerializer != 'undefined') { // non-IE browsers
-      xml = (new XMLSerializer().serializeToString(nodeXML));
-    } else {
-      xml = nodeXML.xml;
-    }
-    
-    // Firefox and Safari will incorrectly turn our internal parsed XML
-    // for the Flash Handler into actual SVG nodes, causing issues. We added
-    // a fake SVG namespace earlier to prevent this from happening; remove that
-    // now
-    xml = xml.replace(/urn\:__fake__internal__namespace/g, svgns);
-    
-    // add our namespace declarations; having repeats is ok if some are
-    // already there
-    var nsString = 'xmlns="' + svgns + '" ';
-    for (var i = 0; i < this._handler.document._namespaces.length; i++) {
-      var uri = this._handler.document._namespaces[i];
-      var prefix = this._handler.document._namespaces['_' + uri];
-      
-      // ignore our fake SVG namespace string
-      if (uri == svgnsFake) {
-        uri = svgns;
-      }
-      
-      if (prefix != 'xmlns') {
-        nsString += 'xmlns:' + prefix + '="' + uri + '" ';
-      } else {
-        nsString += 'xmlns' + '="' + uri + '" ';
-      }
-    }
-
-    xml = xml.replace(/<([^ ]+)/, '<$1 ' + nsString + ' ');
-    
-    return xml;
   },
   
   /** Imports the given child and all it's children's XML into our XML. 
@@ -5488,6 +5714,19 @@ _Style._allStyles = [
   'writingMode'
 ];
 
+// the root SVGSVGElement has a few extra styles possible since it is nested
+// into an HTML context
+_Style._allRootStyles = [
+  'border', 'verticalAlign', 'backgroundColor', 'top', 'right', 'bottom',
+  'left', 'position', 'width', 'height', 'margin', 'marginTop', 'marginBottom',
+  'marginRight', 'marginLeft', 'padding', 'paddingTop', 'paddingBottom',
+  'paddingLeft', 'paddingRight', 'borderTopWidth', 'borderRightWidth',
+  'borderBottomWidth', 'borderLeftWidth', 'borderTopColor', 'borderRightColor',
+  'borderBottomColor', 'borderLeftColor', 'borderTopStyle', 'borderRightStyle',
+  'borderBottomStyle', 'borderLeftStyle', 'zIndex', 'overflowX', 'overflowY',
+  'float', 'clear'
+];
+
 extend(_Style, {
   /** Flag that indicates that the HTC should ignore any property changes
       due to style changes. Used when we are internally making style changes. */
@@ -5507,6 +5746,16 @@ extend(_Style, {
       for (var i = 0; i < _Style._allStyles.length; i++) {
         var styleName = _Style._allStyles[i];
         this._defineAccessor(styleName);
+      }
+      
+      // root SVGSVGElement nodes have some extra properties from being in an
+      // HTML context
+      // FIXME: Make sure embedded SVG nodes don't hit this code
+      if (this._element.nodeName == 'svg') {
+        for (var i = 0; i < _Style._allRootStyles.length; i++) {
+          var styleName = _Style._allRootStyles[i];
+          this._defineAccessor(styleName);
+        }
       }
       
       // CSSStyleDeclaration properties
