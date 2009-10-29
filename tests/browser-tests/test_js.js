@@ -113,7 +113,7 @@ var myRect, mySVG, rects, sodipodi, rdf, div, dc, bad, root, rect,
     stop, defs, parent, textNode2, renderer,
     origText, exp, html, ns, nextToLast, paths, styleStr,
     image, images, line, doTests, styleReturned, use, regExp, split, doc,
-    orig, rect1, rect2, obj1, obj2, obj3, handler, elem, suspendID1,
+    orig, rect1, rect2, obj1, obj2, obj3, obj4, handler, elem, suspendID1,
     suspendID2, i, anim, frag, frag2, frag3, nodes, eventHandlers,
     makeEventHandler;
     
@@ -189,9 +189,7 @@ function runTests(embedTypes) {
   testBugFixes();
     
   // TODO: Test setAttributeNS, hasChildNodes, removeAttribute
-  
-  // TODO: Create tests for svgweb.removeChild for removing SVG OBJECTs
-  
+    
   // TODO: Test dynamically creating an SVG root
   
   // TODO: Test having a dynamically created SVG root that is nested
@@ -5185,6 +5183,8 @@ function testCreateSVGObject() {
     
     // do a test for testSuspendRedraw() here
     // modify the contents _inside_ of an object in the middle of a suspendRedraw
+    svg = obj2.contentDocument.rootElement;
+    assertExists('obj2.contentDocument.rootElement should exist', svg);
     obj2 = document.getElementById('dynamic2');
     assertExists('dynamic2 should exist', obj2);
     svg.suspendRedraw(500);
@@ -5307,6 +5307,26 @@ function testCreateSVGObject() {
   }, false);
   svgweb.appendChild(obj3, div);
   
+  // test svgweb.removeChild on an SVG OBJECT
+  div = document.getElementById('test_container');
+  obj4 = document.createElement('object', true);
+  obj4.setAttribute('id', 'dynamic4');
+  obj4.setAttribute('data', '../../samples/svg-files/rectangles.svg');
+  obj4.setAttribute('type', 'image/svg+xml');
+  obj4.addEventListener('load', function() {
+    // FIXME: This is known to fail, incorrectly returns null
+    //assertEquals('obj4.parentNode == DIV', div, obj4.parentNode);
+    obj4 = document.getElementById('dynamic4');
+    svgweb.removeChild(obj4, obj4.parentNode);
+    assertNull('getElementById(dynamic4) == null',
+                    document.getElementById('dynamic4'));
+    assertNull('obj4.parentNode == null', obj4.parentNode);
+  }, false);
+  svgweb.appendChild(obj4, div);
+  
+  console.log('There should only be THREE SVG OBJECTs on the page that '
+              + 'shows squares');
+  
   // TODO: dynamically create an SVG OBJECT that has a SCRIPT tag in it,
   // and make sure that it has a Window object of some kind, such as our
   // fake _SVGWindow instance
@@ -5334,6 +5354,14 @@ function testCreateSVGRoot() {
   svg.setAttribute('height', 100);
   svg.style.display = 'block';
   svg.style.border = '2px solid black';
+  // make sure our non-SVG styles 'stick' (i.e. display and border come from
+  // HTML and are only defined on SVGSVGElement root nodes)
+  assertEqualsAny('svg.style.display == block', 
+                  ['block'], 
+                  svg.style.display);
+  assertEqualsAny('svg.style.border == 2px solid black or black 2px solid', 
+                  ['2px solid black', 'black 2px solid'], 
+                  svg.style.border);
   svg.id = 'dynamicRoot1';
   svg.addEventListener('SVGLoad', function() {
     // now run our tests for this root
@@ -5473,7 +5501,6 @@ function testCreateSVGRoot() {
   
   // Create an SVG root, remove it, then reattach it. Add some more elements to
   // it.
-  console.log('adding than removing than adding!!!');
   svg = document.createElementNS(svgns, 'svg');
   svg.setAttribute('width', 100);
   svg.setAttribute('height', 100);
@@ -5496,14 +5523,10 @@ function testCreateSVGRoot() {
     
     // now re-attach
     svg.childNodes[0].setAttribute('fill', 'red'); // change color
-    svg.onload = function(evt) {
-      assertExists('Event object should exist', evt);
-
+    svg.onload = function() {
       svg = document.getElementById('dynamicRoot2');
       assertExists('SVG root should exist', svg);
       assertExists('SVG root should have an id', svg.id);
-      assertTrue('SVG root should have a random id',
-                 (svg.id.indexOf('random') != -1));
 
       // make sure 'this' points to the right thing
       assertEquals('this == dynamic SVG root', svg, this);
@@ -5527,12 +5550,11 @@ function testCreateSVGRoot() {
                    circle.getAttribute('fill'));
 
       // make sure our parent is correct
-      parent = svg.parentNode;
-      assertExists('dynamic SVG root parent node should exist', parent);
+      assertExists('dynamic SVG root parent node should exist', svg.parentNode);
       assertEquals('dynamic SVG root parent node should be document BODY',
-                   'body', parent.parentNode.toLowerCase());
+                   'body', svg.parentNode.nodeName.toLowerCase());
       assertEquals('dynamic SVG root parent node == document.body',
-                   document.body, parent.parentNode);
+                   document.body, svg.parentNode);
 
       console.log('NINTH IMAGE: You should see a small red circle with '
                   + 'as the whole XML image (it should _not_ be purple)');
