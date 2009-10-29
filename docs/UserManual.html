@@ -806,6 +806,10 @@ following:</p>
 <p>The svgweb.appendChild() method takes the SVG OBJECT to append as its first 
 argument, and the parent to attach it to as its second argument.</p>
 
+<p>The parent that you attach your SVG OBJECT to must 
+already be attached to the real DOM on your page (i.e. it can't be disconnected
+from the page).</p>
+
 <p>Note that our svgweb.appendChild method is a divergence from the standard 
 necessary for SVG Web to do its magic.</p>
 
@@ -838,17 +842,9 @@ need not be retrieved from the network).</p>
 &lt;/object&gt;
 </code></pre>
 
-<p>Note that if you want to create an SVG image from dynamic content, an
-alternative to the above is to create an SVG root element on the fly
-(see next section) and then use innerHTML to set the initial content from a string.
-(NOTE: Neither of those features is implemented at this time, although
-there are plans to do so.)</p>
-
 <h2 id="dynamic_root">Dynamically Creating an SVG Root</h2>
 <p>Dynamically creating an SVG Root element is similar for direct embedding into
-a web page (NOTE: this is just documented here but is not yet implemented). 
-You don't have to create a SCRIPT tag like you would if you were direct
-embedding the SVG on page load:</p>
+a web page. You don't have to create a SCRIPT tag like you would if you were direct embedding the SVG on page load:</p>
 
 <pre><code>&lt;script type="image/svg+xml"&gt;
   &lt;svg&gt;
@@ -867,30 +863,74 @@ svg.setAttribute('height', '300');
 var circle = document.createElementNS(svgns, 'circle');
 svg.appendChild(circle);
 
+// Must use a callback to know when SVG is appended to page (this is slight
+// divergence from standard). The following are supported ways to do this:
+svg.addEventListener('SVGLoad', function() {
+  svg = this; // this will correctly refer to your SVG root
+  alert('loaded!');
+}, false);
+// also supported:
+svg.onload = function() {
+  alert('loaded!');
+}
+
 // now append the SVG root to our document
 svgweb.appendChild(svg, document.body); // note that we call svgweb.appendChild</code></pre>
 
-<p>The parent that you attach either your SVG OBJECT or SVG root must 
+<p>Note in the above code that we have to use an event listener to know when the SVG root is finished loading into the page; this is a slight divergence from the standard necessary for SVG Web's magic.</p>
+
+<p>The parent that you attach either your SVG root must 
 already be attached to the real DOM on your page (i.e. it can't be disconnected
 from the page).</p>
 
-<p>To remove an SVG OBJECT, you must similarly call a special method on svgweb:</p>
+<h2 id="svgweb.removeChild">Removing SVG OBJECTs and SVG Roots From The Page</h2>
+
+<p>To remove an SVG OBJECT or SVG root, you must similarly call a special method on svgweb:</p>
 
 <pre><code>svgweb.removeChild(mySVGObject, parentNode);</code></pre>
 
-<p>This method is not yet supported for SVG Roots embedded into an HTML document,
-only for SVG OBJECTS. The first argument to svgweb.removeChild is the SVG
-OBJECT to remove from the page, while the second is the parent node of
-this object. Note that you must directly remove an SVG OBJECT using the
-above method; if you remove a parent node that might have an SVG OBJECT
-as a distant descendant than resources might not be cleaned up correctly.
-For example, if you have a container DIV that then has an SVG OBJECT, the
+<p>The first argument to <code>svgweb.removeChild</code> is the SVG
+OBJECT or SVG Root to remove from the page, while the second is the parent node of
+this object. Note that you must directly remove an SVG OBJECT or SVG root using the
+above method; if you remove a parent node that might have an SVG OBJECT or root
+as a distant descendant than resources might not be cleaned up correctly.</p>
+
+<p>For example, if you have a container DIV that then has an SVG OBJECT, the
 following might have the SVG OBJECT disappear from the page but resources
 will not get cleaned up correctly, and memory will get wasted over time:</p>
 
 <pre><code>containerDiv = ''; // bad!!
 // or
 containerDiv.parentNode.removeChild(mySVGObject); // bad!!</code></pre>
+
+<p id="removeChildClosureReference">One final subtle note; when you remove an SVG OBJECT or SVG root from the page make sure to use the correct reference. Any of the following will work:</p>
+
+<pre><code>svg = document.createElementNS(svgns, 'svg');
+svg.setAttribute('width', 100);
+svg.setAttribute('height', 100);
+svg.id = 'dynamicRoot2';
+svg.addEventListener('SVGLoad', function() {
+  <b>// these are good:
+  svg = this;
+  svg = document.getElementById('dynamicRoot2');
+  // if this is the second SVG root:
+  svg = document.getElementsByTagNameNS(svgns, 'svg')[1];
+  
+  svgweb.removeChild(svg, svg.parentNode);</b>
+}, false);</code></pre>
+
+<p>Note that using the direct reference caught by the closure <em>will not</em> work as expected under all situations; this is a limitation of SVG Web:</p>
+
+<pre><code>svg = document.createElementNS(svgns, 'svg');
+svg.setAttribute('width', 100);
+svg.setAttribute('height', 100);
+svg.id = 'dynamicRoot2';
+svg.addEventListener('SVGLoad', function() {
+  <b>// bad!!
+  svgweb.removeChild(svg, svg.parentNode);</b>
+}, false);</code></pre>
+
+<a href="#known_issues19">See here for more details on this issue.</a>
 
 <h1 id="suspendRedraw">suspendRedraw/unsuspendRedraw</h1>
 
@@ -1251,6 +1291,8 @@ obj.addEventListener('load', function() {
 }, false);
 svgweb.appendChild(obj, myParentNode);</code></pre>
 
+<p>Note that similar issues pertain to <code>svgweb.removeChild</code> when dealing with SVG OBJECT references. See <a href="#removeChildClosureReference">here</a> for more details.</p>
+
 <p id="known_issues20">* Inside of an SVG OBJECT for the Flash handler, if you access the 
 window.location value for that file and try to change it, nothing will happen.
 You can, however, read the values off this object and they will correctly
@@ -1315,3 +1357,5 @@ svgweb.appendChild(obj, container);</b>
 </code></pre>
 
 <p id="known_issues25">* <code>currentTranslate</code> is supported on the SVG root tag (see the section <a href="#zoomAndPan">"Zooming and Panning with currentTranslate and currentScale"</a> for details). However, due to limitations in Internet Explorer the way to work with this is slightly different when using SVG Web than the SVG 1.1 standard. See the <a href="#zoomAndPan">section</a> for details.
+  
+<p id="known_issues26">If you remove an SVG OBJECT with <code>svgweb.removeChild</code> and then re-attach it, things will not work. You must create a fresh SVG OBJECT in this case.
