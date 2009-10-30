@@ -6881,6 +6881,11 @@ function testCloneNode() {
               + 'with a yellow stroke outline');
   
   // do a shallow clone of a text node; the text value should disappear
+  text = getDoc('svg2').getElementById('SomeSVGText');
+  clone = text.cloneNode(false);
+  assertEquals('clone.getAttribute(y) == 300', 300, clone.getAttribute('y'));
+  assertEquals('clone.childNodes.length == 0', 0,
+               clone.childNodes.length);
   
   // do a deep clone on a DOM node with children that is not attached to the
   // document
@@ -6897,6 +6902,118 @@ function testCloneNode() {
   // tunnel into a dynamic SVG OBJECT
   
   // tunnel into a dynamic SVG root
+  
+  // Do a deep clone of a DocumentFragment.
+  // create something to clone.
+  frag = getDoc('svg2').createDocumentFragment(true);
+  svg = getRoot('svg2');
+  group2 = getDoc('svg2').createElementNS(svgns, 'g');
+  group2.setAttribute('transform', 'translate(30, -15) rotate(-90)');
+  nodes = [];
+  for (var i = 1; i <= 4; i++) {
+    // have a circle with a small text value on it, all together in a group
+    group = getDoc('svg2').createElementNS(svgns, 'g');
+    group.setAttribute('id', 'docFrag_clone1_Circle' + i);
+    group.setAttribute('transform', 'scale(0.75) '
+                       + 'translate(470, ' + (65 + (i * 50)) + ')');
+    group.style.fill = 'orange';
+    circle = getDoc('svg2').createElementNS(svgns, 'circle');
+    circle.setAttribute('r', 20);
+    circle.setAttribute('fill', 'blue');
+    group.appendChild(circle);
+    svgText = getDoc('svg2').createElementNS(svgns, 'text');
+    svgText.appendChild(getDoc('svg2').createTextNode(i, true));
+    svgText.style.fontSize = '30px';
+    svgText.setAttribute('x', -7);
+    svgText.setAttribute('y', 10);
+    group.appendChild(svgText);
+    group2.appendChild(group);
+    nodes.push(group);
+  }
+  frag.appendChild(group2);
+  // now clone it
+  frag = frag.cloneNode(true);
+  // check DOM values before appending to a real DOM
+  assertEquals('frag.childNodes.length == 1', 1, frag.childNodes.length);
+  assertEquals('frag.childNodes[0] == group2', group2, frag.childNodes[0]);
+  assertEquals('frag.firstChild == group2', group2, frag.firstChild);
+  assertEquals('frag.lastChild == group2', group2, frag.lastChild);
+  assertEquals('group2.parentNode == frag', frag, group2.parentNode);
+  assertEquals('group.parentNode == group2', group2, group.parentNode);
+  assertEquals('group2.childNodes[0] == group', nodes[0], group2.childNodes[0]);
+  assertEquals('group2.childNodes.length == 4', 4, group2.childNodes.length);
+  assertEquals('frag.firstChild.firstChild.childNodes[0].nodeName == circle', 
+               'circle',
+               frag.firstChild.firstChild.childNodes[0].nodeName);
+  assertEquals('frag.firstChild.firstChild.childNodes[1].firstChild.nodeValue '
+                + '== 1', '1',
+                frag.firstChild.firstChild.childNodes[1].firstChild.nodeValue);
+  // now append to a real DOM and recheck all DOM values
+  svg.appendChild(frag);
+  assertEquals('svg.lastChild == group2', group2, svg.lastChild);
+  assertEquals('svg.lastChild.nodeName == g', 'g', svg.lastChild.nodeName);
+  assertEquals('svg.lastChild.parentNode == svg', svg, 
+               svg.lastChild.parentNode);
+  assertEquals('group2.parentNode == svg', svg, group2.parentNode);
+  assertEquals('group2.ownerDocument == getDoc(svg2)',
+               getDoc('svg2'), group2.ownerDocument);
+  assertEquals('group.ownerDocument == getDoc(svg2)',
+               getDoc('svg2'), group.ownerDocument);
+  assertEquals('svg.lastChild.childNodes.length == 4', 4,
+               svg.lastChild.childNodes.length);
+  assertEquals('svg.lastChild.childNodes[0].nodeName == g', 'g',
+               svg.lastChild.childNodes[0].nodeName);
+  assertEquals('svg.lastChild.firstChild.childNodes.length == 2', 2,
+               svg.lastChild.firstChild.childNodes.length);
+  assertEquals('svg.lastChild.firstChild.childNodes[0].nodeName == circle', 
+               'circle', svg.lastChild.firstChild.childNodes[0].nodeName);
+  assertEquals('svg.lastChild.childNodes[2].childNodes[1].firstChild.nodeValue == 3',
+               3, 
+               svg.lastChild.childNodes[2].childNodes[1].firstChild.nodeValue);
+  assertEquals('svg.lastChild.childNodes[2].childNodes[1].firstChild '
+                + '== nodes[2].lastChild.firstChild',
+               nodes[2].lastChild.firstChild, 
+               svg.lastChild.childNodes[2].childNodes[1].firstChild);
+  assertEquals('svg.childNodes[svg.childNodes.length - 1].firstChild.nextSibling '
+                + '== nodes[1]', nodes[1],
+                svg.childNodes[svg.childNodes.length - 1].firstChild.nextSibling);
+  // make sure the DocumentFragment is cleared
+  assertNull('after append, frag.firstChild == null', frag.firstChild);
+  assertNull('after append, frag.lastChild == null', frag.lastChild);
+  assertEquals('after append, frag.childNodes.length == 0', 0, 
+               frag.childNodes.length);
+
+  // do a shallow clone of a DocumentFragment
+  frag = getDoc('svg2').createDocumentFragment(true);
+  svg = getRoot('svg2');
+  group2 = getDoc('svg2').createElementNS(svgns, 'g');
+  group2.setAttribute('transform', 'translate(30, -15) rotate(-90)');
+  nodes = [];
+  for (var i = 1; i <= 4; i++) {
+    // have a circle with a small text value on it, all together in a group
+    group = getDoc('svg2').createElementNS(svgns, 'g');
+    group.setAttribute('id', 'docFrag_clone1_Circle' + i);
+    group.setAttribute('transform', 'scale(0.75) '
+                       + 'translate(470, ' + (65 + (i * 50)) + ')');
+    group.style.fill = 'orange';
+    circle = getDoc('svg2').createElementNS(svgns, 'circle');
+    circle.setAttribute('r', 20);
+    circle.setAttribute('fill', 'blue');
+    group.appendChild(circle);
+    svgText = getDoc('svg2').createElementNS(svgns, 'text');
+    svgText.appendChild(getDoc('svg2').createTextNode(i, true));
+    svgText.style.fontSize = '30px';
+    svgText.setAttribute('x', -7);
+    svgText.setAttribute('y', 10);
+    group.appendChild(svgText);
+    group2.appendChild(group);
+    nodes.push(group);
+  }
+  frag.appendChild(group2);
+  // now clone it
+  frag = frag.cloneNode(false);
+  // should have no children
+  assertEquals('frag.childNodes.length == 0', 0, frag.childNodes.length);
 }
 
 function testImportNode() {
