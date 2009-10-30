@@ -210,6 +210,9 @@
       testStyle();
       testSuspendRedraw();
       testDocumentFragment();
+      testCloneNode();
+      testImportNode();
+      testAdoptNode();
       
       // print out what should be visible after all tests
       top.console.log('2ND IMAGE: There should be blue text saying '
@@ -3179,6 +3182,28 @@
                   'INSIDE OBJECT: 2ND IMAGE: You should see four yellow '
                   + 'circles vertically stacked near the upper right of the '
                   + 'image with the numbers 1 to 4 inside of them in black');
+    }
+    
+    function testCloneNode() {
+      // test the cloneNode() method
+      
+      top.console.log('Inside SVG OBJECT: Testing cloneNode...');
+    
+      // do a deep clone node on an element already in the document
+      
+      // repeat, but with a shallow clone
+      
+      // do a deep clone node on an element not yet in the document
+      
+      // repeat, but with a shallow clone
+    }
+    
+    function testImportNode() {
+      
+    }
+    
+    function testAdoptNode() {
+      
     }
   ]]></script>
   <g

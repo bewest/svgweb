@@ -115,7 +115,7 @@ var myRect, mySVG, rects, sodipodi, rdf, div, dc, bad, root, rect,
     image, images, line, doTests, styleReturned, use, regExp, split, doc,
     orig, rect1, rect2, obj1, obj2, obj3, obj4, handler, elem, suspendID1,
     suspendID2, i, anim, frag, frag2, frag3, nodes, eventHandlers,
-    makeEventHandler;
+    makeEventHandler, clone;
     
 var allStyles = [
   'font', 'fontFamily', 'fontSize', 'fontSizeAdjust', 'fontStretch', 'fontStyle',
@@ -185,6 +185,9 @@ function runTests(embedTypes) {
   testCreateSVGRoot();
   testSuspendRedraw();
   testDocumentFragment();
+  testCloneNode();
+  testImportNode();
+  testAdoptNode();
   //testEventHandlers();
   testBugFixes();
     
@@ -6740,6 +6743,168 @@ function testDocumentFragment() {
     assertNull('after append, frag.parentNode == null', frag.parentNode);
     console.log('THIRD IMAGE: You should see a small yellow circle');
   }
+}
+
+function testCloneNode() {
+  // Test the cloneNode method
+  console.log('Testing cloneNode...');
+
+  // Get an element already in the DOM with children and do a deep clone.
+  // Make sure all the new children are correct; change their IDs and attach
+  // to the document. Make sure that fetching the old nodes we cloned are
+  // also correct; change an attribute on one of them to ensure we are truly
+  // getting the old ones.
+  // We'll use the complicated 'pop2' series of lines and event listeners
+  // we added to our second SVG image to clone
+  group = getDoc('svg2').getElementById('pop2');
+  // add some custom attributes to make sure they come over
+  group.setAttribute('some-custom-attribute', 'foobar');
+  group.childNodes[0].setAttribute('some-custom-attribute2', 'foobar2');
+  group.setAttributeNS('http://example.com', 'my-attr', 'my-value');
+  // now do the deep clone
+  clone = group.cloneNode(true);
+  // make sure the new clone is clone-er-riffic
+  assertEquals('clone.nodeName == g', 'g', clone.nodeName);
+  assertTrue('clone != group', (clone != group));
+  assertTrue('clone !== group', (clone !== group));
+  assertEquals('clone.childNodes.length == group.childNodes.length',
+                group.childNodes.length, clone.childNodes.length);
+  assertEquals('clone.childNodes[0].nodeName == rect', 'rect',
+               clone.childNodes[0].nodeName);
+  assertEquals('clone.childNodes[0].id == pop2_0', 'pop2_0',
+               clone.childNodes[0].id);
+  // change the IDs of the clone
+  clone.id = 'pop2_clone';
+  assertEquals('clone.getAttribute(id) == pop2_clone', 'pop2_clone',
+               clone.getAttribute('id'));
+  for (var i = 0; i < clone.childNodes.length; i++) {
+    clone.childNodes[i].id = clone.childNodes[0].getAttribute('id') + '_clone';
+  }
+  // make sure our custom attributes came over and that changing the original
+  // ones doesn't mess things up
+  group.setAttribute('some-custom-attribute', 'something-else');
+  group.childNodes[0].setAttribute('some-custom-attribute2', 'foobar2');
+  group.setAttributeNS('http://example.com', 'my-attr', 'my-value-changed');
+  assertEquals('clone.getAttribute(some-custom-attribute) == foobar',
+               'foobar', clone.getAttribute('some-custom-attribute'));
+  assertEquals('clone.childNodes[0].getAttribute(some-custom-attribute2) == '
+               + 'foobar2', 'foobar2', 
+               clone.childNodes[0].getAttribute('some-custom-attribute2'));
+  assertEquals('clone.getAttributeNS(http://example.com, my-attr) == '
+               + 'my-value', 'my-value', 
+               clone.getAttributeNS('http://example.com', 'my-attr'));
+  assertEquals('group.getAttribute(some-custom-attribute) == something-else',
+               'something-else', group.getAttribute('some-custom-attribute'));
+  assertEquals('group.getAttribute(some-custom-attribute2) == foobar2',
+               'foobar2', group.getAttribute('some-custom-attribute2'));
+  assertEquals('group.getAttributeNS(http://example.com, my-attr) == '
+               + 'my-value-changed', 'my-value-changed',
+               group.getAttributeNS('http://example.com', 'my-attr'));
+  // make sure the guids aren't the same
+  if (svgweb.getHandlerType() == 'flash') {
+    assertExists('clone.__guid should exist', clone.getAttribute('__guid'));
+    assertTrue('group.__guid != clone.__guid',
+               (group.getAttribute('__guid') != clone.getAttribute('__guid')));
+  }
+  // now attach to the document, but move it over to the right
+  clone.setAttribute('transform', 
+                     'scale(0.25, 0.25) rotate(270) translate(-350, 1500)');
+  group.parentNode.appendChild(clone);
+  // make sure old and new elements can still be fetched
+  assertEquals('group == getElementById(pop2)',
+               group, getDoc('svg2').getElementById('pop2'));
+  assertEquals('clone == getElementById(pop2_clone)',
+               clone, getDoc('svg2').getElementById('pop2_clone'));
+  assertEquals('group.childNodes[1] == getElementById(pop2_1)', 
+               group.childNodes[1], getDoc('svg2').getElementById('pop2_1'));
+  assertEquals('clone.childNodes[1] == getElementById(pop2_1_clone)', 
+               clone.childNodes[1], 
+               getDoc('svg2').getElementById('pop2_1_clone'));                          
+  console.log('SECOND IMAGE: There should be a series of purple lines stacked '
+              + 'vertically on the right side of the image; run your mouse '
+              + 'over these to ensure that the event listeners are working - '
+              + 'you should see messages printed out to the debug console '
+              + 'when you do');
+              
+  // repeat, but do a deep clone with something with text children
+  group = getDoc('svg11242').getElementById('blueCircle1');
+  clone = group.cloneNode(true);
+  assertEquals('clone.childNodes.length == 2', 2, clone.childNodes.length);
+  text = clone.childNodes[1];
+  assertEquals('text.nodeName == text', 'text', text.nodeName);
+  assertEquals('text.childNodes.length == 1', 1, text.childNodes.length);
+  assertEquals('text.childNodes[0].nodeValue == 1', '1',
+               text.childNodes[0].nodeValue);
+  // change the value
+  text.childNodes[0].data = '9';
+  // change it's location
+  clone.setAttribute('transform', 'scale(0.75, 0.75) translate(400, 350)');
+  // now clone it again
+  group2 = group.cloneNode(true);
+  // change the clones value
+  group2.childNodes[1].childNodes[0].nodeValue = 8;
+  // change the clones' IDs
+  clone.id = 'blueCircle1_clone1';
+  group2.setAttribute('blueCircle1_clone2');
+  // append it, then replace it with our other cloned node
+  group.parentNode.appendChild(group2);
+  group.parentNode.replaceChild(clone, group.parentNode.lastChild);
+  // make sure DOM is correct
+  temp = group.parentNode.lastChild;
+  assertEquals('last child of group == clone', clone,
+               temp);
+  text = temp.childNodes[1];
+  assertEquals('text node inside appended clone == 9', 9,
+               text.childNodes[0].nodeValue);
+  // make sure correct things show up in document.getElementById
+  assertExists('getElementById(blueCircle1) should exist',
+               getDoc('svg11242').getElementById('blueCircle1'));
+  assertExists('getElementById(blueCircle1_clone1) should exist',
+               getDoc('svg11242').getElementById('blueCircle1_clone1'));
+  assertNull('getElementById(blueCircle1_clone2) == null',
+             getDoc('svg11242').getElementById('blueCircle1_clone2'));
+  console.log('THIRD IMAGE: You should see a blue circle with the number '
+              + '9 in it; there should _not_ be a blue circle with the '
+              + 'number 8 in it');
+  
+  // repeat, but do a shallow clone
+  rect = getDoc('svg11242').getElementById('testStyleRect');
+  clone = rect.cloneNode(false);
+  // change some style values and its location
+  clone.setAttribute('blue');
+  clone.style.stroke = 'yellow';
+  clone.style.strokeWidth = '3px';
+  clone.setAttribute('x', -20);
+  clone.setAttribute('y', '-70');
+  rect.parentNode.insertBefore(clone, rect);
+  console.log('THIRD IMAGE: You should see a rotated blue rectangle '
+              + 'with a yellow stroke outline');
+  
+  // do a shallow clone of a text node; the text value should disappear
+  
+  // do a deep clone on a DOM node with children that is not attached to the
+  // document
+  
+  // repeat, but do a shallow clone on a DOM node with children that is not
+  // attached to the document
+  
+  // do a deep cloneNode on a dynamic SVG root that is already in the document
+  
+  // repeat, but have the dynamic SVG root not be in the document
+  
+  // repeat, but do a shallow cloneNode
+  
+  // tunnel into a dynamic SVG OBJECT
+  
+  // tunnel into a dynamic SVG root
+}
+
+function testImportNode() {
+  
+}
+
+function testAdoptNode() {
+  
 }
 
 function testEventHandlers() {
