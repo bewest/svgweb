@@ -6891,6 +6891,40 @@ function testCloneNode() {
   
   // do a deep clone on a DOM node with children that is not attached to the
   // document
+  svg = getRoot('svg2');
+  group2 = getDoc('svg2').createElementNS(svgns, 'g');
+  group2.id = 'clone1_Group';
+  group2.setAttribute('transform', ' translate(170, 52) rotate(-90)');
+  for (var i = 1; i <= 4; i++) {
+    // have a circle with a small text value on it, all together in a group
+    group = getDoc('svg2').createElementNS(svgns, 'g');
+    group.setAttribute('id', 'clone1_Circle' + i);
+    group.setAttribute('transform', 'scale(0.75) '
+                       + 'translate(0, ' + (0 + (i * 50)) + ')');
+    group.style.fill = 'orange';
+    circle = getDoc('svg2').createElementNS(svgns, 'circle');
+    circle.setAttribute('r', 20);
+    circle.setAttribute('fill', 'brown');
+    group.appendChild(circle);
+    svgText = getDoc('svg2').createElementNS(svgns, 'text');
+    svgText.appendChild(getDoc('svg2').createTextNode(i, true));
+    svgText.style.fontSize = '30px';
+    svgText.setAttribute('x', -7);
+    svgText.setAttribute('y', 10);
+    group.appendChild(svgText);
+    group2.appendChild(group);
+  }
+  clone = group2.cloneNode(true);
+  // add to the document
+  svg.appendChild(clone);
+  // check some values and make sure it shows up in getElementById
+  temp = getDoc('svg2').getElementById('clone1_Group');
+  assertExists('getElementById(clone1_Circle4)', temp);
+  assertEquals('clone.childNodes.length == 4', 4, clone.childNodes.length);
+  assertEquals('temp.childNodes.length == 4', 4, temp.childNodes.length);
+  console.log('SECOND IMAGE: You should see four brown circles, with the '
+              + 'numbers 1 to 4, at the top of the image and rotated -90 '
+              + 'degrees to the side');  
   
   // repeat, but do a shallow clone on a DOM node with children that is not
   // attached to the document
