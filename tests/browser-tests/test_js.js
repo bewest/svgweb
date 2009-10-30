@@ -6910,14 +6910,14 @@ function testCloneNode() {
   frag = getDoc('svg2').createDocumentFragment(true);
   svg = getRoot('svg2');
   group2 = getDoc('svg2').createElementNS(svgns, 'g');
-  group2.setAttribute('transform', 'translate(30, -15) rotate(-90)');
+  group2.setAttribute('transform', ' translate(170, 20) rotate(-90)');
   nodes = [];
   for (var i = 1; i <= 4; i++) {
     // have a circle with a small text value on it, all together in a group
     group = getDoc('svg2').createElementNS(svgns, 'g');
     group.setAttribute('id', 'docFrag_clone1_Circle' + i);
     group.setAttribute('transform', 'scale(0.75) '
-                       + 'translate(470, ' + (65 + (i * 50)) + ')');
+                       + 'translate(0, ' + (0 + (i * 50)) + ')');
     group.style.fill = 'orange';
     circle = getDoc('svg2').createElementNS(svgns, 'circle');
     circle.setAttribute('r', 20);
@@ -6987,6 +6987,9 @@ function testCloneNode() {
   assertNull('after append, frag.lastChild == null', frag.lastChild);
   assertEquals('after append, frag.childNodes.length == 0', 0, 
                frag.childNodes.length);
+  console.log('SECOND IMAGE: You should see four blue circles, with the '
+              + 'numbers 1 to 4, at the top of the image and rotated -90 '
+              + 'degrees to the side');
 
   // do a shallow clone of a DocumentFragment
   frag = getDoc('svg2').createDocumentFragment(true);
