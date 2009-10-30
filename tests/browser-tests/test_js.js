@@ -6778,7 +6778,7 @@ function testCloneNode() {
   assertEquals('clone.getAttribute(id) == pop2_clone', 'pop2_clone',
                clone.getAttribute('id'));
   for (var i = 0; i < clone.childNodes.length; i++) {
-    clone.childNodes[i].id = clone.childNodes[0].getAttribute('id') + '_clone';
+    clone.childNodes[i].id = clone.childNodes[i].getAttribute('id') + '_clone';
   }
   // make sure our custom attributes came over and that changing the original
   // ones doesn't mess things up
@@ -6795,8 +6795,9 @@ function testCloneNode() {
                clone.getAttributeNS('http://example.com', 'my-attr'));
   assertEquals('group.getAttribute(some-custom-attribute) == something-else',
                'something-else', group.getAttribute('some-custom-attribute'));
-  assertEquals('group.getAttribute(some-custom-attribute2) == foobar2',
-               'foobar2', group.getAttribute('some-custom-attribute2'));
+  assertEquals('group.childNodes[0].getAttribute(some-custom-attribute2) '
+               + '== foobar2', 'foobar2', 
+               group.childNodes[0].getAttribute('some-custom-attribute2'));
   assertEquals('group.getAttributeNS(http://example.com, my-attr) == '
                + 'my-value-changed', 'my-value-changed',
                group.getAttributeNS('http://example.com', 'my-attr'));
@@ -6817,14 +6818,14 @@ function testCloneNode() {
                clone, getDoc('svg2').getElementById('pop2_clone'));
   assertEquals('group.childNodes[1] == getElementById(pop2_1)', 
                group.childNodes[1], getDoc('svg2').getElementById('pop2_1'));
+               console.log('id='+clone.childNodes[1].id);
   assertEquals('clone.childNodes[1] == getElementById(pop2_1_clone)', 
                clone.childNodes[1], 
-               getDoc('svg2').getElementById('pop2_1_clone'));                          
+               getDoc('svg2').getElementById('pop2_1_clone'));  
+  // NOTE: Both Firefox and Safari/Native _don't_ copy over event listeners
+  // for clones, so we mimic this behavior                        
   console.log('SECOND IMAGE: There should be a series of purple lines stacked '
-              + 'vertically on the right side of the image; run your mouse '
-              + 'over these to ensure that the event listeners are working - '
-              + 'you should see messages printed out to the debug console '
-              + 'when you do');
+              + 'vertically on the right side of the image');
               
   // repeat, but do a deep clone with something with text children
   group = getDoc('svg11242').getElementById('blueCircle1');
@@ -6845,7 +6846,7 @@ function testCloneNode() {
   group2.childNodes[1].childNodes[0].nodeValue = 8;
   // change the clones' IDs
   clone.id = 'blueCircle1_clone1';
-  group2.setAttribute('blueCircle1_clone2');
+  group2.setAttribute('id', 'blueCircle1_clone2');
   // append it, then replace it with our other cloned node
   group.parentNode.appendChild(group2);
   group.parentNode.replaceChild(clone, group.parentNode.lastChild);
@@ -6871,7 +6872,8 @@ function testCloneNode() {
   rect = getDoc('svg11242').getElementById('testStyleRect');
   clone = rect.cloneNode(false);
   // change some style values and its location
-  clone.setAttribute('blue');
+  clone.id = 'testStyleRect_clone';
+  clone.style.fill = 'blue';
   clone.style.stroke = 'yellow';
   clone.style.strokeWidth = '3px';
   clone.setAttribute('x', -20);
@@ -6934,13 +6936,20 @@ function testCloneNode() {
   // now clone it
   frag = frag.cloneNode(true);
   // check DOM values before appending to a real DOM
+  temp = group2;
+  group2 = frag.firstChild;
   assertEquals('frag.childNodes.length == 1', 1, frag.childNodes.length);
+  assertEquals('group2.id == temp.id', temp.id, group2.id);
   assertEquals('frag.childNodes[0] == group2', group2, frag.childNodes[0]);
   assertEquals('frag.firstChild == group2', group2, frag.firstChild);
   assertEquals('frag.lastChild == group2', group2, frag.lastChild);
   assertEquals('group2.parentNode == frag', frag, group2.parentNode);
+  temp = group;
+  group = group2.lastChild;
+  assertEquals('temp.id == group.id', temp.id, group.id);
   assertEquals('group.parentNode == group2', group2, group.parentNode);
-  assertEquals('group2.childNodes[0] == group', nodes[0], group2.childNodes[0]);
+  assertEquals('group2.childNodes[0].id == group.id', nodes[0].id, 
+               group2.childNodes[0].id);
   assertEquals('group2.childNodes.length == 4', 4, group2.childNodes.length);
   assertEquals('frag.firstChild.firstChild.childNodes[0].nodeName == circle', 
                'circle',
@@ -6970,13 +6979,9 @@ function testCloneNode() {
   assertEquals('svg.lastChild.childNodes[2].childNodes[1].firstChild.nodeValue == 3',
                3, 
                svg.lastChild.childNodes[2].childNodes[1].firstChild.nodeValue);
-  assertEquals('svg.lastChild.childNodes[2].childNodes[1].firstChild '
-                + '== nodes[2].lastChild.firstChild',
-               nodes[2].lastChild.firstChild, 
-               svg.lastChild.childNodes[2].childNodes[1].firstChild);
-  assertEquals('svg.childNodes[svg.childNodes.length - 1].firstChild.nextSibling '
-                + '== nodes[1]', nodes[1],
-                svg.childNodes[svg.childNodes.length - 1].firstChild.nextSibling);
+  assertEquals('svg.childNodes[svg.childNodes.length - 1].firstChild.nextSibling.id '
+                + '== nodes[1].id', nodes[1].id,
+                svg.childNodes[svg.childNodes.length - 1].firstChild.nextSibling.id);
   // make sure the DocumentFragment is cleared
   assertNull('after append, frag.firstChild == null', frag.firstChild);
   assertNull('after append, frag.lastChild == null', frag.lastChild);
@@ -7014,6 +7019,8 @@ function testCloneNode() {
   frag = frag.cloneNode(false);
   // should have no children
   assertEquals('frag.childNodes.length == 0', 0, frag.childNodes.length);
+  
+  // do a cloneNode on a text node
 }
 
 function testImportNode() {
