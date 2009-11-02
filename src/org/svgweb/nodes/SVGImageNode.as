@@ -137,6 +137,14 @@ package org.svgweb.nodes
             this.finishDrawNode();
         }
 
+        public function onImageError():void {
+            if (!this._initialRenderDone && topSprite.parent) {
+                this.attachEventListeners();
+                this._initialRenderDone = true;
+                this.svgRoot.renderFinished();
+            }
+        }
+
         override public function setAttribute(name:String, value:String):void {
             super.setAttribute(name, value);
             if (name == 'x' || name == 'y') {

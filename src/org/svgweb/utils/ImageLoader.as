@@ -70,6 +70,9 @@ package org.svgweb.utils {
                 try {
                     urlLoader.load(new URLRequest(imageHref));
                 } catch (e:Error) {
+                    for (var i:uint=0; i < listeners.length; i++) {
+                        listeners[i].onImageError();
+                    }
                     listener.dbg("svgweb:flash:URLLoader.load:"+e);
                 }
 
@@ -79,6 +82,9 @@ package org.svgweb.utils {
 
         private function onError(event:IOErrorEvent):void {
             urlLoader = null;
+            for (var i:uint=0; i < listeners.length; i++) {
+                listeners[i].onImageError();
+            }
         }
 
         private function onURLLoaderComplete( event:Event ):void {
