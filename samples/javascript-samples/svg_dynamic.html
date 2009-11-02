@@ -12,7 +12,6 @@
     </script>
   
     <script type='text/javascript'>
-      var svgns = 'http://www.w3.org/2000/svg';
       var root = null;
       var width = 320, height = 200;
       var particles = [];
@@ -32,10 +31,10 @@
         this.el.setAttribute('cx', this.x);
         this.el.setAttribute('cy', this.y);
         this.el.setAttribute('r', 5);
-        this.el.setAttribute('fill', '#223FA3');
+        this.el.setAttribute('fill', 'blue');
         this.el.setAttribute('stroke-width', '1px');
-        this.el.setAttribute('stroke', 'black');
-      
+        this.el.setAttribute('stroke', 'yellow');
+
         root.appendChild(this.el);
       }
 
@@ -59,8 +58,7 @@
       }
 
       function loop() {
-        // TODO: Add suspendRedraw/unsuspendRedraw when those are supported
-        // by Flash viewer
+        root.suspendRedraw(10000);
         for (var i = 0; i < NUM_PARTICLES; i++) {
           var p = particles[i];
           var x = p.x;
@@ -70,46 +68,34 @@
           p.Y += p.y - y;
           p.el.setAttribute('transform', 'translate(' + p.X + ',' + p.Y + ')');
         }
+        root.unsuspendRedrawAll();
       }
       
       window.onload = function() {
-        console.log('developers window.onload called');
         root = document.createElementNS(svgns, 'svg');
-        root.setAttribute('width', width);
-        root.setAttribute('height', height);
+        root.setAttribute('width', '100%');
+        root.setAttribute('height', '100%');
+        root.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
         root.addEventListener('SVGLoad', function(evt) {
-          console.log('SVG onload called');
+          root = this;
+          root.suspendRedraw(10000);
           for (var i = 0; i < NUM_PARTICLES; i++) {
             particles[i] = new Particle();
           }
+          root.unsuspendRedrawAll();
 
           setInterval(loop, 10);
         }, false);
         svgweb.appendChild(root, document.body);
-      });
+      };
     </script>
   
     <style>
-      @namespace svg url("http://www.w3.org/2000/svg");
-    
       body {
-        margin: 50px;
         background-color: black;
-      }
-    
-      .debug-message {
-        color: white;
-      }
-
-      svg\:svg,
-      svg|svg {
-        background-color: white;
       }
     </style>
   </head>
   
-  <body>
-    <h1>Tests dynamically creating an SVG root, adding many circles to it,
-        and animating them to bounce using JavaScript</h1>
-  </body>
+  <body></body>
 </html>
