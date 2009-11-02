@@ -1551,7 +1551,8 @@ package org.svgweb.core
                     if (    (name == 'display' || name == 'visibility')
                          || (name == 'style' &&
                               ( value.indexOf('visibility') != -1
-                              || value.indexOf('display') != -1 )) ) {
+                              || value.indexOf('display') != -1 ))
+                         || (this is SVGGroupNode) ) {
                         this.invalidateChildren();
                     }
                     break;
