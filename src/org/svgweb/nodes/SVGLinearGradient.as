@@ -81,8 +81,16 @@ package org.svgweb.nodes
             var matrGrTr:Matrix = this.parseTransform(this.getAttribute('gradientTransform'));
             var gradientUnits:String = this.getAttribute('gradientUnits', 'objectBoundingBox', false);
 
-            var xString:Number = node.getAttribute('x', '0', false);
-            var yString:Number = node.getAttribute('y', '0', false);
+
+            if (node is SVGCircleNode) {
+                var xy:Array = SVGCircleNode(node).getCircleXY();
+                var xString:Number = xy[0].toString();
+                var yString:Number = xy[1].toString();
+            }
+            else {
+                xString = node.getAttribute('x', '0', false);
+                yString = node.getAttribute('y', '0', false);
+            }
 
             var x1String:String = this.getAttribute('x1', '0%', false);
             var x2String:String = this.getAttribute('x2', '100%', false);         
@@ -233,6 +241,11 @@ package org.svgweb.nodes
                 if (matrGrTr != null)
                     matr.concat(matrGrTr);
 
+                // A special adjustment is needed for circles for unknown reasons.
+                // This adjustment was determined empirically. See Issues 349 and 371.
+                if (node is SVGCircleNode) {
+                    matr.translate(objectX, objectY);
+                }
                 return matr;
             }
         }

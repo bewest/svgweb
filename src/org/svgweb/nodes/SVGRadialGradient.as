@@ -68,10 +68,17 @@ package org.svgweb.nodes
             var matrGrTr:Matrix = this.parseTransform(this.getAttribute('gradientTransform'));
             var gradientUnits:String = this.getAttribute('gradientUnits', 'objectBoundingBox', false);
 
-            var xString:Number = node.getAttribute('x', '0', false);
-            var objectX:Number = Math.round(SVGColors.cleanNumber2(xString, node.svgParent.getWidth()));
-            var yString:Number = node.getAttribute('y', '0', false);
-            var objectY:Number = Math.round(SVGColors.cleanNumber2(yString, node.svgParent.getHeight()));
+            if (node is SVGCircleNode) {
+                var xy:Array = SVGCircleNode(node).getCircleXY();
+                var objectX:Number = xy[0];
+                var objectY:Number = xy[1];
+            }
+            else {
+                var xString:String = node.getAttribute('x', '0', false);
+                var yString:String = node.getAttribute('y', '0', false);
+                objectX = Math.round(SVGColors.cleanNumber2(xString, node.svgParent.getWidth()));
+                objectY = Math.round(SVGColors.cleanNumber2(yString, node.svgParent.getHeight()));
+            }
 
             var cxString:String = this.getAttribute('cx', '50%', false);
             var cyString:String = this.getAttribute('cy', '50%', false);
@@ -175,6 +182,12 @@ package org.svgweb.nodes
                 // xxx needs testing
                 if (matrGrTr != null)
                     matr.concat(matrGrTr);
+
+                // A special adjustment is needed for circles for unknown reasons.
+                // This adjustment was determined empirically. See Issues 349 and 371.
+                if (node is SVGCircleNode) {
+                    matr.translate(objectX, objectY);
+                }
 
                 return matr;
             }

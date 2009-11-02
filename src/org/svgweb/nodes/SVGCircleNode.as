@@ -54,6 +54,17 @@ package org.svgweb.nodes
                 this._graphicsCommands.push(['CIRCLE', cx, cy, r]);
             }
         }
+        public function getCircleXY():Array {
+            var cxString:String = this.getAttribute('cx', '0');
+            var cx:Number = SVGColors.cleanNumber2(cxString, svgParent.getWidth());
+
+            var cyString:String = this.getAttribute('cy', '0');
+            var cy:Number = SVGColors.cleanNumber2(cyString, svgParent.getHeight());
+
+            var rString:String = this.getAttribute('r','0');
+            var r:Number = SVGColors.cleanNumber2(rString, svgParent.getWidth());
+            return [ cx - r, cy - r ];
+        }
         
     }
 }
