@@ -47,9 +47,6 @@
         this.shadow.setAttribute('ry', this.radius * 0.5);
         this.shadow.setAttribute('fill', '#666666');
         this.shadow.setAttribute('filter', 'url(#Gaussian_Blur)');
-
-        root.appendChild(this.shadow);
-        root.appendChild(this.el);
       }
 
       Particle.prototype.update = function() {
@@ -169,9 +166,21 @@
           root = this;
           
           root.suspendRedraw(10000);
+          
           for (var i = 0; i < numParticles; i++) {
             particles[i] = new Particle();
           }
+          
+          // add the shadows then the balls so that shadows always fall
+          // in the background
+          for (var i = 0; i < numParticles; i++) {
+            root.appendChild(particles[i].shadow);
+          }
+          
+          for (var i = 0; i < numParticles; i++) {
+            root.appendChild(particles[i].el);
+          }
+            
           root.unsuspendRedrawAll();
           
           intervalId = setInterval(loop, 10);
