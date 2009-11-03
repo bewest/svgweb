@@ -40,6 +40,17 @@ package org.svgweb.nodes
             var list:XMLList = this._xml.svg::feGaussianBlur;
 
             if (list.length()) {
+                var blurXML:XML;
+                // TODO: We do not yet support more than one blur
+                if (list.length > 1) {
+                    var elem:XML;
+                    for each(elem in list) {
+                        blurXML=elem;
+                    }
+                }
+                else {
+                    blurXML=XML(list);
+                }
                 var svgNode:SVGNode = objectToFilter;
                 var concatMatrix:Matrix = new Matrix();
                 var oldMatrix:Matrix;
@@ -56,7 +67,7 @@ package org.svgweb.nodes
                     svgNode = svgNode.svgParent;
                 }
 
-                var stdDeviation:String = this._xml.svg::feGaussianBlur.@stdDeviation.toString();
+                var stdDeviation:String = blurXML.@stdDeviation.toString();
                 var stdDeviationX:String;
                 var stdDeviationY:String;
 

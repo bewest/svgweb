@@ -6965,7 +6965,15 @@ extend(FlashInserter, {
     var objHeight = this._explicitHeight;
 
     var xmlWidth = this._nodeXML.getAttribute('width');
+    if (xmlWidth && xmlWidth.indexOf('%') == -1) {
+        // strip 'px' if present
+        xmlWidth = parseInt(xmlWidth).toString();
+    }
     var xmlHeight = this._nodeXML.getAttribute('height');
+    if (xmlHeight && xmlHeight.indexOf('%') == -1) {
+        // strip 'px' if present
+        xmlHeight = parseInt(xmlHeight).toString();
+    }
 
     if (objWidth && objHeight) {
       // calculate width in pixels
@@ -7152,7 +7160,15 @@ extend(FlashInserter, {
     var objHeight = this._explicitHeight;
 
     var xmlWidth = this._nodeXML.getAttribute('width');
+    if (xmlWidth && xmlWidth.indexOf('%') == -1) {
+        // strip 'px' if present
+        xmlWidth = parseInt(xmlWidth).toString();
+    }
     var xmlHeight = this._nodeXML.getAttribute('height');
+    if (xmlHeight && xmlHeight.indexOf('%') == -1) {
+        // strip 'px' if present
+        xmlHeight = parseInt(xmlHeight).toString();
+    }
 
     if (objWidth && !objHeight) {
       return this._getQuirksSize(parentWidth, parentHeight);

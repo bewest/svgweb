@@ -88,7 +88,15 @@ package org.svgweb.utils {
         }
 
         private function onURLLoaderComplete( event:Event ):void {
-            this.loadBytes(ByteArray(urlLoader.data));
+            try {
+                var bytes:ByteArray = ByteArray(urlLoader.data);
+                this.loadBytes(bytes);
+            }
+            catch(e:Error) {
+                for (var i:uint=0; i < listeners.length; i++) {
+                    listeners[i].onImageError();
+                }
+            }
             urlLoader = null;
         }
 
@@ -99,7 +107,14 @@ package org.svgweb.utils {
         private function loadBytes(byteArray:ByteArray):void {
             var loader:Loader = new Loader();
             loader.contentLoaderInfo.addEventListener( Event.COMPLETE, onBytesLoaded );
-            loader.loadBytes( byteArray );
+            try {
+                loader.loadBytes( byteArray );
+            }
+            catch(e:Error) {
+                for (var i:uint=0; i < listeners.length; i++) {
+                    listeners[i].onImageError();
+                }
+            }
         }
 
 
