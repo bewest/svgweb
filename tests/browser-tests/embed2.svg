@@ -62,7 +62,7 @@
         image, line, defs, runTests, styleReturned, use, regExp, split, doc,
         orig, rect1, rect2, obj1, obj2, obj3, params, hasParams, hasParam1,
         hasParam2, param1Value, param2Value, pathname, origUrl, origWindowLoc,
-        loc, fakeLoc, timerID, frag;
+        loc, fakeLoc, timerID, frag, clone;
 
     var allStyles = [
       'font', 'fontFamily', 'fontSize', 'fontSizeAdjust', 'fontStretch', 'fontStyle',
@@ -3188,10 +3188,109 @@
       top.console.log('Inside SVG OBJECT: Testing cloneNode...');
     
       // do a deep clone node on an element already in the document
+      group = document.getElementById('object_pop2');
+      // add some custom attributes to make sure they come over
+      group.setAttribute('some-custom-attribute', 'foobar');
+      group.childNodes[0].setAttribute('some-custom-attribute2', 'foobar2');
+      group.setAttributeNS('http://example.com', 'my-attr', 'my-value');
+      // now do the deep clone
+      clone = group.cloneNode(true);
+      // make sure the new clone is clone-er-riffic
+      top.assertEquals('clone.nodeName == g', 'g', clone.nodeName);
+      top.assertTrue('clone != group', (clone != group));
+      top.assertTrue('clone !== group', (clone !== group));
+      top.assertEquals('clone.childNodes.length == group.childNodes.length',
+                       group.childNodes.length, clone.childNodes.length);
+      top.assertEquals('clone.childNodes[0].nodeName == rect', 'rect',
+                       clone.childNodes[0].nodeName);
+      top.assertEquals('clone.childNodes[0].id == object_pop2_0', 
+                       'object_pop2_0', clone.childNodes[0].id);
+      // change the IDs of the clone
+      clone.id = 'object_pop2_clone';
+      top.assertEquals('clone.getAttribute(id) == object_pop2_clone', 
+                       'object_pop2_clone', clone.getAttribute('id'));
+      for (var i = 0; i < clone.childNodes.length; i++) {
+        clone.childNodes[i].id = clone.childNodes[i].getAttribute('id') + '_clone';
+      }
+      // make sure our custom attributes came over and that changing the original
+      // ones doesn't mess things up
+      group.setAttribute('some-custom-attribute', 'something-else');
+      group.childNodes[0].setAttribute('some-custom-attribute2', 'foobar2');
+      group.setAttributeNS('http://example.com', 'my-attr', 'my-value-changed');
+      top.assertEquals('clone.getAttribute(some-custom-attribute) == foobar',
+                       'foobar', clone.getAttribute('some-custom-attribute'));
+      top.assertEquals('clone.childNodes[0].'
+                       + 'getAttribute(some-custom-attribute2) == '
+                       + 'foobar2', 'foobar2', 
+                       clone.childNodes[0].getAttribute('some-custom-attribute2'));
+      top.assertEquals('clone.getAttributeNS(http://example.com, my-attr) == '
+                       + 'my-value', 'my-value', 
+                       clone.getAttributeNS('http://example.com', 'my-attr'));
+      top.assertEquals('group.getAttribute(some-custom-attribute) == something-else',
+                       'something-else', group.getAttribute('some-custom-attribute'));
+      top.assertEquals('group.childNodes[0].getAttribute(some-custom-attribute2) '
+                       + '== foobar2', 'foobar2', 
+                      group.childNodes[0].getAttribute('some-custom-attribute2'));
+      top.assertEquals('group.getAttributeNS(http://example.com, my-attr) == '
+                       + 'my-value-changed', 'my-value-changed',
+                       group.getAttributeNS('http://example.com', 'my-attr'));
+      // make sure the guids aren't the same
+      if (top.svgweb.getHandlerType() == 'flash') {
+        top.assertExists('clone.__guid should exist', 
+                         clone.getAttribute('__guid'));
+        top.assertTrue('group.__guid != clone.__guid',
+                       (group.getAttribute('__guid') != clone.getAttribute('__guid')));
+      }
+      // now attach to the document, but move it over to the right
+      clone.setAttribute('transform', 
+                         'scale(0.25, 0.25) rotate(270) translate(-350, 1200)');
+      group.parentNode.appendChild(clone);
+      // make sure old and new elements can still be fetched
+      top.assertEquals('group == getElementById(object_pop2)',
+                   group, document.getElementById('object_pop2'));
+      top.assertEquals('clone == getElementById(object_pop2_clone)',
+                   clone, document.getElementById('object_pop2_clone'));
+      top.assertEquals('group.childNodes[1] == getElementById(object_pop2_1)', 
+                   group.childNodes[1], 
+                   document.getElementById('object_pop2_1'));
+      top.assertEquals('clone.childNodes[1] == getElementById(object_pop2_1_clone)', 
+                   clone.childNodes[1], 
+                   document.getElementById('object_pop2_1_clone'));  
+      // NOTE: Both Firefox and Safari/Native _don't_ copy over event listeners
+      // for clones, so we mimic this behavior                        
+      top.console.log('SECOND IMAGE: There should be a series of purple lines '
+                      + 'stacked vertically on the right side of the image');
       
       // repeat, but with a shallow clone
+      group = document.getElementById('object_pop2');
+      clone = group.cloneNode(false);
+      // check values
+      top.assertEquals('clone.nodeName == g', 'g', clone.nodeName);
+      top.assertEquals('clone.childNodes.length == 0', 0, 
+                       clone.childNodes.length);
+      top.assertEquals('clone.id == object_pop2', 'object_pop2', clone.id);
       
       // do a deep clone node on an element not yet in the document
+      text = document.createElementNS(svgns, 'text');
+      text.setAttribute('x', 30);
+      text.setAttribute('y', 360);
+      text.setAttribute('font-family', 'Verdana');
+      text.setAttribute('font-size', '18');
+      text.setAttribute('fill', 'yellow');
+      textNode = document.createTextNode('Deleted then added again', true);
+      text.appendChild(textNode);
+      clone = text.cloneNode(true);
+      // append to document
+      svg = document.rootElement;
+      svg.insertBefore(clone, svg.lastChild.previousSibling.previousSibling);
+      // check clone values
+      top.assertEquals('clone.childNodes.length == 1', 1, clone.childNodes.length);
+      top.assertEquals('clone.childNodes[0].nodeValue == "Deleted then added again"',
+                   'Deleted then added again', clone.childNodes[0].nodeValue);
+      top.assertTrue('clone.childNodes[0] != textNode',
+                 (clone.childNodes[0] != textNode));
+      top.console.log('SECOND IMAGE: You should see the text '
+                      + '"Deleted then added again" in yellow');
       
       // repeat, but with a shallow clone
     }

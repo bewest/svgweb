@@ -649,9 +649,10 @@ function testGetElementsByTagNameNS() {
     rects = getDoc('svg2').getElementsByTagNameNS(svgns, 'rect');
     assertExists("svg2.contentDocument.getElementsByTagNameNS('rect')", rects);
     // 2 rects were added by tests inside of embed2.svg, then another
-    // 200 inside the testSuspendRedraw() method in embed2.svg
+    // 200 inside the testSuspendRedraw() method in embed2.svg; another
+    // 100 were added by testCloneNode() inside embed2.svg
     assertEquals("svg2.contentDocument.getElementsByTagNameNS(rect).length "
-                 + "should be 207", 207, rects.length);
+                 + "should be 307", 307, rects.length);
   } else {
     assertEquals("document.getElementsByTagNameNS(svgns, 'rect').length "
                 + "should be 14", 14, rects.length);
@@ -1117,9 +1118,10 @@ function testChildNodes() {
   if (_hasObjects) {
     // Firefox and Safari differ by one; we also added two group elements
     // to the root inside of embed2.svg in testSuspendRedraw(), as well as
-    // one group element in embed2.svg#testDocumentFragment()
-    assertEqualsAny('2nd SVG root element.childNodes.length == 47 or 48',
-                [47, 48], child.childNodes.length);
+    // one group element in embed2.svg#testDocumentFragment() and more
+    // elements inside embed2.svg#testCloneNode()
+    assertEqualsAny('2nd SVG root element.childNodes.length == 49 or 50',
+                [49, 50], child.childNodes.length);
   } else {
     assertEquals('2nd SVG root element.childNodes.length == 19', 19, 
                 child.childNodes.length);
