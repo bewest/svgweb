@@ -3272,8 +3272,16 @@ NativeHandler._patchBrowserObjects = function(win, doc) {
     
     // svg root
     var svg = doc._createElementNS(ns, localName);
-    return NativeHandler._patchAddEventListener(svg);
+    
+    // patch addEventListener
+    svg = NativeHandler._patchAddEventListener(svg);
+    
+    return svg;
   }
+  
+  // cloneNode needs some help or it loses our reference to the patched
+  // addEventListener
+  NativeHandler._patchCloneNode();
   
   // Firefox/Native needs some help around svgElement.style.* access; see
   // NativeHandler._patchStyleObject for details
@@ -3281,6 +3289,24 @@ NativeHandler._patchBrowserObjects = function(win, doc) {
     NativeHandler._patchStyleObject(win);
   }
 };
+
+/** If someone calls cloneNode, our patched addEventListener method goes away;
+    we need to ensure this doesn't happen. */
+NativeHandler._patchCloneNode = function() {
+  var proto;
+  if (typeof SVGSVGElement != 'undefined') { // Firefox
+    proto = SVGSVGElement.prototype;
+  } else { // Webkit
+    proto = document.createElementNS(svgns, 'svg').__proto__;
+  }
+  
+  proto._cloneNode = proto.cloneNode;
+  proto.cloneNode = function(deepClone) {
+    var results = this._cloneNode(deepClone);
+    NativeHandler._patchAddEventListener(results);
+    return results;
+  }
+}
 
 /** Adds a bit of magic we need on addEventListener so we can
     fire SVGLoad events for dynamically created SVG nodes. Unfortunately
@@ -3444,7 +3470,7 @@ extend(NativeHandler, {
     // flag that we are loaded
     this._loaded = true;
     
-    // patch the document and style objects to correct some browser bugs and 
+    // patch various browser objects to correct some browser bugs and 
     // to have more consistency between the Flash and Native handlers
     var doc = win.document;    
     NativeHandler._patchBrowserObjects(win, doc);
