@@ -4504,9 +4504,11 @@ function testStyle() {
   // for some reason
   // TODO: investigate if this is something we should do too
   assertEqualsAny('circle.style.fill == url(#testGradient1) or '
-                  + '"url(#testGradient1) rgb(0, 0, 0)"',
+                  + '"url(#testGradient1) rgb(0, 0, 0)" or '
+                  + 'url("#testGradient1") rgb(0, 0, 0)',
                   ['url(#testGradient1)', 
-                   'url(#testGradient1) rgb(0, 0, 0)'],
+                   'url(#testGradient1) rgb(0, 0, 0)',
+                   'url("#testGradient1") rgb(0, 0, 0)'],
                   circle.style.fill);
   assertEqualsAny('circle.style.stroke == white or #FFFFFF or #ffffff',
                   ['white', '#FFFFFF', '#ffffff'],
@@ -4946,7 +4948,7 @@ function testStyle() {
   // the native SVG renderers don't lower-case the style string; we
   // do for the Flash renderer though to simplify internal processing
   regExp = 'fill:\\s*green;\\s*fill-opacity:\\s*1;'
-           + '\\s*background-image:\\s*url\\(FOOBAR\\.SVG\\);'
+           + '\\s*background-image:\\s*url\\("?FOOBAR\\.SVG"?\\);'
            + '\\s*stroke:\\s*purple;\\s*stroke-width:\\s*3px;?';
   if (renderer == 'flash') {
     // make sure casing is transformed correctly
