@@ -109,7 +109,7 @@ var cc_ns = "http://web.resource.org/cc/";
 var myRect, mySVG, rects, sodipodi, rdf, div, dc, bad, root, rect, 
     path, gradient, group, group2, child, whitespaceAreNodes, metadata,
     cc, svg, svgText, textNode, text, desc, title, format, type,
-    className, htmlTitle, head, circle, lengthBefore, matches, temp,
+    className, htmlTitle, head, circle, lengthBefore, matches, temp, temp2,
     stop, defs, parent, textNode2, renderer,
     origText, exp, html, ns, nextToLast, paths, styleStr,
     image, images, line, doTests, styleReturned, use, regExp, split, doc,
@@ -182,12 +182,12 @@ function runTests(embedTypes) {
   testIsSupported();
   testStyle();
   testCreateSVGObject();
-  testCreateSVGRoot();
+  if (!_hasObjects) {
+    testCreateSVGRoot();
+  }
   testSuspendRedraw();
   testDocumentFragment();
   testCloneNode();
-  testImportNode();
-  testAdoptNode();
   //testEventHandlers();
   testBugFixes();
     
@@ -325,8 +325,8 @@ function runTests(embedTypes) {
                  + 'objects', 3, svgweb._dynamicObjOnloads);
                  
     // make sure that our dynamic SVG roots fired their onloads correctly
-    assertEquals('onload should have fired for our 3 listeners for dynamic '
-                 + 'root', 3, svgweb._dynamicRootOnloads);
+    assertEquals('onload should have fired for our 5 listeners for dynamic '
+                 + 'root', 5, svgweb._dynamicRootOnloads);
        
     if (_hasObjects) {
       // make sure that all of our timing functions inside of embed2.svg
@@ -5090,6 +5090,17 @@ function testCreateSVGObject() {
     assertEquals('this == SVG OBJECT', obj1, this);
     assertEquals('this.id == dynamic1', 'dynamic1', this.id);
     
+    // tunnel into a dynamic SVG OBJECT to do a test for testCloneNode
+    rect = obj1.contentDocument.getElementById('myRect');
+    temp = rect.cloneNode(true);
+    assertEquals('temp.childNodes.length == 0', 0, temp.childNodes.length);
+    assertEquals('temp.nodeName == rect', 'rect', temp.nodeName);
+    assertEquals('temp.id == myRect', 'myRect', temp.id);
+    assertTrue('temp != rect', (temp != rect));
+    assertExists('temp.ownerDocument should exist', temp.ownerDocument);
+    assertEquals('temp.ownerDocument == obj1.contentDocument',
+                 obj1.contentDocument, temp.ownerDocument);
+    
     /*
     // TODO: Get inline event handlers working and uncomment this
     // do inline event handler tests for inline on* event handlers on the 
@@ -5366,6 +5377,8 @@ function testCreateSVGRoot() {
                   ['2px solid black', 'black 2px solid'], 
                   svg.style.border);
   svg.id = 'dynamicRoot1';
+  // make sure ownerDocument is correct
+  assertEquals('svg.ownerDocument == document', document, svg.ownerDocument);
   svg.addEventListener('SVGLoad', function() {
     // now run our tests for this root
     
@@ -5376,6 +5389,9 @@ function testCreateSVGRoot() {
     
     // make sure 'this' points to the right thing
     assertEquals('this == dynamic SVG root', svg, this);
+    
+    // make sure ownerDocument is correct
+    assertEquals('svg.ownerDocument == document', document, svg.ownerDocument);
     
     // add our circle now
     circle = document.createElementNS(svgns, 'circle');
@@ -5415,8 +5431,89 @@ function testCreateSVGRoot() {
                  'body', parent.nodeName.toLowerCase());
     assertEquals('dynamic SVG root parent node == document.body',
                  document.body, parent);
+                 
+    // do a test for testCloneNode:
+    // tunnel into an SVG root and clone an element there
+    temp = svg.childNodes[0];
+    temp2 = temp.cloneNode(true);
+    assertEquals('temp2.childNodes.length == 0', 0, temp2.childNodes.length);
+    assertEquals('temp2.id == dynamicRootCircle2', 'dynamicRootCircle2', 
+                 temp2.id);
+    assertTrue('temp2 != circle', (temp2 != circle));
+    assertTrue('temp2 != temp', (temp2 != temp));
+    assertEquals('temp2.nodeName == circle', 'circle',
+                 temp2.nodeName.toLowerCase());
+    assertEquals('temp2.getAttribute(cx) == 20', 20,
+                 temp2.getAttribute('cx'));
+    assertEquals('temp2.getAttribute(cy) == 20', 20,
+                 temp2.getAttribute('cy'));
+    assertEqualsAny('temp2.getAttribute(fill) == brown',
+                 ['brown'],
+                 temp2.getAttribute('fill'));
+    assertEqualsAny('temp2.style.stroke == orange', 
+                 ['orange', '#FFA500'],
+                 temp2.style.stroke);
+    assertExists('temp2.ownerDocument should exist', temp2.ownerDocument);
+    assertEquals('temp.ownerDocument == document',
+                 document, temp2.ownerDocument);
     
-    console.log('SEVENTH IMAGE: You should see a small brown circle with '
+    // do a test for testCloneNode:
+    // do a deep cloneNode on a dynamic SVG root that is already in the document
+    clone = svg.cloneNode(true);
+    assertEquals('clone.id == dynamicRoot1');
+    clone.id = 'dynamicRoot1_clone';
+    assertEquals('clone.childNodes.length == 1', 1, clone.childNodes.length);
+    assertEquals('clone.childNodes[0].nodeName == circle', 'circle',
+                 clone.childNodes[0].nodeName);
+    clone.childNodes[0].id = 'dynamicRootCircle2_clone1';
+    // clone the circle again with a shallow clone node
+    temp = clone.childNodes[0].cloneNode(false);
+    temp.id = 'dynamicRootCircle2_clone2';
+    temp.setAttribute('cx', 40);
+    temp.setAttribute('cy', 40);
+    temp.setAttribute('r', 5);
+    temp.style.fill = 'blue';
+    clone.appendChild(temp);
+    // add a new onload listener
+    clone.onload = function() {
+      // make sure our new nodes show up in the DOM
+      assertExists('getElementById(dynamicRoot1_clone)',
+                   document.getElementById('dynamicRoot1_clone'));
+      assertExists('getElementById(dynamicRootCircle2_clone1)',
+                   document.getElementById('dynamicRootCircle2_clone1'));
+      assertExists('getElementById(dynamicRootCircle2_clone2)',
+                   document.getElementById('dynamicRootCircle2_clone1'));
+                   
+      console.log('You should see a new SVG root with new circles, one '
+                  + 'brown and one blue');
+      
+      // indicate that this onload and its tests ran
+      svgweb._dynamicRootOnloads++;
+    }
+    // now add it to our full page
+    svgweb.appendChild(clone, document.body);
+    
+    // do a test here for testCloneNode:
+    // do a shallow cloneNode on a dynamic SVG root that is already in 
+    // the document
+    clone = svg.cloneNode(false);
+    clone.id = 'dynamicRoot1_clone2';
+    clone.addEventListener('SVGLoad', function() {
+      // make sure our new nodes show up in the DOM
+      assertExists('getElementById(dynamicRoot1_clone2)',
+                   document.getElementById('dynamicRoot1_clone2'));
+      assertEquals('this.childNodes.length == 0', 0,
+                   this.childNodes.length);
+                   
+      console.log('You should see a cloned SVG root that has nothing inside '
+                  + 'of it but a black border around the outside');
+      
+      // indicate that this onload and its tests ran
+      svgweb._dynamicRootOnloads++;
+    }, false);
+    svgweb.appendChild(clone, document.body);
+    
+    console.log('You should see a small brown circle with '
                 + 'an orange outline as the whole XML image. The XML image '
                 + 'itself should be display: block and with a 2 pixel '
                 + 'solid black outline.');
@@ -5443,9 +5540,9 @@ function testCreateSVGRoot() {
     assertTrue('getElementsByTagNameNS should have more than zero svg roots',
                (matches.length > 0));
     if (_hasObjects) {
-      svg = matches[1];
+      svg = matches[3];
     } else {
-      svg = matches[4];
+      svg = matches[6];
     }
     assertExists('SVG root should exist', svg);
     assertExists('SVG root should have an id', svg.id);
@@ -6818,7 +6915,6 @@ function testCloneNode() {
                clone, getDoc('svg2').getElementById('pop2_clone'));
   assertEquals('group.childNodes[1] == getElementById(pop2_1)', 
                group.childNodes[1], getDoc('svg2').getElementById('pop2_1'));
-               console.log('id='+clone.childNodes[1].id);
   assertEquals('clone.childNodes[1] == getElementById(pop2_1_clone)', 
                clone.childNodes[1], 
                getDoc('svg2').getElementById('pop2_1_clone'));  
@@ -6928,16 +7024,85 @@ function testCloneNode() {
   
   // repeat, but do a shallow clone on a DOM node with children that is not
   // attached to the document
+  group2 = getDoc('svg2').createElementNS(svgns, 'g');
+  group2.id = 'clone1_Group';
+  group2.setAttribute('transform', ' translate(170, 52) rotate(-90)');
+  for (var i = 1; i <= 4; i++) {
+    // have a circle with a small text value on it, all together in a group
+    group = getDoc('svg2').createElementNS(svgns, 'g');
+    group.setAttribute('id', 'clone2_Circle' + i);
+    group.setAttribute('transform', 'scale(0.75) '
+                       + 'translate(0, ' + (0 + (i * 50)) + ')');
+    group.style.fill = 'orange';
+    circle = getDoc('svg2').createElementNS(svgns, 'circle');
+    circle.setAttribute('r', 20);
+    circle.setAttribute('fill', 'brown');
+    group.appendChild(circle);
+    svgText = getDoc('svg2').createElementNS(svgns, 'text');
+    svgText.appendChild(getDoc('svg2').createTextNode(i, true));
+    svgText.style.fontSize = '30px';
+    svgText.setAttribute('x', -7);
+    svgText.setAttribute('y', 10);
+    group.appendChild(svgText);
+    group2.appendChild(group);
+  }
+  clone = group2.cloneNode(false);
+  // check some values
+  assertEquals('clone.childNodes.length == 0', 0, clone.childNodes.length);
   
   // do a deep cloneNode on a dynamic SVG root that is already in the document
+  // NOTE: This test is inside testCreateSVGRoot
   
-  // repeat, but have the dynamic SVG root not be in the document
+  // do a shallow cloneNode on a dynamic SVG root that is already in the 
+  // document.
+  // NOTE: This test is inside testCreateSVGRoot
+
+  // repeat, but have the dynamic SVG root not be in the document and let it
+  // have children
+  if (!_hasObjects) {
+    svg = document.createElementNS(svgns, 'svg');
+    group = document.createElementNS(svgns, 'g');
+    svg.appendChild(group);
+    group.id = 'clonedGroup1';
+    circle = document.createElementNS(svgns, 'circle');
+    group.appendChild(circle);
+    circle.id = 'clonedCircle1';
+    circle.style.strokeColor = '#FFFFFF';
+    circle.setAttribute('fill', '#333');
+    // now clone
+    temp = svg.cloneNode(true);
+    // make sure DOM is right
+    assertEquals('temp.childNodes.length == 1', 1, temp.childNodes.length);
+    assertTrue('temp != svg', (temp != svg));
+    temp = temp.childNodes[0]; // group
+    assertEquals('clonedGroup.id == clonedGroup1', 'clonedGroup1', temp.id);
+    assertEquals('clonedGroup.nodeName == g', 'g', temp.nodeName);
+    assertEquals('clonedGroup.childNodes.length == 1', 1, 
+                 temp.childNodes.length);
+    assertTrue('clonedGroup != group', (temp != group));
+    temp = temp.childNodes[0]; // circle
+    assertEquals('clonedCircle.id == clonedCircle1', 'clonedCircle1', temp.id);
+    assertEquals('clonedCircle.nodeName == circle', 'circle', temp.nodeName);
+    assertEquals('clonedCircle.childNodes.length == 0', 0, 
+                 temp.childNodes.length);
+    assertTrue('clonedCircle != circle', (temp != circle));
+  } // end if (!_hasObjects)
   
   // repeat, but do a shallow cloneNode
+  if (!_hasObjects) {
+    svg = document.createElementNS(svgns, 'svg');
+    // now clone
+    temp = svg.cloneNode(false);
+    // make sure DOM is right
+    assertEquals('temp.childNodes.length == 0', 0, temp.childNodes.length);
+    assertTrue('temp != svg', (temp != svg));
+  } // end if (!_hasObjects)
   
   // tunnel into a dynamic SVG OBJECT
+  // NOTE: This test is inside testSVGObject
   
   // tunnel into a dynamic SVG root
+  // NOTE: This test is inside testSVGRoot
   
   // Do a deep clone of a DocumentFragment.
   // create something to clone.
@@ -7057,15 +7222,82 @@ function testCloneNode() {
   // should have no children
   assertEquals('frag.childNodes.length == 0', 0, frag.childNodes.length);
   
-  // do a cloneNode on a text node
-}
-
-function testImportNode() {
+  // do a cloneNode on an SVG text node already in the document
+  text = getDoc('mySVG').getElementById('myText');
+  clone = text.cloneNode(true);
+  // delete the cloned ID
+  clone.id = '';
+  assertEquals('clone.childNodes.length == 1', 1, clone.childNodes.length);
+  assertEquals('clone.childNodes[0].nodeValue == Deleted then added again',
+               'Deleted then added again', clone.childNodes[0].nodeValue);
+  assertTrue('clone.childNodes[0] != text.childNodes[0]',
+             (clone.childNodes[0] != text.childNodes[0]));
+  assertEquals('clone.id == ""', '', clone.id);
+  // make sure getElementById returns the _old_ pre-cloned node, not our
+  // cloned node with no ID
+  assertEquals('document.getElementById(myText) == text', text,
+               getDoc('mySVG').getElementById('myText'));
+  assertTrue('document.getElementById(myText) != clone',
+             (clone != getDoc('mySVG').getElementById('myText')));
+  clone.setAttribute('y', 200);
+  clone.setAttribute('fill', 'red');
+  svg = getRoot('mySVG');
+  svg.appendChild(clone);
+  console.log('FIRST IMAGE: You should see the text "Deleted then added again" '
+              + 'in brown');
   
-}
-
-function testAdoptNode() {
+  // do a cloneNode on an SVG text node not yet in the document
+  text = document.createElementNS(svgns, 'text');
+  text.setAttribute('x', 80);
+  text.setAttribute('y', 230);
+  text.setAttribute('font-family', 'Verdana');
+  text.setAttribute('font-size', '24');
+  text.setAttribute('fill', 'purple');
+  textNode = document.createTextNode('Deleted then added again', true);
+  text.appendChild(textNode);
+  clone = text.cloneNode(true);
+  // append to document
+  svg = getRoot('mySVG');
+  svg.appendChild(clone);
+  // check clone values
+  assertEquals('clone.childNodes.length == 1', 1, clone.childNodes.length);
+  assertEquals('clone.childNodes[0].nodeValue == "Deleted then added again"',
+               'Deleted then added again', clone.childNodes[0].nodeValue);
+  assertTrue('clone.childNodes[0] != textNode',
+             (clone.childNodes[0] != textNode));
+  console.log('FIRST IMAGE: You should see the text "Deleted then added again" '
+              + 'in purple');
   
+  // do a cloneNode on a DOM text node already in the document
+  text = document.getElementById('myText');
+  textNode = text.childNodes[0];
+  // clone
+  clone = textNode.cloneNode(true);
+  // check values
+  assertEquals('clone.nodeValue == "Deleted then added again"',
+               'Deleted then added again', clone.nodeValue);
+  assertTrue('clone != textNode', (clone != textNode));
+  // repeat but with shallow clone
+  clone = textNode.cloneNode(false);
+  // check values
+  assertEquals('clone.nodeValue == "Deleted then added again"',
+               'Deleted then added again', clone.nodeValue);
+  assertTrue('clone != textNode', (clone != textNode));
+  
+  // do a cloneNode on a DOM text node not yet in the document
+  textNode = document.createTextNode('Deleted then added again', true);
+  // clone
+  clone = textNode.cloneNode(true);
+  // check values
+  assertEquals('clone.nodeValue == "Deleted then added again"',
+               'Deleted then added again', clone.nodeValue);
+  assertTrue('clone != textNode', (clone != textNode));
+  // repeat but with shallow clone
+  clone = textNode.cloneNode(false);
+  // check values
+  assertEquals('clone.nodeValue == "Deleted then added again"',
+               'Deleted then added again', clone.nodeValue);
+  assertTrue('clone != textNode', (clone != textNode));
 }
 
 function testEventHandlers() {

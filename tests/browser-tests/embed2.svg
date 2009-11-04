@@ -211,8 +211,6 @@
       testSuspendRedraw();
       testDocumentFragment();
       testCloneNode();
-      testImportNode();
-      testAdoptNode();
       
       // print out what should be visible after all tests
       top.console.log('2ND IMAGE: There should be blue text saying '
@@ -3196,14 +3194,6 @@
       // do a deep clone node on an element not yet in the document
       
       // repeat, but with a shallow clone
-    }
-    
-    function testImportNode() {
-      
-    }
-    
-    function testAdoptNode() {
-      
     }
   ]]></script>
   <g
