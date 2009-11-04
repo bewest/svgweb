@@ -324,9 +324,11 @@ function runTests(embedTypes) {
     assertEquals('onload should have fired for our 3 listeners for dynamic '
                  + 'objects', 3, svgweb._dynamicObjOnloads);
                  
-    // make sure that our dynamic SVG roots fired their onloads correctly
-    assertEquals('onload should have fired for our 5 listeners for dynamic '
-                 + 'root', 5, svgweb._dynamicRootOnloads);
+    if (!_hasObjects) {
+      // make sure that our dynamic SVG roots fired their onloads correctly
+      assertEquals('onload should have fired for our 5 listeners for dynamic '
+                   + 'root', 5, svgweb._dynamicRootOnloads);
+    }   
        
     if (_hasObjects) {
       // make sure that all of our timing functions inside of embed2.svg
@@ -6979,7 +6981,7 @@ function testCloneNode() {
               + 'with a yellow stroke outline');
   
   // do a shallow clone of a text node; the text value should disappear
-  text = getDoc('svg2').getElementById('SomeSVGText');
+  text = getDoc('mySVG').getElementById('SomeSVGText');
   clone = text.cloneNode(false);
   assertEquals('clone.getAttribute(y) == 300', 300, clone.getAttribute('y'));
   assertEquals('clone.childNodes.length == 0', 0,
@@ -7269,7 +7271,7 @@ function testCloneNode() {
               + 'in purple');
   
   // do a cloneNode on a DOM text node already in the document
-  text = document.getElementById('myText');
+  text = getDoc('mySVG').getElementById('myText');
   textNode = text.childNodes[0];
   // clone
   clone = textNode.cloneNode(true);
