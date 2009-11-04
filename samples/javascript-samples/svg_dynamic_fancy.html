@@ -115,7 +115,7 @@
         filter.id = 'Gaussian_Blur';
         var blurFilter = document.createElementNS(svgns, 'feGaussianBlur');
         blurFilter.id = 'blur';
-        blurFilter.setAttribute('in', 'SourceGraphics');
+        blurFilter.setAttribute('in', 'SourceGraphic');
         blurFilter.setAttribute('stdDeviation', 1);
         filter.appendChild(blurFilter);
         defs.appendChild(filter);
