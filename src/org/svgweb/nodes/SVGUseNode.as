@@ -26,6 +26,8 @@ package org.svgweb.nodes
     public class SVGUseNode extends SVGNode
     {        
 
+        protected var clonedName:String;
+
         public function SVGUseNode(svgRoot:SVGSVGNode, xml:XML = null, original:SVGNode = null):void {
             super(svgRoot, xml, original);
         }
@@ -35,21 +37,23 @@ package org.svgweb.nodes
                 this._invalidDisplay = false;
                 if (this._xml != null) {
                     drawSprite.graphics.clear();
+                    if (!this._parsedChildren) {
+                        this.parseChildren();
+                        this._parsedChildren = true;
+                    }
 
                     var name:String = this.getAttribute('href');
-                    if (name) {
+                    if (name && name != clonedName) {
                         name = name.substr(1);
                         var node:SVGNode = this.svgRoot.getNode(name);
                         if (node) {
-                            if (!this._parsedChildren) {
-                                this.parseChildren();
-                                this._parsedChildren = true;
-                                node = node.clone();
-                                viewBoxSprite.addChild(node.topSprite);
-                                node.svgParent = this;
-                                this.svgRoot.renderPending();
-                                this.svgRoot.deleteReference(this, name);
-                            }
+                            this.clearSVGChildren();
+                            node = node.clone();
+                            viewBoxSprite.addChild(node.topSprite);
+                            node.svgParent = this;
+                            this.svgRoot.renderPending();
+                            this.svgRoot.deleteReference(this, name);
+                            clonedName = name;
                         }
                         else {
                             this.svgRoot.addReference(this, name);
