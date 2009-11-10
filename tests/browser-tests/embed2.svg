@@ -3192,7 +3192,7 @@
       // add some custom attributes to make sure they come over
       group.setAttribute('some-custom-attribute', 'foobar');
       group.childNodes[0].setAttribute('some-custom-attribute2', 'foobar2');
-      group.setAttributeNS('http://example.com', 'my-attr', 'my-value');
+      group.setAttributeNS('http://example.com', 'example:my-attr', 'my-value');
       // now do the deep clone
       clone = group.cloneNode(true);
       // make sure the new clone is clone-er-riffic
@@ -3216,7 +3216,8 @@
       // ones doesn't mess things up
       group.setAttribute('some-custom-attribute', 'something-else');
       group.childNodes[0].setAttribute('some-custom-attribute2', 'foobar2');
-      group.setAttributeNS('http://example.com', 'my-attr', 'my-value-changed');
+      group.setAttributeNS('http://example.com', 'example:my-attr', 
+                           'my-value-changed');
       top.assertEquals('clone.getAttribute(some-custom-attribute) == foobar',
                        'foobar', clone.getAttribute('some-custom-attribute'));
       top.assertEquals('clone.childNodes[0].'
@@ -3236,10 +3237,11 @@
                        group.getAttributeNS('http://example.com', 'my-attr'));
       // make sure the guids aren't the same
       if (top.svgweb.getHandlerType() == 'flash') {
+        temp = (temp._fakeNode) ? temp._fakeNode : temp;
         top.assertExists('clone.__guid should exist', 
-                         clone.getAttribute('__guid'));
+                     temp._nodeXML.getAttribute('__guid'));
         top.assertTrue('group.__guid != clone.__guid',
-                       (group.getAttribute('__guid') != clone.getAttribute('__guid')));
+                   (group.getAttribute('__guid') != temp._nodeXML.getAttribute('__guid')));
       }
       // now attach to the document, but move it over to the right
       clone.setAttribute('transform', 
@@ -3255,7 +3257,7 @@
                    document.getElementById('object_pop2_1'));
       top.assertEquals('clone.childNodes[1] == getElementById(object_pop2_1_clone)', 
                    clone.childNodes[1], 
-                   document.getElementById('object_pop2_1_clone'));  
+                   document.getElementById('object_pop2_1_clone')); 
       // NOTE: Both Firefox and Safari/Native _don't_ copy over event listeners
       // for clones, so we mimic this behavior                        
       top.console.log('SECOND IMAGE: There should be a series of purple lines '
@@ -3291,8 +3293,6 @@
                  (clone.childNodes[0] != textNode));
       top.console.log('SECOND IMAGE: You should see the text '
                       + '"Deleted then added again" in yellow');
-      
-      // repeat, but with a shallow clone
     }
   ]]></script>
   <g

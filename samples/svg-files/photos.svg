@@ -132,7 +132,7 @@
           image.setAttribute("id", s+"-img");
           svgSetXYWH(image, -imgw/2, -imgh/2, imgw, imgh);
           image.setAttribute("preserveAspectRatio", "xMinYMin slice");
-          image.setAttributeNS(XLINK, "href", url);
+          image.setAttributeNS(XLINK, "xlink:href", url);
           g.appendChild(image);
 
           var rect = document.createElementNS(SVG, "rect");

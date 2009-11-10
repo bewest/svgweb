@@ -1359,3 +1359,5 @@ svgweb.appendChild(obj, container);</b>
 <p id="known_issues25">* <code>currentTranslate</code> is supported on the SVG root tag (see the section <a href="#zoomAndPan">"Zooming and Panning with currentTranslate and currentScale"</a> for details). However, due to limitations in Internet Explorer the way to work with this is slightly different when using SVG Web than the SVG 1.1 standard. See the <a href="#zoomAndPan">section</a> for details.
   
 <p id="known_issues26">If you remove an SVG OBJECT with <code>svgweb.removeChild</code> and then re-attach it, things will not work. You must create a fresh SVG OBJECT in this case.
+  
+<p id="known_issues27">If you do a <code>cloneNode</code> on a node or group of nodes that have event listeners, these event listeners will not get copied over; this mimics the native behavior on Firefox and Safari which <em>do not</em> copy over event listeners from cloned nodes.</p>

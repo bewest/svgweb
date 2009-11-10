@@ -54,6 +54,7 @@ The 'lightWeight' attribute below is important for two reasons:
     <property name="fake" value="true" />
              
     <method name="getAttribute" />
+    <method name="getAttributeNS" />
     <method name="setAttribute" />
     <method name="setAttributeNS" />
     <method name="appendChild" />
@@ -62,6 +63,10 @@ The 'lightWeight' attribute below is important for two reasons:
     <method name="insertBefore" />
     <method name="hasChildNodes" />
     <method name="hasAttributes" />
+    <method name="hasAttribute" />
+    <method name="hasAttributeNS" />
+    <method name="removeAttribute" />
+    <method name="removeAttributeNS" />
     <method name="isSupported" />
     <method name="addEventListener" />
     <method name="removeEventListener" />
@@ -69,6 +74,7 @@ The 'lightWeight' attribute below is important for two reasons:
     <method name="getCTM" />
     <method name="createSVGPoint" />
     <method name="createSVGRect" />
+    <method name="cloneNode" />
     
     <defaults tabStop="false" contentEditable="false"
               canHaveHTML="false" viewInheritStyle="true"
@@ -81,7 +87,8 @@ The 'lightWeight' attribute below is important for two reasons:
   // there is a very strong correlation between the length of this script
   // and performance, so we minimize size as much as possible
   
-  function getAttribute(n) { return this._fakeNode.getAttribute(n); }  
+  function getAttribute(n) { return this._fakeNode.getAttribute(n); }
+  function getAttributeNS(ns, l) { return this._fakeNode.getAttributeNS(ns, l); }  
   function setAttribute(n, v) { return this._fakeNode.setAttribute(n, v); }  
   function setAttributeNS(ns, qName, v) { return this._fakeNode.setAttributeNS(ns, qName, v); }
   function appendChild(c) { return this._fakeNode.appendChild(c); }
@@ -90,6 +97,10 @@ The 'lightWeight' attribute below is important for two reasons:
   function insertBefore(n, o) { return this._fakeNode.insertBefore(n, o); }
   function hasChildNodes() { return this._fakeNode.hasChildNodes(); }
   function hasAttributes() { return this._fakeNode.hasAttributes(); }
+  function hasAttribute(l) { return this._fakeNode.hasAttribute(l); }
+  function hasAttributeNS(ns, l) { return this._fakeNode.hasAttributeNS(ns, l); }
+  function removeAttribute(l) { return this._fakeNode.removeAttribute(l); }
+  function removeAttributeNS(ns, l) { return this._fakeNode.removeAttributeNS(ns, l); }
   function isSupported(f, v) { return this._fakeNode.isSupported(f, v); }
   function addEventListener(t, l, u) { return this._fakeNode.addEventListener(t, l, u); }
   function removeEventListener(t, l, u) { return this._fakeNode.removeEventListener(t, l, u); }
@@ -97,6 +108,7 @@ The 'lightWeight' attribute below is important for two reasons:
   function getCTM() { return this._fakeNode.getCTM(); }
   function createSVGPoint() { return this._fakeNode.createSVGPoint(); }
   function createSVGRect() { return this._fakeNode.createSVGRect(); }
+  function cloneNode(d) { return this._fakeNode.cloneNode(d); }
 
   function _getNodeName() { return this._fakeNode.nodeName; }
   function _getNodeType() { return this._fakeNode.nodeType; }

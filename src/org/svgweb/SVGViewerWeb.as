@@ -243,6 +243,7 @@ package org.svgweb
                 ExternalInterface.addCallback("jsMatrixInvert", js_matrixInvert);
                 ExternalInterface.addCallback("jsSetCurrentScale", js_setCurrentScale);
                 ExternalInterface.addCallback("jsSetCurrentTranslate", js_setCurrentTranslate);
+                ExternalInterface.addCallback("jsRemoveAttribute", js_removeAttribute);
             }
             catch(error:SecurityError) {
                 var debugstr:String = "Security Error on ExternalInterface.addCallback(...). ";
@@ -594,6 +595,36 @@ package org.svgweb
             }            
         }
         
+         public function js_removeAttribute(msg:String):void {
+            //this.debug('js_removeAttribute, msg='+msg);
+            // msg is a string delimited by __SVG__DELIMIT with fields in
+            // the following order: elementGUID, namespace, localName
+            var args:Array = msg.split(DELIMITER);
+            var elementGUID:String = args[0];
+            // Flash/JS bridge transforms nulls/undefined into '' empty strings
+            var ns:String = (args[1] !== '') ? args[1] : null;
+            var localName:String = args[2];
+
+            var element:SVGNode = this.svgRoot.getNodeByGUID(elementGUID);
+            if (!element) {
+                this.error('setAttribute: GUID not found: ' + elementGUID);
+            }
+
+            if (ns == null && localName == 'id') {
+                this.svgRoot.unregisterID(element);
+            }
+            
+            // ActionScript's XML implementation does not implement
+            // removeAttribute or removeAttributeNS, so we have to use
+            // this workaround
+            if (ns) {
+              var nsObj:Namespace = new Namespace(ns);
+              delete element.xml.@nsObj::[localName]
+            } else {
+              delete element.xml.@[localName];
+            }
+        }
+        
         public function js_addEventListener(msg:String):void {
             //this.debug('js_addEventListener, msg='+msg);
             // msg is a string delimited by __SVG__DELIMIT with fields in
@@ -706,16 +737,19 @@ package org.svgweb
         }
         
         public function js_getAttribute(msg:String):String {
+            //this.debug('js_getAttribute, msg='+msg);
             // msg is a string delimited by __SVG__DELIMIT with fields in
             // the following order: elementGUID, getFromStyle (boolean),
-            // applyAnimations (boolean), attrNamespace, attrName
+            // applyAnimations (boolean), attrNamespace, attrName,
+            // onlyUseXML (boolean)
             var args:Array = msg.split(DELIMITER);
             var elementGUID:String = args[0];
             var getFromStyle:Boolean = (args[1] === 'true') ? true : false;
             var applyAnimations:Boolean = (args[2] === 'true') ? true : false;
             // Flash/JS bridge transforms nulls/undefined into '' empty strings
-            var attrNamespace:String = (args[3] !== '') ? args[2] : null;
+            var attrNamespace:String = (args[3] !== '') ? args[3] : null;
             var attrName:String = args[4];
+            var onlyUseXML:Boolean = (args[5] === 'true') ? true : false;
             
             var element:SVGNode = this.svgRoot.getNodeByGUID(elementGUID);
             if (!element) {
@@ -723,8 +757,19 @@ package org.svgweb
                            + elementGUID);
             }
 
-            // FIXME: TODO: Make sure we can get namespaced attribute values
-            var attrValue:String = element.xml.@[attrName]; 
+            var attrValue:String;
+            var ns:Namespace;
+            if (attrNamespace) {
+              ns = new Namespace(attrNamespace);
+              attrValue = element.xml.@ns::[attrName];
+            } else {
+              attrValue = element.xml.@[attrName];
+            }
+            
+            if (onlyUseXML) {
+              return attrValue;
+            }
+            
             if (typeof(attrValue) != 'undefined' && attrValue != null) {
                 if (getFromStyle) {
                     attrValue = element.getStyle(attrName, null, false);
@@ -742,9 +787,6 @@ package org.svgweb
                     attrValue = element.getAttribute(attrName, null, 
                                                      false, applyAnimations, false);
                 }
-            }
-            else {
-                this.error("error:getAttribute: attrName not found: " + attrName);
             }
             
             return attrValue;

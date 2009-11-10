@@ -115,7 +115,7 @@ var myRect, mySVG, rects, sodipodi, rdf, div, dc, bad, root, rect,
     image, images, line, doTests, styleReturned, use, regExp, split, doc,
     orig, rect1, rect2, obj1, obj2, obj3, obj4, handler, elem, suspendID1,
     suspendID2, i, anim, frag, frag2, frag3, nodes, eventHandlers,
-    makeEventHandler, clone;
+    makeEventHandler, clone, link;
     
 var allStyles = [
   'font', 'fontFamily', 'fontSize', 'fontSizeAdjust', 'fontStretch', 'fontStyle',
@@ -170,6 +170,7 @@ function runTests(embedTypes) {
   testSVGUseElementProperties();
   testGetAttribute();
   testSetAttribute();
+  testGetSetAttributeNS();
   testChildNodes();
   testOwnerDocument();
   testTextNodes();
@@ -191,21 +192,7 @@ function runTests(embedTypes) {
   //testEventHandlers();
   testBugFixes();
     
-  // TODO: Test setAttributeNS, hasChildNodes, removeAttribute
-    
-  // TODO: Test dynamically creating an SVG root
-  
-  // TODO: Test having a dynamically created SVG root that is nested
-  // in some dynamically created HTML, such as a DIV
-  
-  // TODO: Test doing removeChild that removes an SVG root
-                                         
-  // TODO: Test every one of the SVG element types, perhaps
-  // creating them dynamically and building up an image; probably
-  // in another file     
-  
-  // TODO: Do all these tests again, but have some SVG that we
-  // namespace with svg: inside of our SVG SCRIPT block  
+  // TODO: Test hasChildNodes, removeAttribute
   
   // TODO: Rename the ID of nodes (including the SVG root) and make sure
   // things propagate correctly
@@ -219,9 +206,7 @@ function runTests(embedTypes) {
   // it to test it on an XHTML page, a quirks doctype, a standards
   // doctype, none, etc.; have one page with an HTML TITLE in the 
   // markup
-  
-  // TODO: Have some performance tests with a performance threshold
-  
+    
   // TODO: Have tests where we pass in various kinds of invalid values:
   // Have tests where we pass in null, undefined, and non-DOM
   // or internal _Node or _Element values into our DOM methods; should
@@ -564,7 +549,7 @@ function testGetElementById() {
   
   // element.id syntax
   console.log('Testing element.id...');
-  
+
   group = getDoc('svg11242').getElementById('g4743');
   assertExists('SVG g element with ID g4743 should exist', group);
   assertEquals('group.nodeName == g', 'g', group.nodeName);
@@ -999,6 +984,270 @@ function testSetAttribute() {
                 sodipodi.getAttribute('newAttribute'));
 }
 
+function testGetSetAttributeNS() {
+  console.log('Testing setAttributeNS and getAttributeNS...');
+
+  // check non-namespaced forms on element not attached to DOM
+  rect = getDoc('mySVG').createElementNS(svgns, 'rect');
+  rect.setAttribute('x', 350);
+  assertEquals('rect.getAttribute(x) == 350', 350, rect.getAttribute('x'));
+  assertTrue('rect.hasAttribute(x) == true', rect.hasAttribute('x'));
+  assertFalse('rect.hasAttribute(bad) == false', rect.hasAttribute('bad'));
+  rect.removeAttribute('x');
+  assertFalse('rect.hasAttribute(x) == false', rect.hasAttribute('x'));
+  assertNull('rect.getAttribute(x) == null', rect.getAttribute('x'));
+  
+  // do setAttributeNS(null, 'fill', 'red') with default null namespace;
+  // do getAttributeNS(null) to get value; repeat with getAttribute() which
+  // should get the null NS attribute
+  rect = getDoc('mySVG').createElementNS(svgns, 'rect');
+  rect.setAttributeNS(null, 'x', 350);
+  rect.setAttributeNS(null, 'y', 290);
+  rect.setAttribute('fill', 'brown');
+  rect.setAttribute('width', 50);
+  rect.setAttributeNS(null, 'height', '50');
+  rect.id = 'anotherRect3';
+  // make sure DOM values are correct before appending
+  // getAttribute()
+  assertEquals('rect.getAttribute(x) == 350', 350, rect.getAttribute('x'));
+  assertEquals('rect.getAttribute(y) == 290', 290, rect.getAttribute('y'));
+  assertEqualsAny('rect.getAttribute(fill) == brown',
+                  ['brown'], rect.getAttribute('fill'));
+  assertEquals('rect.getAttribute(width) == 50', 50, 
+               rect.getAttribute('width'));
+  assertEquals('rect.getAttribute(height) == 50', 50, 
+               rect.getAttribute('height'));
+  // getAttributeNS
+  assertEquals('rect.getAttributeNS(null, x) == 350', 350, 
+               rect.getAttributeNS(null, 'x'));
+  assertEquals('rect.getAttributeNS(null, y) == 290', 290, 
+               rect.getAttributeNS(null, 'y'));
+  assertEqualsAny('rect.getAttributeNS(null, fill) == brown',
+                  ['brown'], rect.getAttributeNS(null, 'fill'));
+  assertEquals('rect.getAttributeNS(null, width) == 50', 50, 
+               rect.getAttributeNS(null, 'width'));
+  assertEquals('rect.getAttributeNS(null, height) == 50', 50, 
+               rect.getAttributeNS(null, 'height'));
+  // now append
+  root = getRoot('mySVG');
+  root.appendChild(rect);
+  // check DOM values again
+  // getAttribute()
+  assertEquals('rect.getAttribute(x) == 350', 350, rect.getAttribute('x'));
+  assertEquals('rect.getAttribute(y) == 290', 290, rect.getAttribute('y'));
+  assertEqualsAny('rect.getAttribute(fill) == brown',
+                  ['brown'], rect.getAttribute('fill'));
+  assertEquals('rect.getAttribute(width) == 50', 50, 
+               rect.getAttribute('width'));
+  assertEquals('rect.getAttribute(height) == 50', 50, 
+               rect.getAttribute('height'));
+  // getAttributeNS
+  assertEquals('rect.getAttributeNS(null, x) == 350', 350, 
+               rect.getAttributeNS(null, 'x'));
+  assertEquals('rect.getAttributeNS(null, y) == 290', 290, 
+               rect.getAttributeNS(null, 'y'));
+  assertEqualsAny('rect.getAttributeNS(null, fill) == brown',
+                  ['brown'], rect.getAttributeNS(null, 'fill'));
+  assertEquals('rect.getAttributeNS(null, width) == 50', 50, 
+               rect.getAttributeNS(null, 'width'));
+  assertEquals('rect.getAttributeNS(null, height) == 50', 50, 
+               rect.getAttributeNS(null, 'height'));
+  // test hasAttributeNS and removeAttributeNS
+  assertTrue('rect.hasAttributeNS(null, fill) == true',
+             rect.hasAttributeNS(null, 'fill'));
+  assertFalse('rect.hasAttributeNS(null, bad) == false',
+              rect.hasAttributeNS(null, 'bad'));
+  rect.setAttributeNS(null, 'removeMe', 'foobar');
+  assertEquals('rect.getAttributeNS(null, removeMe) == foobar', 'foobar',
+               rect.getAttributeNS(null, 'removeMe'));
+  rect.removeAttributeNS(null, 'removeMe');
+  assertEquals('rect.getAttributeNS(null, removeMe) == ""', '',
+                  rect.getAttributeNS(null, 'removeMe'));
+  assertEquals('rect.getAttributeNS(null, neverPresent) == ""', '',
+                  rect.getAttributeNS(null, 'neverPresent'));
+  console.log('FIRST IMAGE: You should see a brown rectangle');
+  
+  // do setAttributeNS(xlinkns, 'xlink:href', someHREF); use 
+  // getAttributeNS(xlinkNS) to get the value. Make sure it _doesnt_ show 
+  // up if we call getAttribute('href') on the node.
+  // Make a link
+  link = getDoc('mySVG').createElementNS(svgns, 'a');
+  link.setAttributeNS(xlinkns, 'xlink:href', 'http://codinginparadise.org');
+  // remove the rectangle above then wrap it with a link
+  rect = getDoc('mySVG').getElementById('anotherRect3');
+  rect.parentNode.removeChild(rect);
+  link.appendChild(rect);
+  // make sure DOM is correct before appending
+  assertEquals('link.childNodes.length == 1', 1, link.childNodes.length);
+  assertEquals('link.nodeName == a', 'a', link.nodeName);
+  assertEquals('link.childNodes[0].nodeName == rect', 'rect',
+               link.childNodes[0].nodeName);
+  assertEquals("link.getAttributeNS(xlinkns, 'href') == http://codinginparadise.org",
+               'http://codinginparadise.org', link.getAttributeNS(xlinkns, 'href'));
+  assertNull("link.getAttribute('href') == null",
+             link.getAttribute('href'));
+  assertFalse("link.hasAttributeNS(xlinkns, 'xlink:href') == false",
+             link.hasAttributeNS(xlinkns, 'xlink:href'));
+  assertTrue("link.hasAttributeNS(xlinkns, 'href') == true",
+              link.hasAttributeNS(xlinkns, 'href'));
+  assertNull('link.parentNode == null', link.parentNode);
+  // append
+  root = getRoot('mySVG');
+  root.appendChild(link);
+  // make sure DOM is correct after appending
+  assertEquals('link.childNodes.length == 1', 1, link.childNodes.length);
+  assertEquals('link.nodeName == a', 'a', link.nodeName);
+  assertEquals('link.childNodes[0].nodeName == rect', 'rect',
+               link.childNodes[0].nodeName);
+  assertEquals("link.getAttributeNS(xlinkns, 'xlink:href') == ''",
+               '' , link.getAttributeNS(xlinkns, 'xlink:href'));
+  assertEquals("link.getAttributeNS(xlinkns, 'href') == http://codinginparadise.org",
+               'http://codinginparadise.org', link.getAttributeNS(xlinkns, 'href'));
+  assertFalse("link.hasAttributeNS(xlinkns, 'xlink:href') == false",
+             link.hasAttributeNS(xlinkns, 'xlink:href'));
+  assertTrue("link.hasAttributeNS(xlinkns, 'href') == true",
+              link.hasAttributeNS(xlinkns, 'href'));
+  assertEquals('link.parentNode == root', root, link.parentNode);
+  // test hasAttributeNS
+  assertFalse('link.hasAttributeNS(xlinkns, xlink:bad) == false',
+              link.hasAttributeNS(xlinkns, 'xlink:bad'));
+  // remove the attribute and make sure removeAttribute works with prefix
+  // form
+  link.removeAttribute('xlink:href');
+  assertFalse('link.hasAttribute(xlink:href) == false', 
+              link.hasAttribute('xlink:href'));
+  assertFalse('link.hasAttributeNS(xlinkns, href) == false',
+              link.hasAttributeNS(xlinkns, 'href'));
+  // re-add
+  link.setAttributeNS(xlinkns, 'xlink:href', 'http://codinginparadise.org');
+  console.log('FIRST IMAGE: If you click the brown rectangle the browser '
+              + 'should take you to http://codinginparadise.org');
+  
+  // do setAttributeNS with the RDF namespace; use getAttributeNS to make sure
+  // it shows up. Make sure it _doesnt_ show up if we call getAttribute() on
+  // the RDF attribute
+  rdf = getDoc('svg2')
+          .getElementsByTagNameNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+                                  'RDF');
+  assertExists('rdf results array should exist', rdf);
+  rdf = rdf[0];
+  assertExists('rdf[0] should exist', rdf);
+  rdf.setAttributeNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+                     'rdf:foobar1', 'foobar-was-here');
+  rdf.setAttributeNS('http://example.com',
+                     'example:foobar1', 'should-be-something-else');
+  // make sure values are correct
+  assertEquals('rdf.getAttributeNS(rdfns, foobar1) == foobar-was-here',
+               'foobar-was-here', 
+               rdf.getAttributeNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#', 
+                                  'foobar1'));
+  assertEquals('rdf.getAttributeNS(http://example.com, foobar1) == ',
+               'should-be-something-else', 
+               rdf.getAttributeNS('http://example.com', 
+                                  'foobar1'));
+  // test hasAttributeNS and removeAttributeNS
+  assertFalse('rdf.hasAttributeNS(rdfns, rdf:foobar1) == false',
+             rdf.hasAttributeNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+                                'rdf:foobar1'));
+  assertTrue('rdf.hasAttributeNS(rdfns, foobar1) == true',
+             rdf.hasAttributeNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+                                'foobar1'));
+  assertTrue('rdf.hasAttributeNS(http://example.com, foobar1) == true',
+             rdf.hasAttributeNS('http://example.com',
+                                'foobar1'));
+  assertFalse('rdf.hasAttributeNS(rdfns, rdf:bad) == false',
+             rdf.hasAttributeNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+                                'bad'));
+  rdf.removeAttributeNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#', 
+                        'foobar1');
+  assertEquals('rdf.getAttributeNS(http://example.com, foobar1) == ',
+               'should-be-something-else', 
+               rdf.getAttributeNS('http://example.com', 
+                                  'foobar1'));                    
+  // make sure it works with non-existent attributes
+  rdf.removeAttributeNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#', 
+                        'bad');
+  assertFalse('rdf.hasAttributeNS(rdfns, foobar1) == false',
+             rdf.hasAttributeNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+                                'foobar1'));
+  assertFalse('rdf.hasAttributeNS(rdfns, bad) == true',
+             rdf.hasAttributeNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+                                'bad'));
+  assertEquals('rdf.getAttributeNS(rdfns, foobar1) == ""', '',
+                  rdf.getAttributeNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+                                     'foobar1'));
+                                     
+  // add custom namespaced attributes in the hierarchy, append, remove,
+  // then re-append and make sure values are correct
+  group = getDoc('svg2').createElementNS(svgns, 'g');
+  rect = getDoc('svg2').createElementNS(svgns, 'rect');
+  rect.setAttributeNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'rdf:RDF',
+                      'foobar9');
+  group.appendChild(rect);
+  svg = getRoot('svg2');
+  svg.appendChild(group);
+  // make sure values are correct
+  temp = svg.lastChild.childNodes[0]; // rect
+  assertEquals('rect.getAttributeNS(rdfns, RDF) == foobar9',
+               'foobar9', 
+               temp.getAttributeNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#', 
+                                   'RDF'));
+  assertTrue('rect.hasAttributeNS(rdfns, RDF) == true',
+             rect.hasAttributeNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+                                 'RDF'));
+  // remove then reappend
+  svg.removeChild(group);
+  svg.appendChild(group);
+  // make sure values are correct
+  temp = svg.lastChild.childNodes[0]; // rect
+  assertEquals('rect.getAttributeNS(rdfns, RDF) == foobar9',
+               'foobar9', 
+               temp.getAttributeNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#', 
+                                   'RDF'));
+  assertTrue('rect.hasAttributeNS(rdfns, RDF) == true',
+             rect.hasAttributeNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+                                 'RDF'));
+  // cleanup
+  svg.removeChild(group);
+  
+  // do various get/set namespace operations inside of a suspendRedraw
+  svg = getRoot('mySVG');
+  svg.suspendRedraw(10000);
+  link = getDoc('mySVG').createElementNS(svgns, 'a');
+  link.setAttributeNS(xlinkns, 'xlink:href', 'http://codinginparadise.org');
+  // remove the rectangle above then wrap it with a link
+  rect = getDoc('mySVG').getElementById('anotherRect3');
+  rect = rect.cloneNode(true);
+  link.appendChild(rect);
+  // make sure DOM is correct
+  assertEquals('link.childNodes.length == 1', 1, link.childNodes.length);
+  assertEquals('link.nodeName == a', 'a', link.nodeName);
+  assertEquals('link.childNodes[0].nodeName == rect', 'rect',
+               link.childNodes[0].nodeName);
+  assertEquals("link.getAttributeNS(xlinkns, 'xlink:href') == ''",
+               '' , link.getAttributeNS(xlinkns, 'xlink:href'));
+  assertEquals("link.getAttributeNS(xlinkns, 'href') == http://codinginparadise.org",
+               'http://codinginparadise.org', 
+               link.getAttributeNS(xlinkns, 'href'));
+  assertFalse("link.hasAttributeNS(xlinkns, 'xlink:href') == false",
+             link.hasAttributeNS(xlinkns, 'xlink:href'));
+  assertTrue("link.hasAttributeNS(xlinkns, 'href') == true",
+              link.hasAttributeNS(xlinkns, 'href'));
+  // test hasAttributeNS
+  assertFalse('link.hasAttributeNS(xlinkns, xlink:bad) == false',
+              link.hasAttributeNS(xlinkns, 'xlink:bad'));
+  // remove the attribute and make sure removeAttribute works with prefix
+  // form
+  link.removeAttribute('xlink:href');
+  assertFalse('link.hasAttribute(xlink:href) == false', 
+              link.hasAttribute('xlink:href'));
+  assertFalse('link.hasAttributeNS(xlinkns, href) == false',
+              link.hasAttributeNS(xlinkns, 'href'));
+  // re-add
+  link.setAttributeNS(xlinkns, 'xlink:href', 'http://codinginparadise.org');
+  svg.unsuspendRedrawAll();
+}
+
 function testChildNodes() {
   // childNodes
   console.log('Testing childNodes...');
@@ -1084,10 +1333,10 @@ function testChildNodes() {
   assertNull('first SVG root element.nodeValue == null', child.nodeValue);
   if (_hasObjects) {
     // Firefox and Safari differ by one
-    assertEqualsAny('first SVG root element.childNodes.length == 7 or 8',
-                 [7, 8], child.childNodes.length);
+    assertEqualsAny('first SVG root element.childNodes.length == 8, 9, or 10',
+                 [8, 9, 10], child.childNodes.length);
   } else {
-    assertEquals('first SVG root element.childNodes.length == 2', 2, 
+    assertEquals('first SVG root element.childNodes.length == 3', 3, 
                 child.childNodes.length);
   }
   assertNull('first SVG root element.prefix == null', child.prefix);
@@ -5383,7 +5632,7 @@ function testCreateSVGRoot() {
                   ['2px solid black', 'black 2px solid'], 
                   svg.style.border);
   svg.id = 'dynamicRoot1';
-  // make sure ownerDocument is correct
+  // make sure ownerDocument is correct before appending
   assertEquals('svg.ownerDocument == document', document, svg.ownerDocument);
   svg.addEventListener('SVGLoad', function() {
     // now run our tests for this root
@@ -5457,72 +5706,80 @@ function testCreateSVGRoot() {
                  ['brown'],
                  temp2.getAttribute('fill'));
     assertEqualsAny('temp2.style.stroke == orange', 
-                 ['orange', '#FFA500'],
-                 temp2.style.stroke);
+                   ['orange', '#FFA500'],
+                   temp2.style.stroke);
     assertExists('temp2.ownerDocument should exist', temp2.ownerDocument);
     assertEquals('temp.ownerDocument == document',
                  document, temp2.ownerDocument);
-    
+        
     // do a test for testCloneNode:
     // do a deep cloneNode on a dynamic SVG root that is already in the document
-    clone = svg.cloneNode(true);
-    assertEquals('clone.id == dynamicRoot1');
-    clone.id = 'dynamicRoot1_clone';
-    assertEquals('clone.childNodes.length == 1', 1, clone.childNodes.length);
-    assertEquals('clone.childNodes[0].nodeName == circle', 'circle',
-                 clone.childNodes[0].nodeName);
-    clone.childNodes[0].id = 'dynamicRootCircle2_clone1';
-    // clone the circle again with a shallow clone node
-    temp = clone.childNodes[0].cloneNode(false);
-    temp.id = 'dynamicRootCircle2_clone2';
-    temp.setAttribute('cx', 40);
-    temp.setAttribute('cy', 40);
-    temp.setAttribute('r', 5);
-    temp.style.fill = 'blue';
-    clone.appendChild(temp);
-    // add a new onload listener
-    clone.onload = function() {
-      // make sure our new nodes show up in the DOM
-      assertExists('getElementById(dynamicRoot1_clone)',
-                   document.getElementById('dynamicRoot1_clone'));
-      assertExists('getElementById(dynamicRootCircle2_clone1)',
-                   document.getElementById('dynamicRootCircle2_clone1'));
-      assertExists('getElementById(dynamicRootCircle2_clone2)',
-                   document.getElementById('dynamicRootCircle2_clone1'));
+    // NOTE: do the clone on a setTimeout so that we match up the loading 
+    // behavior of our SVG roots between native and flash renderers for 
+    // testing purposes.
+    window.setTimeout(function() {
+      svg = document.getElementById('dynamicRoot1');
+      clone = svg.cloneNode(true);
+      assertEquals('clone.id == dynamicRoot1');
+      clone.id = 'dynamicRoot1_clone';
+      assertEquals('clone.childNodes.length == 1', 1, clone.childNodes.length);
+      assertEquals('clone.childNodes[0].nodeName == circle', 'circle',
+                   clone.childNodes[0].nodeName);
+      clone.childNodes[0].id = 'dynamicRootCircle2_clone1';
+      // clone the circle again with a shallow clone node
+      temp = clone.childNodes[0].cloneNode(false);
+      temp.id = 'dynamicRootCircle2_clone2';
+      temp.setAttribute('cx', 40);
+      temp.setAttribute('cy', 40);
+      temp.setAttribute('r', 5);
+      temp.style.fill = 'blue';
+      clone.appendChild(temp);
+      // add a new onload listener
+      clone.onload = function() {
+        // make sure our new nodes show up in the DOM
+        assertExists('getElementById(dynamicRoot1_clone)',
+                     document.getElementById('dynamicRoot1_clone'));
+        assertExists('getElementById(dynamicRootCircle2_clone1)',
+                     document.getElementById('dynamicRootCircle2_clone1'));
+        assertExists('getElementById(dynamicRootCircle2_clone2)',
+                     document.getElementById('dynamicRootCircle2_clone1'));
                    
-      console.log('You should see a new SVG root with new circles, one '
-                  + 'brown and one blue');
+        console.log('You should see a new SVG root with new circles, one '
+                    + 'brown and one blue');
       
-      // indicate that this onload and its tests ran
-      svgweb._dynamicRootOnloads++;
-    }
-    // now add it to our full page
-    svgweb.appendChild(clone, document.body);
+        // indicate that this onload and its tests ran
+        svgweb._dynamicRootOnloads++;
+      }
+      // now add it to our full page
+      svgweb.appendChild(clone, document.body);
+      // make sure ownerDocument is correct after appending
+      assertEquals('svg.ownerDocument == document', document, svg.ownerDocument);
     
-    // do a test here for testCloneNode:
-    // do a shallow cloneNode on a dynamic SVG root that is already in 
-    // the document
-    clone = svg.cloneNode(false);
-    clone.id = 'dynamicRoot1_clone2';
-    clone.addEventListener('SVGLoad', function() {
-      // make sure our new nodes show up in the DOM
-      assertExists('getElementById(dynamicRoot1_clone2)',
-                   document.getElementById('dynamicRoot1_clone2'));
-      assertEquals('this.childNodes.length == 0', 0,
-                   this.childNodes.length);
+      // do a test here for testCloneNode:
+      // do a shallow cloneNode on a dynamic SVG root that is already in 
+      // the document
+      clone = svg.cloneNode(false);
+      clone.id = 'dynamicRoot1_clone2';
+      clone.addEventListener('SVGLoad', function() {
+        // make sure our new nodes show up in the DOM
+        assertExists('getElementById(dynamicRoot1_clone2)',
+                     document.getElementById('dynamicRoot1_clone2'));
+        assertEquals('this.childNodes.length == 0', 0,
+                     this.childNodes.length);
                    
-      console.log('You should see a cloned SVG root that has nothing inside '
-                  + 'of it but a black border around the outside');
+        console.log('You should see a cloned SVG root that has nothing inside '
+                    + 'of it but a black border around the outside');
       
-      // indicate that this onload and its tests ran
-      svgweb._dynamicRootOnloads++;
-    }, false);
-    svgweb.appendChild(clone, document.body);
+        // indicate that this onload and its tests ran
+        svgweb._dynamicRootOnloads++;
+      }, false);
+      svgweb.appendChild(clone, document.body);
     
-    console.log('You should see a small brown circle with '
-                + 'an orange outline as the whole XML image. The XML image '
-                + 'itself should be display: block and with a 2 pixel '
-                + 'solid black outline.');
+      console.log('You should see a small brown circle with '
+                  + 'an orange outline as the whole XML image. The XML image '
+                  + 'itself should be display: block and with a 2 pixel '
+                  + 'solid black outline.');
+    }, 1); // end window.setTimeout
                 
     // indicate that this onload and its tests ran
     svgweb._dynamicRootOnloads++;
@@ -5548,7 +5805,7 @@ function testCreateSVGRoot() {
     if (_hasObjects) {
       svg = matches[3];
     } else {
-      svg = matches[6];
+      svg = matches[4];
     }
     assertExists('SVG root should exist', svg);
     assertExists('SVG root should have an id', svg.id);
@@ -6863,7 +7120,7 @@ function testCloneNode() {
   // add some custom attributes to make sure they come over
   group.setAttribute('some-custom-attribute', 'foobar');
   group.childNodes[0].setAttribute('some-custom-attribute2', 'foobar2');
-  group.setAttributeNS('http://example.com', 'my-attr', 'my-value');
+  group.setAttributeNS('http://example.com', 'example:my-attr', 'my-value');
   // now do the deep clone
   clone = group.cloneNode(true);
   // make sure the new clone is clone-er-riffic
@@ -6887,13 +7144,14 @@ function testCloneNode() {
   // ones doesn't mess things up
   group.setAttribute('some-custom-attribute', 'something-else');
   group.childNodes[0].setAttribute('some-custom-attribute2', 'foobar2');
-  group.setAttributeNS('http://example.com', 'my-attr', 'my-value-changed');
+  group.setAttributeNS('http://example.com', 'example:my-attr', 
+                       'my-value-changed');
   assertEquals('clone.getAttribute(some-custom-attribute) == foobar',
                'foobar', clone.getAttribute('some-custom-attribute'));
   assertEquals('clone.childNodes[0].getAttribute(some-custom-attribute2) == '
                + 'foobar2', 'foobar2', 
                clone.childNodes[0].getAttribute('some-custom-attribute2'));
-  assertEquals('clone.getAttributeNS(http://example.com, my-attr) == '
+  assertEquals('clone.getAttributeNS(http://example.com, example:my-attr) == '
                + 'my-value', 'my-value', 
                clone.getAttributeNS('http://example.com', 'my-attr'));
   assertEquals('group.getAttribute(some-custom-attribute) == something-else',
@@ -6901,14 +7159,18 @@ function testCloneNode() {
   assertEquals('group.childNodes[0].getAttribute(some-custom-attribute2) '
                + '== foobar2', 'foobar2', 
                group.childNodes[0].getAttribute('some-custom-attribute2'));
-  assertEquals('group.getAttributeNS(http://example.com, my-attr) == '
+  assertEquals('group.getAttributeNS(http://example.com, example:my-attr) == '
                + 'my-value-changed', 'my-value-changed',
                group.getAttributeNS('http://example.com', 'my-attr'));
   // make sure the guids aren't the same
   if (svgweb.getHandlerType() == 'flash') {
-    assertExists('clone.__guid should exist', clone.getAttribute('__guid'));
+    if (isIE) {
+      temp = (clone._fakeNode ? clone._fakeNode : clone);
+    }
+    assertExists('clone.__guid should exist', 
+                 temp._nodeXML.getAttribute('__guid'));
     assertTrue('group.__guid != clone.__guid',
-               (group.getAttribute('__guid') != clone.getAttribute('__guid')));
+               (group.getAttribute('__guid') != temp._nodeXML.getAttribute('__guid')));
   }
   // now attach to the document, but move it over to the right
   clone.setAttribute('transform', 
@@ -6927,7 +7189,7 @@ function testCloneNode() {
   // NOTE: Both Firefox and Safari/Native _don't_ copy over event listeners
   // for clones, so we mimic this behavior                        
   console.log('SECOND IMAGE: There should be a series of purple lines stacked '
-              + 'vertically on the right side of the image');
+              + 'vertically on the top right side of the image');
               
   // repeat, but do a deep clone with something with text children
   group = getDoc('svg11242').getElementById('blueCircle1');
@@ -6996,7 +7258,7 @@ function testCloneNode() {
   svg = getRoot('svg2');
   group2 = getDoc('svg2').createElementNS(svgns, 'g');
   group2.id = 'clone1_Group';
-  group2.setAttribute('transform', ' translate(170, 52) rotate(-90)');
+  group2.setAttribute('transform', 'translate(170, 52) rotate(-90)');
   for (var i = 1; i <= 4; i++) {
     // have a circle with a small text value on it, all together in a group
     group = getDoc('svg2').createElementNS(svgns, 'g');
@@ -7304,6 +7566,108 @@ function testCloneNode() {
   assertEquals('clone.nodeValue == "Deleted then added again"',
                'Deleted then added again', clone.nodeValue);
   assertTrue('clone != textNode', (clone != textNode));
+  
+  // clone one of our namespaced metadata nodes attached to the document
+  metadata = getDoc('svg2').getElementById('metadata7');
+  metadata = metadata.cloneNode(true);
+  assertEquals('metadata.childNodes == 2', 2, metadata.childNodes.length);
+  rdf = metadata.childNodes[1];
+  assertExists('RDF element', rdf);
+  assertEquals('rdf.childNodes.length == 1', 1, rdf.childNodes.length);
+  assertEquals('rdf.nodeName == rdf:RDF', 'rdf:RDF', rdf.nodeName);
+  assertEquals('rdf.prefix == rdf', 'rdf', rdf.prefix);
+  assertEquals('rdf.namespaceURI == http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+               'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+               rdf.namespaceURI);
+  assertEquals('rdf.localName == RDF', 'RDF', rdf.localName);
+  assertEquals('rdf.nodeType == 1', 1, rdf.nodeType);
+  rdf = getDoc('svg2').getElementsByTagNameNS(
+                      'http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'RDF');
+  assertExists('RDF elements should exist', rdf);
+  assertEquals('# of RDF elements == 1', 1, rdf.length);
+  rdf = rdf[0];
+  assertExists('RDF element', rdf);
+  assertEquals('rdf.childNodes.length == 1', 1, rdf.childNodes.length);
+  assertEquals('rdf.nodeName == rdf:RDF', 'rdf:RDF', rdf.nodeName);
+  assertEquals('rdf.prefix == rdf', 'rdf', rdf.prefix);
+  assertEquals('rdf.namespaceURI == '
+               + 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+               'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+               rdf.namespaceURI);
+  assertEquals('rdf.localName == RDF', 'RDF', rdf.localName);
+  assertEquals('rdf.nodeType == 1', 1, rdf.nodeType);
+  cc = rdf.childNodes[0];
+  assertExists('Creative Commons element should exist', cc);
+  assertEquals('cc.childNodes.length == 2', 2, cc.childNodes.length);
+  assertEquals('cc.nodeName == cc:Work', 'cc:Work', cc.nodeName);
+  assertEquals('cc.prefix == cc', 'cc', cc.prefix);
+  assertEquals('cc.namespaceURI == http://web.resource.org/cc/',
+               'http://web.resource.org/cc/', cc.namespaceURI);
+  assertEquals('cc.localName == Work', 'Work', cc.localName);
+  assertEquals('cc.nodeType == 1', 1, cc.nodeType);
+  
+  // do a cloneNode inside of a suspendRedraw operation
+  svg = getRoot('svg2');
+  svg.suspendRedraw(10000);
+  group = getDoc('svg2').getElementById('pop2');
+  // add some custom attributes to make sure they come over
+  group.setAttribute('some-custom-attribute', 'foobar');
+  group.childNodes[0].setAttribute('some-custom-attribute2', 'foobar2');
+  group.setAttributeNS('http://example.com', 'example:my-attr', 'my-value');
+  // now do the deep clone
+  clone = group.cloneNode(true);
+  // make sure the new clone is clone-er-riffic
+  assertEquals('clone.nodeName == g', 'g', clone.nodeName);
+  assertTrue('clone != group', (clone != group));
+  assertTrue('clone !== group', (clone !== group));
+  assertEquals('clone.childNodes.length == group.childNodes.length',
+                group.childNodes.length, clone.childNodes.length);
+  assertEquals('clone.childNodes[0].nodeName == rect', 'rect',
+               clone.childNodes[0].nodeName);
+  assertEquals('clone.childNodes[0].id == pop2_0', 'pop2_0',
+               clone.childNodes[0].id);
+  // change the IDs of the clone
+  clone.id = 'pop2_clone2';
+  assertEquals('clone.getAttribute(id) == pop2_clone2', 'pop2_clone2',
+               clone.getAttribute('id'));
+  for (var i = 0; i < clone.childNodes.length; i++) {
+    clone.childNodes[i].id = clone.childNodes[i].getAttribute('id') + '_clone2';
+  }
+  // set some attributes
+  group.setAttribute('some-custom-attribute', 'something-else');
+  group.childNodes[0].setAttribute('some-custom-attribute2', 'foobar2');
+  group.setAttributeNS('http://example.com', 'example:my-attr', 
+                       'my-value-changed');
+  // make sure the guids aren't the same
+  if (svgweb.getHandlerType() == 'flash') {
+    if (isIE) {
+      temp = (clone._fakeNode ? clone._fakeNode : clone);
+    }
+    assertExists('clone.__guid should exist', 
+                 temp._nodeXML.getAttribute('__guid'));
+    assertTrue('group.__guid != clone.__guid',
+               (group.getAttribute('__guid') != temp._nodeXML.getAttribute('__guid')));
+  }
+  // now attach to the document, but move it over to the right
+  clone.setAttribute('transform', 
+                     'scale(0.25, 0.25) rotate(270) translate(-1800, 1500)');
+  group.parentNode.appendChild(clone);
+  // unsuspend things and make sure things are correct
+  svg.unsuspendRedrawAll();
+  // make sure old and new elements can still be fetched
+  assertEquals('group == getElementById(pop2)',
+               group, getDoc('svg2').getElementById('pop2'));
+  assertEquals('clone == getElementById(pop2_clone2)',
+               clone, getDoc('svg2').getElementById('pop2_clone2'));
+  assertEquals('group.childNodes[1] == getElementById(pop2_1)', 
+               group.childNodes[1], getDoc('svg2').getElementById('pop2_1'));
+  assertEquals('clone.childNodes[1] == getElementById(pop2_1_clone2)', 
+               clone.childNodes[1], 
+               getDoc('svg2').getElementById('pop2_1_clone2'));  
+  // NOTE: Both Firefox and Safari/Native _don't_ copy over event listeners
+  // for clones, so we mimic this behavior                        
+  console.log('SECOND IMAGE: There should be a series of purple lines stacked '
+              + 'vertically on the bottom right side of the image');
 }
 
 function testEventHandlers() {

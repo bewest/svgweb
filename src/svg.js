@@ -3300,6 +3300,10 @@ NativeHandler._patchCloneNode = function() {
     proto = document.createElementNS(svgns, 'svg').__proto__;
   }
   
+  if (proto._cloneNode) { // already patched
+    return;
+  }
+  
   proto._cloneNode = proto.cloneNode;
   proto.cloneNode = function(deepClone) {
     var results = this._cloneNode(deepClone);
@@ -3782,7 +3786,7 @@ function _Node(nodeName, nodeType, prefix, namespaceURI, nodeXML, handler,
     } else {
       xml += '<' + nodeName + ' xmlns:' + prefix + '="' + namespaceURI + '"/>';
     }
-        
+            
     this._nodeXML = parseXML(xml).documentElement;
   } else if (nodeType == _Node.DOCUMENT_FRAGMENT_NODE) {
     var xml = '<?xml version="1.0"?>\n'
@@ -3836,12 +3840,12 @@ function _Node(nodeName, nodeType, prefix, namespaceURI, nodeXML, handler,
     }
   }
   
-  if (this._attached) {
-    if (this._handler.type == 'script') {
-      this.ownerDocument = document;
-    } else if (this._handler.type == 'object') {
-      this.ownerDocument = this._handler.document;
-    }
+  // even when not attached native behavior for ownerDocument is to be
+  // set to 'document'
+  this.ownerDocument = document;
+  // if we are an SVG OBJECT set to our fake pseudo _Document
+  if (this._attached && this._handler.type == 'object') {
+    this.ownerDocument = this._handler.document;
   }
   
   if (passThrough === undefined) {
@@ -4417,6 +4421,102 @@ extend(_Node, {
   getCTM: function() {
     return this.getScreenCTM();
   },
+  
+  /** Clones the given node.
+  
+      @param deepClone Whether this is a shallow clone or a deep clone copying
+      all of our children. */
+  cloneNode: function(deepClone) {
+    //console.log('cloneNode, ns='+this.namespaceURI+', nodeName='+this.nodeName);
+    
+    var clone;
+    // if we are a non-SVG, non-HTML node, such as a namespaced node inside
+    // of an SVG metadata node, handle this a bit differently
+    if (this.nodeType == _Node.ELEMENT_NODE && this.namespaceURI != svgns) {
+      clone = new _Element(this.nodeName, this.prefix, this.namespaceURI);
+    } else if (this.nodeType == _Node.ELEMENT_NODE) {
+      clone = document.createElementNS(this.namespaceURI, this.nodeName);
+    } else if (this.nodeType == _Node.TEXT_NODE) {
+      clone = document.createTextNode(this._nodeValue, true);
+    } else if (this.nodeType == _Node.DOCUMENT_FRAGMENT_NODE) {
+      clone = document.createDocumentFragment(true);
+    } else {
+      throw 'cloneNode not supported for nodeType: ' + this.nodeType;
+    }
+    
+    clone = this._getFakeNode(clone);
+    
+    // copy over our attributes
+    var attrs = this._nodeXML.attributes;
+    for (var i = 0; i < attrs.length; i++) {
+      var attr = attrs.item(i);
+      // IE doesn't have localName or prefix; they are munged together
+      var m = attr.name.match(/([^:]+):?(.*)/);
+      var ns = attr.namespaceURI;
+      // Safari doesn't like setting xmlns declarations with createAttributeNS;
+      // we have to do it this way unfortunately
+      if (isSafari && attr.name.indexOf('xmlns') != -1) {
+        clone._nodeXML.setAttribute(attr.name, attr.nodeValue);
+      } else { // browsers other than Safari
+        // IE doesn't have namespace aware setAttribute methods
+        var attrNode;
+        var doc = clone._nodeXML.ownerDocument;
+        if (isIE) {
+          attrNode = doc.createNode(2, attr.name, ns);
+        } else {
+          attrNode = doc.createAttributeNS(ns, attr.name);
+        }
+        attrNode.nodeValue = attr.nodeValue;
+        if (isIE) {
+          clone._nodeXML.setAttributeNode(attrNode);
+        } else {
+          clone._nodeXML.setAttributeNodeNS(attrNode);
+        }
+      }
+    }
+    
+    // make sure our XML has our correct new cloned GUID
+    clone._nodeXML.setAttribute('__guid', clone._guid);
+    
+    // for IE, copy over cached style values
+    if (isIE) {
+      var copyStyle = this._htcNode.style;
+      for (var i = 0; i < copyStyle.length; i++) {
+        var styleName = copyStyle.item(i);
+        var styleValue = copyStyle.getPropertyValue(styleName);
+        // bump the length on our real style object and on our fake one
+        clone._htcNode.style.length++;
+        clone.style.length++;
+        // add the new style to our real style object and ignore style
+        // changes temporarily so we don't end up in an infinite loop of
+        // asynchronous style updates from onpropertychange events
+        clone.style._ignoreStyleChanges = true;
+        clone._htcNode.style[styleName] = styleValue;
+        clone.style._ignoreStyleChanges = false;
+      }
+    }
+    
+    // update internal attributes table as well on the clone
+    if (clone.nodeType == _Node.ELEMENT_NODE) {
+      clone._importAttributes(clone, clone._nodeXML);
+    }
+    
+    // clone each of the children and add them
+    if (deepClone 
+        && (clone.nodeType == _Node.ELEMENT_NODE
+            || clone.nodeType == _Node.DOCUMENT_FRAGMENT_NODE)) {
+      var children = this._getChildNodes();
+      for (var i = 0; i < children.length; i++) {
+        var childClone = children[i].cloneNode(true);
+        clone.appendChild(childClone);
+      }
+    }
+    
+    // make sure our ownerDocument is right
+    clone.ownerDocument = this.ownerDocument;
+    
+    return clone._getProxyNode();
+  },
 
   toString: function() {
     if (this.namespaceURI == svgns) {
@@ -4869,6 +4969,7 @@ extend(_Node, {
     }
 
     while (current) {
+      //console.log('current, nodeName='+current.nodeName);
       // visit this node
       var currentXML = current._nodeXML;
 
@@ -5178,8 +5279,13 @@ extend(_Node, {
   _createEmptyMethods: function() {
     if (this.nodeType == _Node.TEXT_NODE) {
       this.getAttribute 
+          = this.getAttributeNS
           = this.setAttribute 
           = this.setAttributeNS
+          = this.removeAttribute
+          = this.removeAttributeNS
+          = this.hasAttribute
+          = this.hasAttributeNS
           = this._getId
           = this._setId
           = this._getX
@@ -5286,58 +5392,154 @@ _Element.prototype = new _Node;
 
 extend(_Element, {
   getAttribute: function(attrName) /* String */ {
-    //console.log('getAttribute, attrName='+attrName+', this.nodeName='+this.nodeName);
+    return this.getAttributeNS(null, attrName, true);
+  },
+  
+  /** Namespace aware function to get an attribute from a node.
+  
+      @param ns The namespace.
+      @param localName The local name of the attribute, without the prefix.
+      Note, though, that Webkit and Firefox allow the prefix form to be
+      passed in as well, which will cause a namespace lookup to happen.
+      @param _forceNull Internal boolean flag used by our fake 
+      getAttribute() method. Needed to match the native browser behavior of 
+      returning attributes that don't exist; see the comment near the end of 
+      the function for details. */
+  getAttributeNS: function(ns, localName, _forceNull) /* String */ {
+    //console.log('getAttributeNS, ns='+ns+', localName='+localName+', this.nodeName='+this.nodeName);
     var value;
     
     // ignore internal __guid property
-    if (attrName == '__guid') {
+    if (ns == null && localName == '__guid') {
       return null;
     }
-    
-    // make sure we are attached and aren't in the middle of a 
-    // suspendRedraw operation
+
+    // Make sure we are attached and aren't in the middle of a 
+    // suspendRedraw operation.
     if (this._attached && this._passThrough 
         && !this._handler._redrawManager.isSuspended()) {
       value = this._handler.sendToFlash('jsGetAttribute',
-                                          [ this._guid, false, false, null, 
-                                            attrName ]);
+                                          [ this._guid, false, false, ns, 
+                                            localName, true ]);
     } else {
-      value = this._nodeXML.getAttribute(attrName);
-
-      // id property is special; we return an empty string instead of null
-      // to mimic native behavior on Firefox and Safari
-      if (attrName == 'id' && !value) {
-        return '';
+      if (!isIE) { 
+        value = this._nodeXML.getAttributeNS(ns, localName);
+      } else if (isIE) { // IE has no getAttributeNS
+        if (!ns) {
+          value = this._nodeXML.getAttribute(localName);
+        } else {
+          // IE has funky namespace support; we possibly have no prefix at this
+          // point so we will have to enumerate all attributes to find the one
+          // we want
+          for (var i = 0; i < this._nodeXML.attributes.length; i++) {
+            var attr = this._nodeXML.attributes.item(i);
+            // IE has no localName property; it munges the prefix:localName
+            // together
+            var attrName = new String(attr.name).match(/[^:]*:?(.*)/)[1];
+            if (attr.namespaceURI && attr.namespaceURI == ns 
+                && attrName == localName) {
+              value = attr.nodeValue;
+              break;
+            }
+          }
+        }
       }
     }
     
-    if (value === undefined || value === null || /^[ ]*$/.test(value)) {
-      return null;
+    // id property is special; we return an empty string instead of null
+    // to mimic native behavior on Firefox and Safari
+    if (ns == 'null' && localName == 'id' && !value) {
+      return '';
     }
     
+    // Firefox and Webkit both return null when getAttribute() is called
+    // on unknown element, but return '' when getAttributeNS() is called
+    // on empty element; match this behavior. We pass in a boolean 
+    // '_forceNull' flag when calling getAttributeNS from our own fake
+    // getAttribute method.
+    if (value === undefined || value === null || /^[ ]*$/.test(value)) {
+      return (_forceNull) ? null : '';
+    }
+
     return value;
+  },
+  
+  removeAttribute: function(name) /* void */ {
+    /* throws DOMException */
+    this.removeAttributeNS(null, name);
+  },
+  
+  removeAttributeNS: function(ns, localName) /* void */ {
+      /* throws DOMException */
+    //console.log('removeAttributeNS, ns='+ns+', localName='+localName);
+      
+    // if id then change node lookup table (only if we are attached to
+    // the DOM however)
+    if (localName == 'id' && this._attached && this.namespaceURI == svgns) {
+      var doc = this._handler.document;
+      var elementId = this._nodeXML.getAttribute('id');
+
+      // old lookup
+      doc._nodeById['_' + elementId] = undefined;
+    }
+    
+    // we might not be able to get a prefix to namespace mapping if we are
+    // disconnected; loop through our attributes until we find the matching
+    // attribute node
+    var attrNode;
+    if (!ns) {
+      attrNode = this._nodeXML.getAttributeNode(localName);
+    } else {
+      for (var i = 0; i < this._nodeXML.attributes.length; i++) {
+        var current = this._nodeXML.attributes.item(i);
+        // IE has no localName property; it munges the prefix:localName
+        // together
+        var m = new String(current.name).match(/([^:]+:)?(.*)/);
+        var prefix, attrName;
+        if (current.name.indexOf(':') != -1) {
+          prefix = m[1];
+          attrName = m[2];
+        } else {
+          attrName = m[1];
+        }
+        if (current.namespaceURI && current.namespaceURI == ns 
+            && attrName == localName) {
+          attrNode = current;
+          break;
+        }
+      }
+    }
+    
+    if (!attrNode) {
+      console.log('No attribute node found for: ' + localName
+                  + ' in the namespace: ' + ns);
+      return;
+    }
+        
+    // remove from our XML
+    this._nodeXML.removeAttributeNode(attrNode);
+    
+    // remove from our attributes list
+    var qName = localName;
+    if (ns) {
+      qName = prefix + ':' + localName;
+    }
+    this._attributes['_' + qName] = undefined;
+
+    // send to Flash
+    if (this._attached && this._passThrough) {
+      this._handler.sendToFlash('jsRemoveAttribute', 
+                                [ this._guid, ns, localName ]);
+    }
   },
   
   setAttribute: function(attrName, attrValue /* String */) /* void */ {
     //console.log('setAttribute, attrName='+attrName+', attrValue='+attrValue);
     this.setAttributeNS(null, attrName, attrValue);
   },
-  
-  removeAttribute: function(name) /* void */ {
-    /* throws DOMException */
-    // TODO: Implement
-  },
-
-  getAttributeNS: function(ns, localName) /* String */ {
-    // TODO: Implement
-  },
 
   setAttributeNS: function(ns, qName, attrValue /* String */) /* void */ {
     //console.log('setAttributeNS, ns='+ns+', qName='+qName+', attrValue='+attrValue+', this.nodeName='+this.nodeName);
-    // TODO: Confirm that calling setAttributeNS with arbitrary namespaces
-    // works
-    
-    var elementId = this._nodeXML.getAttribute('id');
     
     // parse out local name of attribute
     var localName = qName;
@@ -5349,11 +5551,14 @@ extend(_Element, {
     // the DOM however)
     if (this._attached && qName == 'id') {
       var doc = this._handler.document;
+      var elementId = this._nodeXML.getAttribute('id');
 
       // old lookup
       doc._nodeById['_' + elementId] = undefined;
-      // new lookup
-      doc._nodeById['_' + attrValue] = this;
+      if (elementId === 0 || elementId) {
+        // new lookup
+        doc._nodeById['_' + attrValue] = this;
+      }
     }
     
     /* Safari has a wild bug; If you have an element inside of a clipPath with
@@ -5387,9 +5592,18 @@ extend(_Element, {
         origParent.appendChild(this._nodeXML);
       }
     } else { // we are an attrname other than style, or on a non-Safari browser
-      // update our XML; we store the full qname (i.e. xlink:href) since
-      // IE has no native setAttributeNS support
-      this._nodeXML.setAttribute(qName, attrValue);
+      // update our XML
+      if (ns && isIE) {
+        // MSXML has its own custom funky way of dealing with namespaces,
+        // so we have to do it this way
+        var attrNode = this._nodeXML.ownerDocument.createNode(2, qName, ns);
+        attrNode.nodeValue = attrValue;
+        this._nodeXML.setAttributeNode(attrNode);
+      } else if (isIE) {
+        this._nodeXML.setAttribute(qName, attrValue);
+      } else {
+        this._nodeXML.setAttributeNS(ns, qName, attrValue);
+      }
     }
 
     // update our internal set of attributes
@@ -5403,18 +5617,44 @@ extend(_Element, {
     }
   },
   
-  removeAttributeNS: function(ns, localName) /* void */ {
-      /* throws DOMException */
-    // TODO: Implement
+  hasAttribute: function(localName) /* Boolean */ {
+    return this.hasAttributeNS(null, localName);
+  },
+
+  hasAttributeNS: function(ns, localName) /* Boolean */ {
+    //console.log('hasAttributeNS, ns='+ns+', localName='+localName);
+    if (!ns && !isIE) {
+      return this._nodeXML.hasAttribute(localName);
+    } else {
+      if (!isIE) {
+        return this._nodeXML.hasAttributeNS(ns, localName);
+      } else {
+        // IE doesn't have hasAttribute or hasAttributeNS
+        var attrNode = null;
+        for (var i = 0; i < this._nodeXML.attributes.length; i++) {
+          var current = this._nodeXML.attributes.item(i);
+          // IE has no localName property; it munges the prefix:localName
+          // together
+          var m = new String(current.name).match(/(?:[^:]+:)?(.*)/);
+          var attrName = m[1];
+          var currentNS = current.namespaceURI;
+          if (currentNS == '') { // IE returns null namespace as ''
+            currentNS = null;
+          }
+          if (ns == currentNS && attrName == localName) {
+            attrNode = current;
+            break;
+          }
+        }
+      
+        return (attrNode != null);
+      }
+    } 
   },
   
   getElementsByTagNameNS: function(ns, localName) /* _NodeList */ {
     // TODO: Implement
   },
-
-  hasAttributeNS: function(ns, localName) /* Boolean */ {
-    // TODO: Implement
-  }, 
 
   /*
     Note: DOM Level 2 getAttributeNode, setAttributeNode, removeAttributeNode,
@@ -5889,7 +6129,7 @@ extend(_Style, {
       var value = this._element._handler.sendToFlash('jsGetAttribute',
                                               [ this._element._guid,
                                                 true, false, null, 
-                                                stylePropName ]);
+                                                stylePropName, false ]);
       return value;
     } else {
       // not attached yet; have to parse it from our local value
@@ -6255,7 +6495,7 @@ extend(_SVGObject, {
   
   _fallback: function(error) {
     console.log('onError (fallback), error='+error);
-    // TODO!!!
+    // TODO: Implement
   },
   
   _loadHTC: function() {
@@ -7581,7 +7821,7 @@ extend(FlashInserter, {
 function _SVGSVGElement(nodeXML, svgString, scriptNode, handler) {
   // superclass constructor
   _Element.apply(this, ['svg', null, svgns, nodeXML, handler, true]);
-  
+
   this._nodeXML = nodeXML;
   this._svgString = svgString;
   this._scriptNode = scriptNode;
@@ -7759,6 +7999,15 @@ extend(_SVGSVGElement, {
       // developers to descend down into the SVG root tag
       // (see Known Issues and Errata for details)
       this._handler.flash.documentElement = this._getProxyNode();
+    }
+    
+    // set the ownerDocument based on how we are embedded
+    if (this._attached) {
+      if (this._handler.type == 'script') {
+        this.ownerDocument = document;
+      } else if (this._handler.type == 'object') {
+        this.ownerDocument = this._handler.document;
+      }
     }
     
     var elementId = this._nodeXML.getAttribute('id');
