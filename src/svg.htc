@@ -163,6 +163,8 @@ The 'lightWeight' attribute below is important for two reasons:
      * Add an empty script block right after the JScript block that 
        is of type text/vbscript (!!!!)
        
+     We choose the second solution.
+       
      The bug is documented here:
      
      http://www.pcreview.co.uk/forums/thread-727396.php

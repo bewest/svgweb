@@ -189,11 +189,11 @@ function runTests(embedTypes) {
   testSuspendRedraw();
   testDocumentFragment();
   testCloneNode();
+  // NOTE: testTranslateScale is called from the async callback of one of the
+  // test objects in testCreateSVGObject()
   //testEventHandlers();
   testBugFixes();
-    
-  // TODO: Test hasChildNodes, removeAttribute
-  
+      
   // TODO: Rename the ID of nodes (including the SVG root) and make sure
   // things propagate correctly
   
@@ -5355,6 +5355,9 @@ function testCreateSVGObject() {
     assertExists('temp.ownerDocument should exist', temp.ownerDocument);
     assertEquals('temp.ownerDocument == obj1.contentDocument',
                  obj1.contentDocument, temp.ownerDocument);
+                 
+    // do some tests to help testTranslateScale on our object
+    testTranslateScale(this.contentDocument.rootElement);
     
     /*
     // TODO: Get inline event handlers working and uncomment this
@@ -5417,7 +5420,7 @@ function testCreateSVGObject() {
                     svg.getAttribute('onclick'));
     console.log('FOURTH IMAGE: Run your mouse into and out of the SVG image; '
                 + 'also click the mouse button');*/
-    
+
     // indicate that this onload and its tests ran
     svgweb._dynamicObjOnloads++;
   }, false);
@@ -5575,7 +5578,7 @@ function testCreateSVGObject() {
     svgweb._dynamicObjOnloads++;
   }, false);
   svgweb.appendChild(obj3, div);
-  
+    
   // test svgweb.removeChild on an SVG OBJECT
   div = document.getElementById('test_container');
   obj4 = document.createElement('object', true);
@@ -7668,6 +7671,58 @@ function testCloneNode() {
   // for clones, so we mimic this behavior                        
   console.log('SECOND IMAGE: There should be a series of purple lines stacked '
               + 'vertically on the bottom right side of the image');
+}
+
+function testTranslateScale(useMe) {
+  console.log('Testing currentTranslate and currentScale...');
+  
+  svg = useMe;
+  
+  // make sure currentTranslate and currentScale are present
+  assertExists('svg.currentTranslate should exist', svg.currentTranslate);
+  assertExists('svg.currentScale should exist', svg.currentScale);
+  
+  // make sure default values are correct before setting
+  assertEquals('svg.currentTranslate.getX() == 0', 0,
+               svg.currentTranslate.getX());
+  assertEquals('svg.currentTranslate.getY() == 0', 0,
+               svg.currentTranslate.getY());
+  assertEquals('svg.currentScale == 1', 1, svg.currentScale);
+  
+  // set with setX() and setY() and make sure getX() and getY() return correct
+  // values: Issue 401: 
+  // "currentTranslate.setXY does translate the svg, but doesn't affect 
+  // currentTranslate.getX or getY"
+  // http://code.google.com/p/svgweb/issues/detail?id=401&start=100)
+  svg.currentTranslate.setX(-10);
+  svg.currentTranslate.setY(-11);
+  assertEquals('svg.currentTranslate.getX() == -10', -10,
+               svg.currentTranslate.getX());
+  assertEquals('svg.currentTranslate.getY() == -11', -11,
+               svg.currentTranslate.getY());
+  console.log('FOURTH IMAGE: The entire SVG should be translated up and to '
+              + 'the left a bit');
+  
+  // set with setXY() and make sure getX() and getY() return correct values
+  // (Issue 401 again)
+  svg.currentTranslate.setXY(-15, -16);
+  assertEquals('svg.currentTranslate.getX() == -15', -15,
+               svg.currentTranslate.getX());
+  assertEquals('svg.currentTranslate.getY() == -16', -16,
+               svg.currentTranslate.getY());
+  
+  // set currentScale, make sure things scale, and make sure currentScale is
+  // correct afterwards and that currentTranslate value stays correct
+  svg.currentScale = 0.5;
+  // some browsers return a very long float value for currentScale
+  assertTrue('svg.currentScale == 0.5', 0.5, 
+             new String(svg.currentScale).indexOf('0.5') != -1);
+  assertEquals('svg.currentTranslate.getX() == -15', -15,
+               svg.currentTranslate.getX());
+  assertEquals('svg.currentTranslate.getY() == -16', -16,
+               svg.currentTranslate.getY());
+  console.log('FOURTH IMAGE: The entire SVG should be scaled down in size '
+              + 'by half');
 }
 
 function testEventHandlers() {

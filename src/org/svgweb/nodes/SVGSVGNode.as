@@ -48,7 +48,7 @@ package org.svgweb.nodes
         public var viewer:SVGViewer;
         
         public var currentScale:Number = 1;
-        public var currentTranslate:Object = {x: 1, y: 1};
+        public var currentTranslate:Object = {x: 0, y: 0};
 
         public var imageCache:Object = new Object();
         private var lastFrameTime:uint = getTimer();
@@ -524,7 +524,7 @@ package org.svgweb.nodes
           } else {
             m = new Matrix();
           }
-          
+                              
           m.translate(this.currentTranslate.x, this.currentTranslate.y);
           m.scale(this.currentScale, this.currentScale);
                                     

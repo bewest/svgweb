@@ -1361,3 +1361,5 @@ svgweb.appendChild(obj, container);</b>
 <p id="known_issues26">If you remove an SVG OBJECT with <code>svgweb.removeChild</code> and then re-attach it, things will not work. You must create a fresh SVG OBJECT in this case.
   
 <p id="known_issues27">If you do a <code>cloneNode</code> on a node or group of nodes that have event listeners, these event listeners will not get copied over; this mimics the native behavior on Firefox and Safari which <em>do not</em> copy over event listeners from cloned nodes.</p>
+
+<p id="known_issues28"><code>currentTranslate</code> and <code>currentScale</code> will only work on the SVG root tags of SVG OBJECTs. If you apply them on directly embedded SVG the results will be unexpected (Safari/Native, for example, will scale the entire page). This makes sense as the SVG directly embedded into a page doesn't have its own translate or scale presence apart from the page itself.</p>

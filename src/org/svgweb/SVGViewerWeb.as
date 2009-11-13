@@ -920,13 +920,14 @@ package org.svgweb
            var args:Array = msg.split(DELIMITER);
            var setMe:String = args[0];
            var newValue:Number = Number(args[1]);
-           var newValue2:Number;
+           var newValue2:Number = Number(args[2]);
            if (setMe == 'xy') {
-             newValue2 = Number(args[2]);
              this.svgRoot.currentTranslate.x = newValue;
              this.svgRoot.currentTranslate.y = newValue2;
+           } else if (setMe == 'x') {
+             this.svgRoot.currentTranslate.x = newValue;
            } else {
-             this.svgRoot.currentTranslate[setMe] = newValue;
+             this.svgRoot.currentTranslate.y = newValue;
            }
            
            this.svgRoot.zoomAndPan();
