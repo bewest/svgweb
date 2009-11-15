@@ -55,6 +55,7 @@ package org.svgweb
     import flash.geom.Point;
     import flash.net.URLLoader;
     import flash.net.URLRequest;
+    import flash.text.TextField;
     import flash.ui.ContextMenu;
     import flash.ui.ContextMenuItem;
     import flash.utils.setTimeout;
@@ -970,9 +971,14 @@ package org.svgweb
         }
 
         public function js_sendMouseEvent(event:MouseEvent):void {
-            if (   ( event.target is SVGSprite ) 
+            if (   ( event.target is SVGSprite || event.target is TextField ) 
                 && ( event.currentTarget is SVGSprite ) ) {
-                var targetNode:SVGNode = SVGSprite(event.target).svgNode;
+                if (event.target is SVGSprite ) {
+                    var targetNode:SVGNode = SVGSprite(event.target).svgNode;
+                }
+                else {
+                    targetNode = SVGSprite(event.currentTarget).svgNode;
+                }
                 var currentTargetNode:SVGNode = SVGSprite(event.currentTarget).svgNode;
                 var scriptCode:String;
 
