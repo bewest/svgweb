@@ -125,8 +125,6 @@ package org.svgweb.nodes
                     this.dbg("last frame time: " + (getTimer() - this.lastFrameTime) +
                          "ms, avg time: " + (this.totalFrameTime/this.frameCount) +
                          "ms avg rate: " + (1000.0/(this.totalFrameTime/this.frameCount)) + " frames/sec");
-                }
-                if (this.frameCount % 100 == 0) {
                     this.totalFrameTime = 0;
                     this.frameCount = 0;
                 }

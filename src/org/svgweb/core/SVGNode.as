@@ -1436,7 +1436,7 @@ package org.svgweb.core
                                          useStyle:Boolean = false):String {
             var animation:SVGAnimateNode;
 
-            // transform is handled by getAllAnimTransforms
+            // transform is handled by getAllAnimsTransforms
             if (name == "transform")
                 return null;
  

@@ -21,19 +21,10 @@ package org.svgweb.nodes
 {
     import org.svgweb.core.SVGNode;
 
-    public class SVGAnimateMotionNode extends SVGAnimateNode
+    public class SVGAnimateMotionNode extends SVGNode
     {
         public function SVGAnimateMotionNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
             super(svgRoot, xml, original);
-        }
-
-        override protected function parseValuesParameter():void {
-        }
-        override protected function parseFromParameter():void {
-        }
-        override protected function parseToParameter():void {
-        }
-        override protected function parseByParameter():void {
         }
 
     }
