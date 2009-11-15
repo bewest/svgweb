@@ -235,13 +235,20 @@ package org.svgweb.nodes
                 strokeWidth = strokeWidth * (1024 / fontSizeNum);
                 return String(strokeWidth);  
             } else if ( (name == "x" || name == "y") ) {
-                // If there is more than one value, then apply them to
-                // individual glyphs, not the text node
                 var xString:String = super.getAttribute(name, defaultValue, inherit, applyAnimations, false);
                 if (xString != null) {
                     xString = xString.replace(/,/sg," "); //Replace commas with spaces
                     if (xString.split(/\s+/).length >= 2) {
-                        return "0";
+                        // For SVG Fonts, if there is more than one value, then apply them to
+                        // individual glyphs, not the text node
+                        if (this._textField == null) {
+                            return "0";
+                        }
+                        else {
+                            // Issue 405: We do not currently support glyph placement
+                            // for native fonts. Just use the first value.
+                            return xString.split(/\s+/)[0];
+                        }
                     }
                     else {
                         return xString;
