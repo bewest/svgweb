@@ -5,12 +5,14 @@ var svgDebug = true;
 
 // whether we are locally debugging (i.e. the page is downloaded to our
 // hard drive and served from a local server to ease development)
-var localDebug = false;
+var localDebug = true;
 
 // the full URL to where svg.js is located
+// Note: Update this before putting on production
 var svgSrcURL;
 if (localDebug) {
   svgSrcURL = 'http://brad.com:8080/src/svg.js';
+  //svgSrcURL = '/src/svg.js';
 } else {
   svgSrcURL = 'http://codinginparadise.org/projects/svgweb-staging/src/svg.js';
 }
@@ -27,7 +29,7 @@ var svgControls;
 // a reference to our SVG root tag
 var svgRoot;
 
-var isSafari = (Math.max(navigator.appVersion.indexOf('WebKit'), 
+var isWebkit = (Math.max(navigator.appVersion.indexOf('WebKit'), 
                          navigator.appVersion.indexOf('Safari'), 0));
 
 var isFF = false;
@@ -37,13 +39,13 @@ if (navigator.userAgent.indexOf('Gecko') >= 0) {
 
 // the URL to the proxy from which we can fetch SVG images within the same
 // domain as this page is served from
-// TODO: define
+// TODO: define once a proxy or API call is setup
 
 // the location of our images
 var imageBundle;
 if (localDebug) {
   // for local debugging
-  var imageRoot = 'http://brad.com:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/';
+  var imageRoot = 'http://127.0.0.1:8080/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/';
   imageBundle = {
     'searchtool': imageRoot + 'searchtool.png',
     'controls-north-mini': imageRoot + 'north-mini.png',
@@ -55,6 +57,7 @@ if (localDebug) {
     'controls-zoom-minus-mini': imageRoot + 'zoom-minus-mini.png'
   };
 } else {
+  // Note: update this before putting on production
   var imageRoot = 'http://codinginparadise.org/projects/svgweb-staging/tests/non-licensed/wikipedia/svgzoom/svgzoom-images/';
   imageBundle = {
     'searchtool': imageRoot + 'searchtool.png',
@@ -68,7 +71,7 @@ if (localDebug) {
   };
 }
 
-// determines if we are at a Wikimedia Commons detail page for an SVG file?
+// determines if we are at a Wikimedia Commons detail page for an SVG file
 function isSVGPage() {
   if (wgNamespaceNumber == 6 && wgTitle && wgTitle.indexOf('.svg') != -1
       && wgAction == 'view') {
@@ -90,7 +93,7 @@ function hasAnnotation() {
   }
 }
 
-// inserts the SVG Web library for IE into the page
+// inserts the SVG Web library into the page
 function insertSVGWeb() {
    document.write('<script type="text/javascript" '
                   + 'src="' + svgSrcURL + '" '
@@ -100,7 +103,8 @@ function insertSVGWeb() {
 
 // adds a button that when pressed turns on the zoom and pan UI
 function addStartButton() {
-   // are we already present? user could have hit back button on an old loaded page
+   // are we already present? user could have hit back button on an old 
+   // loaded page
    if (document.getElementById('SVGZoom.startButton')) {
      return;
    }
@@ -111,7 +115,8 @@ function addStartButton() {
    if (hasAnnotation()) {
      thumbnail = thumbnail.childNodes[0].childNodes[0];
    }
-   // make the container element we will go into a bit larger to accommodate the icon
+   // make the container element we will go into a bit larger to accommodate 
+   // the icon
    var infoWidth = Number(String(info.width).replace('px', ''));
    thumbnail.style.width = (infoWidth + 30) + 'px';
    var img = document.createElement('img');
@@ -159,7 +164,7 @@ function initUI() {
   // Safari/Native has a bug where it doesn't respect the height/width of 
   // the OBJECT when scaling the size of some objects (commons-logo.svg, 
   // for example). A workaround is to manually set the size inside the SVG.
-  if (isSafari) {
+  if (isWebkit) {
     svgRoot.setAttribute('width', info.width);
     svgRoot.setAttribute('height', info.height);
   }
@@ -168,9 +173,10 @@ function initUI() {
   svgObject.parentNode.style.zIndex = 1000;
   svgControls.style.display = 'block';
 
-  // make the cursor a hand when over the SVG
+  // make the cursor a hand when over the SVG; not all browsers support
+  // this property yet
   svgRoot.setAttribute('cursor', 'pointer');
-  // TODO: Get hand cursor showing up in Flash
+  // TODO: Get hand cursor showing up in SVG Web's Flash renderer
   
   // add drag listeners on the SVG root
   svgRoot.addEventListener('mousedown', mouseDown, false);
@@ -331,28 +337,19 @@ function zoomOut() {
 }
 
 // variables used for dragging
-var mouseOffsetX = 0;
-var mouseOffsetY = 0;
-var dragX = 0;
-var dragY = 0;
-var inverseRootCTM;
-var dragging = false; 
+var x, y, rootX, rootY;
+var dragX = 0, dragY = 0;
+var dragging = false;
  
 function mouseDown(evt) {
   dragging = true;
   
-  var p = svgRoot.createSVGPoint();
-  p.x = evt.clientX;
-  p.y = evt.clientY;
-     
-  var rootCTM = svgRoot.getScreenCTM();
-  inverseRootCTM = rootCTM.inverse();
-
-  p = p.matrixTransform(inverseRootCTM);
-         
-  mouseOffsetX = p.x - dragX - svgRoot.currentTranslate.getX();
-  mouseOffsetY = p.y - dragY - svgRoot.currentTranslate.getY();
+  x = evt.clientX;
+  y = evt.clientY;
   
+  rootX = svgRoot.currentTranslate.getX();
+  rootY = svgRoot.currentTranslate.getY();
+    
   evt.preventDefault(true);
 }
 
@@ -361,39 +358,26 @@ function mouseMove(evt) {
      return;
   }
   
-  var p = svgRoot.createSVGPoint();
-  p.x = evt.clientX;
-  p.y = evt.clientY;
+  dragX = evt.clientX - x;
+  dragY = evt.clientY - y;
   
-  p = p.matrixTransform(inverseRootCTM);
-  p.x -= mouseOffsetX;
-  p.y -= mouseOffsetY;
+  // Firefox and Webkit differ on the coordinates they return; Firefox
+  // returns the mouse coordinates with no scaling, while Webkit and SVG Web
+  // scale the mouse coordinates using the currentScale
+  if (isWebkit || svgweb.getHandlerType() == 'flash') {
+    dragX /= svgRoot.currentScale;
+    dragY /= svgRoot.currentScale;
+  }
   
-  dragX = p.x;
-  dragY = p.y;
-  
-  p.x *= svgRoot.currentScale;
-  p.y *= svgRoot.currentScale;
+  var newX = rootX + dragX;
+  var newY = rootY + dragY;
     
-  svgRoot.currentTranslate.setXY(p.x, p.y);
+  svgRoot.currentTranslate.setXY(newX, newY);
   
   evt.preventDefault(true);
 }
 
 function mouseUp(evt) {
-  var p = svgRoot.createSVGPoint();
-  p.x = evt.clientX;
-  p.y = evt.clientY;
-  
-  p = p.matrixTransform(inverseRootCTM);
-  p.x -= mouseOffsetX;
-  p.y -= mouseOffsetY;
-  
-  dragX = p.x;
-  dragY = p.y;
-    
-  mouseOffsetX = 0;
-  mouseOffsetY = 0;
   dragging = false;
   
   evt.preventDefault(true);
