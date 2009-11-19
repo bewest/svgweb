@@ -1753,7 +1753,14 @@ package org.svgweb.core
         public function invalidateChildren():void {
             var child:SVGNode;
             for (var i:uint = 0; i < viewBoxSprite.numChildren; i++) {
-                child = SVGSprite(viewBoxSprite.getChildAt(i)).svgNode;
+                var node:DisplayObject = viewBoxSprite.getChildAt(i);
+                if (!(node is SVGNode)) {
+                  // Issue 391: 
+                  // "Get Jessyink demo working on SVG Web"
+                  // http://code.google.com/p/svgweb/issues/detail?id=391
+                  continue;
+                }
+                child = SVGSprite(node).svgNode;
                 child.invalidateDisplay();
                 child.invalidateChildren();
             }

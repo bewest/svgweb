@@ -1101,13 +1101,18 @@ limitation of the SVG Web framework.</p>
 <p id="known_issues6">* On Internet Explorer we don't support wildcarding a given tag name
 across known namespaces and a given tag:</p>
 
-<pre><code>getElementsByTagNameNS(*, 'someTag');</code></pre>
+<pre><code>getElementsByTagNameNS('*', 'someTag');</code></pre>
 
 <p>We _do_ support wildcard calls of the following type:</p>
 
 <pre><code>getElementsByTagNameNS('*', '*');
 getElementsByTagNameNS('someNameSpace', '*');
 getElementsByTagNameNS(null, 'someTag');</code></pre>
+
+<p>The same limitation applies when using getElementsByTagNameNS scoped to
+a particular node, so the following would not work on Internet Explorer:</p>
+
+<pre><code>someNode.getElementsByTagNameNS('*', 'someTag');</code></pre>
 
 <p id="known_issues7">* insertBefore and replaceChild only accepts DOM element nodes for now, not 
 DOM text nodes</p>

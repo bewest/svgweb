@@ -1653,7 +1653,7 @@ extend(SVGWeb, {
       // IE memory leaks
       var f = (function(rootOnload, rootID) {
         return function() {
-          // get our SVG root so we can set the 'this' keyword correctly
+          // get our SVG root so we can set the 'this' reference correctly
           var handler = svgweb.handlers[rootID];
           var root;
           if (svgweb.getHandlerType() == 'flash') {
@@ -2388,7 +2388,7 @@ FlashHandler._prepareBehavior = function(libraryPath, htcFilename) {
     that external callers can manipulate it and have getter/setter magic happen; 
     if other browsers, returns the _Node or _Element itself. */
 FlashHandler._getNode = function(nodeXML, handler) {
-  //console.log('getNode, nodeXML='+nodeXML+', nodeName='+nodeXML.nodeName+', guid='+nodeXML.getAttribute('__guid')+', handler='+handler);
+  //console.log('getNode, nodeXML='+nodeXML+', nodeName='+nodeXML.nodeName+', handler='+handler);
   var node;
   
   // if we've created an _Element or _Node for this XML before, we
@@ -2413,7 +2413,7 @@ FlashHandler._getNode = function(nodeXML, handler) {
     throw new Error('Unknown node type given to _getNode: ' 
                     + nodeXML.nodeType);
   }
-    
+
   return node._getProxyNode();
 };
 
@@ -2481,7 +2481,7 @@ FlashHandler._getElementById = function(id) {
     scope, so 'this' will not refer to our object instance but rather
     the window object. */
 FlashHandler._getElementsByTagNameNS = function(ns, localName) {
-  //console.log('getElementsByTagNameNS, ns='+ns+', localName='+localName);
+  //console.log('FlashHandler._getElementsByTagNameNS, ns='+ns+', localName='+localName);
   var results = createNodeList();
   
   // NOTE: can't use Array.concat to combine our arrays below because 
@@ -3503,17 +3503,26 @@ extend(NativeHandler, {
       // Issue 219: "body.onload not fired for SVG OBJECT"
       // http://code.google.com/p/svgweb/issues/detail?id=219
       var self = this;
+      // Our OBJECT node could have come about in two ways:
+      // * It was dynamically created with createElement - in this case 
       // make sure to call the original, unpatched version of
       // addEventListener (notice that it is _addEventListener below)! We
       // patched this in NativeHandler._patchAddEventListener().
-      this._objNode._addEventListener('load', function() {
+      // * It was in the markup of the page on page load - use the standard
+      // unpatched addEventListener
+      var loadFunc = function() {
         // svgweb.removeChild might have been called before we are fired
         if (!self._objNode.contentDocument) {
           return;
         }
         var win = self._objNode.contentDocument.defaultView;
         self._onObjectLoad(self._objNode._svgFunc, win);
-      }, false);
+      };
+      if (this._objNode._addEventListener) {
+        this._objNode._addEventListener('load', loadFunc, false);
+      } else {
+        this._objNode.addEventListener('load', loadFunc, false);
+      }
     }
   },
   
@@ -5359,6 +5368,7 @@ extend(_Node, {
           = this.removeAttributeNS
           = this.hasAttribute
           = this.hasAttributeNS
+          = this.getElementsByTagNameNS
           = this._getId
           = this._setId
           = this._getX
@@ -5726,7 +5736,118 @@ extend(_Element, {
   },
   
   getElementsByTagNameNS: function(ns, localName) /* _NodeList */ {
-    // TODO: Implement
+    //console.log('_Element.getElementsByTagNameNS, ns='+ns+', localName='+localName);
+    var results = createNodeList();
+    var matches;
+    // DOM Level 2 spec details:
+    // if ns is null or '', return elements that have no namespace
+    // if ns is '*', match all namespaces
+    // if localName is '*', match all tags in the given namespace
+    if (ns == '') {
+      ns = null;
+    }
+    
+    // we internally have to mess with the SVG namespace a bit to avoid
+    // an issue with Firefox and Safari
+    if (ns == svgns) {
+      ns = svgnsFake;
+    }
+
+    // get DOM nodes with the given tag name
+    if (this._nodeXML.getElementsByTagNameNS) { // non-IE browsers
+      results = this._nodeXML.getElementsByTagNameNS(ns, localName);
+    } else { // IE
+      // we use XPath instead of xml.getElementsByTagName because some versions
+      // of MSXML have namespace glitches with xml.getElementsByTagName
+      // (Issue 183: http://code.google.com/p/svgweb/issues/detail?id=183)
+      // and the namespace aware xml.getElementsByTagNameNS is not supported
+      var namespaces = null;
+      if (this._attached) {
+        namespaces = this._handler._namespaces;
+      }
+      
+      // figure out prefix
+      var prefix = 'xmlns';
+      if (ns && ns != '*' && namespaces) {
+        prefix = namespaces['_' + ns];
+        
+        if (prefix === undefined) {
+          return createNodeList(); // empty []
+        }
+      }
+      
+      // determine correct xpath query; 
+      // MSXML incorrectly evaluates XPath expressions on the _whole_ XML DOM
+      // document rather than restricting things to our context. In order to
+      // provide support for contextual getElementsByTagNameNS we use the
+      // following 'hack': we get all of our nodes, but then do a node test
+      // along the ancestor axis to make sure we are rooted under the 
+      // node that has the GUID of our context
+      var query;
+      if (ns == '*' && localName == '*') {
+        query = "//*[ancestor::*[@__guid = '" + this._guid + "']]";
+      } else if (ns == '*') {
+        // NOTE: IE does not support wild carding just the namespace; see
+        // http://svgweb.googlecode.com/svn/trunk/docs/UserManual.html#known_issues6
+        // for details
+        query = "//*[namespace-uri()='*' and local-name()='" + localName + "'"
+                + " and ancestor::*[@__guid = '" + this._guid + "']]";
+      } else if (localName == '*') {
+        query = "//*[namespace-uri()='" + ns + "'"
+                + " and ancestor::*[@__guid = '" + this._guid + "']]";
+      } else {
+        // Wonderful IE bug: some versions of MSXML don't seem to 'see'
+        // the default XML namespace with XPath, forcing you to pretend like 
+        // an element has no namespace: '//circle'
+        // _Other_ versions of MSXML won't work like this, and _do_ see the
+        // default namespace, forcing you to fully specify it:
+        // //*[namespace-uri()='http://my-namespace' and local-name()='circle']
+        // To accomodate these we run both and use an XPath Union Operator
+        // to combine the results. One is the MSXML default in Windows XP,
+        // the other is an updated MSXML component installed by 
+        // Microsoft Office.
+        query = "//" + localName + "[ancestor::*[@__guid = '" + this._guid + "']]"
+                + "| //*[namespace-uri()='" + ns 
+                + "' and local-name()='" + localName + "'"
+                + " and ancestor::*[@__guid = '" + this._guid + "']]";
+      }
+            
+      matches = xpath(this._nodeXML.ownerDocument, this._nodeXML, query, 
+                      namespaces);
+      if (matches !== null && matches !== undefined && matches.length > 0) {
+        for (var i = 0; i < matches.length; i++) {
+          // IE will incorrectly return the context node under some 
+          // conditions; filter that out
+          if (matches[i] === this._nodeXML) {
+            continue;
+          }
+          results.push(matches[i]);
+        }
+      }
+    }
+    
+    // When doing wildcards on local name and namespace text nodes
+    // can also sometimes be included; filter them out
+    if (ns == '*' && localName == '*') {
+      var temp = [];
+      for (var i = 0; i < results.length; i++) {
+        if (results[i].nodeType == _Node.ELEMENT_NODE
+            && results[i].nodeName != '__text') {
+          temp.push(results[i]);
+        }
+      }
+      results = temp;
+    }
+
+    // now create or fetch _Elements representing these DOM nodes
+    var nodes = createNodeList();
+    for (var i = 0; i < results.length; i++) {
+      var elem = FlashHandler._getNode(results[i], this._handler);
+      elem._passThrough = true;
+      nodes.push(elem);
+    }
+    
+    return nodes;
   },
 
   /*
@@ -8082,6 +8203,8 @@ extend(_SVGSVGElement, {
       }
     }
     
+    this._handler.document.rootElement = this;
+    
     var elementId = this._nodeXML.getAttribute('id');
     this._handler._loaded = true;
     //end('onRenderingFinished');
@@ -8252,79 +8375,21 @@ extend(_Document, {
   */
   getElementsByTagNameNS: function(ns, localName) /* _NodeList of _Elements */ {
     //console.log('document.getElementsByTagNameNS, ns='+ns+', localName='+localName);
-    var results = createNodeList();
-    var matches;
-    // DOM Level 2 spec details:
-    // if ns is null or '', return elements that have no namespace
-    // if ns is '*', match all namespaces
-    // if localName is '*', match all tags in the given namespace
-    if (ns == '') {
-      ns = null;
+    // we might be a dynamically created SVG script node that is not done
+    // loading yet
+    if (this._handler.type == 'script' && !this._handler._loaded) {
+      return [];
     }
     
-    // we internally have to mess with the SVG namespace a bit to avoid
-    // an issue with Firefox and Safari
-    if (ns == svgns) {
-      ns = svgnsFake;
-    }
-
-    // get DOM nodes with the given tag name
-    if (this._xml.getElementsByTagNameNS) { // non-IE browsers
-      results = this._xml.getElementsByTagNameNS(ns, localName);
-    } else { // IE
-      // we use XPath instead of xml.getElementsByTagName because some versions
-      // of MSXML have namespace glitches with xml.getElementsByTagName
-      // (Issue 183: http://code.google.com/p/svgweb/issues/detail?id=183)
-      
-      // figure out prefix
-      var prefix = 'xmlns';
-      if (ns && ns != '*') {
-        prefix = this._namespaces['_' + ns];
-        
-        if (prefix === undefined) {
-          return createNodeList(); // empty []
-        }
-      }
-      
-      // determine correct xpath query
-      var query;
-      if (ns == '*' && localName == '*') {
-        query = '//*';
-      } else if (ns == '*') {
-        query = "//*[namespace-uri()='*' and local-name()='" + localName + "']";
-      } else if (localName == '*') {
-        query = "//*[namespace-uri()='" + ns + "']";
-      } else {
-        // Wonderful IE bug: some versions of MSXML don't seem to 'see'
-        // the default XML namespace with XPath, forcing you to pretend like 
-        // an element has no namespace: //circle
-        // _Other_ versions of MSXML won't work like this, and _do_ see the
-        // default namespace, forcing you to fully specify it:
-        // //*[namespace-uri()='http://my-namespace' and local-name()='circle']
-        // To accomodate these we run both and use an XPath Union Operator
-        // to combine the results
-        query = "//" + localName 
-                + " | //*[namespace-uri()='" + ns + "' and local-name()='" 
-                + localName + "']";
-      }
-
-      matches = xpath(this._xml, null, query, this._namespaces);
-      if (matches !== null && matches !== undefined && matches.length > 0) {
-        for (var i = 0; i < matches.length; i++) {
-          results.push(matches[i]);
-        }
-      }
+    var results = this.rootElement.getElementsByTagNameNS(ns, localName);
+    
+    // Make sure to include root SVG node in our results if that is what
+    // is asked for!
+    if (ns == svgns && localName == 'svg') {
+      results.push(this.rootElement._getProxyNode());
     }
     
-    // now create or fetch _Elements representing these DOM nodes
-    var nodes = createNodeList();
-    for (var i = 0; i < results.length; i++) {
-      var elem = FlashHandler._getNode(results[i], this._handler);
-      elem._passThrough = true;
-      nodes.push(elem);
-    }
-    
-    return nodes;
+    return results;
   },
   
   // Note: createDocumentFragment, createComment, createCDATASection,

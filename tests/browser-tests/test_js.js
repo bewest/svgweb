@@ -115,7 +115,7 @@ var myRect, mySVG, rects, sodipodi, rdf, div, dc, bad, root, rect,
     image, images, line, doTests, styleReturned, use, regExp, split, doc,
     orig, rect1, rect2, obj1, obj2, obj3, obj4, handler, elem, suspendID1,
     suspendID2, i, anim, frag, frag2, frag3, nodes, eventHandlers,
-    makeEventHandler, clone, link;
+    makeEventHandler, clone, link, doTest;
     
 var allStyles = [
   'font', 'fontFamily', 'fontSize', 'fontSizeAdjust', 'fontStretch', 'fontStyle',
@@ -135,9 +135,6 @@ var allStyles = [
 ];
 
 function runTests(embedTypes) {
-  // TODO: Refactor this to use JSUnit instead of our own custom assertion 
-  // methods
-  
   // did we embed any of the SVG using OBJECTs?
   if (embedTypes['mySVG'] == 'object' || embedTypes['svg2'] == 'object'
       || embedTypes['svg11242'] == 'object') {
@@ -763,46 +760,50 @@ function testGetElementsByTagNameNS() {
   assertEquals("doc.getElementsByTagNameNS(null, 'rect').length "
                + "should be 0", 0, rects.length);
   
-  // TODO: FIXME: uncomment these when we support contextual node finding            
   // test contextual getElementsByTagNameNS to find SVG nodes
-  //group = getDoc('svg2').getElementById('layer1');
-  //matches = group.getElementsByTagNameNS(svgns, 'rect');
-  //assertExists("group.getElementsByTagNameNS(svgns, 'rect') should "
-  //             + "return results", matches);
-  //assertEquals("group.getElementsByTagNameNS(svgns, 'rect').length == 1", 
-  //             1, matches.length);
-  //rect = matches[0];
-  //assertEquals('rect.nodeName == rect', 'rect', rect.nodeName);
-  //assertEquals('rect.id == rect3926', 'rect3926', rect.id);
+  group = getDoc('svg2').getElementById('layer1');
+  matches = group.getElementsByTagNameNS(svgns, 'rect');
+  assertExists("group.getElementsByTagNameNS(svgns, 'rect') should "
+               + "return results", matches);
+  assertEquals("group.getElementsByTagNameNS(svgns, 'rect').length == 1", 
+               1, matches.length);
+  rect = matches[0];
+  assertEquals('rect.nodeName == rect', 'rect', rect.nodeName);
+  assertEquals('rect.id == rect3926', 'rect3926', rect.id);
+  
   // test contextual getElementsByTagNameNS on a node with children but with
   // a tag that should have no results
-  //matches = group.getElementsByTagNameNS(svgns, 'text');
-  //assertEquals("group.getElementsByTagNameNS(svgns, 'text').length == 0", 0, 
-  //             matches.length);
+  matches = group.getElementsByTagNameNS(svgns, 'text');
+  assertEquals("group.getElementsByTagNameNS(svgns, 'text').length == 0", 0, 
+               matches.length);
   
   // test contextual getElementsByTagNameNS on node with no children
-  //path = getDoc('svg2').getElementById('path3913');
-  //matches = path.getElementsByTagNameNS(svgns, 'rect');
-  //assertEquals("path.getElementsByTagNameNS(svgns, 'rect').length == 0", 0, 
-  //             matches.length);
+  path = getDoc('svg2').getElementById('path3913');
+  matches = path.getElementsByTagNameNS(svgns, 'rect');
+  assertEquals("path.getElementsByTagNameNS(svgns, 'rect').length == 0", 0, 
+               matches.length);
   
   // test contextual getElementsByTagNameNS on node with only textual children
-  //text = getDoc('mySVG').getElementById('testText5');
-  //matches = text.getElementsByTagNameNS(svgns, 'path');
-  //assertEquals("text.getElementsByTagNameNS(svgns, 'path').length == 0", 0, 
-  //             matches.length);
+  text = getDoc('mySVG').getElementById('testText5');
+  matches = text.getElementsByTagNameNS(svgns, 'path');
+  assertEquals("text.getElementsByTagNameNS(svgns, 'path').length == 0", 0, 
+               matches.length);
   
   // text contextual getElementsByTagNameNS to get a non-SVG node
-  //metadata = getDoc('svg2').getElementById('metadata7');
-  //matches = metadata.getElementsByTagNameNS(cc_ns, 'Work');
-  //assertExists('getElementsByTagNameNS(cc:Work) should return something',
-  //             matches);
-  //assertEquals('getElementsByTagNameNS(cc:Work).length == 1', 1, 
-  //             matches.length);
-  //cc = matches[0];
-  //assertExists('myCCWork from contentDocument should exist', cc);
-  //assertEquals('myCCWork.getAttribute(id) == myCCWork', 'myCCWork',
-  //             cc.getAttribute('id'));
+  // NOTE: Safari/Native has a bug where getElementsByTagNameNS contextually
+  // filtered on non-SVG and non-HTML nodes does not work
+  if (renderer == 'flash' || !isSafari) {
+    metadata = getDoc('svg2').getElementById('metadata7');
+    matches = metadata.getElementsByTagNameNS(cc_ns, 'Work');
+    assertExists('getElementsByTagNameNS(cc:Work) should return something',
+                 matches);
+    assertEquals('getElementsByTagNameNS(cc:Work).length == 1', 1, 
+                 matches.length);
+    cc = matches[0];
+    assertExists('myCCWork from contentDocument should exist', cc);
+    assertEquals('myCCWork.getAttribute(id) == myCCWork', 'myCCWork',
+                 cc.getAttribute('id'));
+  }
                
   // test getElementsByTagNameNS on normal HTML content to
   // ensure it still works
@@ -813,6 +814,82 @@ function testGetElementsByTagNameNS() {
     html = document.getElementsByTagNameNS(ns, 'head');
     assertEquals('There should be one HEAD element after calling '
                  + 'getElementsByTagNameNS', 1, html.length);
+  }
+  
+  // test getElementsByTagNameNS on a disconnected node
+  group = getDoc('svg2').createElementNS(svgns, 'g');
+  for (var i = 0; i < 10; i++) {
+    rect = getDoc('svg2').createElementNS(svgns, 'rect');
+    group.appendChild(rect);
+  }
+  matches = group.getElementsByTagNameNS(svgns, 'rect');
+  assertEquals('matches.length == 10 rectangles', 10, matches.length);
+  
+  // test getElementsByTagNameNS on a disconnected node from a non-HTML, 
+  // non-SVG namespace
+  metadata = getDoc('svg2').createElementNS(svgns, 'metadata');
+  rdf = getDoc('svg2')
+          .createElementNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+                           'RDF');
+  metadata.appendChild(rdf);
+  matches = getDoc('svg2')
+          .getElementsByTagNameNS('http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+                                  'RDF');
+  assertEquals('matches.length == 1 RDF node', 1, matches.length);
+  
+  // do a contextual getElementsByTagNameNS on a group node with children;
+  // temporarily add some nested groups; the way IE internally works it returns
+  // the contextual node we are searching on as well, and want to ensure that
+  // doesn't happen externally
+  svg = getRoot('svg2');
+  group = getDoc('svg2').createElementNS(svgns, 'g');
+  group.id = 'gettingTestParent';
+  svg.appendChild(group);
+  group = getDoc('svg2').createElementNS(svgns, 'g');
+  group.id = 'gettingTestChild1';
+  svg.lastChild.appendChild(group);
+  group = getDoc('svg2').createElementNS(svgns, 'g');
+  group.id = 'gettingTestChild2';
+  svg.lastChild.appendChild(group);
+  group = svg.lastChild;
+  assertEquals('svg.lastChild.nodeName == g', 'g', group.nodeName);
+  matches = group.getElementsByTagNameNS(svgns, 'g');
+  assertEquals('matches.length == 2 groups', 2, matches.length);
+  assertEquals('matches[0].id == gettingTestChild1', 'gettingTestChild1',
+               matches[0].id);
+  assertEquals('matches[1].id == gettingTestChild2', 'gettingTestChild2',
+               matches[1].id);
+  // clean up
+  group.parentNode.removeChild(group);
+  
+  // do a contextual getElementsByTagNameNS with wildcarded namespace
+  // Safari/Native does not work with these; Internet Explorer has same
+  // limitation
+  doTest = true;
+  if (isIE) {
+    doTest = false;
+  } else if (renderer != 'flash' && isSafari) {
+    doTest = false;
+  }
+  if (doTest) {
+    metadata = getDoc('svg2').getElementById('metadata7');
+    matches = metadata.getElementsByTagNameNS('*', 'Work');
+    assertEquals('matches.length == 1 of Work', 1, matches.length);
+  }
+  
+  // do a contextual getElementsByTagNameNS with wildcarded localName
+  if (renderer == 'flash' || !isSafari) {
+    metadata = getDoc('svg2').getElementById('metadata7');
+    matches = metadata.getElementsByTagNameNS(cc_ns, '*');
+    assertEquals('matches.length == 1 of Work', 1, matches.length);
+  }
+  
+  // do a contextual getElementsByTagNameNS with wildcarded
+  // AND localName
+  if (renderer == 'flash' || !isSafari) {
+    metadata = getDoc('svg2').getElementById('metadata7');
+    matches = metadata.getElementsByTagNameNS('*', '*');
+    assertEquals('matches.length == 4 of RDF, Work, etc.', 4, matches.length);
   }
 }
 
@@ -5689,6 +5766,41 @@ function testCreateSVGRoot() {
                  'body', parent.nodeName.toLowerCase());
     assertEquals('dynamic SVG root parent node == document.body',
                  document.body, parent);
+                 
+    // do a test for testGetElementsByTagNameNS
+    matches = svg.getElementsByTagNameNS(svgns, 'circle');
+    assertEquals('matches.length == 1 circle', 1, matches.length);
+    
+    // do another test but make sure SVG elements show up
+    matches = svg.ownerDocument.getElementsByTagNameNS(svgns, 'svg');
+    assertTrue('matches.length > 3 for SVG roots', (matches.length > 3));
+    
+    // repeat, but do a getElementsByTagNameNS call scoped to a node;
+    // add a group to play with, then remove it
+    group = svg.ownerDocument.createElementNS(svgns, 'g');
+    rect = svg.ownerDocument.createElementNS(svgns, 'rect');
+    rect.id = 'imHereForGetElementsByTagNameNS';
+    group.appendChild(rect);
+    svg.appendChild(group);
+    assertEquals('svg.lastChild == g', group, svg.lastChild);
+    matches = svg.lastChild.getElementsByTagNameNS(svgns, 'rect');
+    assertEquals('matches.length == 1 rect', 1, matches.length);
+    // make sure that our rectangle shows up globally
+    matches = document.getElementsByTagNameNS(svgns, 'rect');
+    rect = null;
+    for (var i = 0; i < matches.length; i++) {
+      if (matches[i].id == 'imHereForGetElementsByTagNameNS') {
+        rect = matches[i];
+        break;
+      }
+    }
+    assertExists('The rect with ID imHereForGetElementsByTagNameNS should '
+                 + 'exists', rect);
+    // clean up
+    group.parentNode.removeChild(group);
+    // make sure the rectangle is gone from the global namespace after removal
+    rect = document.getElementById('imHereForGetElementsByTagNameNS');
+    assertNull('imHereForGetElementsByTagNameNS should be gone', rect);
                  
     // do a test for testCloneNode:
     // tunnel into an SVG root and clone an element there

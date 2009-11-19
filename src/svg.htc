@@ -75,6 +75,7 @@ The 'lightWeight' attribute below is important for two reasons:
     <method name="createSVGPoint" />
     <method name="createSVGRect" />
     <method name="cloneNode" />
+    <method name="getElementsByTagNameNS" />
     
     <defaults tabStop="false" contentEditable="false"
               canHaveHTML="false" viewInheritStyle="true"
@@ -109,6 +110,7 @@ The 'lightWeight' attribute below is important for two reasons:
   function createSVGPoint() { return this._fakeNode.createSVGPoint(); }
   function createSVGRect() { return this._fakeNode.createSVGRect(); }
   function cloneNode(d) { return this._fakeNode.cloneNode(d); }
+  function getElementsByTagNameNS(n, l) { return this._fakeNode.getElementsByTagNameNS(n, l); }
 
   function _getNodeName() { return this._fakeNode.nodeName; }
   function _getNodeType() { return this._fakeNode.nodeType; }
