@@ -342,6 +342,7 @@ window.onload = function () {
   lat = 37.687;
   lng = -122.407;
   
+  svgroot.suspendRedraw(20000);
 	SA.generateChart(addr, lat, lng, SA.date);
-
+  svgroot.unsuspendRedrawAll();
 };
