@@ -3656,8 +3656,14 @@ extend(NativeHandler, {
     var t;
     if (typeof SVGRoot != 'undefined') { // FF
       t = root.currentTranslate;
-    } else { // Safari et al
+    } else if (typeof root.currentTranslate.__proto__ != 'undefined') {
+      // Safari
       t = root.currentTranslate.__proto__;
+    } else if (typeof SVGPoint != 'undefined') { // Opera
+      // Issue 358:
+      // "Opera throws exception on patch to currentTranslate"
+      // http://code.google.com/p/svgweb/issues/detail?id=358
+      t = SVGPoint.prototype;
     }
     
     t.setX = function(newValue) { return this.x = newValue; }
