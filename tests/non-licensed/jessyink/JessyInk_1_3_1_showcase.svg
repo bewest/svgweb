@@ -14043,8 +14043,6 @@ function jessyInkInit()
 				if (ROOT_NODE.hasAttribute(&quot;style&quot;))
 					newAttribute += ROOT_NODE.getAttribute(&quot;style&quot;);
 
-        // FIXME: The following line throws an exception in SVG Web
-        // Brad Neuberg
 				ROOT_NODE.setAttribute(&quot;style&quot;, newAttribute);
 			}
 		}
