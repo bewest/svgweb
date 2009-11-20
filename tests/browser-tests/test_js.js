@@ -113,9 +113,9 @@ var myRect, mySVG, rects, sodipodi, rdf, div, dc, bad, root, rect,
     stop, defs, parent, textNode2, renderer,
     origText, exp, html, ns, nextToLast, paths, styleStr,
     image, images, line, doTests, styleReturned, use, regExp, split, doc,
-    orig, rect1, rect2, obj1, obj2, obj3, obj4, handler, elem, suspendID1,
+    orig, rect1, rect2, obj, obj1, obj2, obj3, obj4, handler, elem, suspendID1,
     suspendID2, i, anim, frag, frag2, frag3, nodes, eventHandlers,
-    makeEventHandler, clone, link, doTest;
+    makeEventHandler, clone, link, doTest, xml, importedNode;
     
 var allStyles = [
   'font', 'fontFamily', 'fontSize', 'fontSizeAdjust', 'fontStretch', 'fontStyle',
@@ -186,6 +186,8 @@ function runTests(embedTypes) {
   testSuspendRedraw();
   testDocumentFragment();
   testCloneNode();
+  // TODO: Uncomment when importNode is done
+  //testImportNode();
   // NOTE: testTranslateScale is called from the async callback of one of the
   // test objects in testCreateSVGObject()
   //testEventHandlers();
@@ -303,13 +305,13 @@ function runTests(embedTypes) {
     // the different ways we subscribed to the onload events worked;
     // NOTE: this must be in the final dynamically created SVG OBJECT's
     // onload function that we want to check for
-    assertEquals('onload should have fired for our 3 listeners for dynamic '
-                 + 'objects', 3, svgweb._dynamicObjOnloads);
+    assertEquals('onload should have fired for our 4 listeners for dynamic '
+                 + 'objects', 4, svgweb._dynamicObjOnloads);
                  
     if (!_hasObjects) {
       // make sure that our dynamic SVG roots fired their onloads correctly
-      assertEquals('onload should have fired for our 5 listeners for dynamic '
-                   + 'root', 5, svgweb._dynamicRootOnloads);
+      assertEquals('onload should have fired for our 6 listeners for dynamic '
+                   + 'root', 6, svgweb._dynamicRootOnloads);
     }   
        
     if (_hasObjects) {
@@ -7783,6 +7785,143 @@ function testCloneNode() {
   // for clones, so we mimic this behavior                        
   console.log('SECOND IMAGE: There should be a series of purple lines stacked '
               + 'vertically on the bottom right side of the image');
+}
+
+function testImportNode() {
+  // Test the importNode method
+  console.log('Testing importNode...');
+  
+  // parse some XML that has a full SVG root in it, make a new SVG OBJECT,
+  // and bring everything under the root element in.
+  xml = fetchURL('../../samples/svg-files/tiger.svg');
+  assertExists('The text from tiger.svg should exist', xml);
+  xml = parseXML(xml);
+  assertExists('The parsed XML from tiger.svg should exist', xml);
+  // make sure it has the correct # of children, including whitespace
+  // nodes
+  // first child is DTD definition, second is SVG root element
+  assertEquals('xml.childNodes.length == 2', 2, xml.childNodes.length);
+  assertExists('xml.documentElement should exist', xml.documentElement);
+  assertEquals('xml.documentElement.nodeName == svg', 'svg',
+               xml.documentElement.nodeName);
+  // create our new SVG OBJECT
+  div = document.getElementById('test_container');
+  obj = document.createElement('object', true);
+  obj.setAttribute('data', '../../samples/svg-files/rectangles.svg');
+  obj.setAttribute('type', 'image/svg+xml');
+  obj.addEventListener('load', 
+    (function(xml) {
+      return function() {
+        obj = this;
+        doc = obj.contentDocument;
+        assertExists('Doc should exist', doc);
+        svg = doc.rootElement;
+        assertExists('The rootElement should exist before', svg);
+        // try to import the SVG root - should throw an exception
+        exp = null;
+        try {
+          xml.rootElement.importNode(root, true);
+        } catch (e) {
+          exp = e;
+        }
+        assertExists('Trying to import node should throw exception', exp);
+        // get first child of XML
+        root = xml.documentElement;
+        group = root.childNodes[1];
+        assertEquals('group.nodeName == g', 'g', group.nodeName);
+        assertEqualsAny('group.getAttribute(transform) == translate(200,200)',
+                     ['translate(200,200)', 'translate(200, 200)'], 
+                     group.getAttribute('transform'));
+        assertEquals('root.childNodes[2].nodeType == 3', 3,
+                      root.childNodes[2].nodeType);
+        // import it and make sure values are correct
+        group = doc.importNode(group, true);
+        assertEquals('group.nodeName == g', 'g', group.nodeName);
+        assertEqualsAny('group.getAttribute(transform) == translate(200,200)',
+                     ['translate(200,200)', 'translate(200, 200)'], 
+                     group.getAttribute('transform'));
+        assertEquals('root.childNodes[2].nodeType == 3', 3,
+                      root.childNodes[2].nodeType);
+        // now bring it into our existing SVG OBJECT
+        svg.appendChild(group);
+        // make sure last element is our group
+        group = svg.lastChild;
+        assertEquals('lastChild.nodeName == g', 'g', group.nodeName);
+        assertEqualsAny('lastChild.getAttribute(transform) == translate(200,200)',
+                     ['translate(200,200)', 'translate(200, 200)'], 
+                     group.getAttribute('transform'));
+        // scale the tiger as well
+        group.setAttribute('transform', 'translate(60, 60) scale(0.2 0.2)');
+        // make sure ownerDocument is correct
+        assertExists('group.ownerDocument should exist', group.ownerDocument);
+        assertEquals('lastChild.ownerDocument == SVG OBJECT owner doc',
+                     doc, group.ownerDocument);
+                     
+        console.log('You should see a tiger SVG on the page');
+                     
+        // indicate that this onload and its tests ran
+        svgweb._dynamicObjOnloads++;
+      }
+  })(xml), false); // Form closure over XML so we can access it in callback
+  svgweb.appendChild(obj, div);
+  
+  // parse some XML that has a full SVG root in it, make a new SVG SCRIPT embed,
+  // and bring the whole thing in
+  xml = fetchURL('../../samples/svg-files/DroidSans.svg');
+  assertExists('The text from DroidSans.svg should exist', xml);
+  xml = parseXML(xml);
+  assertExists('The parsed XML from DroidSans.svg should exist', xml);
+  // make sure parsed XML is correct
+  root = xml.documentElement;
+  assertEquals('xml.childNodes.length == 2', 2, xml.childNodes.length);
+  assertEquals('root.childNodes.length == 5', 5, root.childNodes.length);
+  // make a dynamic SVG root
+  div = document.getElementById('test_container');
+  svg = document.createElementNS(svgns, 'svg');
+  svg.setAttribute('width', 300);
+  svg.setAttribute('height', 300);
+  svg.addEventListener('SVGLoad', 
+    (function(xml) {
+      return function() {
+        svg = this;
+        // import each of the children and append to ourselves
+        for (var i = 0; i < xml.documentElement.childNodes.length; i++) {
+          child = xml.documentElement.childNodes[i];
+          child = document.importNode(child, true);
+          svg.appendChild(child);
+        }
+        // make sure values were brought in
+        assertExists('document.getElementById(DroidSans) should exist',
+                     document.getElementById('DroidSans'));
+        matches = svg.getElementsByTagNameNS(svgns, 'text');
+        assertExists('matches should exist', matches);
+        assertEquals('matches.length == 4', 4, matches.length);
+        assertEquals('matches[0].childNodes[0].nodeValue == '
+                     + 'SVG Open 2009', 'SVG Open 2009',
+                     matches[0].childNodes[0].nodeValue);
+                     
+        console.log('You should see part of the alphabet as a separate SVG'
+                    + ' image, showing the SVG DroidSans font');
+        
+        // indicate that this onload and its tests ran
+        svgweb._dynamicRootOnloads++;
+      }
+  })(xml), false); // make closure to just grab XML object
+  svgweb.appendChild(svg, div);
+  
+  // TODO: parse some XML and get just an SVG fragment; import it into an 
+  // existing SVG SCRIPT embed
+  
+  // TODO: repeat, but have the XML be the responseXML returned by an 
+  // XHR request
+  
+  // TODO: import some SVG nodes between two SVG OBJECTs
+  
+  // TODO: import some SVG nodes between two SVG SCRIPT embeds
+  
+  // TODO: import some SVG nodes from an SVG OBJECT to an SVG SCRIPT embed
+  
+  // TODO: import some SVG nodes from an SVG SCRIPT embed to an SVG OBJECT  
 }
 
 function testTranslateScale(useMe) {

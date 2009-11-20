@@ -194,6 +194,134 @@ function getRoot(id) {
   }
 }
 
+/* 
+  Internet Explorer's list of standard XHR PROGIDS. 
+*/
+var XHR_PROGIDS = [
+  'MSXML2.XMLHTTP.6.0', 'MSXML2.XMLHTTP.3.0', 'MSXML2.XMLHTTP',
+  'Microsoft.XMLHTTP'
+];
+
+/*
+  Standard way to grab XMLHttpRequest object.
+*/
+function xhrObj() {
+  if (typeof XMLHttpRequest != 'undefined') {
+    return new XMLHttpRequest();
+  } else if (ActiveXObject) {
+    var xhr = null;
+    var i; // save the good PROGID for quicker access next time
+    for (i = 0; i < XHR_PROGIDS.length && !xhr; ++i) {
+      try {
+        xhr = new ActiveXObject(XHR_PROGIDS[i]);
+      } catch(e) {}
+    }
+
+    if (!xhr) {
+      throw new Error('XMLHttpRequest object not available on this platform');
+    }
+
+    return xhr;
+  }
+}
+
+/** Fetches the given URL using a synchronous XHR request.
+
+    @param url The URL to grab.
+    @param returnText Boolean flag. If true, we return text. If false, we
+    return the responseXML value from the XHR object. Defaults to true if
+    left off. */
+function fetchURL(url, returnText) {
+  if (returnText === undefined) {
+    returnText = true;
+  }
+  var req = xhrObj();
+  
+  req.onreadystatechange = function() {
+    if (req.readyState == 4) {
+      if (req.status == 200) { // done
+        onSuccess(req.responseText);
+      } else { // error
+        onFailure(req.status + ': ' + req.statusText);
+      }
+      
+      req = null;
+    }
+  };
+  
+  // do things synchronously to simplify testing
+  req.open('GET', url, false);
+  req.send(null);
+  
+  return (returnText) ? req.responseText : req.responseXML;
+}
+
+/** Parses the given XML string and returns the document object.
+
+    @param xml XML String to parse.
+    
+    @returns XML DOM document node.
+*/
+function parseXML(xml) {  
+  var xmlDoc;
+  if (typeof DOMParser != 'undefined') { // non-IE browsers
+    // parse the SVG using an XML parser
+    var parser = new DOMParser();
+    try { 
+      xmlDoc = parser.parseFromString(xml, 'application/xml');
+    } catch (e) {
+      throw e;
+    }
+    
+    var root = xmlDoc.documentElement;
+    if (root.nodeName == 'parsererror') {
+      throw new Error('There is a bug in your SVG: '
+                      + (new XMLSerializer().serializeToString(root)));
+    }
+  } else { // IE
+    // only use the following two MSXML parsers:
+    // http://blogs.msdn.com/xmlteam/archive/2006/10/23/using-the-right-version-of-msxml-in-internet-explorer.aspx
+    var versions = [ 'Msxml2.DOMDocument.6.0', 'Msxml2.DOMDocument.3.0' ];
+    
+    var xmlDoc;
+    for (var i = 0; i < versions.length; i++) {
+      try {
+        xmlDoc = new ActiveXObject(versions[i]);
+        if (xmlDoc) {
+          break;
+        }
+      } catch (e) {}
+    }
+    
+    if (!xmlDoc) {
+      throw new Error('Unable to instantiate XML parser');
+    }
+    
+    try {
+      xmlDoc.preserveWhiteSpace = true;
+      // IE will attempt to resolve external DTDs (i.e. the SVG DTD) unless 
+      // we add the following two flags
+      xmlDoc.resolveExternals = false;
+      xmlDoc.validateOnParse = false;
+      // MSXML 6 breaking change (Issue 138):
+      // http://code.google.com/p/sgweb/issues/detail?id=138
+      xmlDoc.setProperty('ProhibitDTD', false);
+      xmlDoc.async = 'false';
+      
+      var successful = xmlDoc.loadXML(xml);
+      
+      if (!successful || xmlDoc.parseError.errorCode !== 0) {
+        throw new Error(xmlDoc.parseError.reason);
+      }
+    } catch (e) {
+      console.log(e.message);
+      throw new Error('Unable to parse SVG: ' + e.message);
+    }
+  }
+  
+  return xmlDoc;
+}
+
 // browser detection adapted from Dojo
 var isOpera = false, isSafari = false, isMoz = false, isIE = false, 
     isAIR = false, isKhtml = false, isFF = false;
