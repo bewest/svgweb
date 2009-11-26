@@ -128,4 +128,26 @@ You can see how to load these examples using straight html in samples/flash-samp
 <p>
 8. In the Flex Navigator, right click on the new class file and "Set as Default Application"</p>
 
+<p>
+9. Modify the index.template.html file in the html-template directory.</p>
+
+<p>
+You have to modify the FlashVars if you want to pass parameters to svgweb. This is probably not necessary if you are hard coding the URL as I have done above.</p>
+
+<p>
+If you want to load different URLs, you could adapt code from src/org/svgweb/tests/svgflextest.mxml, which gets the URL from the FlashVars. </p>
+
+</p>
+Here is a diff of the changes against the default index.template.html file:</p>
+
+<pre><code>
+65c65
+<       "FlashVars", "MMredirectURL="+MMredirectURL+'&MMplayerType='+MMPlayerType+'&MMdoctitle='+MMdoctitle+"",
+---
+>       "FlashVars", "sourceType=url_svg&svgURL=i369.svg",
+85a86
+>           "FlashVars", "sourceType=url_svg&svgURL=i369.svg",
+105a107
+>                         &lt;param name="FlashVars" value="sourceType=url_svg&svgURL=i369.svg"&gt;
+</code></pre>
 
