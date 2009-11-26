@@ -64,3 +64,68 @@ files to your web server directory. Substitute the appropriate directory for you
 make install SVGSRV=/var/www/html</code></pre>
 
 
+
+<h2>Flex Builder </h2>
+
+<p>
+We do not maintain project files for Flex Builder. However, it is not too dificult to import
+SVG Web into Flex Builder. You can take the following steps:</p>
+
+<p>
+1. Create a new ActionScript Project named svgweb.</p>
+
+<p>
+2. Navigate to the directory of the project.</p>
+(On my machine it is C:\Documents and Settings\username\My Documents\Flex Builder 3\svgweb)</p>
+
+<p>
+3. Copy over the SVG Web src/org directory into the flex src directory.</p>
+
+<p>
+4. Import the files. Select File Import, then select File System and the select the directories.</p>
+
+<p>Actually, I don't remember if I imported the directory in-place or from a separate location in the file system.
+You may have to try it both ways</p>
+
+<p>
+5. Place the svg file you want to test in the org directory.</p>
+
+<p>
+6. Create a class in the org directory to test with. The following worked for me:</p>
+
+<pre><code>
+package
+{
+    import org.svgweb.SVGViewerFlash;
+    import flash.display.Sprite;
+
+    [SWF(frameRate="40", width="800", height="600")]
+    public class SVGViewerFlashTest extends Sprite
+    {
+        private var svgImage:SVGViewerFlash;
+
+        public function SVGViewerFlashTest()
+        {
+            super();
+            svgImage = new SVGViewerFlash();
+            this.addChild(svgImage);
+            svgImage.loadURL("i369.svg");
+        }
+
+    }
+}
+</code></pre>
+
+<p>
+Note that there is another flash oriented example for SVG Web here: src/org/svgweb/tests/SVGViewerFlashTest.as</p>
+
+<p>
+You can see how to load these examples using straight html in samples/flash-samples/ and samples/flex-samples/.</p>
+
+<p>
+7. Import the new class file into flex builder</p>
+
+<p>
+8. In the Flex Navigator, right click on the new class file and "Set as Default Application"</p>
+
+
