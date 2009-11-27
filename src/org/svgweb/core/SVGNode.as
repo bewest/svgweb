@@ -1162,7 +1162,16 @@ package org.svgweb.core
 
                        newMask.topSprite.visible = true;
                        clipSprite.cacheAsBitmap = true;
-                       newMask.topSprite.cacheAsBitmap = true;
+                       // We need to cacheAsBitmap for group and path nodes
+                       // to fix a strange problem with a path on line 336
+                       // of samples/svg-files/juanmontoya_lingerie.svg
+                       // Without cacheAsBitmap, this path is not clipped by the
+                       // group node mask on line 329.
+                       // Issue 345: cacheAsBitmap should only be used when
+                       // necessary due to its large memory consumption.
+                       if (this is SVGPathNode || this is SVGGroupNode) {
+                           newMask.topSprite.cacheAsBitmap = true;
+                       }
                    }
                }
             }

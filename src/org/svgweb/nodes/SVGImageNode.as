@@ -21,6 +21,7 @@ package org.svgweb.nodes
 {
     import org.svgweb.utils.Base64;
     import org.svgweb.core.SVGNode;
+    import org.svgweb.utils.SVGColors;
 
     import flash.display.Bitmap;
     import flash.display.BitmapData;
@@ -29,11 +30,15 @@ package org.svgweb.nodes
     import flash.display.LoaderInfo;
     import flash.events.Event;
     import flash.geom.Matrix;
+    import flash.geom.Rectangle;
+    import flash.geom.Point;
     import flash.utils.ByteArray;
 
     public class SVGImageNode extends SVGNode {
-        private var bitmap:Bitmap;
-        private var bitmapData:BitmapData;
+        protected var bitmap:Bitmap;
+        protected var bitmapData:BitmapData;
+
+        protected var clipRect:Rectangle;
 
         public var imageWidth:Number = 0;
         public var imageHeight:Number = 0;
@@ -130,11 +135,59 @@ package org.svgweb.nodes
             this.imageWidth = bitmapData.width;
             this.imageHeight = bitmapData.height;
 
-            bitmap = new Bitmap( bitmapData );
+            clipRect = this.getClipRect();
+            if (clipRect) {
+                this.bitmapData = new BitmapData( clipRect.width, clipRect.height, false, 0x00000000 );
+                this.bitmapData.copyPixels(bitmapData, clipRect, new Point(0,0));
+                bitmap = new Bitmap( this.bitmapData );
+                bitmap.x = clipRect.left;
+                bitmap.y = clipRect.top;
+            }
+            else {
+                bitmap = new Bitmap( bitmapData );
+            }
+            this.bitmapData = null;
             bitmap.opaqueBackground = null;
 
             drawSprite.addChild(bitmap);
             this.finishDrawNode();
+        }
+
+        // This is used for an optimization when there is a rectangular clipping area.
+        // The rectangle is relative to the image.
+        protected function getClipRect():Rectangle {
+            var attr:String;
+            var match:Array;
+            var node:SVGNode;
+
+            attr = this.getStyleOrAttr('mask');
+            if (!attr) {
+                attr = this.getAttribute('clip-path');
+            }
+            if (attr) {
+                match = attr.match(/url\(\s*#(.*?)\s*\)/si);
+                if (match.length == 2) {
+                    attr = match[1];
+                    node = this.svgRoot.getNode(attr);
+                    // One simple clipping shape?
+                    if (node && node.svgChildren.length == 1) {
+                        // Is it a rectangle?
+                        if (node.svgChildren[0] is SVGRectNode) {
+                            var clip:SVGRectNode=SVGRectNode(node.svgChildren[0]);
+                            // Subtract the current position from the clip to get the
+                            // image position
+                            return new Rectangle(SVGColors.cleanNumber2(clip.getStyleOrAttr('x'), this.getWidth())
+                                                   - SVGColors.cleanNumber2(this.getStyleOrAttr('x'), this.getWidth()),
+                                                 SVGColors.cleanNumber2(clip.getStyleOrAttr('y'), this.getHeight())
+                                                   - SVGColors.cleanNumber2(this.getStyleOrAttr('y'), this.getHeight()),
+                                                 SVGColors.cleanNumber2(clip.getStyleOrAttr('width'), this.getWidth()),
+                                                 SVGColors.cleanNumber2(clip.getStyleOrAttr('height'), this.getHeight()));
+                        }
+                    }
+                }
+            }
+
+            return null;
         }
 
         public function onImageError():void {
@@ -251,6 +304,10 @@ package org.svgweb.nodes
                     }
                     this.bitmap.x = translateX;
                     this.bitmap.y = translateY;
+                }
+                if (clipRect) {
+                    this.bitmap.x += clipRect.left;
+                    this.bitmap.y += clipRect.top;
                 }
 
             }
