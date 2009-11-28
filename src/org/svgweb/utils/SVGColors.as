@@ -205,8 +205,8 @@ package org.svgweb.utils
                     color = color.replace('#', '0x');
                     return parseInt(color);
                 }
-                else if(color.indexOf("rgb") != -1){
-                    var str:Array = color.replace(/\s|rgb\(|\)/g, "").split(",");
+                else if ( (color.indexOf("rgb") != -1) || color.indexOf("RGB") != -1) {
+                    var str:Array = color.replace(/\s|rgb\(|\)/gi, "").split(",");
                     if (str[0].match(/%/)) {
                         str[0]=str[0].replace(/%/g, "");
                         r = str[0];
