@@ -126,8 +126,8 @@ package org.svgweb.nodes
                 yString = yString.replace(/,/sg," "); //Replace commas with spaces
                 glyphYOffsets = yString.split(/\s+/);
 
-                var glyphX:Number = 0;
-                var glyphY:Number = 0;
+                var startGlyphX:Number = 0;
+                var startGlyphY:Number = 0;
 
                 // Handle text-anchor attribute
                 var textAnchor:String = this.getStyleOrAttr('text-anchor');
@@ -150,7 +150,7 @@ package org.svgweb.nodes
                             glyph = this._svgFont.getGlyph(glyphChar);
                             textWidth += SVGUnits.cleanNumber(glyph.getAttribute('horiz-adv-x'));
                         }
-                        glyphX = -textWidth / 2;
+                        startGlyphX = -textWidth / 2;
                         break;
                     case 'end':
                         textWidth=0;
@@ -159,14 +159,17 @@ package org.svgweb.nodes
                             glyph = this._svgFont.getGlyph(glyphChar);
                             textWidth += SVGUnits.cleanNumber(glyph.getAttribute('horiz-adv-x'));
                         }
-                        glyphX = -textWidth;
+                        startGlyphX = -textWidth;
                         break;
                     default: //'start'
-                        glyphX=0;
+                        startGlyphX=0;
                         break;
                 }
 
+                var glyphX:Number = startGlyphX;
+                var glyphY:Number = startGlyphY;
                 newGlyphs = new Array();
+
                 //Add a glyph for each character in the text
                 for (i = 0; i < this._text.length; i++) {
                     glyphChar = this._text.charAt(i);
@@ -177,19 +180,25 @@ package org.svgweb.nodes
                     }
                     glyphClone.setAttribute('transform',
                               'scale(' + (fontSizeNum / 2048) + ') scale(1,-1)');
-                    /* XXX gylph offsets are being transformed by the glyph
-                       transform and so they are not working :(
-                    glyphClone.setAttribute('x', String(glyphX + 
-                       ( (glyphXOffsets.length >= 2 && glyphXOffsets.length > i)
-                           ? SVGUnits.cleanNumber(glyphXOffsets[i]) : 0)));
-                    glyphClone.setAttribute('y', String(glyphY +
-                       ( (glyphYOffsets.length >= 2 && glyphYOffsets.length > i)
-                           ? SVGUnits.cleanNumber(glyphYOffsets[i]) : 0)));
-                    */ 
+
+                    // If there is an offset for each character, then apply the offset,
+                    // adjusting for the transform above.
+                    if (glyphXOffsets.length >= 2 && glyphXOffsets.length > i) {
+                        glyphX = (startGlyphX + glyphXOffsets[i]) * (2048/fontSizeNum);
+                    }
+                    if (glyphYOffsets.length >= 2 && glyphYOffsets.length > i) {
+                        glyphY = (startGlyphY + glyphYOffsets[i]) * (-2048/fontSizeNum);
+                    }
+
                     glyphClone.setAttribute('x', String(glyphX));
                     glyphClone.setAttribute('y', String(glyphY));
-                    var offsetX:Number = SVGUnits.cleanNumber(glyph.getAttribute('horiz-adv-x'));
-                    glyphX = glyphX + offsetX;
+
+                    // If there is not an offset for each character, then use
+                    // the standard horizontal adjustment.
+                    if (glyphXOffsets.length < 2 || glyphXOffsets.length <= i) {
+                        glyphX = glyphX + SVGUnits.cleanNumber(glyph.getAttribute('horiz-adv-x'));
+                    }
+
                     glyphClone.topSprite.visible=false;
                     newGlyphs.push(glyphClone);
                     addSVGChild(glyphClone);
