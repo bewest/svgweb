@@ -5630,6 +5630,14 @@ extend(_Element, {
   setAttributeNS: function(ns, qName, attrValue /* String */) /* void */ {
     //console.log('setAttributeNS, ns='+ns+', qName='+qName+', attrValue='+attrValue+', this.nodeName='+this.nodeName);
     
+    // Issue 428: 
+    // "setAttribute gives error for undefined or null attribute value 
+    // (Flash renderer)"
+    // http://code.google.com/p/svgweb/issues/detail?id=428
+    if (attrValue === null || typeof attrValue == 'undefined') {
+      attrValue = '';
+    }
+    
     // parse out local name of attribute
     var localName = qName;
     if (qName.indexOf(':') != -1) {
