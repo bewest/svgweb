@@ -835,6 +835,15 @@ package org.svgweb
                         case 'jsHandleResize':
                             this.js_handleResize(message);
                             break;
+                        case 'jsSetCurrentScale':
+                            this.js_setCurrentScale(message);
+                            break;
+                        case 'jsSetCurrentTranslate':
+                            this.js_setCurrentTranslate(message);
+                            break;
+                        case 'jsRemoveAttribute':
+                            this.js_removeAttribute(message);
+                            break;
                         default:
                             this.error('Unknown unsuspendRedrawAll method: ' + invoke);
                             break;

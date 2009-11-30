@@ -5961,8 +5961,6 @@ extend(_Element, {
   },
 
   _getCurrentTranslate: function() { /* SVGPoint */
-    // TODO: at some point we probably want to call over to Flash on this one,
-    // since I believe it can be animated through SMIL
     return this._currentTranslate;
   },
   
