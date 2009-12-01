@@ -364,9 +364,17 @@ function xpath(doc, context, expr, namespaces) {
     
     @returns XML DOM document node.
 */
+var parseXMLCache = {};
 function parseXML(xml, preserveWhiteSpace) {
   if (preserveWhiteSpace === undefined) {
     preserveWhiteSpace = false;
+  }
+  
+  // Issue 421: Reuse XML ActiveX object on Internet Explorer
+  // http://code.google.com/p/svgweb/issues/detail?id=421
+  var cachedXML = parseXMLCache[preserveWhiteSpace + xml];
+  if (cachedXML) {
+    return cachedXML.cloneNode(true);
   }
     
   var xmlDoc;
@@ -2003,6 +2011,9 @@ extend(SVGWeb, {
     
     window.attachEvent = window._attachEvent;
     window._attachEvent = null;
+    
+    // cleanup parsed XML cache
+    parseXMLCache = null;
   },
   
   /** Does certain things early on in the page load process to cleanup
