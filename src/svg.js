@@ -7963,7 +7963,6 @@ extend(FlashInserter, {
                        + '://www.macromedia.com/go/getflashplayer');
       flash.setAttribute('style', style);
       flash.setAttribute('className', className);
-      flash.setAttribute
       for (var i = 0; i < customAttrs.length; i++) {
         flash.setAttribute(customAttrs[i].attrName,
                          customAttrs[i].attrValue);
