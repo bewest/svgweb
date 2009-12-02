@@ -433,6 +433,9 @@ function parseXML(xml, preserveWhiteSpace) {
     }
   }
   
+  // cache parsed XML (Issue 421)
+  parseXMLCache[preserveWhiteSpace + xml] = xmlDoc.cloneNode(true);
+  
   return xmlDoc;
 }
 
