@@ -305,13 +305,13 @@ function runTests(embedTypes) {
     // the different ways we subscribed to the onload events worked;
     // NOTE: this must be in the final dynamically created SVG OBJECT's
     // onload function that we want to check for
-    assertEquals('onload should have fired for our 4 listeners for dynamic '
-                 + 'objects', 4, svgweb._dynamicObjOnloads);
+    assertEquals('onload should have fired for our 3 listeners for dynamic '
+                 + 'objects', 3, svgweb._dynamicObjOnloads);
                  
     if (!_hasObjects) {
       // make sure that our dynamic SVG roots fired their onloads correctly
-      assertEquals('onload should have fired for our 6 listeners for dynamic '
-                   + 'root', 6, svgweb._dynamicRootOnloads);
+      assertEquals('onload should have fired for our 5 listeners for dynamic '
+                   + 'root', 5, svgweb._dynamicRootOnloads);
     }   
        
     if (_hasObjects) {
