@@ -132,7 +132,7 @@ OTHER DEALINGS IN THE SOFTWARE.
   Generally patching the browser is taboo. Since SVG Web is an emulation
   environment rather than a new API we must patch the browser to give the
   illusion of a real SVG implementation. We attempt to do this without
-  impacting or slowing down non-SVG implementations. Methods such as 
+  impacting or slowing down non-SVG use-cases. Methods such as 
   getElementById, getElementsByTagNameNS, or createElementNS are patched in 
   to short-circuit for the non-SVG case.
   
