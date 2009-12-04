@@ -134,7 +134,7 @@ OTHER DEALINGS IN THE SOFTWARE.
   illusion of a real SVG implementation. We attempt to do this without
   impacting or slowing down non-SVG use-cases. Methods such as 
   getElementById, getElementsByTagNameNS, or createElementNS are patched in 
-  to short-circuit for the non-SVG case.
+  to short-circuit for the non-SVG cases.
   
   The real magic, though, begins when these methods are called for SVG nodes.
   Instead of returning real DOM nodes we actually return 'fake' DOM nodes.
