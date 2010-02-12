@@ -53,6 +53,10 @@ build/samples/flex-samples/svgflextest.swf: src/org/svgweb/tests/svgflextest.mxm
 	@echo Building svgflex.swf file...
 	(cd src/org/svgweb/tests;mxmlc -output ../../../../build/samples/flex-samples/svgflextest.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- svgflextest.mxml)
 
+# SWF file for Issue 452 (http://code.google.com/p/svgweb/issues/detail?id=452)
+tests/non-licensed/perf/test6/Main.swf: tests/non-licensed/perf/test6/*.as
+	(cd tests/non-licensed/perf/test6;mxmlc -output Main.swf -use-network=false -warnings=true -compiler.strict=true -compiler.optimize=true -compiler.debug=true -compiler.source-path . -- Main.as)
+
 ifeq ($(COMPRESS), 1)
 build/src/svg.js: src/svg.js
 	cp src/svg.js build/src/svg-uncompressed.js
