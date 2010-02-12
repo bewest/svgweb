@@ -1,0 +1,31 @@
+<html>
+  <head>
+    <script>
+      function debug(msg) {
+        console.log('FLASH: ' + msg);
+      }
+      
+      function getNumberOfRuns() {
+        var matches = window.location.search.match(/\?numRuns=([0-9]+)/);
+        runs = matches ? matches[1] : 200;
+        console.log('runs: ' + runs);
+        return runs;
+      }
+    </script>
+  </head>
+  <body>
+    <OBJECT CLASSID="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" 
+    WIDTH="400" HEIGHT="300" 
+    CODEBASE="http://active.macromedia.com/flash5/cabs/swflash.cab#version=5,0,0,0"
+    allowScriptAccess="always">
+    <PARAM NAME="MOVIE" VALUE="Main.swf">
+    <PARAM NAME="PLAY" VALUE="true">
+    <PARAM NAME="QUALITY" VALUE="best">
+    <PARAM NAME="LOOP" VALUE="false">
+    <EMBED SRC="Main.swf" WIDTH="400" HEIGHT="300" PLAY="true" LOOP="false" QUALITY="best" 
+    PLUGINSPAGE="http://www.macromedia.com/shockwave/download/index.cgi?P1_Prod_Version=ShockwaveFlash"
+    allowScriptAccess="always"> 
+    </EMBED>
+    </OBJECT>
+  </body>
+</html>
