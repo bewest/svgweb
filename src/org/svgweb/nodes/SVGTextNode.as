@@ -43,9 +43,9 @@ package org.svgweb.nodes
         private var _textPath:SVGNode = null;
         
         /**
-         * TextField to render nodes text
+         * TextFields to render nodes text
          **/
-        private var _textField:TextField;
+        private var _textFields:Array = null;
         private var _svgFont:SVGFontNode;
         
         private var _text:String = '';
@@ -93,6 +93,152 @@ package org.svgweb.nodes
             this._text = newValue;
         }
         
+        protected function removeOldTextFields():void {
+            var i:int = 0;
+            var child:Object;
+            while (i < this.drawSprite.numChildren) {
+                child = this.drawSprite.getChildAt(i);
+                if (child is TextField) this.drawSprite.removeChildAt(i);
+                else i++;
+            }
+        }
+
+        protected function removeOldSVGFontGlyphs():void {
+            var i:int = 0;
+            while (i < this.svgChildren.length) {
+                if (this.svgChildren[i] is SVGGlyphNode)
+                    removeSVGChild(this.svgChildren[i]);
+                else i++
+            }
+        }
+
+        protected function addTextFieldChunk(chunk:String,
+                                             startPos:Object,
+                                             currentPos:Object,
+                                             fontFamily:String,
+                                             fontSizeNum:Number,
+                                             textAnchor:String,
+                                             fontWeight:String,
+                                             fill:String):void {
+            var textField:TextField = new TextField();
+            textField.text = chunk;
+            textField.autoSize = TextFieldAutoSize.LEFT;
+            var textFormat:TextFormat = new TextFormat();
+
+            if (fontWeight != null && fontWeight != 'normal') {
+                textFormat.bold = true;
+            }
+
+            if (fontFamily != null) {
+                fontFamily = fontFamily.replace("'", '');
+                textFormat.font = fontFamily;
+            }
+            // choose a (nominal) size
+            var nomSize:Number = 100.0;
+            textFormat.size = nomSize;
+            var fontScale:Number = fontSizeNum / nomSize;  // used to scale the TextField to produce the correct size
+
+            if (fill != null) {
+                textFormat.color = SVGColors.getColor(fill);
+            }
+            textField.setTextFormat(textFormat);
+            var textLineMetrics:TextLineMetrics = textField.getLineMetrics(0);
+
+            // apply text anchor
+            var advance:Number = 0.0;  // add to current text position
+            var x:Number;
+            var y:Number;
+            switch (textAnchor) {
+                case 'middle':
+                    x = - textField.width/2.0;
+                    advance = textLineMetrics.width * fontScale / 2.0;
+                    break;
+                case 'end':
+                    x = 2.0 - textField.width;
+                    // advance = 0.0
+                    break;
+                default: //'start'
+                    x = -2.0;  //gutter
+                    advance = textLineMetrics.width * fontScale;
+                    break;
+            }
+            y = -textLineMetrics.ascent - 2.0;
+
+            // reposition the TextField to account for scaling and offset from startPos
+            textField.y = fontScale * y + (currentPos.y - startPos.y);
+            textField.x = fontScale * x + (currentPos.x - startPos.x);
+
+            // scale the TextField to the required size
+            textField.scaleX = fontScale;
+            textField.scaleY = fontScale;
+
+            // add textField to _textFields
+            _textFields.push(textField);
+            // update current text position
+            currentPos.x += advance;
+        }
+
+        protected function addSVGFontChunk(chunk:String,
+                                           startPos:Object,
+                                           currentPos:Object,
+                                           fontSizeNum:Number,
+                                           textAnchor:String,
+                                           fill:String):void {
+            var i:uint;
+            var chunkWidth:Number = 0.0;
+            var glyphChar:String;
+            var glyph:SVGGlyphNode;
+            // calculate the width of the chunk
+            for (i = 0; i < chunk.length; i++) {
+                glyphChar = chunk.charAt(i);
+                glyph = this._svgFont.getGlyph(glyphChar);
+                chunkWidth += SVGUnits.cleanNumber(glyph.getAttribute('horiz-adv-x'));
+            }
+
+            var startOffsetX:Number = 0.0;
+            var advance:Number = 0.0;
+            // apply text anchor
+            switch (textAnchor) {
+                case 'middle':
+                    startOffsetX = - chunkWidth / 2.0;
+                    advance = chunkWidth / 2.0;
+                    break;
+                case 'end':
+                    startOffsetX = -chunkWidth;
+                    // advance = 0.0;
+                    break;
+                default: //'start'
+                    // startOffsetX = 0.0
+                    advance = chunkWidth;
+                    break;
+            }
+            //Add a glyph for each character in the text chunk
+            var glyphX:Number = startOffsetX + (currentPos.x - startPos.x) * (2048/fontSizeNum);
+            var glyphY:Number = (currentPos.y - startPos.y) * (-2048/fontSizeNum);
+            for (i = 0; i < chunk.length; i++) {
+                glyphChar = chunk.charAt(i);
+                glyph = this._svgFont.getGlyph(glyphChar);
+                var glyphClone:SVGNode = glyph.clone();
+                if (fill !=null) {
+                    glyphClone.setAttribute('fill', fill);
+                }
+                glyphClone.setAttribute('transform',
+                          'scale(' + (fontSizeNum / 2048) + ') scale(1,-1)');
+
+                glyphClone.setAttribute('x', String(glyphX));
+                glyphClone.setAttribute('y', String(glyphY));
+
+                glyphX += SVGUnits.cleanNumber(glyph.getAttribute('horiz-adv-x'));
+
+                glyphClone.topSprite.visible=false;
+                newGlyphs.push(glyphClone);
+                addSVGChild(glyphClone);
+                lastGlyph=glyphClone;
+            }
+            // update current text position
+            currentPos.x += chunkWidth * (fontSizeNum / 2048);
+        }
+
         /**
          * Get any child text (not text inside child nodes)
          * If this node has any text create a TextField at this._textField
@@ -100,36 +246,38 @@ package org.svgweb.nodes
          **/
         override protected function parseChildren():void {
             var i:uint;
-            var textWidth:Number;
-            var glyphChar:String;
 
             super.parseChildren();
             
             //Check for SVGFont
             var fontFamily:String = this.getStyleOrAttr('font-family');
             this._svgFont = this.svgRoot.getFont(fontFamily);
-            var glyph:SVGGlyphNode;
             if (this._svgFont != null) {
-                if (this._textField) {
-                    this._textField.parent.removeChild(this._textField);
-                    this._textField = null;
+                removeOldTextFields();
+                newGlyphs = new Array();
                 }
-                var fontSize:String = this.getStyleOrAttr('font-size');
-                var fontSizeNum:Number = SVGUnits.cleanNumber(fontSize);
-                var glyphXOffsets:Array = new Array();
-                var xString:String = super.getAttribute('x', '0');
-                xString = xString.replace(/,/sg," "); //Replace commas with spaces
-                glyphXOffsets = xString.split(/\s+/);
+            else {
+                removeOldSVGFontGlyphs();
+                _textFields = new Array();
+            }
 
-                var glyphYOffsets:Array = new Array();
-                var yString:String = super.getAttribute('y', '0');
-                yString = yString.replace(/,/sg," "); //Replace commas with spaces
-                glyphYOffsets = yString.split(/\s+/);
+            var fontSize:String = this.getStyleOrAttr('font-size');
+            var fontSizeNum:Number = 12.0;  // default
+            if (fontSize != null) {
+                fontSizeNum = SVGUnits.cleanNumber(fontSize);
+                //Font size can be in user units, pixels (px), or points (pt); if no
+                //measurement type given defaults to user units
+                if (SVGUnits.getType(fontSize) == SVGUnits.PT) {
+                    fontSizeNum = SVGUnits.pointsToPixels(fontSizeNum);
+                }
+            }
 
-                var startGlyphX:Number = 0;
-                var startGlyphY:Number = 0;
+            var fill:String = this.getStyleOrAttr('fill');
+            if (fill == 'currentColor') {
+                fill = this.getStyleOrAttr('color');
+            }
+            var fontWeight:String = this.getStyleOrAttr('font-weight');
 
-                // Handle text-anchor attribute
                 var textAnchor:String = this.getStyleOrAttr('text-anchor');
                 var currentNode:SVGNode = this;
                 while (textAnchor == 'inherit') {
@@ -142,76 +290,44 @@ package org.svgweb.nodes
                     }
                 }
 
-                switch (textAnchor) {                    
-                    case 'middle':
-                        textWidth=0;
-                        for (i = 0; i < this._text.length; i++) {
-                            glyphChar = this._text.charAt(i);
-                            glyph = this._svgFont.getGlyph(glyphChar);
-                            textWidth += SVGUnits.cleanNumber(glyph.getAttribute('horiz-adv-x'));
-                        }
-                        startGlyphX = -textWidth / 2;
-                        break;
-                    case 'end':
-                        textWidth=0;
-                        for (i = 0; i < this._text.length; i++) {
-                            glyphChar = this._text.charAt(i);
-                            glyph = this._svgFont.getGlyph(glyphChar);
-                            textWidth += SVGUnits.cleanNumber(glyph.getAttribute('horiz-adv-x'));
-                        }
-                        startGlyphX = -textWidth;
-                        break;
-                    default: //'start'
-                        startGlyphX=0;
-                        break;
+            // process text chunks
+            var glyphXOffsets:Array = new Array();
+            var xString:String = super.getAttribute('x', '0');
+            xString = xString.replace(/,/sg," "); //Replace commas with spaces
+            glyphXOffsets = xString.split(/\s+/);
+
+            var glyphYOffsets:Array = new Array();
+            var yString:String = super.getAttribute('y', '0');
+            yString = yString.replace(/,/sg," "); //Replace commas with spaces
+            glyphYOffsets = yString.split(/\s+/);
+
+            var startGlyphX:Number = glyphXOffsets[0];
+            var startGlyphY:Number = glyphYOffsets[0];
+            // startPos is the x,y position assigned to drawSprite at setAttributes()
+            // all positioning of TextFields or glyphClones is set relative to startPos
+            var startPos:Object = {x:startGlyphX, y:startGlyphY};
+            var currentPos:Object = {x:startGlyphX, y:startGlyphY};  // Current Text Position
+
+            var numChunks:int = Math.max(glyphXOffsets.length, glyphYOffsets.length);
+            numChunks = Math.min(numChunks, this._text.length);
+            var chunk:String = "";
+            for (i=0; i < numChunks; i++) {
+                if (i < glyphXOffsets.length) {
+                    currentPos.x = Number(glyphXOffsets[i]);
+                    }
+                if (i < glyphYOffsets.length) {
+                    currentPos.y = Number(glyphYOffsets[i]);
+                    }
+                if (i == numChunks-1) { // lastchunk
+                    chunk = this._text.slice(i);
+                    }
+                else { // single glyph
+                    chunk = this._text.charAt(i);
                 }
-
-                var glyphX:Number = startGlyphX;
-                var glyphY:Number = startGlyphY;
-                newGlyphs = new Array();
-
-                //Add a glyph for each character in the text
-                for (i = 0; i < this._text.length; i++) {
-                    glyphChar = this._text.charAt(i);
-                    glyph = this._svgFont.getGlyph(glyphChar);
-                    var glyphClone:SVGNode = glyph.clone();
-                    if (this.getStyleOrAttr('fill')) {
-                        glyphClone.setAttribute('fill', this.getStyleOrAttr('fill'));
-                    }
-                    glyphClone.setAttribute('transform',
-                              'scale(' + (fontSizeNum / 2048) + ') scale(1,-1)');
-
-                    // If there is an offset for each character, then apply the offset,
-                    // adjusting for the transform above.
-                    if (glyphXOffsets.length >= 2 && glyphXOffsets.length > i) {
-                        glyphX = (startGlyphX + glyphXOffsets[i]) * (2048/fontSizeNum);
-                    }
-                    if (glyphYOffsets.length >= 2 && glyphYOffsets.length > i) {
-                        glyphY = (startGlyphY + glyphYOffsets[i]) * (-2048/fontSizeNum);
-                    }
-
-                    glyphClone.setAttribute('x', String(glyphX));
-                    glyphClone.setAttribute('y', String(glyphY));
-
-                    // If there is not an offset for each character, then use
-                    // the standard horizontal adjustment.
-                    if (glyphXOffsets.length < 2 || glyphXOffsets.length <= i) {
-                        glyphX = glyphX + SVGUnits.cleanNumber(glyph.getAttribute('horiz-adv-x'));
-                    }
-
-                    glyphClone.topSprite.visible=false;
-                    newGlyphs.push(glyphClone);
-                    addSVGChild(glyphClone);
-                    lastGlyph=glyphClone;
-                }
+                if (this._svgFont != null) addSVGFontChunk(chunk, startPos, currentPos, fontSizeNum, textAnchor, fill);
+                else addTextFieldChunk(chunk, startPos, currentPos, fontFamily, fontSizeNum, textAnchor, fontWeight, fill);
             }
-            else {
-                if (this._textField == null) {
-                    //If this is not an SVGFont, use a TextField
-                    this._textField = new TextField();
                 }
-            }
-        }
         
         public function onDrawGlyph(glyph:SVGNode):void {
             // when they are ready, unhide the new characters,
@@ -235,7 +351,7 @@ package org.svgweb.nodes
                                               inherit:Boolean = true,
                                               applyAnimations:Boolean = true,
                                               useStyle:Boolean = false):* {
-            if (name == 'stroke-width' && this._textField == null) {
+            if (name == 'stroke-width' && this._svgFont != null) {
                 // Relevant to SVG Fonts only
                 var fontSize:String = this.getStyleOrAttr('font-size');
                 var fontSizeNum:Number = SVGUnits.cleanNumber(fontSize);
@@ -248,17 +364,8 @@ package org.svgweb.nodes
                 if (xString != null) {
                     xString = xString.replace(/,/sg," "); //Replace commas with spaces
                     if (xString.split(/\s+/).length >= 2) {
-                        // For SVG Fonts, if there is more than one value, then apply them to
-                        // individual glyphs, not the text node
-                        if (this._textField == null) {
-                            return "0";
-                        }
-                        else {
-                            // Issue 405: We do not currently support glyph placement
-                            // for native fonts. Just use the first value.
                             return xString.split(/\s+/)[0];
                         }
-                    }
                     else {
                         return xString;
                     }
@@ -269,115 +376,6 @@ package org.svgweb.nodes
             }
             else {
                 return super.getAttribute(name, defaultValue, inherit, applyAnimations, useStyle);
-            }
-        }
-        
-        /**
-         * Call SVGNode.setAttributes()
-         * If this node contains text load text format (font, font-size, color, etc...)
-         * Render text to a bitmap and add bitmap to node
-         **/
-        override protected function setAttributes():void {
-            super.setAttributes();
-            if (this._textField != null) {
-                var fontFamily:String = this.getStyleOrAttr('font-family');                
-                var fontSize:String = this.getStyleOrAttr('font-size');
-                var fill:String = this.getStyleOrAttr('fill');
-                if (fill == 'currentColor') {
-                    fill = this.getStyleOrAttr('color');
-                }
-                var fontWeight:String = this.getStyleOrAttr('font-weight');
-                var textAnchor:String = this.getStyleOrAttr('text-anchor');
-                
-                var textFormat:TextFormat = this._textField.getTextFormat();
-                
-                if (fontFamily != null) {
-                    fontFamily = fontFamily.replace("'", '');
-                    textFormat.font = fontFamily;
-                }
-                
-                if (fontSize != null) {
-                    //Handle floating point font size
-                    var fontSizeNum:Number = SVGUnits.cleanNumber(fontSize);
-                    
-                    //Font size can be in user units, pixels (px), or points (pt); if no
-                    //measurement type given defaults to user units
-                    if (SVGUnits.getType(fontSize) == SVGUnits.PT) {
-                        fontSizeNum = SVGUnits.pointsToPixels(fontSizeNum);
-                    }
-                    
-                    var fontScale:Number = Math.floor(fontSizeNum);
-                    textFormat.size = fontScale;
-                    
-                    fontScale = fontSizeNum / fontScale;
-                    
-                    _textField.scaleX = fontScale;
-                    _textField.scaleY = fontScale;
-                }
-                      
-                if (fill != null) {
-                    textFormat.color = SVGColors.getColor(fill);
-                }
-                
-                // only bold/no bold supported for now (SVG has many levels of bold)
-                var currentNode:SVGNode = this;
-                while (fontWeight == 'inherit') {                    
-                    if (currentNode.svgParent != null) {
-                        currentNode = currentNode.svgParent;
-                        fontWeight = currentNode.getStyleOrAttr('font-weight');
-                    }
-                    else {
-                        fontWeight = null;
-                    }
-                }                    
-                if (fontWeight != null && fontWeight != 'normal') {
-                    textFormat.bold = true;
-                }
-                
-                this._textField.text = this._xml.text().toString();
-                this._textField.setTextFormat(textFormat);
-                var textLineMetrics:TextLineMetrics = this._textField.getLineMetrics(0);
-                
-                currentNode = this;
-                while (textAnchor == 'inherit') {                    
-                    if (currentNode.svgParent != null) {
-                        currentNode = currentNode.svgParent;
-                        textAnchor = currentNode.getStyleOrAttr('text-anchor');
-                    }
-                    else {
-                        textAnchor = null;
-                    }
-                }    
-                
-                // Handle text-anchor attribute
-                switch (textAnchor) {                    
-                    case 'middle':
-                        this._textField.autoSize = TextFieldAutoSize.CENTER;
-                        this._textField.x = Math.floor( - (this._textField.width - textLineMetrics.width)/2
-                                                        - textLineMetrics.width / 2 );
-                        break;
-                    case 'end':
-                        this._textField.autoSize = TextFieldAutoSize.RIGHT;
-                        // Technically, the entire difference between text field width and
-                        // the actual text width should be shifted in the following equation,
-                        // assuming the text was actually right justified properly,
-                        // but half seems to replicate native behavior more closely.
-                        this._textField.x =  - Math.floor( (this._textField.width - textLineMetrics.width)/2)
-                                             - textLineMetrics.width;
-                        break;
-                    default: //'start'
-                        this._textField.autoSize = TextFieldAutoSize.LEFT;
-                        this._textField.x = - Math.floor(this._textField.width - textLineMetrics.width)/2;
-                        //If autosize actually left justified properly, it seems the following would be correct:
-                        //this._textField.x = 0;
-                        break;
-                }
-                
-                this.setVisibility(this.getStyleOrAttr('visibility'));
-                
-                // SVG Text elements position y attribute as baseline of text,
-                // not the top
-                this._textField.y = 0 - textLineMetrics.ascent - 1;
             }
         }
         
@@ -399,15 +397,18 @@ package org.svgweb.nodes
                 this.drawSprite.filters = new Array();
                 super.setVisibility(visible);
             }
-
         }
         
         override protected function draw():void {
             super.draw();
-
-            if (this._textField != null) {
-                drawSprite.addChild(this._textField);         
-            }            
-        }             
+            removeOldTextFields();
+            // add the new textFields
+            if (_textFields != null) {
+                for (var i:uint=0; i<this._textFields.length; i++) {
+                    drawSprite.addChild(this._textFields[i]);
+                }
+            }
+            _textFields = null;
+        }
     }
 }
