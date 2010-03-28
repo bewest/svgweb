@@ -32,6 +32,7 @@ package org.svgweb.nodes
          * Override parent function to do nothing
          **/
         override protected function draw():void {
+            topSprite.visible = false;
             //Do Nothing
         }
 
