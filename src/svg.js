@@ -4129,6 +4129,11 @@ extend(_Node, {
       throw 'Not supported';
     }
     
+    // Issue 296: existing child should not be added again
+    if (newChild.parentNode) {
+      newChild.parentNode.removeChild(newChild);
+    }
+    
     // if the children are DOM nodes, turn them into _Node or _Element
     // references
     newChild = this._getFakeNode(newChild);
@@ -4210,6 +4215,11 @@ extend(_Node, {
     if (this.nodeType != _Node.ELEMENT_NODE
         && this.nodeType != _Node.DOCUMENT_FRAGMENT_NODE) {
       throw 'Not supported';
+    }
+    
+    // Issue 296: existing child should not be added again
+    if (newChild.parentNode) {
+      newChild.parentNode.removeChild(newChild);
     }
     
     // the children could be DOM nodes; turn them into something we can
@@ -4397,6 +4407,11 @@ extend(_Node, {
     if (this.nodeType != _Node.ELEMENT_NODE
         && this.nodeType != _Node.DOCUMENT_FRAGMENT_NODE) {
       throw 'Not supported';
+    }
+    
+    // Issue 296: existing child should not be added again
+    if (child.parentNode) {
+      child.parentNode.removeChild(child);
     }
     
     // the child could be a DOM node; turn it into something we can
