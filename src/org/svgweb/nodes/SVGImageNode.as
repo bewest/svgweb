@@ -148,6 +148,7 @@ package org.svgweb.nodes
             }
             this.bitmapData = null;
             bitmap.opaqueBackground = null;
+            bitmap.smoothing = true;
 
             drawSprite.addChild(bitmap);
             this.finishDrawNode();
