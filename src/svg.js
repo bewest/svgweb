@@ -3082,6 +3082,7 @@ extend(FlashHandler, {
     // which is what flash provides as node.transform.concatenatedMatrix.
     var evt = { target: target._getProxyNode(),
                 currentTarget: currentTarget._getProxyNode(),
+                type: msg.eventType,
                 clientX: new Number(msg.stageX),
                 clientY: new Number(msg.stageY),
                 screenX: new Number(msg.stageX),
@@ -3107,6 +3108,7 @@ extend(FlashHandler, {
                       target._getProxyNode().getAttribute('id') + '") ,\n' +
                     'currentTarget:document.getElementById("' +
                       currentTarget._getProxyNode().getAttribute('id') + '") ,\n' +
+                    'type: "' + msg.eventType + '",\n' +
                     'clientX: ' + new Number(msg.stageX) + ',\n' +
                     'clientY: ' + new Number(msg.stageY) + ',\n' +
                     'screenX: ' + new Number(msg.stageX) + ',\n' +
