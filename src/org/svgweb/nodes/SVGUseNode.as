@@ -92,8 +92,8 @@ package org.svgweb.nodes
             // Other attribute should be inherited by children
         }
 
-        override public function setAttribute(name:String, value:String):void {
-            super.setAttribute(name, value);
+        override public function setAttribute(name:String, value:String, attrNamespace:String = null):void {
+            super.setAttribute(name, value, attrNamespace);
             this.invalidateChildren();
         }
     }

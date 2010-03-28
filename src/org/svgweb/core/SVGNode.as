@@ -1526,10 +1526,15 @@ package org.svgweb.core
             return [ animTransform, isAdditive ];
         }
 
-        public function setAttribute(name:String, value:String):void {
+        public function setAttribute(name:String, value:String, attrNamespace:String = null):void {
             if (name == "style") {
                 this._xml.@style = value;
                 this.parseStyle();
+            }
+            if (attrNamespace != null) {
+                // namespaced attribute, such as xlink:href
+                var ns:Namespace = new Namespace(attrNamespace);
+                this.xml.@ns::[name] = value.toString();
             }
             else {
                 this._xml.@[name] = value;

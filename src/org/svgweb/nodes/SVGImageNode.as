@@ -198,8 +198,14 @@ package org.svgweb.nodes
             }
         }
 
-        override public function setAttribute(name:String, value:String):void {
-            super.setAttribute(name, value);
+        override public function setAttribute(name:String, value:String, attrNamespace:String = null):void {
+            super.setAttribute(name, value, attrNamespace);
+            if (name == 'href') {
+                if (this.bitmap) {
+                    this.drawSprite.removeChild(this.bitmap);
+                    this.bitmap = null;
+                }
+            }
             if (name == 'x' || name == 'y') {
                 this.applyDefaultMask();
             }

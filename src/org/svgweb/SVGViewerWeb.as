@@ -583,12 +583,8 @@ package org.svgweb
             if (applyToStyle) {
                 element.setStyle(attrName, attrValue);
             }
-            else if (attrNamespace != null) {
-                // namespaced attribute, such as xlink:href
-                var ns:Namespace = new Namespace(attrNamespace);
-                element.xml.@ns::[attrName] = attrValue.toString();
-            } else {
-                element.setAttribute(attrName, attrValue.toString());
+            else {
+                element.setAttribute(attrName, attrValue.toString(), attrNamespace);
             }
 
             if (attrName == 'id') {

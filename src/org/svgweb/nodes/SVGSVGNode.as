@@ -227,8 +227,8 @@ package org.svgweb.nodes
             return defaultValue;
         }
 
-        override public function setAttribute(name:String, value:String):void {
-            super.setAttribute(name, value);
+        override public function setAttribute(name:String, value:String, attrNamespace:String = null):void {
+            super.setAttribute(name, value, attrNamespace);
             if (name == 'x' || name == 'y') {
                 this.applyDefaultMask();
             }
