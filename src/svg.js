@@ -542,7 +542,11 @@ function parseXML(xml, preserveWhiteSpace) {
   }
   
   // cache parsed XML (Issue 421)
-  parseXMLCache[preserveWhiteSpace + xml] = xmlDoc.cloneNode(true);
+  try {
+    parseXMLCache[preserveWhiteSpace + xml] = xmlDoc.cloneNode(true);
+  } catch (e) {
+    //Opera at v10.10 cannot clone a Document.
+  }
   
   return xmlDoc;
 }
