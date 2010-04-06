@@ -27,10 +27,10 @@ package org.svgweb.core
         protected var context:ContextMenu;
 
         public function SVGViewer() {
-            customizeContextMenu();
+            //customizeContextMenu();
 
-            XML.ignoreProcessingInstructions = false;
-            XML.ignoreComments = false;
+            XML.ignoreProcessingInstructions = true;
+            XML.ignoreComments = true;
             super();
         }
 

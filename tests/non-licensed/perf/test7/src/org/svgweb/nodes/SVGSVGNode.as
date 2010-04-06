@@ -27,6 +27,7 @@ package org.svgweb.nodes
     import flash.display.Sprite;
     import flash.events.Event;
     import flash.utils.getTimer;
+    import flash.external.ExternalInterface;
     import org.svgweb.utils.ImageLoader;
 
     public class SVGSVGNode extends SVGNode
@@ -530,12 +531,8 @@ package org.svgweb.nodes
         }
 
         public function debug(debugString:String):void {
-            if (this.parentSVGRoot) {
-                this.parentSVGRoot.debug(debugString);
-            }
-            else if (topSprite.parent is SVGViewer) {
-                SVGViewer(topSprite.parent).debug(debugString);
-            }
+            // UNCOMMENT!!!
+            //ExternalInterface.call("debug", debugString);
         }
 
         public function error(message:String):void {
