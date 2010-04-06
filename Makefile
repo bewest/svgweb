@@ -53,9 +53,13 @@ build/samples/flex-samples/svgflextest.swf: src/org/svgweb/tests/svgflextest.mxm
 	@echo Building svgflex.swf file...
 	(cd src/org/svgweb/tests;mxmlc -output ../../../../build/samples/flex-samples/svgflextest.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- svgflextest.mxml)
 
-# SWF file for Issue 452 (http://code.google.com/p/svgweb/issues/detail?id=452)
+# SWF files for Issue 452 (http://code.google.com/p/svgweb/issues/detail?id=452)
 tests/non-licensed/perf/test6/Main.swf: tests/non-licensed/perf/test6/*.as
 	(cd tests/non-licensed/perf/test6;mxmlc -output Main.swf -use-network=false -warnings=true -compiler.strict=true -compiler.optimize=true -compiler.debug=true -compiler.source-path . -- Main.as)
+
+tests/non-licensed/perf/test7/svg.swf: tests/non-licensed/perf/test7/src/org/svgweb/SVGViewerWeb.as tests/non-licensed/perf/test7/src/org/svgweb/core/*.as tests/non-licensed/perf/test7/src/org/svgweb/nodes/*.as tests/non-licensed/perf/test7/src/org/svgweb/utils/*.as tests/non-licensed/perf/test7/src/org/svgweb/smil/*.as
+	@echo Building test7/svg.swf file...
+	(cd tests/non-licensed/perf/test7/src/org/svgweb;mxmlc -output ../../svg.swf -use-network=false -warnings=true -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../ -- SVGViewerWeb.as)
 
 ifeq ($(COMPRESS), 1)
 build/src/svg.js: src/svg.js
