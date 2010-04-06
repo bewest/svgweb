@@ -13948,6 +13948,7 @@ var DRAWING_MODE = 3;
 
 // Parameters.
 var ROOT_NODE = document.getElementsByTagNameNS(NSS[&quot;svg&quot;], &quot;svg&quot;)[0];
+
 var HEIGHT = 0;
 var WIDTH = 0;
 var INDEX_COLUMNS_DEFAULT = 4;
@@ -14008,6 +14009,10 @@ function jessyInkInit()
 	// not lead to any problems, but it takes more time.
 	if (jessyInkInitialised)
 		return;
+		
+	// Suspend redrawing while we initialize to improve performance;
+	// added by bradneuberg
+	ROOT_NODE.suspendRedraw(15000);
   
 	// Making the presentation scaleable.
 	var VIEWBOX = ROOT_NODE.getAttribute(&quot;viewBox&quot;);
@@ -14110,8 +14115,9 @@ function jessyInkInit()
 	}
 
 	// Set start slide.
-	var paramString = window.location.hash;
-
+	// top.window added by bradneuberg
+	var paramString = top.window.location.hash;
+	
 	paramString = paramString.substr(1, paramString.length);
 	
 	if (!isNaN(parseInt(paramString)))
@@ -14382,7 +14388,6 @@ function jessyInkInit()
 	
 	// Set key handler.
 	var scriptElems = getElementsByPropertyNS(ROOT_NODE, NSS[&quot;jessyink&quot;], &quot;customKeyBindings&quot;);
-	
 	for (var counter = 0; counter &lt; scriptElems.length; counter++)
 	{
 		var scriptElem = document.getElementById(scriptElems[counter]);
@@ -14398,6 +14403,11 @@ function jessyInkInit()
 	hideProgressBar();
 	setProgressBarValue(activeSlide);
 	setTimeIndicatorValue(0);
+	
+	// Start redrawing again now that we are done initializing; added
+	// by bradneuberg
+	ROOT_NODE.unsuspendRedrawAll();
+	
 	setInterval(&quot;updateTimer()&quot;, 1000);
 	setSlideToState(activeSlide, STATE_START);
 	setMouseEventHandler(currentMode);
@@ -14436,7 +14446,6 @@ function substituteAutoTexts(node, slideName, slideNumber, numberOfSlides)
 function getElementsByPropertyNS(node, namespace, name)
 {
 	var elems = new Array();
-
 	if (node.getAttributeNS(namespace, name))
 		elems.push(node.getAttribute(&quot;id&quot;));
 
@@ -14535,7 +14544,8 @@ function changeSlide(dir)
 
 	activeSlide += dir;
 	setProgressBarValue(activeSlide);
-	window.location.hash = activeSlide + 1;
+	// top.window added by bradneuberg
+	top.window.location.hash = activeSlide + 1;
 
 	effectArray[1] = new Object();
 	if (dir == 1)
@@ -14790,7 +14800,9 @@ function keydown(e)
 		document.onkeypress = keypress;
 }
 // Set event handler for key down.
-document.onkeydown = keydown;
+// top. added by bradneuberg; address issue 433!!!
+// bradneuberg
+top.document.onkeydown = keydown;
 
 /** Event handler for key press.
  *
@@ -15376,7 +15388,7 @@ function view(dir, element, time, options)
 		else if (fraction &gt;= 1)
 		{
 			element.setAttribute(&quot;transform&quot;, options[&quot;matrixNew&quot;].toAttribute());
-			set_path_paint_width();
+			//set_path_paint_width();
 
 			return true;
 		}
@@ -15394,7 +15406,7 @@ function view(dir, element, time, options)
 		else if (fraction &gt;= 1)
 		{
 			element.setAttribute(&quot;transform&quot;, options[&quot;matrixOld&quot;].toAttribute());
-			set_path_paint_width();
+			//set_path_paint_width();
 
 			return true;
 		}
