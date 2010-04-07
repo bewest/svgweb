@@ -1409,6 +1409,8 @@ svgweb.appendChild(obj, container);</b>
 
 <h2 id="breaking_changes_in_development">In Development</h2>
 
+<h2 id="breaking_changes_dracolisk">Dracolisk Release</h2>
+
 <ul>
   <li id="breaking_change_onload">SVG Web <em>no longer</em> does magic around <code>window.addEventListener('load', ...)</code>; <code>window.onload</code>; and <code>window.attachEvent('load', ...)</code>, as this was breaking third-party code such as JQuery (<a href="http://code.google.com/p/svgweb/issues/detail?id=375">see issue</a>). You must now use a slightly different syntax, detailed <a href="onload">here</a>.</li>
   <li id="breaking_change_addeventlistener_inside_svg_files">Also related, inside of external SVG files you must only use the <code>&lt;svg onload=""&gt;</code> attribute to wait for SVG Web to finish loading; <a href="known_issues30">see this note</a> for details.</li>
