@@ -2,7 +2,7 @@
   <head>
     <meta name="svg.render.forceflash" content="true" />
     
-    <script src="../../src/svg.js" data-path="../../src/" data-debug="false"></script>
+    <script src="../../src/svg.js" data-path="../../src/" data-debug="true"></script>
     
     <script>
     
@@ -113,7 +113,7 @@
         // Create a cols*rows grid with a 1/2-cell border.
         // Scale to fit width*height user pixels (including border).
         // Place at x,y user pixel coords.
-        start('grid-start', 'board');
+        //start('grid-start', 'board');
         this._cols = cols;
         this._rows = rows;
         this._color = color;
@@ -135,9 +135,9 @@
 
         this._rowArray = document.createElementNS(SVG_NS, "g");
         
-        end('grid-start', 'board');
+        //end('grid-start', 'board');
         
-        start('grid-middle', 'board');
+        //start('grid-middle', 'board');
         for (var r=0;r<rows;++r) {
           var row_group = document.createElementNS(SVG_NS, "g");
           row_group.setAttribute("transform", "translate(0,"+r+")");
@@ -154,13 +154,13 @@
           }
           this._rowArray.appendChild(row_group);
         }
-        end('grid-middle', 'board');
+        //end('grid-middle', 'board');
         
-        start('grid-append', 'board');
+        //start('grid-append', 'board');
         node.appendChild(this._border);
         node.appendChild(this._background);
         node.appendChild(this._rowArray);
-        end('grid-append', 'board');
+        //end('grid-append', 'board');
       }
 
       Grid.prototype = {
@@ -446,34 +446,34 @@
       }
 
       //----------------------------------------------------------------------
-      start('init');
+      //start('init');
       function init() {
-        end('init');
-        start('everything');
+        //end('init');
+        //start('everything');
         root = document.getElementsByTagNameNS(SVG_NS, 'svg')[0];
         
         // page layout:
         root.setAttribute("viewBox", "0 0 "+(3*HPAD+(COLS+1)+5)+" "+(2*VPAD+(ROWS+1)));
         
-        start('board');
+        //start('board');
         board = new Grid(COLS, ROWS, "black", "grey", HPAD, VPAD, COLS+1, ROWS+1, document.getElementById("board"));
-        end('board');
+        //end('board');
         
-        start('preview');
+        //start('preview');
         preview = new Grid(4,4, "black", "grey", 2*HPAD+COLS+1, VPAD, 5, 5, document.getElementById("preview"));
-        end('preview');
+        //end('preview');
         
         startNewGame();
 
         // initialize event processing:
         root.addEventListener("keydown", keyHandler, false);
         
-        end('everything');
+        //end('everything');
         
         //report();
       }
     
-      svgweb.addOnLoad(init);
+      window.addEventListener('SVGLoad', init, false);
     </script>
   </head>
   
@@ -482,7 +482,6 @@
     <script type="image/svg+xml">
       <svg xmlns="http://www.w3.org/2000/svg"
            xmlns:xlink="http://www.w3.org/1999/xlink"
-           onload="loaded();"
            width="600"
            height="400">
         <text x="1" y="1" font-size="1px">Mozilla SVG Tetris - Press 'h' for help.</text>

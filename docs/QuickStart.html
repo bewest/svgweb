@@ -282,11 +282,17 @@ query string to tell them to use your different HTC file or else they will not w
 
 <p>SVG Web includes a large set of the DOM (Document Object Model) when working with SVG. It is fairly complete though there are some omissions or areas which are still being worked on. Your JavaScript, even on Internet Explorer, has the 'illusion' of native SVG support.</p>
 
-<p id="onload">Let's start with scripting SVG that is embedded right into a web page. We will be using the source in <code>helloworld.html</code>. First, before working with the DOM or SVG on your page you must wait for the page's onload handler to fire, just like you would for normal HTML:</p>
+<p id="onload"><a name="onsvgload"></a>Let's start with scripting SVG that is embedded right into a web page. We will be using the source in <code>helloworld.html</code>. First, before working with the DOM or SVG on your page you must wait for SVG Web to finish loading:</p>
 
-<pre><code>window.onload = function() {
+<pre><code>window.onsvgload = function() {
   // do stuff now
 }</code></pre>
+
+<p>Notice that we use <code>window.onsvgload</code> rather than <code>window.onload</code>. You can alternatively also use <code>window.addEventListener</code> with the <code>SVGLoad</code> event (this also works on Internet Explorer):</p>
+
+<pre><code>window.addEventListener('SVGLoad', function() {
+  // function to be called when SVG Web and the page is done loading
+}, false)</code></pre>
 
 <p>On the <code>helloworld.html</code> page you will see two buttons, "Change Colors" and "Change Text." When clicked, they change the color of the circles in both SVG images, as well as change the text. The script for all of this is just a normal <code>&lt;script&gt;</code> tag embedded into the page, in the two functions <code>changeColors</code> and <code>changeText</code>. Let's look at the <code>changeColors</code> method:</p>
 

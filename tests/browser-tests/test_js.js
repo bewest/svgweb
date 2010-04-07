@@ -35,31 +35,6 @@ svgweb._objectLoaded = function(position) {
 // listeners added in different ways run in the right order
 svgweb._embedOnloads = [];
 
-// a method that embed2.svg calls after all of its onloads have fired to
-// make sure things ran correctly
-svgweb._validateOnloadsCalled = false;
-svgweb._validateOnloads = function() {
-  // make sure that the 4 onload listeners in embed2.svg got called
-  // and in the right order
-  assertEquals('embeds2.svg should have had 4 onload functions fire',
-               4, svgweb._embedOnloads.length);
-  assertEquals('1st onload in embeds2.svg should be "1"', 1, 
-               svgweb._embedOnloads[0]);
-  assertEquals('2nd onload in embeds2.svg should be "2"', 2,
-               svgweb._embedOnloads[1]);
-  assertEquals('3rd onload in embeds2.svg should be "3"', 3,
-               svgweb._embedOnloads[2]);
-  assertEquals('4th onload in embeds2.svg should be "4"', 4,
-               svgweb._embedOnloads[3]);
-               
-  // make sure that embeded objects' onload listeners get called before us;
-  // at this point, window._objectsLoadedFirst should have been set to _true_
-  // by one of the embed*.svg files
-  assertTrue('window._objectsLoadedFirst == false', window._objectsLoadedFirst);
-               
-  svgweb._validateOnloadsCalled = true;
-};
-
 // a variable that we use to make sure that the different ways we listen
 // for the onload event when dynamically creating SVG OBJECT tags works
 svgweb._dynamicObjOnloads = 0;
@@ -100,6 +75,25 @@ window._topDocument = document;
 // a data structure that we use to test making sure that adding event listeners
 // for the onload event fires in the correct order
 window._pageLoadedListeners = [];
+
+// subscribe to the window's onload, then subscribe to SVG Web; make sure it fires
+var _wrappedOnLoadCalled = false;
+if (!window.attachEvent) {
+  window.addEventListener('load', function() {
+    window.addEventListener('SVGLoad', function() {
+      _wrappedOnLoadCalled = true;
+    }, false);
+  }, false);
+} else {
+  window.attachEvent('onload', function() {
+    window.addEventListener('SVGLoad', function() {
+      _wrappedOnLoadCalled = true;
+    }, false);
+  });
+}
+
+// same as the above, but done inside embed2.svg
+var _wrappedOnLoadInsideEmbed2Called = false;
 
 var sodipodi_ns = 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd';
 var dc_ns = "http://purl.org/dc/elements/1.1/";
@@ -290,11 +284,7 @@ function runTests(embedTypes) {
   // also make sure that the timing functions in embed2.svg inside
   // testTimingFunctions have completed successfuly.
   window.setTimeout(function() {
-    if (_hasObjects) {
-      // make sure that embed2.svg called our _validateOnloads() method
-      assertTrue('_validateOnloads should have been called', 
-                 svgweb._validateOnloadsCalled);
-    } else {
+    if (!_hasObjects) {
       // make sure that the onload="" attribute on our first directly embedded
       // SVG root tag is fired
       assertTrue('The onload attribute for the SVG root mySVG should have '
@@ -338,53 +328,78 @@ function runTests(embedTypes) {
       }
     }
     
-    // make sure our window.onload listeners fired in the correct order
+    // make sure our window.onsvgload listeners fired in the correct order
     if (isIE && !_hasObjects) {
-      // window.onload and attachEvent
-      assertEquals('2 page onload handlers should have fired', 2,
+      // window.onsvgload and attachEvent
+      assertEquals('2 page onsvgload handlers should have fired', 4,
                    window._pageLoadedListeners.length);
-      assertEquals('1st page onload handler == windowOnLoad', 'windowOnLoad',
+      assertEquals('1st page onsvgload handler == windowOnLoad', 'windowOnLoad',
                    window._pageLoadedListeners[0]);
-      assertEquals('2nd page onload handler == attachEvent', 'attachEvent',
+      assertEquals('2nd page onsvgload handler == '
+                   + '"addEventListener, useCapture=false"',
+                   'addEventListener, useCapture=false',
                    window._pageLoadedListeners[1]);
+      assertEquals('3rd page onsvgload handler == '
+                   + '"addEventListener, useCapture=true"',
+                   'addEventListener, useCapture=true',
+                   window._pageLoadedListeners[2]);
+      assertEquals('4th page onsvgload handler == attachEvent', 'attachEvent',
+                   window._pageLoadedListeners[3]);
     } else if (isIE && _hasObjects) {
       // bodyOnLoad and attachEvent
-      assertEquals('2 page onload handlers should have fired', 2,
+      assertEquals('4 page onsvgload handlers should have fired', 4,
                    window._pageLoadedListeners.length);
-      assertEquals('1st page onload handler == bodyOnLoad', 'bodyOnLoad',
+      assertEquals('1st page onsvgload handler == bodyOnLoad', 'bodyOnLoad',
                    window._pageLoadedListeners[0]);
-      assertEquals('2nd page onload handler == attachEvent', 'attachEvent',
+      assertEquals('2nd page onsvgload handler == '
+                   + '"addEventListener, useCapture=false"',
+                   'addEventListener, useCapture=false',
                    window._pageLoadedListeners[1]);
+      assertEquals('3rd page onsvgload handler == '
+                   + '"addEventListener, useCapture=true"',
+                   'addEventListener, useCapture=true',
+                   window._pageLoadedListeners[2]);
+      assertEquals('4th page onsvgload handler == attachEvent', 'attachEvent',
+                   window._pageLoadedListeners[3]);
     } else if (!_hasObjects) {
-      // window.onload, 'addEventListener, useCapture=false',
+      // window.onsvgload, 'addEventListener, useCapture=false',
       // and 'addEventListener, useCapture=true'
-      assertEquals('3 page onload handlers should have fired', 3,
+      assertEquals('3 page onsvgload handlers should have fired', 3,
                    window._pageLoadedListeners.length);
-      assertEquals('1st page onload handler == '
+      assertEquals('1st page onsvgload handler == '
                    + '"addEventListener, useCapture=false"',
                    'addEventListener, useCapture=false',
                    window._pageLoadedListeners[0]);
-      assertEquals('2nd page onload handler == '
+      assertEquals('2nd page onsvgload handler == '
                    + '"addEventListener, useCapture=true"',
                    'addEventListener, useCapture=true',
                    window._pageLoadedListeners[1]);
-      assertEquals('3rd page onload handler == windowOnLoad', 'windowOnLoad',
+      assertEquals('3rd page onsvgload handler == windowOnLoad', 'windowOnLoad',
                    window._pageLoadedListeners[2]);
     } else if (_hasObjects) {
       // bodyOnLoad, 'addEventListener, useCapture=false',
       // and 'addEventListener, useCapture=true'
-      assertEquals('3 page onload handlers should have fired', 3,
+      assertEquals('3 page onsvgload handlers should have fired', 3,
                    window._pageLoadedListeners.length);
-      assertEquals('1st page onload handler == '
+      assertEquals('1st page onsvgload handler == '
                    + '"addEventListener, useCapture=false"',
                    'addEventListener, useCapture=false',
                    window._pageLoadedListeners[0]);
-      assertEquals('2nd page onload handler == '
+      assertEquals('2nd page onsvgload handler == '
                    + '"addEventListener, useCapture=true"',
                    'addEventListener, useCapture=true',
                    window._pageLoadedListeners[1]);
-      assertEquals('3rd page onload handler == bodyOnLoad', 'bodyOnLoad',
+      assertEquals('3rd page onsvgload handler == bodyOnLoad', 'bodyOnLoad',
                    window._pageLoadedListeners[2]);
+    }
+    
+    // make sure that subscribing to the window onload event and _then_ to
+    // SVG Web's onload works
+    assertTrue('Subscribing to window.onload and _then_ SVG Webs onload should work',
+               _wrappedOnLoadCalled);
+    if (_hasObjects) {
+      assertTrue('Subscribing to window.onload and _then_ SVG Webs onload should work '
+                 + 'from inside embed2', _wrappedOnLoadInsideEmbed2Called);
     }
     
     // Uncomment to test the page unload functionality. We comment this out 
@@ -5396,13 +5411,13 @@ function testCreateSVGObject() {
   // Tests for dynamically creating an SVG OBJECT
   console.log('Testing dynamically creating an SVG OBJECT...');
   
-  // test using addEventListener('load')
+  // test using addEventListener('SVGLoad')
   div = document.getElementById('test_container');
   obj1 = document.createElement('object', true);
   obj1.setAttribute('id', 'dynamic1');
   obj1.setAttribute('data', '../../samples/svg-files/rectangles.svg');
   obj1.setAttribute('type', 'image/svg+xml');
-  obj1.addEventListener('load', function() {
+  obj1.addEventListener('SVGLoad', function() {
     // now run our tests for this object
     
     // make sure 'this' points to the right thing, as well as ensuring
@@ -5505,7 +5520,7 @@ function testCreateSVGObject() {
   }, false);
   svgweb.appendChild(obj1, div);
   
-  // test using onload
+  // test using onsvgload
   div = document.getElementById('test_container');
   obj2 = document.createElement('object', true);
   obj2.setAttribute('id', 'dynamic2');
@@ -5521,7 +5536,7 @@ function testCreateSVGObject() {
   obj2.setAttribute('custom4', 'true');
   obj2.setAttribute('custom5', 'false');
   obj2.setAttribute('camelCaseName', 'camelCaseValue');
-  obj2.onload = function() {
+  obj2.onsvgload = function() {
     // now run our tests for this object
     
     // make sure getting the element by ID works
@@ -5620,7 +5635,7 @@ function testCreateSVGObject() {
   obj3 = document.createElement('object', true);
   obj3.setAttribute('data', '../../samples/svg-files/rectangles.svg');
   obj3.setAttribute('type', 'image/svg+xml');
-  obj3.addEventListener('load', function() {
+  obj3.addEventListener('svgload', function() {
     if (renderer == 'native' || isIE) {
       matches = document.getElementsByTagName('object');
     } else {
@@ -5664,7 +5679,7 @@ function testCreateSVGObject() {
   obj4.setAttribute('id', 'dynamic4');
   obj4.setAttribute('data', '../../samples/svg-files/rectangles.svg');
   obj4.setAttribute('type', 'image/svg+xml');
-  obj4.addEventListener('load', function() {
+  obj4.addEventListener('SVGLoad', function() {
     // FIXME: This is known to fail, incorrectly returns null
     //assertEquals('obj4.parentNode == DIV', div, obj4.parentNode);
     obj4 = document.getElementById('dynamic4');
@@ -5852,7 +5867,7 @@ function testCreateSVGRoot() {
       temp.style.fill = 'blue';
       clone.appendChild(temp);
       // add a new onload listener
-      clone.onload = function() {
+      clone.onsvgload = function() {
         // make sure our new nodes show up in the DOM
         assertExists('getElementById(dynamicRoot1_clone)',
                      document.getElementById('dynamicRoot1_clone'));
@@ -5904,14 +5919,14 @@ function testCreateSVGRoot() {
   svgweb.appendChild(svg, document.body);
   
   // Create SVG root and immediately add stuff to it, then wait for onload
-  // handler. Use .onload to add onload event handler. Have no ID on the SVG
+  // handler. Use .onsvgload to add onload event handler. Have no ID on the SVG
   // root.
   svg = document.createElementNS(svgns, 'svg');
   svg.setAttribute('width', 100);
   svg.setAttribute('height', 100);
   svg.style.display = 'inline';
   svg.style.border = '4px solid yellow';
-  svg.onload = function(evt) {
+  svg.onsvgload = function(evt) {
     // now run our tests for this root
     
     matches = document.getElementsByTagNameNS(svgns, 'svg');
@@ -6003,7 +6018,7 @@ function testCreateSVGRoot() {
     
     // now re-attach
     svg.childNodes[0].setAttribute('fill', 'red'); // change color
-    svg.onload = function() {
+    svg.onsvgload = function() {
       svg = document.getElementById('dynamicRoot2');
       assertExists('SVG root should exist', svg);
       assertExists('SVG root should have an id', svg.id);
@@ -7809,7 +7824,7 @@ function testImportNode() {
   obj = document.createElement('object', true);
   obj.setAttribute('data', '../../samples/svg-files/rectangles.svg');
   obj.setAttribute('type', 'image/svg+xml');
-  obj.addEventListener('load', 
+  obj.addEventListener('svgload', 
     (function(xml) {
       return function() {
         obj = this;

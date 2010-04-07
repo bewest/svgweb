@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta name="svg.render.forceflash" content="true" />
-  <script src="../src/svg.js" data-path="../src" data-debug="false"></script>
+  <script src="../src/svg.js" data-path="../src"></script>
 </head>
 <body><h1 style="margin:2px">Welcome to the SVG Web Demo!
          <span style="font-size: 10pt">
@@ -1178,7 +1178,7 @@
             if (newSVG.height != undefined) {
               currentSVGObject.setAttribute('height', newSVG.height);
             }
-            currentSVGObject.addEventListener('load', function() {
+            currentSVGObject.addEventListener('SVGLoad', function() {
               // if the user is very rapidly pressing the next button, some of
               // the old SVG OBJECTs might have loaded in the interim while
               // we were waiting; remove all existing SVG OBJECTs except
@@ -1364,7 +1364,7 @@
         document.getElementById('selectRenderer').disabled='true';
     }
     
-    window.onload = function() {
+    window.onsvgload = function() {
       // be able to grab a specific demo by name
       indexSVGFiles();
       

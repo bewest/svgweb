@@ -238,7 +238,8 @@ implemented yet; it works however with SVG brought in with the OBJECT tag).</p>
 
 <p>For browsers with native SVG support, the SVG content inside of a SCRIPT tag 
 shows up fully in the browser's DOM, with the SCRIPT tag thrown away after the
-page has finished loading, so you can manipulate it with normal JavaScript:</p>
+page has finished loading, so you can manipulate it with normal JavaScript; also note
+how we wait for the page and SVG Web to load below using <code>window.onsvgload</code> instead of <code>window.onload</code>:</p>
 
 <pre><code>&lt;script type="image/svg+xml"&gt;
  &lt;svg width="200" height="200"&gt;
@@ -252,7 +253,7 @@ page has finished loading, so you can manipulate it with normal JavaScript:</p>
 &lt;/script&gt;
 
 &lt;script&gt;
-  window.onload = function() {
+  window.onsvgload = function() {
     var rect = document.getElementById('myRect');
     rect.setAttribute('fill', 'red');
     rect.style.strokeWidth = 20;
@@ -319,17 +320,10 @@ property:</p>
 &lt;/object&gt;
 
 &lt;script&gt;
-  if (window.addEventListener) {
-    window.addEventListener('load', function() {
-      var doc = document.getElementById('testSVG').contentDocument;
-      var rect = doc.getElementsByTagNameNS(svgns, 'rect')[0];
-    }, false);
-  } else { // IE
-    window.attachEvent('onload', function() {
-      var doc = document.getElementById('testSVG').contentDocument;
-      var rect = doc.getElementsByTagNameNS(svgns, 'rect')[0];
-    });
-  }
+  window.addEventListener('SVGLoad', function() {
+    var doc = document.getElementById('testSVG').contentDocument;
+    var rect = doc.getElementsByTagNameNS(svgns, 'rect')[0];
+  }, false);
 &lt;/script&gt;</code></pre>
 
 <p>When doing DOM scripting on SVG elements, you should use the namespace aware
@@ -391,13 +385,19 @@ add it to the SVG root element itself if you want to intercept all these).</p>
 <h1 id="onload">Knowing When Your SVG Is Loaded</h1>
 
 <p>If you want to know when your SVG and the entire page is done loading, you 
-can use window.onload, have an onload attribute on the BODY tag, or use
-window.addEventListener('load, ...) or window.attachEvent('onload' for IE. 
-Example:</p>
+can use window.onsvgload; have an onsvgload attribute on the BODY tag; or use
+<code>window.addEventListener('SVGLoad', callback, useCapture)</code> or <code>window.addEventListener('svgload', callback, useCapture)</code>. Examples:</p>
 
-<pre><code>window.onload = function() {
+<pre><code>window.onsvgload = function() {
   // all SVG loaded and rendered
 }</code></pre>
+
+<pre><code>window.addEventListener('SVGLoad', function() {
+  // all SVG loaded and rendered
+}, false)
+</code></pre>
+
+<p>Older versions of SVG Web would transparently allow developers to use <code>window.onload</code> and <code>window.addEventListener('load', ...)</code> to do the above, but this lead to issues with third-party libraries such as JQuery and was changed.</p>
 
 <p>If you dynamically create SVG root elements _after_ the page has already 
 finished loading, you must add an SVGLoad listener to the SVG root 
@@ -415,15 +415,29 @@ root.addEventListener('SVGLoad', function(evt) {
 });
 svgweb.appendChild(root, document.body);</code></pre>
 
-<p>'load' and 'SVGLoad' are synonomous and are both supported; they lead to the
-same behavior when used. Notice also that when we append our newly created SVG
+<p>Notice also that when we append our newly created SVG
 root that we must use the method <code>svgweb.appendChild</code>. This method
 has the following arguments:</p>
 
 <pre><code>svgweb.appendChild(newNode, parentNode);</code></pre>
 
-<p>If you are loading an SVG file using the OBJECT tag and have an onload="" 
-attribute, such as:</p>
+<p id="chaining_onloads">Note that if you are using a <code>window.onload</code> listener for something else (or using something like JQuery's <code>$(document).ready()</code> function), you should also make sure that SVG Web is done loading:</p>
+
+<pre><code>// JQuery onload
+  $(document).ready(function() {
+    window.addEventListener('SVGLoad', function() {
+      // ready to work with SVG now
+    }, false);
+  });
+
+  // window.onload
+  window.onload = function() {
+    window.addEventListener('SVGLoad', function() {
+      // ready to work with SVG now
+    }, false);
+  }</code></pre>
+  
+<p id="workaround_for_onload_inside_svg_files">If you are loading an SVG file using the OBJECT tag and have an <code>onload=""</code> attribute inside the SVG file on the <code>&lt;svg&gt;</code> root, such as:</p>
 
 <p>Containing HTML page:</p>
 
@@ -483,6 +497,8 @@ var onloadFunc = doload;</code></pre>
 in the example above. Notice that we pass a reference to the function
 and _don't_ have () at the end -- i.e. it is 'var onloadFunc = doload' NOT
 'var onloadFunc = doload()'.</p>
+
+<p>Note that using <code>window.addEventListener('SVGLoad', ...)</code> or <code>window.onsvgload = someFunc;</code> <i>inside</i> of an external SVG file is not supported; for more details <a href="#known_issues30">see this note</a>.
 
 <h1 id="compression">Compression</h1>
 
@@ -870,7 +886,7 @@ svg.addEventListener('SVGLoad', function() {
   alert('loaded!');
 }, false);
 // also supported:
-svg.onload = function() {
+svg.onsvgload = function() {
   alert('loaded!');
 }
 
@@ -1260,7 +1276,7 @@ have the following code:</p>
 <pre><code>var obj = document.createElement('object', true);
 obj.setAttribute('type', 'text/svg+xml');
 obj.setAttribute('data', 'myfile.svg');
-obj.addEventListener('load', function() {
+obj.addEventListener('SVGLoad', function() {
   alert(obj.parentNode); // will incorrectly return null!
 }, false);
 svgweb.appendChild(obj, myParentNode);</code></pre>
@@ -1278,7 +1294,7 @@ or store the value:</p>
 <pre><code>var obj = document.createElement('object', true);
 obj.setAttribute('type', 'text/svg+xml');
 obj.setAttribute('data', 'myfile.svg');
-obj.addEventListener('load', function() {
+obj.addEventListener('SVGLoad', function() {
   obj = this;
   alert(obj.parentNode); // correctly prints 'myParentNode'
 }, false);
@@ -1290,7 +1306,7 @@ svgweb.appendChild(obj, myParentNode);</code></pre>
 obj.setAttribute('type', 'text/svg+xml');
 obj.setAttribute('data', 'myfile.svg');
 obj.setAttribute('id', 'mySVG');
-obj.addEventListener('load', function() {
+obj.addEventListener('SVGLoad', function() {
   obj = document.getElementById('mySVG');
   alert(obj.parentNode); // correctly prints 'myParentNode'
 }, false);
@@ -1326,7 +1342,7 @@ obj.setAttribute('type', 'image/svg+xml');
 obj.setAttribute('data', someURL);
 obj.setAttribute('width', 300);
 obj.setAttribute('height', 300);
-obj.addEventListener('load', myObjLoaded, false);
+obj.addEventListener('SVGLoad', myObjLoaded, false);
 
 <b>// avoid this
 obj.setAttribute('style', 'position: absolute; z-index: -1000; top: 0px; right: 0px')
@@ -1347,7 +1363,7 @@ obj.setAttribute('type', 'image/svg+xml');
 obj.setAttribute('data', someURL);
 obj.setAttribute('width', 300);
 obj.setAttribute('height', 300);
-obj.addEventListener('load', myObjLoaded, false);
+obj.addEventListener('SVGLoad', myObjLoaded, false);
 
 <b>// position object using a DIV container to avoid 
 // strange style + OBJECT interactions
@@ -1368,3 +1384,32 @@ svgweb.appendChild(obj, container);</b>
 <p id="known_issues27">If you do a <code>cloneNode</code> on a node or group of nodes that have event listeners, these event listeners will not get copied over; this mimics the native behavior on Firefox and Safari which <em>do not</em> copy over event listeners from cloned nodes.</p>
 
 <p id="known_issues28"><code>currentTranslate</code> and <code>currentScale</code> will only work on the SVG root tags of SVG OBJECTs. If you apply them on directly embedded SVG the results will be unexpected (Safari/Native, for example, will scale the entire page). This makes sense as the SVG directly embedded into a page doesn't have its own translate or scale presence apart from the page itself.</p>
+
+<p id="known_issues29">Transparently intercepting <code>window.onload</code>; any <code>onload</code> attributes on the HTML <code>body</code> tag; <code>window.addEventListener('load', ...)</code>; and <code>window.attachEvent('onload', ...)</code> is not supported. You must instead use a slightly different syntax as detailed <a href="#onload">here</a>.
+  
+<p id="known_issues30">If you have code inside of an external SVG file that you bring in through the SVG OBJECT tag, you must subscribe to the onload event using the &lt;svg onload=""&gt; attribute as detailed <a href="workaround_for_onload_inside_svg_files">here</a>. We don't support using <code>window.addEventListener('SVGLoad', ...)</code> or <code>window.onsvgload = someFunc;</code> <i>inside</i> of an external SVG file. For example, the following would <em>not</em> work:
+  
+<p>MyExternalSVGFile.svg:</p>
+
+<pre><code>&lt;svg&gt;
+  &lt;script&gt;
+    // doesn't work
+    window.addEventListener('SVGLoad', function() {
+      alert('loaded!');
+    }, false);
+    
+    // also doesn't work
+    window.onsvgload = function() { alert('foobar!'); }
+  &lt;/script&gt;
+&lt;/svg&gt;</code></pre>
+
+<h1 id="breaking_changes">Breaking Changes</h1>
+
+<p>This section describes any removal of functionality or changing of our APIs that might break code that used previous versions of SVG Web.</p>
+
+<h2 id="breaking_changes_in_development">In Development</h2>
+
+<ul>
+  <li id="breaking_change_onload">SVG Web <em>no longer</em> does magic around <code>window.addEventListener('load', ...)</code>; <code>window.onload</code>; and <code>window.attachEvent('load', ...)</code>, as this was breaking third-party code such as JQuery (<a href="http://code.google.com/p/svgweb/issues/detail?id=375">see issue</a>). You must now use a slightly different syntax, detailed <a href="onload">here</a>.</li>
+  <li id="breaking_change_addeventlistener_inside_svg_files">Also related, inside of external SVG files you must only use the <code>&lt;svg onload=""&gt;</code> attribute to wait for SVG Web to finish loading; <a href="known_issues30">see this note</a> for details.</li>
+</ul>

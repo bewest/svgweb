@@ -3,7 +3,7 @@
   <!-- Runs a suite of unit tests against our JavaScript SVG DOM and CSS API -->
 
   <head>
-    <meta name="svg.render.forceflash" content="true" />
+    <meta name="svg.render.forceflash" content="false" />
         
     <script src="../../src/svg.js" data-path="../../src" data-debug="true"></script>
     <script src="test_js.js"></script>
@@ -12,22 +12,20 @@
     <script>
       // subscribe to the page load event in different ways to make sure
       // it works
-      if (window.addEventListener) { // Standards-compliant browsers
-        window.addEventListener('load', function() {
-          window._pageLoadedListeners.push('addEventListener, useCapture=false');
-        }, false);
-        window.addEventListener('load', function() {
-          window._pageLoadedListeners.push('addEventListener, useCapture=true');
-        }, true);
-      }
+      window.addEventListener('SVGLoad', function() {
+        window._pageLoadedListeners.push('addEventListener, useCapture=false');
+      }, false);
+      window.addEventListener('svgload', function() {
+        window._pageLoadedListeners.push('addEventListener, useCapture=true');
+      }, true);
       
       if (window.attachEvent) { // IE
-        window.attachEvent('onload', function() {
+        window.attachEvent('onsvgload', function() {
           window._pageLoadedListeners.push('attachEvent');
         });
       }
       
-      window.onload = function() {
+      window.onsvgload = function() {
         // indicate which onload listener fired for later testing
         window._pageLoadedListeners.push('windowOnLoad');
         

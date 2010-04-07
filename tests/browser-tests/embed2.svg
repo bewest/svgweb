@@ -152,31 +152,13 @@
       // main HTML page by putting them here
       runObjectTests();
     }
-
-    // test the different ways to register for the SVG file onload
     
-    // anonymous function - onload
+    // make sure subscribing to the window.onload and _then_ SVG Web works
     window.addEventListener('load', function() {
-      top.svgweb._embedOnloads.push(2);
+      window.addEventListener('SVGLoad', function() {
+        top.window._wrappedOnLoadInsideEmbed2Called = true;
+      }, false);
     }, false);
-    
-    // named function - onload
-    window.addEventListener('load', addEventListenerMethod, false); 
-    function addEventListenerMethod() {
-      top.svgweb._embedOnloads.push(3);
-    }
-
-    // .onload on the window object
-    window.onload = function() {
-      top.svgweb._embedOnloads.push(4);
-      top.svgweb._validateOnloads();
-    };
-    
-    // Note: we don't test document.rootElement.addEventListener(onload) for the 
-    // following reason:
-    // * Firefox only supports document.rootElement.addEventListener('SVGLoad')
-    // * Safari only supports document.rootElement.addEventListener('onload')
-    // So there is no common subset between them
 
     function runObjectTests() {
       top.console.log('Inside SVG OBJECT: Running suite of tests');

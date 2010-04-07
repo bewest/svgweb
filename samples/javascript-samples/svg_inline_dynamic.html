@@ -7,7 +7,7 @@
    <script src="../../src/svg.js" data-path="../../src/"></script>
    
    <script>
-     svgweb.addOnLoad(function() {
+     window.addEventListener('SVGLoad', function() {
        // use some JavaScript to animate the rectangles over and over
        window._counter = 1;
        window.setInterval(function() {
@@ -32,7 +32,7 @@
 
          window._counter++;
        }, 100);
-     });
+     }, false);
    </script>
  </head>
 

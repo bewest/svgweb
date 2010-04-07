@@ -7,7 +7,7 @@
          page; provide the optional data-path attribute if the 
          svg.js/svg.swf/svg.htc files are stored in a different directory from
          where your HTML page is. -->
-    <script src="../../src/svg.js" data-path="../../src"></script>
+    <script src="../../src/svg.js" data-path="../../src" data-debug="true"></script>
     
     <!-- By default Flash is used for rendering on IE and the native SVG support
          is used on other browsers. You can override this and force Flash to
@@ -23,7 +23,7 @@
     
     <!-- Example JavaScript block that shows scripting our SVG -->
     <script type="text/javascript">
-      window.onload = function() {
+      window.onsvgload = function() {
         // SVG on the page should only be manipulated after the page is 
         // finished loading
         var buttons = document.getElementsByTagName('button');

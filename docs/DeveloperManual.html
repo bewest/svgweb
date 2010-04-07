@@ -12,7 +12,7 @@ svn checkout http://svgweb.googlecode.com/svn/trunk/ svgweb-read-only
 using "MingW and msys" (see Issue 176 comment #4).</p>
 
 <p>
-You need the flex/flash SDK, the java runtime*, and the java sdk**.
+You need the Flex/Flash SDK, the java runtime*, and the java sdk**.
 </p>
 <p>
 Respectively, that means mxmlc, java, and javac should be in your path.
@@ -53,7 +53,7 @@ make all COPY_TESTS=1</code></pre>
 
 <p>
 Once building you will need to access things using the local web server as normal in
-build/. See the Quick Start guide for details on running the 
+build/. See the <a href="QuickStart.html">Quick Start guide</a> for details on running the 
 provided java webserver.</p>
 
 <p>If you have your own web server, you can run the following command, which will copy
@@ -142,12 +142,12 @@ Here is a diff of the changes against the default index.template.html file:</p>
 
 <pre><code>
 65c65
-<       "FlashVars", "MMredirectURL="+MMredirectURL+'&MMplayerType='+MMPlayerType+'&MMdoctitle='+MMdoctitle+"",
+&lt;       "FlashVars", "MMredirectURL="+MMredirectURL+'&amp;MMplayerType='+MMPlayerType+'&amp;MMdoctitle='+MMdoctitle+"",
 ---
->       "FlashVars", "sourceType=url_svg&svgURL=i369.svg",
+&gt;       "FlashVars", "sourceType=url_svg&amp;svgURL=i369.svg",
 85a86
->           "FlashVars", "sourceType=url_svg&svgURL=i369.svg",
+&gt;           "FlashVars", "sourceType=url_svg&amp;svgURL=i369.svg",
 105a107
->                         &lt;param name="FlashVars" value="sourceType=url_svg&svgURL=i369.svg"&gt;
+&gt;                         &lt;param name="FlashVars" value="sourceType=url_svg&amp;svgURL=i369.svg"&gt;
 </code></pre>
 

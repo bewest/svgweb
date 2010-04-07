@@ -541,11 +541,11 @@ function parseXML(xml, preserveWhiteSpace) {
     }
   }
   
-  // cache parsed XML (Issue 421)
+  // cache parsed XML to speed up performance (Issue 421)
   try {
     parseXMLCache[preserveWhiteSpace + xml] = xmlDoc.cloneNode(true);
   } catch (e) {
-    //Opera at v10.10 cannot clone a Document.
+    // Opera at v10.10 cannot clone a Document
   }
   
   return xmlDoc;
@@ -671,8 +671,10 @@ function xhrObj() {
   }
 }
 
-// we just use an autoincrement counter to ensure uniqueness for our node 
-// tracking, which is fine for our situation and produces much smaller GUIDs
+// We just use an autoincrement counter to ensure uniqueness for our node 
+// tracking, which is fine for our situation and produces much smaller GUIDs;
+// GUIDs are used to track individual SVG nodes between our JavaScript and
+// Flash.
 var guidCounter = 0;
 function guid() {
   return '_' + guidCounter++;
@@ -771,6 +773,12 @@ extend(SVGWeb, {
     } else { // normal addOnLoad request from containing HTML page
       this._loadListeners.push(listener);
     }
+    
+    // fire the onsvgload event immediately if the page was done
+    // loading earlier
+    if (this.pageLoaded) {
+      this._fireOnLoad();
+    }
   },
   
   /** Returns a string for the given handler for this platform, 'flash' if
@@ -802,14 +810,15 @@ extend(SVGWeb, {
       this._svgObjects.push(node);
       
       if (this.getHandlerType() == 'native') {
+        node.onload = node.onsvgload;
         parent.appendChild(node);
       }
       
       var placeHolder = node;
       if (this.getHandlerType() == 'flash') {
         // register onloads
-        if (node.onload) {
-          node.addEventListener('load', node.onload, false);
+        if (node.onsvgload) {
+          node.addEventListener('SVGLoad', node.onsvgload, false);
         }
         
         // Turn our OBJECT into a place-holder DIV attached to the DOM, 
@@ -851,9 +860,9 @@ extend(SVGWeb, {
       // dynamic SVG root
       this.totalSVG++;
       
-      // copy over any node.onload listener
-      if (node.onload) {
-        node.addEventListener('SVGLoad', node.onload, false);
+      // copy over any node.onsvgload listener
+      if (node.onsvgload) {
+        node.addEventListener('SVGLoad', node.onsvgload, false);
       }
       
       if (isIE && node._fakeNode) {
@@ -1110,7 +1119,6 @@ extend(SVGWeb, {
     if (document.addEventListener) {
       // DOMContentLoaded natively supported on Opera 9/Mozilla/Safari 3
       document.addEventListener('DOMContentLoaded', function() {
-        self._saveWindowOnload();
         self._onDOMContentLoaded();
       }, false);
     } else { // Internet Explorer
@@ -1121,17 +1129,7 @@ extend(SVGWeb, {
                       + 'src=//0><\/script>');
       var script = document.getElementById('__ie__svg__onload');
       script.onreadystatechange = function() {
-        // Save any window.onload listener that might be registered so we can
-        // delay calling it until we are done internally. IE has two tricky
-        // states when it comes to this:
-        // * Page loaded from cache - window.onload will be ready during
-        // 'loaded' or 'loading' readyState event. If we wait until a
-        // 'complete' readyState for this kind it will be too late.
-        // * Page not in cache - we must use a document.onreadystatechange
-        // listener to detect an 'interactive' or 'complete' readyState event.
-        if (this.readyState != 'complete' && window.onload) {
-          self._saveWindowOnload();
-        } else if (this.readyState == 'complete') {
+        if (this.readyState == 'complete') {
           // all the DOM content is finished loading -- continue our internal
           // execution now
           self._onDOMContentLoaded();
@@ -1260,6 +1258,9 @@ extend(SVGWeb, {
       listener.onreadystatechange = null;
       listener = null;
     }
+    
+    // save any window.onsvgload listener that might be present
+    this._saveWindowOnload();
     
     // determine what renderers (native or Flash) to use for which browsers
     this.config = new RenderConfig();
@@ -2166,9 +2167,16 @@ extend(SVGWeb, {
     if (window.addEventListener) {
       window._addEventListener = window.addEventListener;
       window.addEventListener = function(type, f, useCapture) {
-        if (type != 'load') {
+        if (type.toLowerCase() != 'svgload') {
           return window._addEventListener(type, f, useCapture);
         } else {
+          svgweb.addOnLoad(f);
+        }
+      }
+    } else {
+      // patch in addEventListener just for the svgload event
+      window.addEventListener = function(type, f, useCapture) {
+        if (type.toLowerCase() == 'svgload') {
           svgweb.addOnLoad(f);
         }
       }
@@ -2177,7 +2185,7 @@ extend(SVGWeb, {
     if (isIE && window.attachEvent) {
       window._attachEvent = window.attachEvent;
       window.attachEvent = function(type, f) {
-        if (type != 'onload') {
+        if (type.toLowerCase() != 'onsvgload') {
           return window._attachEvent(type, f);
         } else {
           svgweb.addOnLoad(f);
@@ -2187,17 +2195,36 @@ extend(SVGWeb, {
   },
   
   _saveWindowOnload: function() {
-    // intercept and save window.onload or <body onload="">
-    if (window.onload) {
+    // intercept and save window.onsvgload or <body onsvgload="">
+    var onsvgload = window.onsvgload;
+    // browsers will replace any previous window.onload listeners
+    // with a <body onload=""> listener; simulate this for onsvgload
+    if (document.getElementsByTagName('body')) {
+      var body = document.getElementsByTagName('body')[0];
+      if (body.getAttribute('onsvgload')) {
+        callbackStr = body.getAttribute('onsvgload');
+        onsvgload = (function(callbackStr) {
+          // FIXME: What should 'this' refer to when body.onload
+          // is simulated? The body tag? The window object?
+          return function() {
+            eval(callbackStr);
+          }
+        })(callbackStr);
+      }
+    }
+    
+    if (onsvgload) {
       // preserve IE's different behavior of firing window.onload 
       // behavior _before_ everything else; other browsers don't necessarily
-      // give preferential treatment to window.onload
+      // give preferential treatment to window.onload. Even though we
+      // now use window.onsvgload instead of window.onload preserve
+      // this behavior.
       if (isIE) {
-        this._loadListeners.splice(0, 0, window.onload);
+        this._loadListeners.splice(0, 0, onsvgload);
       } else {
-        this._loadListeners.push(window.onload);
+        this._loadListeners.push(onsvgload);
       }
-      window.onload = null;
+      window.onsvgload = onsvgload = null;
     }
   }
 });
@@ -2728,7 +2755,7 @@ FlashHandler._createElement = function(nodeName, forSVG) {
       _obj.addEventListener = function(type, listener, useCapture) {
         // handle onloads special
         // NOTE: 'this' == our SVG OBJECT
-        if (type == 'load') {
+        if (type.toLowerCase() == 'svgload') {
           this._onloadListeners.push(listener);
         } else if (!addEventListener) { // IE
           this.attachEvent('on' + type, listener);
@@ -3197,7 +3224,6 @@ extend(FlashHandler, {
   },
 
   _onViewSourceDynamic: function(msg) {
-
     // Add xml tag if not present
     if (msg.source.indexOf('<?xml') == -1) {
       msg.source='<?xml version="1.0"?>\n' + msg.source;
@@ -3451,6 +3477,15 @@ NativeHandler._patchBrowserObjects = function(win, doc) {
   if (isFF) {
     NativeHandler._patchStyleObject(win);
   }
+  
+  // make sure that calls to window.addEventListener('SVGLoad', ...) or
+  // window.onsvgload made from external SVG files works if done _after_
+  // the normal window.onload call has fired
+  var rootElement = doc.rootElement;
+  if (rootElement && rootElement.localName == 'svg'
+      && rootElement.namespaceURI == svgns) {
+    NativeHandler._patchSvgFileAddEventListener(win, doc);
+  }
 };
 
 /** If someone calls cloneNode, our patched addEventListener method goes away;
@@ -3507,7 +3542,7 @@ NativeHandler._patchAddEventListener = function(root) {
   root._onloadListeners = [];
   root.addEventListener = (function(self) {
     return function(type, f, useCapture) {
-      if (type == 'SVGLoad' || type == 'load') {
+      if (type.toLowerCase() == 'svgload') {
         this._onloadListeners.push(f);
       } else {
         root._addEventListener(type, f, useCapture);
@@ -3568,6 +3603,49 @@ NativeHandler._patchStyleObject = function(win) {
       );
     })(styleName, stylePropName); // pass closure values
   }
+};
+
+/**
+  This method is meant to address the following edge condition. If we
+  have an external SVG file that we have brought in using an SVG
+  OBJECT tag, such as foobar.svg, inside _that_ external SVG file
+  there might be nested calls to know when SVG Web is done loading
+  _after_ the page has loaded:
+  
+  foobar.svg:
+  <svg>
+    <script>
+      window.addEventListener('load', function() {
+        // be able to handle this!
+        window.addEventListener('SVGLoad', function() {
+          // this should fire
+        }, false);
+      }, false);
+    </script>
+  </svg>
+  
+  @param win The owner window to patch.
+  @param doc The owner document to work with.
+*/
+NativeHandler._patchSvgFileAddEventListener = function(win, doc) {
+  var _addEventListener = win.addEventListener;
+  win.addEventListener = function(type, listener, useCapture) {
+    if (type.toLowerCase() != 'svgload') {
+      _addEventListener(type, listener, useCapture);
+    } else {
+      if (doc.readyState == 'complete') {
+        listener();
+      }
+    }
+  }
+  
+  win.__defineGetter__('onsvgload', function() {
+    return this.__onsvgload;
+  });
+  win.__defineSetter__('onsvgload', function(listener) {
+    this.__onsvgload = listener;
+    this.addEventListener('SVGLoad', listener, false);
+  });
 };
 
 // end of static singleton functions
@@ -7209,7 +7287,7 @@ function _SVGWindow(handler) {
 
 extend(_SVGWindow, {
   addEventListener: function(type, listener, capture) {
-    if (type == 'load' || type == 'SVGLoad') {
+    if (type.toLowerCase() == 'SVGLoad') {
       this._onloadListeners.push(listener);
     }
   },
