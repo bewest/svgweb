@@ -178,6 +178,12 @@ package org.svgweb.nodes
             if (name == 'stroke') {
                 return 'none';
             }
+            
+            // Provide defaults for the various rendering hints.
+            if (name == 'shape-rendering' || name == 'color-rendering'
+                || name == 'text-rendering' || name == 'image-rendering') {
+              return 'auto';
+            }
 
             return defaultValue;
         }

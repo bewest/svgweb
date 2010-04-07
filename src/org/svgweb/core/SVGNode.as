@@ -863,6 +863,8 @@ package org.svgweb.core
         }
 
         protected function nodeBeginStroke():void {
+            var shapeRendering:String = this.getStyle('shape-rendering'); 
+            
             //Stroke
             var line_color:Number;
             var line_alpha:Number;
@@ -902,16 +904,36 @@ package org.svgweb.core
                 jointStyle = JointStyle.BEVEL;
             }
             else {
+              // Issue 437: "Slow rendering with mitered corners"
+              // http://code.google.com/p/svgweb/issues/detail?id=437
+              // The SVG default is to use mitered joins, but this is _extremely_ slow on
+              // Flash for some edge cases; using the Flash default joint style
+              // is much faster, by about two orders of magnitude for certain
+              // SVG files.
+              if (shapeRendering == 'optimizeSpeed'
+                  || shapeRendering == 'auto'){
+                // The SVG standard says that 'auto' on the shape-rendering property should 
+                // optimize correctness over speed. However, we go against the
+                // standard for SVG Web on this point for two reasons:
+                // * If a developer uses shape-rendering: optimizeSpeed for native
+                // SVG renderers, such as Firefox, the visual quality is very
+                // degraded -- there is no way to specify that only one renderer
+                // should be optimized for speed.
+                // * The effect on performance is _huge_ for the Flash SVG Web
+                // renderer.
+                jointStyle = JointStyle.ROUND;
+              } else {
                 jointStyle = JointStyle.MITER;
+              }
             }
-            
+                        
             var miterLimit:String = this.getStyleOrAttr('stroke-miterlimit');
             if (miterLimit == null) {
                 miterLimit = '4';
             }
             
-            drawSprite.graphics.lineStyle(line_width, line_color, line_alpha, false, LineScaleMode.NORMAL,
-                                          capsStyle, jointStyle, SVGColors.cleanNumber(miterLimit));
+            //drawSprite.graphics.lineStyle(line_width, line_color, line_alpha, false, LineScaleMode.NORMAL,
+            //                              capsStyle, jointStyle, SVGColors.cleanNumber(miterLimit));
 
             if ( (stroke != 'none') && (stroke != '')  && (this.getStyleOrAttr('visibility') != 'hidden') ) {
                 var strokeMatches:Array = stroke.match(/url\(#([^\)]+)\)/si);
