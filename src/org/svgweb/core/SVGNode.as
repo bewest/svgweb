@@ -910,8 +910,7 @@ package org.svgweb.core
               // Flash for some edge cases; using the Flash default joint style
               // is much faster, by about two orders of magnitude for certain
               // SVG files.
-              if (shapeRendering == 'optimizeSpeed'
-                  || shapeRendering == 'auto'){
+              if (shapeRendering == 'optimizeSpeed' || shapeRendering == 'auto'){
                 // The SVG standard says that 'auto' on the shape-rendering property should 
                 // optimize correctness over speed. However, we go against the
                 // standard for SVG Web on this point for two reasons:
