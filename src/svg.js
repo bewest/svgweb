@@ -1182,10 +1182,21 @@ extend(SVGWeb, {
   
   /** Gets any data-path value that might exist on the SCRIPT tag
       that pulls in our svg.js or svg-uncompressed.js library to configure 
-      where to find library resources like SWF files, HTC files, etc. */
+      where to find library resources like SWF files, HTC files, etc. 
+      You can also use a META tag with the name 'svg.config.data-path'
+      and the content property set to the data path. */
   _getLibraryPath: function() {
     // determine the path to our HTC and Flash files
     var libraryPath = './';
+    
+    var meta = document.getElementsByTagName('meta');
+    for (var i = 0; i < meta.length; i++) {
+      if (meta[i].name == 'svg.config.data-path'
+          && meta[i].content.length > 0) {
+        libraryPath = meta[i].content;
+      }
+    }
+    
     var scripts = document.getElementsByTagName('script');
     for (var i = 0; i < scripts.length; i++) {
       if (/svg(?:\-uncompressed)?\.js/.test(scripts[i].src)
