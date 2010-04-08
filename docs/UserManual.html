@@ -1403,6 +1403,8 @@ svgweb.appendChild(obj, container);</b>
   &lt;/script&gt;
 &lt;/svg&gt;</code></pre>
 
+<p id="known_issues31">By default SVG Web will use the round joint style rather than the miter joint style mandated by the SVG standard for performance reasons in the Flash renderer. To override this, use the <code>shape-rendering</code> CSS property on your SVG root tag and set it to <code>geometric-precision</code>.
+
 <h1 id="breaking_changes">Breaking Changes</h1>
 
 <p>This section describes any removal of functionality or changing of our APIs that might break code that used previous versions of SVG Web.</p>
