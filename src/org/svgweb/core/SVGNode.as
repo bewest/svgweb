@@ -931,8 +931,8 @@ package org.svgweb.core
                 miterLimit = '4';
             }
             
-            //drawSprite.graphics.lineStyle(line_width, line_color, line_alpha, false, LineScaleMode.NORMAL,
-            //                              capsStyle, jointStyle, SVGColors.cleanNumber(miterLimit));
+            drawSprite.graphics.lineStyle(line_width, line_color, line_alpha, false, LineScaleMode.NORMAL,
+                                          capsStyle, jointStyle, SVGColors.cleanNumber(miterLimit));
 
             if ( (stroke != 'none') && (stroke != '')  && (this.getStyleOrAttr('visibility') != 'hidden') ) {
                 var strokeMatches:Array = stroke.match(/url\(#([^\)]+)\)/si);
