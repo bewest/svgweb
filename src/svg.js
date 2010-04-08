@@ -7106,13 +7106,13 @@ extend(_SVGObject, {
       var pathname = this.url.replace(/[^:]*:\/\/[^\/]*/).match(/\/?[^\?\#]*/)[0];
       if (pathname && pathname.length > 0 && pathname.indexOf('/') != -1) {
         // snip off any filename after a final slash
-        results = pathname.replace(/\/([^/]*)$/, '/');
+        results = pathname.replace(/\/([^\/]*)$/, '/');
       }
     } else {
       var pathname = window.location.pathname.toString();
       if (pathname && pathname.length > 0 && pathname.indexOf('/') != -1) {
         // snip off any filename after a final slash
-        results = pathname.replace(/\/([^/]*)$/, '/');
+        results = pathname.replace(/\/([^\/]*)$/, '/');
       }
     }
 
@@ -8443,7 +8443,7 @@ extend(_SVGSVGElement, {
     var pathname = window.location.pathname.toString();
     if (pathname && pathname.length > 0 && pathname.indexOf('/') != -1) {
       // snip off any filename after a final slash
-      results = pathname.replace(/\/([^/]*)$/, '/');
+      results = pathname.replace(/\/([^\/]*)$/, '/');
     }
 
     return results;
