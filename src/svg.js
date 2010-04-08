@@ -1624,24 +1624,12 @@ extend(SVGWeb, {
       // 1) We don't parse comments into our DOM, 2) when we add our
       // <__text> sections below they can get incorrectly nested into multi
       // line comments; stripping them out is a simple solution for now.
-      var commentRE = /<!\-\-/g;
-      RegExp.lastIndex = 0; // reset global exec()
-      match = commentRE.exec(svg);
-      var i = 0;
-      var strippedSVG = svg;
-      while (match && RegExp.lastMatch) {
-        // get the text of the comment
-        var endIndx = RegExp.rightContext.indexOf('-->') + 3;
-        var comment = '<!--' + RegExp.rightContext.substring(0, endIndx);
-        
-        // now strip it out
-        strippedSVG = strippedSVG.replace(comment, '');
-        
-        // find next match
-        match = commentRE.exec(svg);
-        i++;
-      }
-      svg = strippedSVG;
+      
+      // this is preferable and more readable but most browsers and JavaScript
+      // do not support a Single Line Mode (i.e. .* matches everything
+      // _including_ new lines)
+      //svg = svg.replace(/<!\-\-.*?\-\->/gm, '');
+      svg = svg.replace(/<!\-\-[\s\S]*?\-\->/g, '');
       
       // We might have nested <svg> elements; we want to make sure we don't
       // incorrectly think these are SVG root elements. To do this, temporarily

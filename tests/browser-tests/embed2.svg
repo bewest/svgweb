@@ -4740,7 +4740,8 @@
     <text id="suspendRedraw3" x="220" y="220" style="font-size: 24px; fill: red;">Inside the markup</text>  
      <!-- Added so that we can test incorrect processing for comment sections;
           we used to get incorrectly setup __text nodes inside multiline
-          comments. -->
+          comments. Adding in some inline - dashes and a > character to
+          make sure things don't break. -->
      <!--<rect id="rectToAnimateAtStart" x="50" y="50" width="50" height="50" fill="#0f5" stroke="#085" stroke-width="4">
             <animate id="animAtStart" attributeName="x" calcMode="linear" additive="replace" accumulate="none"
                            from="50" to="100" begin="2s; 5s" dur="2s" fill="remove"/>
