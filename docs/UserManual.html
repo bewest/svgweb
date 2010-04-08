@@ -232,11 +232,7 @@ is being forced).</p>
 
 <p>SVG has a SCRIPT tag, which allows you to embed JavaScript inside of your
 SVG. SVG files brought in with the OBJECT tag can have SVG SCRIPT blocks that 
-will execute as normal. However, if you directly embed SVG into your page
-using the SVG SCRIPT process but have nested SVG script tags, you should 
-make sure that you namespace all of your SVG, such as having &lt;svg:script&gt;.
-(NOTE: having SVG SCRIPT tags inside of directly embedded SVG is not 
-implemented yet; it works however with SVG brought in with the OBJECT tag).</p>
+will execute as normal. If you directly embed SVG into an HTML page then SVG SCRIPT blocks will not work; in this case you should use normal HTML SCRIPT blocks to 'script' your SVG.</p>
 
 <p>For browsers with native SVG support, the SVG content inside of a SCRIPT tag 
 shows up fully in the browser's DOM, with the SCRIPT tag thrown away after the
@@ -1418,4 +1414,5 @@ svgweb.appendChild(obj, container);</b>
 <ul>
   <li id="breaking_change_onload">SVG Web <em>no longer</em> does magic around <code>window.addEventListener('load', ...)</code>; <code>window.onload</code>; and <code>window.attachEvent('load', ...)</code>, as this was breaking third-party code such as JQuery (<a href="http://code.google.com/p/svgweb/issues/detail?id=375">see issue</a>). You must now use a slightly different syntax, detailed <a href="onload">here</a>.</li>
   <li id="breaking_change_addeventlistener_inside_svg_files">Also related, inside of external SVG files you must only use the <code>&lt;svg onload=""&gt;</code> attribute to wait for SVG Web to finish loading; <a href="known_issues30">see this note</a> for details.</li>
+  <li id="breaking_change_custom_prefixes">SVG Web no longer supports having the <code>svg:</code> prefix in your SVG markup, such as <code>&lt;svg:svg&gt;</code> or <code>&lt;some-custom-prefix:circle&gt;</code>. This was removed due to both spotty support, low usage, and the fact that it has a significant impact on the most common case performance for non-prefixed SVG.</li>
 </ul>

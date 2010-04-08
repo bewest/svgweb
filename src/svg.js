@@ -1578,18 +1578,11 @@ extend(SVGWeb, {
         svg = '<?xml version="1.0"?>\n' + svg;
       }
       
-      // add SVG namespace declaration; don't however if there is a custom 
-      // prefix for SVG namespace
+      // add SVG namespace declaration
 
-      // NOTE: the following regular expression in this if statement
-      // right below had to be replaced since it was a performance
-      // bottleneck; see Issue 218
-      // for details: http://code.google.com/p/svgweb/issues/detail?id=218
-      if (svg.indexOf(':svg ') == -1) { // was regular expression
-        if (/xmlns\=['"]http:\/\/www\.w3\.org\/2000\/svg['"]/.test(svg) == false) {
-          svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
-        }
-      }
+      if (/xmlns\=['"]http:\/\/www\.w3\.org\/2000\/svg['"]/.test(svg) == false) {
+        svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+      }     
       
       // add xlink namespace if it is not present
       if (/xmlns:[^=]+=['"]http:\/\/www\.w3\.org\/1999\/xlink['"]/.test(svg) == false) {
@@ -1654,14 +1647,14 @@ extend(SVGWeb, {
       // incorrectly think these are SVG root elements. To do this, temporarily
       // rename the SVG root element, then rename nested <svg> root elements
       // to a temporary token that we will restore at the end of this method
-      svg = svg.replace(/<(svg:)?svg/, '<$1SVGROOT'); // root <svg> element
-      svg = svg.replace(/<(svg:)?svg/g, '<$1NESTEDSVG'); // nested <svg>
-      svg = svg.replace(/<(svg:)?SVGROOT/, '<$1svg');
+      svg = svg.replace(/<svg/, '<SVGROOT'); // root <svg> element
+      svg = svg.replace(/<svg/g, '<NESTEDSVG'); // nested <svg>
+      svg = svg.replace(/<SVGROOT/, '<svg');
       
       // break SVG string into pieces so that we don't incorrectly add our
       // <__text> fake text nodes outside the SVG root tag
-      var separator = svg.match(/<[a-zA-Z_-]*:?svg/)[0];
-      var pieces = svg.split(/<[a-zA-Z_-]*:?svg/);
+      var separator = svg.match(/<svg/)[0];
+      var pieces = svg.split(/<svg/);
       
       // extract CDATA sections temporarily so that we don't end up
       // adding double <__text> blocks
@@ -1694,8 +1687,7 @@ extend(SVGWeb, {
       }
       
       // capture anything between > and < tags
-      pieces[1] = pieces[1].replace(/>([^>]+)</g, 
-                                    '><__text>$1</__text><');
+      pieces[1] = pieces[1].replace(/>([^>]+)</g, '><__text>$1</__text><');
       
       // re-assemble our CDATA blocks
       if (hasCData) {
@@ -1713,7 +1705,7 @@ extend(SVGWeb, {
     
     // earlier we turned nested <svg> elements into a temporary token; restore
     // them
-    svg = svg.replace(/<(svg:)?NESTEDSVG/g, '<$1svg');
+    svg = svg.replace(/<NESTEDSVG/g, '<svg');
                  
     if (this.renderer == FlashHandler) {
       // handle Flash encoding issues
@@ -3235,27 +3227,27 @@ extend(FlashHandler, {
   },
 
   _onViewSourceDynamic: function(msg) {
-    // Add xml tag if not present
+    // add xml tag if not present
     if (msg.source.indexOf('<?xml') == -1) {
       msg.source='<?xml version="1.0"?>\n' + msg.source;
     }
 
-    // Remove svg web artifacts
-    msg.source=msg.source.replace(/<svg:([^ ]+) /g,'<$1 ');
-    msg.source=msg.source.replace(/<\/svg:([^>]+)>/g,'<\/$1>');
-    msg.source=msg.source.replace(/\n\s*<__text[^\/]*\/>/gm,'');
-    msg.source=msg.source.replace(/<__text[^>]*>([^<]*)<\/__text>/gm,'$1');
-    msg.source=msg.source.replace(/<__text[^>]*>/g,'');
-    msg.source=msg.source.replace(/<\/__text>/g,'');
-    msg.source=msg.source.replace(/ __guid="[^"]*"/g,'');
-    msg.source=msg.source.replace(/ id="__svg__random__[^"]*"/g,'');
-    msg.source=msg.source.replace(/>\n\n/g,'>\n');
+    // remove svg web artifacts
+    msg.source=msg.source.replace(/<svg:([^ ]+) /g, '<$1 ');
+    msg.source=msg.source.replace(/<\/svg:([^>]+)>/g, '<\/$1>');
+    msg.source=msg.source.replace(/\n\s*<__text[^\/]*\/>/gm, '');
+    msg.source=msg.source.replace(/<__text[^>]*>([^<]*)<\/__text>/gm, '$1');
+    msg.source=msg.source.replace(/<__text[^>]*>/g, '');
+    msg.source=msg.source.replace(/<\/__text>/g, '');
+    msg.source=msg.source.replace(/\s*__guid="[^"]*"/g, '');
+    msg.source=msg.source.replace(/ id="__svg__random__[^"]*"/g, '');
+    msg.source=msg.source.replace(/>\n\n/g, '>\n');
     
-    // Escape tags
-    msg.source=msg.source.replace(/>/g,'&gt;');
-    msg.source=msg.source.replace(/</g,'&lt;');
+    // escape tags
+    msg.source=msg.source.replace(/>/g, '&gt;');
+    msg.source=msg.source.replace(/</g, '&lt;');
     
-    // Place source in a new window
+    // place source in a new window
     var w = window.open('', '_blank');
     w.document.write('<body><pre>' + msg.source + '</pre></body>');
     w.document.close();
