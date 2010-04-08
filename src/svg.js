@@ -8426,7 +8426,7 @@ extend(_SVGSVGElement, {
       }
     }
     
-    this._handler.document.rootElement = this;
+    this._handler.document.rootElement = this._getProxyNode();
     
     var elementId = this._nodeXML.getAttribute('id');
     this._handler._loaded = true;
@@ -8609,7 +8609,7 @@ extend(_Document, {
     // Make sure to include root SVG node in our results if that is what
     // is asked for!
     if (ns == svgns && localName == 'svg') {
-      results.push(this.rootElement._getProxyNode());
+      results.push(this.rootElement);
     }
     
     return results;
