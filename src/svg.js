@@ -3391,8 +3391,7 @@ NativeHandler._patchBrowserObjects = function(win, doc) {
         expr = '//' + localName;
       }
       
-      xpathResults = xpath(doc, handler._svgRoot, expr, 
-                           handler._namespaces);
+      xpathResults = xpath(doc, handler._svgRoot, expr, handler._namespaces);
       if (xpathResults !== null && xpathResults !== undefined
           && xpathResults.length > 0) {
         for (var j = 0; j < xpathResults.length; j++) {
@@ -4260,11 +4259,9 @@ extend(_Node, {
     // inform Flash about the change
     if (this._attached && this._passThrough) {
       var xmlString = FlashHandler._encodeFlashData(
-                          xmlToStr(newChild, 
-                                   this._handler.document._namespaces));
+                          xmlToStr(newChild, this._handler.document._namespaces));
       this._handler.sendToFlash('jsInsertBefore',
-                                [ refChild._guid, this._guid, position,
-                                  xmlString ]);
+                                [ refChild._guid, this._guid, position, xmlString ]);
     }
     
     if (!isIE) {
@@ -4377,8 +4374,7 @@ extend(_Node, {
     // tell Flash about the newly inserted child
     if (this._attached && this._passThrough) {
       var xmlString = FlashHandler._encodeFlashData(
-                            xmlToStr(newChild, 
-                                     this._handler.document._namespaces));
+                            xmlToStr(newChild, this._handler.document._namespaces));
       this._handler.sendToFlash('jsAddChildAt',
                                 [ this._guid, position, xmlString ]);
     }
@@ -4550,8 +4546,7 @@ extend(_Node, {
       // the <__document__fragment> tag over to Flash so it knows what it is
       // dealing with
       var xmlString = FlashHandler._encodeFlashData(
-                        xmlToStr(child, 
-                                 this._handler.document._namespaces));
+                        xmlToStr(child, this._handler.document._namespaces));
       this._handler.sendToFlash('jsAppendChild', [ this._guid, xmlString ]);
     }
 
@@ -4654,8 +4649,7 @@ extend(_Node, {
     if (!_adding && !this._attached) {
       // add to a list of event listeners that will get truly registered when
       // we get attached in _Node._processAppendedChildren()
-      this._detachedListeners.push({ type: type, listener: listener, 
-                                     useCapture: useCapture });
+      this._detachedListeners.push({ type: type, listener: listener, useCapture: useCapture });
       return;
     }
     
@@ -4687,6 +4681,12 @@ extend(_Node, {
                                   listener(evt);
                                 }
                               })(listener);
+      // persist information about this listener so we can easily remove
+      // it later
+      wrappedListener.__type = type;
+      wrappedListener.__listener = listener;
+      wrappedListener.__useCapture = useCapture; 
+      
       // save keyboard listeners for later so we can clean them up
       // later if the parent SVG document is removed from the DOM
       this._handler._keyboardListeners.push(wrappedListener);
@@ -4707,7 +4707,38 @@ extend(_Node, {
       throw 'Not supported';
     }
     
-    // TODO: Implement
+    var pos;
+    
+    if (!this._attached) {
+      // remove from our list of event listeners that we keep around until
+      // _Node._processAppendedChildren() is called
+      pos = this._findListener(this._detachedListeners, type, listener, useCapture);
+      if (pos !== null) {
+        delete this._detachedListeners[pos];
+      }
+      return;
+    }
+
+    // remove from our list of event listeners
+    pos = this._findListener(this._listeners, type, listener, useCapture);
+    if (pos !== null) {
+      // FIXME: Ensure that if identical listeners are added twice that they collapse to
+      // just one entry or else this will fail to delete more than the first one.
+      delete this._listeners[pos];
+      delete this._listeners[type]['_' + listener.toString() + ':' + useCapture];
+    }
+    
+    if (type == 'keydown') {
+      // FIXME: We really need to remove keypress logic from being handled by us
+      pos = this._findListener(this._keyboardListeners, type, listener, useCapture);
+      if (pos !== null) {
+        // FIXME: Ensure that if identical listeners are added twice that they collapse to
+        // just one entry or else this will fail to delete more than the first one.
+        delete this._keyboardListeners[pos];
+      }
+    }
+    
+    this._handler.sendToFlash('jsRemoveEventListener', [ this._guid, type ]);
   },
 
   getScreenCTM: function() {
@@ -5626,6 +5657,19 @@ extend(_Node, {
       }
       c._persistEventListeners();
     }
+  },
+  
+  /** Finds a listener in the given listenerArray using the given type, listener, and useCapture
+      values, returning the index position. Returns null the listener is not found. */
+  _findListener: function(listenerArray, type, listener, useCapture) {
+    for (var i = 0; i < listenerArray.length; i++) {
+      var l = listenerArray[i];
+      if (l.listener == listener && l.type == type && l.useCapture == useCapture) {
+        return i;
+      }
+    }
+    
+    return null;
   }
 });
 
@@ -5989,7 +6033,7 @@ extend(_Element, {
       // and the namespace aware xml.getElementsByTagNameNS is not supported
       var namespaces = null;
       if (this._attached) {
-        namespaces = this._handler._namespaces;
+        namespaces = this._handler.document._namespaces;
       }
       
       // figure out prefix

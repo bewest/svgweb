@@ -236,6 +236,7 @@ package org.svgweb
                 ExternalInterface.addCallback("jsAddChildAt", js_addChildAt);
                 ExternalInterface.addCallback("jsRemoveChild", js_removeChild);
                 ExternalInterface.addCallback("jsAddEventListener", js_addEventListener);
+                ExternalInterface.addCallback("jsRemoveEventListener", js_removeEventListener);
                 ExternalInterface.addCallback("jsSetText", js_setText);
                 ExternalInterface.addCallback("jsSetAttribute", js_setAttribute);
                 ExternalInterface.addCallback("jsGetAttribute", js_getAttribute);
@@ -636,20 +637,15 @@ package org.svgweb
             if (element) {
                 if (eventType == 'click') {
                     element.topSprite.addEventListener(MouseEvent.CLICK, handleAction);
-                }
-                if (eventType == 'mouseup') {
+                } else if (eventType == 'mouseup') {
                     element.topSprite.addEventListener(MouseEvent.MOUSE_UP, handleAction);
-                }
-                if (eventType == 'mousedown') {
+                } else if (eventType == 'mousedown') {
                     element.topSprite.addEventListener(MouseEvent.MOUSE_DOWN, handleAction);
-                }
-                if (eventType == 'mousemove') {
+                } else if (eventType == 'mousemove') {
                     element.topSprite.addEventListener(MouseEvent.MOUSE_MOVE, handleAction);
-                }
-                if (eventType == 'mouseover') {
+                } else if (eventType == 'mouseover') {
                     element.topSprite.addEventListener(MouseEvent.MOUSE_OVER, handleAction);
-                }
-                if (eventType == 'mouseout') {
+                } else if (eventType == 'mouseout') {
                     element.topSprite.addEventListener(MouseEvent.MOUSE_OUT, handleAction);
                 }
             }
@@ -658,6 +654,34 @@ package org.svgweb
                            + elementGUID);
             }
         }
+ 
+        public function js_removeEventListener(msg:String):void {
+            //this.debug('js_removeEventListener, msg='+msg); 
+            // msg is a string delimited by __SVG__DELIMIT with fields in
+            // the following order: elementGUID, eventType
+            var args:Array = msg.split(DELIMITER);
+            var elementGUID:String = args[0];
+            var eventType:String = args[1];
+
+            var element:SVGNode = this.svgRoot.getNodeByGUID(elementGUID);
+            if (element) { 
+                if (eventType == 'click') { 
+                   element.topSprite.removeEventListener(MouseEvent.CLICK, handleAction);
+                } else if (eventType == 'mouseup') {
+                   element.topSprite.removeEventListener(MouseEvent.MOUSE_UP, handleAction);
+                } else if (eventType == 'mousedown') {
+                   element.topSprite.removeEventListener(MouseEvent.MOUSE_DOWN, handleAction);
+                } else if (eventType == 'mousemove') {
+                   element.topSprite.removeEventListener(MouseEvent.MOUSE_MOVE, handleAction); 
+                } else if (eventType == 'mouseover') { 
+                   element.topSprite.removeEventListener(MouseEvent.MOUSE_OVER, handleAction);
+                } else if (eventType == 'mouseout') {
+                   element.topSprite.removeEventListener(MouseEvent.MOUSE_OUT, handleAction);
+                }
+            } else {
+                this.error("removeEventListener: GUID not found: " + elementGUID);
+            }
+         }
         
         public function js_setText(msg:String):void {
             //this.debug('js_setText, msg='+msg);
@@ -818,6 +842,9 @@ package org.svgweb
                             break;
                         case 'jsAddEventListener':
                             this.js_addEventListener(message);
+                            break;
+                        case 'jsRemoveEventListener':
+                            this.js_removeEventListener(message);
                             break;
                         case 'jsSetText':
                             this.js_setText(message);
