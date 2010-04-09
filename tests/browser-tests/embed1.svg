@@ -2,7 +2,8 @@
 <svg id="mySVG" width="500" height="500"
 		 xmlns="http://www.w3.org/2000/svg" 
      xmlns:dc="http://purl.org/dc/elements/1.1/"
-     onload="loaded()">
+     onload="loaded()"
+     class="mySVGClassName1 mySVGClassName2">
      
   <script type="text/javascript"><![CDATA[
     // A global variable that we set to ensure we don't incorrectly see it
@@ -33,7 +34,7 @@
     }
   ]]></script>
   
-  <g id="myGroup"><rect
+  <g id="myGroup" class="foobar"><rect
        id="myRect"
        width="36.416"
        height="36.416"

@@ -173,6 +173,8 @@ function runTests(embedTypes) {
   testHasChildNodes();       
   testIsSupported();
   testStyle();
+  // Uncomment when className worked out (Issue 392)
+  //testClassName();
   testCreateSVGObject();
   if (!_hasObjects) {
     testCreateSVGRoot();
@@ -5405,6 +5407,49 @@ function testStyle() {
   
   // TODO: null out properties and make sure they change, see if they 
   // change style.length
+}
+
+function testClassName() {
+  // Test className property
+  console.log('Testing className property...');
+  
+  // get the class value from existing markup for the SVG root tag
+  root = getRoot('mySVG');
+  assertEquals('mySVG.className == mySVGClassName1 mySVGClassName2',
+               'mySVGClassName1 mySVGClassName2', root.className.baseVal);
+  
+  // set the class value on the SVG root tag
+  root = getRoot('mySVG');
+  root.className.baseVal += ' mySVGClassName3';
+  assertEquals('mySVG.className == mySVGClassName1 mySVGClassName2 mySVGClassName3',
+               'mySVGClassName1 mySVGClassName2 mySVGClassName3', 
+               root.className.baseVal);
+  
+  // get the class value from existing markup from a group tag
+  group = getDoc('mySVG').getElementById('myGroup');
+  assertEquals('myGroup.className == foobar', 'foobar', 
+               group.className.baseVal);
+  
+  // set the class value on a group tag
+  group = getDoc('mySVG').getElementById('myGroup');
+  group.className.baseVal = 'boobar';
+  assertEquals('myGroup.className == boobar', 'boobar', 
+               group.className.baseVal);
+  
+  // set/get the class value on a dynamically created node not attached to
+  // the document
+  text = getDoc('mySVG').createElementNS(svgns, 'text');
+  text.className.baseVal = 'css-is-cool';
+  assertEquals('text.className == css-is-cool', 'css-is-cool', 
+               text.className.baseVal);
+  root = getRoot('mySVG');
+  root.appendChild(text);
+  assertEquals('after appending, text.className == css-is-cool', 'css-is-cool', 
+               text.className.baseVal);
+  text.className.baseVal = 'css-is-awesome';
+  assertEquals('text.className == css-is-awesome', 'css-is-awesome',
+               text.className.baseVal);
+  text.parentNode.removeChild(text);
 }
 
 function testCreateSVGObject() {
