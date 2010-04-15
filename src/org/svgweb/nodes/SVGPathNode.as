@@ -286,8 +286,8 @@ package org.svgweb.nodes
             this.lastCurveControlX = this.currentX;
             this.lastCurveControlY = this.currentY;        
 
-            this.setXMinMax(x);
-            this.setYMinMax(y);
+            this.setXMinMax(this.currentX);
+            this.setYMinMax(this.currentY);
         }
         
         private function ellipticalArc(rx:Number, ry:Number, xAxisRotation:Number, largeArcFlag:Number, 
