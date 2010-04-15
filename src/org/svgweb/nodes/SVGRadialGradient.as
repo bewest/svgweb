@@ -73,6 +73,11 @@ package org.svgweb.nodes
                 var objectX:Number = xy[0];
                 var objectY:Number = xy[1];
             }
+            else if (node is SVGEllipseNode) {
+                xy = SVGEllipseNode(node).getEllipseXY();
+                objectX = xy[0];
+                objectY = xy[1];
+            }
             else {
                 var xString:String = node.getAttribute('x', '0', false);
                 var yString:String = node.getAttribute('y', '0', false);
@@ -183,10 +188,13 @@ package org.svgweb.nodes
                 if (matrGrTr != null)
                     matr.concat(matrGrTr);
 
-                // A special adjustment is needed for circles for unknown reasons.
-                // This adjustment was determined empirically. See Issues 349 and 371.
-                if (node is SVGCircleNode) {
+                // A special adjustment is needed for these elements for unknown reasons.
+                // These adjustment were determined empirically. See Issues 349 and 371.
+                if (node is SVGCircleNode || node is SVGEllipseNode) {
                     matr.translate(objectX, objectY);
+                }
+                if (node is SVGPathNode) {
+                    matr.translate(node.xMin, node.yMin);
                 }
 
                 return matr;

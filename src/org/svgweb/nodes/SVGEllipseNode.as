@@ -20,6 +20,7 @@
 package org.svgweb.nodes
 {
     import org.svgweb.core.SVGNode;
+    import org.svgweb.utils.SVGColors;
 
     public class SVGEllipseNode extends SVGNode
     {
@@ -41,8 +42,8 @@ package org.svgweb.nodes
             var ry:Number = this.getAttribute('ry',0);
             
             //Width/height calculations for gradients
-            this.setXMinMax(cx - ry);
-            this.setXMinMax(cx + ry);
+            this.setXMinMax(cx - rx);
+            this.setXMinMax(cx + rx);
             this.setYMinMax(cy - ry);
             this.setYMinMax(cy + ry);
 
@@ -50,5 +51,22 @@ package org.svgweb.nodes
                 this._graphicsCommands.push(['ELLIPSE', (cx - rx), (cy - ry), (rx * 2), (ry * 2)]);            
             }
         }                    
+
+        public function getEllipseXY():Array {
+            var cxString:String = this.getAttribute('cx', '0');
+            var cx:Number = SVGColors.cleanNumber2(cxString, svgParent.getWidth());
+
+            var cyString:String = this.getAttribute('cy', '0');
+            var cy:Number = SVGColors.cleanNumber2(cyString, svgParent.getHeight());
+
+            var rxString:String = this.getAttribute('rx','0');
+            var rx:Number = SVGColors.cleanNumber2(rxString, svgParent.getWidth());
+
+            var ryString:String = this.getAttribute('ry','0');
+            var ry:Number = SVGColors.cleanNumber2(ryString, svgParent.getWidth());
+            return [ cx - rx, cy - ry ];
+        }
     }
+
+
 }
