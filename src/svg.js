@@ -3120,7 +3120,12 @@ extend(FlashHandler, {
         for (var i = 0; i < handlers.length; i++) {
           var handler = handlers[i];
           var listener = handler.listener;
-          listener(evt);
+          // TODO: See Issue 208
+          // If the element is in an svg in an object,
+          // then the function needs to be called in the 
+          // proper sandbox (see below).
+          // See tests/browser-tests/test_events.html tests 10, 38
+          listener.call(evt.target, evt);
         }
     }
     if (msg.scriptCode != null) {
@@ -3147,7 +3152,8 @@ extend(FlashHandler, {
         // execute the code within the correct window context.
         this.sandbox_eval(this._svgObject._sandboxedScript(defineEvtCode + executeInContext));
       } else {
-        // TODO
+        // TODO Issue 53: execute markup event handlers for inline svg in correct context.
+        // See tests/browser-tests/test_events.html tests 20-22, 49-51
       }
     }
   },
