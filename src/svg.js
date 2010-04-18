@@ -3152,8 +3152,8 @@ extend(FlashHandler, {
         // execute the code within the correct window context.
         this.sandbox_eval(this._svgObject._sandboxedScript(defineEvtCode + executeInContext));
       } else {
-        // TODO Issue 53: execute markup event handlers for inline svg in correct context.
-        // See tests/browser-tests/test_events.html tests 20-22, 49-51
+        var eventFunc = new Function(msg.scriptCode);
+        eventFunc.call(evt.target, evt);
       }
     }
   },
