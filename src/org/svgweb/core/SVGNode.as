@@ -1306,6 +1306,10 @@ package org.svgweb.core
         }
 
         protected function unregisterSelf():void {
+            if (this._isClone || (getMaskAncestor() != null)) {
+                return;
+            }
+
             this.svgRoot.unregisterGUID(this);
             
             if (this._id) {
@@ -1593,6 +1597,9 @@ package org.svgweb.core
                     break;
             }
             this.updateClones();
+            if (getClipPathAncestor() != null) {
+                getClipPathAncestor().updateClones();
+            }
             if (getPatternAncestor() != null) {
                 this.svgRoot.invalidateReferers(getPatternAncestor().id);
             }
@@ -2035,6 +2042,16 @@ package org.svgweb.core
                 node=node.svgParent;
                 if (node is SVGPatternNode)
                     return SVGPatternNode(node);
+            }
+            return null;
+        }
+
+        public function getClipPathAncestor():SVGClipPathNode {
+            var node:SVGNode = this;
+            while (node && !(node is SVGSVGNode)) {
+                node=node.svgParent;
+                if (node is SVGClipPathNode)
+                    return SVGClipPathNode(node);
             }
             return null;
         }
