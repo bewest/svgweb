@@ -37,7 +37,7 @@ package org.svgweb.nodes
         }
 
         override public function beginGradientFill(node:SVGNode):void {
-            var stopData:Object = this.getStopData();
+            var stopData:Object = this.getStopData(node);
             var spreadMethod:String = this.getSpreadMethod();
             var matrix:Matrix = this.getMatrix(node);
 
@@ -50,7 +50,7 @@ package org.svgweb.nodes
         }
 
         override public function lineGradientStyle(node:SVGNode, line_alpha:Number = 1):void {
-            var stopData:Object = this.getStopData(line_alpha);
+            var stopData:Object = this.getStopData(node, line_alpha);
             var spreadMethod:String = this.getSpreadMethod();
             var matrix:Matrix = this.getMatrix(node);
 

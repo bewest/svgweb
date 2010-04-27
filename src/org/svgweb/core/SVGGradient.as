@@ -56,14 +56,14 @@ package org.svgweb.core
             return spreadMethod;
         }
 
-        public function getStopData(line_alpha:Number = 1):Object {
+        public function getStopData(node:SVGNode, line_alpha:Number = 1):Object {
             var href:String = this.getAttribute("href");
 
             if (href) {
                href = href.substr(1);
                var node:SVGNode = this.svgRoot.getNode(href);
                if (node is SVGGradient) {
-                   return SVGGradient(node).getStopData();
+                   return SVGGradient(node).getStopData(node, line_alpha);
                }
             }
 
@@ -85,6 +85,9 @@ package org.svgweb.core
             for (var i:uint = 0; i < svgChildren.length; i++) {
                 child = svgChildren[i];
                 if (child is SVGStopNode) {
+                    if (child.id) {
+                        this.svgRoot.addReference(node, child.id);
+                    }
                     color = SVGStopNode(child).getStyleOrAttr('stop-color', 'black');
                     if (color == 'currentColor') {
                         color = this.getStyleOrAttr('color');
