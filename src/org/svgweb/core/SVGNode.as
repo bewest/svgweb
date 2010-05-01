@@ -1162,6 +1162,7 @@ package org.svgweb.core
             var node:SVGNode;
             var matrix:Matrix;
 
+            this.removeMask();
             attr = this.getStyleOrAttr('mask');
             if (!attr) {
                 attr = this.getAttribute('clip-path');
@@ -1173,8 +1174,6 @@ package org.svgweb.core
                    attr = match[1];
                    node = this.svgRoot.getNode(attr);
                    if (node) {
-                       this.removeMask();
-
                        var newMask:SVGNode = node.clone();
                        newMask.isMask = true;
 
@@ -1199,7 +1198,7 @@ package org.svgweb.core
         }
 
         protected function removeMask():void {
-            if (clipSprite.mask) {
+            if (clipSprite != topSprite && clipSprite.mask) {
                 clipSprite.mask.parent.removeChild(clipSprite.mask);
                 clipSprite.mask = null;
             }
@@ -1564,7 +1563,10 @@ package org.svgweb.core
             else {
                 this._xml.@[name] = value;
             }
+            handleAttrChange(name, value, attrNamespace);
+        }
             
+        public function handleAttrChange(name:String, value:String, attrNamespace:String = null):void {
             switch (name) {
                 case 'onclick':
                 case 'onmousedown':
@@ -1588,7 +1590,7 @@ package org.svgweb.core
                 default:
                     this.invalidateDisplay();
                     if (    (name == 'display' || name == 'visibility')
-                         || (name == 'style' &&
+                         || (name == 'style' && value != null &&
                               ( value.indexOf('visibility') != -1
                               || value.indexOf('display') != -1 ))
                          || (this is SVGGroupNode) ) {

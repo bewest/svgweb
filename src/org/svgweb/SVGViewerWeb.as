@@ -621,6 +621,8 @@ package org.svgweb
             } else {
               delete element.xml.@[localName];
             }
+            // Trigger redraw
+            element.handleAttrChange(localName, null, ns);
         }
         
         public function js_addEventListener(msg:String):void {

@@ -199,8 +199,8 @@ package org.svgweb.nodes
             }
         }
 
-        override public function setAttribute(name:String, value:String, attrNamespace:String = null):void {
-            super.setAttribute(name, value, attrNamespace);
+        override public function handleAttrChange(name:String, value:String, attrNamespace:String = null):void {
+            super.handleAttrChange(name, value, attrNamespace);
             if (name == 'href') {
                 if (this.bitmap) {
                     this.drawSprite.removeChild(this.bitmap);
