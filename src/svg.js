@@ -6489,7 +6489,13 @@ extend(_Style, {
       for (var i = 0; i < parsedStyle.length; i++) {
         var styleName = this._toCamelCase(parsedStyle[i].styleName);
         var styleValue = parsedStyle[i].styleValue;
-        htcStyle[styleName] = styleValue;
+        // Issue 485: Cannot set textAlign style on IE
+        try {
+          htcStyle[styleName] = styleValue;
+        } catch (exp) {
+          console.log('The following exception occurred setting style.'
+                      + styleName + ' on IE: ' + (exp.message || exp));
+        }
       }
       
       // set initial values for style.length
