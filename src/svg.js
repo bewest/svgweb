@@ -6126,6 +6126,26 @@ extend(_Element, {
     return nodes;
   },
 
+  beginElement: function() {
+    this.beginElementAt(0);
+  },
+
+  endElement: function() {
+    this.endElementAt(0);
+  },
+
+  beginElementAt: function(offset) {
+    if (this._attached && this._passThrough) {
+      this._handler.sendToFlash('jsBeginElementAt', [ this._guid, offset ]);
+    }
+  },
+
+  endElementAt: function(offset) {
+    if (this._attached && this._passThrough) {
+      this._handler.sendToFlash('jsEndElementAt', [ this._guid, offset ]);
+    }
+  },
+
   /*
     Note: DOM Level 2 getAttributeNode, setAttributeNode, removeAttributeNode,
     getElementsByTagName, getAttributeNodeNS, setAttributeNodeNS not supported

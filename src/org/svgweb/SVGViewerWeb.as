@@ -32,6 +32,7 @@ package org.svgweb
 {    
     import org.svgweb.core.SVGNode;
     import org.svgweb.core.SVGSprite;
+    import org.svgweb.core.SVGTimedNode;
     import org.svgweb.core.SVGViewer;
     import org.svgweb.nodes.SVGSVGNode;
     import org.svgweb.nodes.SVGGroupNode;
@@ -246,6 +247,8 @@ package org.svgweb
                 ExternalInterface.addCallback("jsSetCurrentScale", js_setCurrentScale);
                 ExternalInterface.addCallback("jsSetCurrentTranslate", js_setCurrentTranslate);
                 ExternalInterface.addCallback("jsRemoveAttribute", js_removeAttribute);
+                ExternalInterface.addCallback("jsBeginElementAt", js_beginElementAt);
+                ExternalInterface.addCallback("jsEndElementAt", js_endElementAt);
             }
             catch(error:SecurityError) {
                 var debugstr:String = "Security Error on ExternalInterface.addCallback(...). ";
@@ -966,6 +969,34 @@ package org.svgweb
            }
            
            this.svgRoot.zoomAndPan();
+        }
+
+        public function js_beginElementAt(msg:String):void {
+            // msg is a string delimited by __SVG__DELIMIT with fields in
+            // the following order: elementGUID, timeOffset
+            var args:Array = msg.split(DELIMITER);
+            var elementGUID:String = args[0];
+            var offset:Number = Number(args[1]);
+            
+            // Get the element to add the event listener to
+            var element:SVGNode = this.svgRoot.getNodeByGUID(elementGUID);
+            if (element && element is SVGTimedNode) {
+                SVGTimedNode(element).beginElementAt(offset);
+            }
+        }
+
+        public function js_endElementAt(msg:String):void {
+            // msg is a string delimited by __SVG__DELIMIT with fields in
+            // the following order: elementGUID, timeOffset
+            var args:Array = msg.split(DELIMITER);
+            var elementGUID:String = args[0];
+            var offset:Number = Number(args[1]);
+            
+            // Get the element to add the event listener to
+            var element:SVGNode = this.svgRoot.getNodeByGUID(elementGUID);
+            if (element && element is SVGTimedNode) {
+                SVGTimedNode(element).endElementAt(offset);
+            }
         }
 
         override public function addActionListener(eventType:String, target:EventDispatcher):void {

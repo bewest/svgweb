@@ -27,5 +27,19 @@ package org.svgweb.nodes
             super(svgRoot, xml, original);
         }
         
+        override public function getAnimValue():String {
+            if (isEffective()) {
+                if (this.toParameter == "inherit") {
+                    var inheritedValue:String = null;
+                    if (targetNode.svgParent != null) {
+                        inheritedValue = targetNode.svgParent.getAttribute(attributeName, null, true, true);
+                    }
+                    return inheritedValue;
+                }
+                return this.toParameter;
+            }    
+            return null;
+        }
+
     }
 }

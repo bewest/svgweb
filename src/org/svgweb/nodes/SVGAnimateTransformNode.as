@@ -21,16 +21,16 @@ package org.svgweb.nodes
     import org.svgweb.core.SVGNode;
     import org.svgweb.utils.SVGColors;
     import org.svgweb.utils.SVGUnits;
-    import org.svgweb.smil.TimeInterval;
     import flash.geom.Matrix;
 
     public class SVGAnimateTransformNode extends SVGAnimateNode
     {
         protected var typeParameter:String;
+        protected var animMatrix:Matrix;
 
         public function SVGAnimateTransformNode(svgRoot:SVGSVGNode, xml:XML,
                                                 original:SVGNode = null):void {
-                super(svgRoot, xml, original);
+            super(svgRoot, xml, original);
         } 
 
         override public function getAnimValue():String {
@@ -57,20 +57,15 @@ package org.svgweb.nodes
             if (typeParameter == null) {
                 return null;
             }
-            var interval:TimeInterval = getEffectiveInterval();
-            if (interval == null) {
-                return null;
-            }
-
-            var repeatFraction:Number = interval.getRepeatIntervalFraction(lastDocTime, this);
-
+            if (!isEffective()) return(null);
+            if (frozen) return animMatrix;
+            frozen = !this.active;
+            var repeatFraction:Number = getRepeatIntervalFraction(lastDocTime);
             var fromString:String; 
             var toString:String; 
             var keyTimeIndex:Number = 0;
             var keyTimeFraction:Number = repeatFraction;
             if (valuesParameter != null) {
-                fromString = fromParameter;
-                toString = toParameter;
                 keyTimeIndex = getKeyTimeIndex(repeatFraction);
                 keyTimeFraction = getKeyTimeFraction(repeatFraction);
                 fromString = getKeyTimeValue(keyTimeIndex);
@@ -110,6 +105,7 @@ package org.svgweb.nodes
                                                keyTimeFraction, keyTimeSpline);
                 transformMatrix = new Matrix();
                 transformMatrix.translate(animX, animY);
+                animMatrix = transformMatrix;
                 return transformMatrix;
                 // XXX create a matrix directly
                 //return parseTransform("translate("+animX+","+animY+")");
@@ -142,6 +138,7 @@ package org.svgweb.nodes
                                                keyTimeFraction, keyTimeSpline);
                 transformMatrix = new Matrix();
                 transformMatrix.scale(animX, animY);
+                animMatrix = transformMatrix;
                 return transformMatrix;
             }
 
@@ -189,16 +186,19 @@ package org.svgweb.nodes
                 transformMatrix.translate(-animCX, -animCY);
                 transformMatrix.rotate(animAngle * Math.PI / 180.0);
                 transformMatrix.translate(animCX, animCY);
+                animMatrix = transformMatrix;
                 return transformMatrix;
             }
 
             // XXX not implemented
             if (typeParameter == "skewX") {
+                animMatrix.identity();
                 return new Matrix();
             }
 
             // XXX not implemented
             if (typeParameter == "skewY") {
+                animMatrix.identity();
                 return new Matrix();
             }
 
@@ -241,5 +241,50 @@ package org.svgweb.nodes
              }
         }
        
+        static protected function getParameterValues(param:String):Array {
+            var parts:Array;
+            var values:Array = new Array();
+            parts = SVGColors.trim(param).split(/\s+/);
+            for each (var part:String in parts) {
+                values.push(SVGUnits.cleanNumber(part));
+            }
+            return(values);
+        }
+
+        override protected function parseByParameter():void {
+            if (toParameter != null) return;  // ignore by if there is a to
+            if (valuesParameter != null) return;  // ignore if valuesParameter
+
+            byParameter = this.getAttribute('by', null);
+            if (byParameter == null) return;
+
+            // XXX error checks for invalid parameters
+            var fromValues:Array = getParameterValues(fromParameter);
+            var byValues:Array  = getParameterValues(byParameter);
+            // convert by into a to value
+            if ((typeParameter == "translate") ||
+                (typeParameter == "scale")) {
+                if (fromValues.length == 1) fromValues.push(fromValues[0]);
+                if (byValues.length == 1) byValues.push(byValues[0]);
+                toParameter = String(fromValues[0] + byValues[0]) + " " +
+                              String(fromValues[1] + byValues[1]);
+                return;
+            }
+            if (typeParameter == "rotate") {
+                byValues[0] += fromValues[0];    //angle
+                // copy from <cx cy> if by <cx cy> is missing
+                for (var i:uint = byValues.length; i < fromValues.length; i++) {
+                    byValues.push(fromValues[i]);
+                }
+                toParameter = String(byValues[0]);
+                if (byValues.length == 3) toParameter += " " + String(byValues[1]) +
+                                                         " " + String(byValues[2]);
+                return;
+            }
+            if ((typeParameter == "skewX") || (typeParameter == "skewY")) {
+                toParameter = String(fromValues[0] + byValues[0]);
+                return;
+            }
+        }
     }
 }

@@ -19,32 +19,24 @@
 package org.svgweb.smil
 {
     import org.svgweb.utils.SVGUnits;
-    import org.svgweb.smil.TimeInterval;
-    import org.svgweb.core.SVGNode;
+    import org.svgweb.core.SVGTimedNode;
     import mx.utils.StringUtil;
 
     public class TimeSpec
     {
+        public static const EVENT_NAMES:Array = ['begin','end', 'repeat', 'click',
+                                                 'mousedown',  'mouseup', 'mousemove',
+                                                 'mouseover', 'mouseout', 'repeat'];
 
-        protected var intervals:Array = new Array();
-
-        public function addInterval(interval:TimeInterval):void {
-            this.intervals.push(interval);
-        }
-
-        public function getIntervals():Array {
-            return this.intervals;
-        }
-
-        static public function parseTimeSpec(timeSpecString:String, node:SVGNode):TimeSpec {
+        static public function parseTimeSpec(instanceType:String, timeSpecString:String, node:SVGTimedNode):TimeSpec {
             if (timeSpecString.indexOf("wallclock") != -1) {
                 return parseWallclockTimeSpec(timeSpecString);
             }
-            // .{nondigit}  matches for "foo.click"
-            else if (timeSpecString.match(/\.\D+/)) {
-                return parseEventTimeSpec(timeSpecString, node);
+            else {
+                var ets:EventTimeSpec = parseEventTimeSpec(instanceType, timeSpecString, node);
+                if (ets != null) return ets;
             }
-            else if (timeSpecString.indexOf("indefinite") != -1) {
+            if (timeSpecString.indexOf("indefinite") != -1) {
                 return new IndefiniteTimeSpec();
             }
             else {
@@ -56,13 +48,30 @@ package org.svgweb.smil
             return new WallclockTimeSpec(timeSpecString);
         }
 
-        static public function parseEventTimeSpec(timeSpecString:String, node:SVGNode):EventTimeSpec {
+        static public function parseEventTimeSpec(instanceType:String, timeSpecString:String, node:SVGTimedNode):EventTimeSpec {
+            // "click", "click+5s", "click+0.5s", "id.begin", "id.begin+5s", "id.begin+0.5s"
             var parts:Array = timeSpecString.split(".");
-
+            if (parts.length == 1) {  // event-ref with implied id
+                if (node.svgParent == null) return null;
+                parts.unshift(node.svgParent.id);  // XXX targetNode may be referenced by xlink:href
+            }
+            else if (parts.length == 2) {
+                // can either be id.eventName[+1s] or eventref+1.0s
+                if (parts[0].match(/[\+\-]/)) {  // the latter  
+                    //prepend the id
+                    if (parts[0].indexOf("repeat") == 0) {
+                        parts.unshift(node.id);  // could be null ?
+                    }
+                    else {
+                        if (node.svgParent == null) return null;
+                        parts.unshift(node.svgParent.id);  // could be null ?
+                    }                            
+                }
+            }
             // If event spec had a decimal offset, don't split that off
             if (parts.length == 3) {
-                parts[1] = parts[1]+parts[2];
-                delete parts[2];
+                parts[1] = parts[1]+"."+parts[2];
+                parts.splice(2,1);
             }
 
             if (parts.length != 2) {
@@ -100,10 +109,14 @@ package org.svgweb.smil
                     eventParam=eventParam.replace(')','');
                 }
     
-                return new EventTimeSpec(eventTarget, // Id
+                if (EVENT_NAMES.indexOf(eventName) == -1) return null;
+
+                return new EventTimeSpec(instanceType, // begin or end instance
+                                         eventTarget, // Id
                                          eventName,   // Event name
                                          eventParam,  // Optional event parameter
-                                         offset);     // Offset
+                                         offset,      // Offset
+                                         node);       // node
             }
         }
     

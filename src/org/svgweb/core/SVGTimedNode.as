@@ -28,7 +28,6 @@ package org.svgweb.core
     import org.svgweb.smil.IndefiniteTimeSpec;
     import org.svgweb.smil.OffsetTimeSpec;
     import org.svgweb.smil.WallclockTimeSpec;
-    import org.svgweb.smil.TimeInterval;
     import flash.events.Event;
     import flash.events.MouseEvent;
     import flash.net.URLRequest;
@@ -45,62 +44,23 @@ package org.svgweb.core
      *  SVGTimedNode has parameters which specify TimeSpecs (time specifications)
      *  (begin times or event to begin on, end times or events, etc).
      * 
+     *  An instance list of begin times and end times is maintained to handle
+     *  keeping track of instances created from static configuration and
+     *  dynamic events.
+     *
      *  Begin TimeSpecs are static time offsets or patterns that match events.
-     *  TimeSpecs create TimeIntervals either when parsed [static offsets ('5s')]
+     *  begin instances are created either when parsed [static offsets ('5s')]
      *  or when events occur [timebase or syncbase time specs (e.g. 'foo.begin',
      *  'bar.click')].
-     *
-     *  TimeInterval arrays are used to determine the current interval for a
-     *  given time sample. State is kept within intervals in order to fire
-     *  their events (begin, end, repeat, etc) properly.
      *
      *  The SVGTimedNode progresses along when it receives events of type
      *  _SVGDocTimeUpdate which indicates the timeline has progressed forward to a
      *  new timestamp (the next frame). At this point, events are fired for transitions
-     *  between TimeInterval states, until no further transitions are left to perform up
-     *  to the current time.
+     *  between states, until no further transitions are left to perform up
+     *  to the current time. The begin and end times are removed from the
+     *  instance lists as they are processed.
      *
-     *  The same progress occurs when an event of type SVGDocTimeSeek is received,
-     *  which occurs when a hyperlink is traversed to a different document time offset.
-     *  In the case of a seek forward, events are used to resolve intervals, but they
-     *  are not be dispatched to DOM listeners. In the case of a seek backward,
-     *  the current interval is determined de novo (i.e. with no consideration to
-     *  prior state) and no events are fired.
-     * 
      *
-     *  Note that negative offsets for time specs are not resolved prior to the occurence
-     *  of the base event. So, if an interval is specified to begin at foo.begin-5s,
-     *  and foo has a begin time spec of "10s", then the interval will be created at
-     *  foo.begin time, which is 10s. However, the interval will already be 5 seconds
-     *  into its active duration, as would be expected from the late start.
-     *  Note the interval is not created at 5 seconds even though it is possible to
-     *  resolve that begin time from the time specs.
-     *
-     *  The reason for this is that it is a shortcut that simplifies the implementation.
-     *  If this feature is not supported, then we do not need to implement what I call
-     *  "recursive, greedy" time spec resolution. This is where we resolve instance times
-     *  for timespecs using timebase offsets when the timebase has a resolved instance time.
-     *  In the above example, the timebase "foo.begin" has a resolved instance time of
-     *  "10s" and therefore we can resolve "foo.begin-5s", which may result in the
-     *  resolution of further timespec instances. Greedy resolution can result in cycles
-     *  that must be detected using 'visited' lists.
-     *
-     *  By doing "on demand" resolution in constrast, we defer resolving "foo.begin-5s"
-     *  until foo.begin actually occurs. This means backward progating time resolutions
-     *  will not function perhaps as one would expect. 
-     *
-     *  However, we can still support forward propogating resolutions (see Example 3,
-     *  end of section 3.6.8 in the SMIL Animation spec) using "on demand" time spec
-     *  resolution, which creates the dependent interval only when events occur.
-     *  Since negative timebase offsets are an unusual feature, and in my opinion,
-     *  conceptually confusing, this tradeoff seems to be a reasonable starting point.
-     *
-     *  In the future, the implementation can be improved and the shortcut removed in a
-     *  straightforward manner. Instead of resolving timebase time specs (foo.begin-5s)
-     *  when the event occurs, that could be changed to resolve the time spec when the
-     *  interval is created. This can be done by dispatching a new SVGIntervalCreate event
-     *  and resolving new intervals based on that. The SVGIntervalCreate event could pass
-     *  along a visited list which is used to break cycles as described in the spec.
      *
      **/
     public class SVGTimedNode extends SVGNode {
@@ -108,21 +68,32 @@ package org.svgweb.core
 
         protected var lastDocTime:Number = -1;
 
-        // This keeps track of the active interval so that if we play or seek
-        // past the interval, we know to process the end state transition
-        // of the interval.
-        protected var currentTimeSpec:TimeSpec = null;
-        protected var currentTimeInterval:TimeInterval = null;
         protected var currentRepeatIndex:Number = -1;
-
         protected var eachRepeatDuration:Number;    // dur
         protected var repeatCount:Number;           // repeatCount
+        protected var repeatCountSpecified:Boolean = false;
         protected var allRepeatsDuration:Number;    // repeatDuration
+        protected var repeatDurSpecified:Boolean = false;
         protected var minIntervalDuration:Number;   // min
         protected var maxIntervalDuration:Number;   // max
 
         protected var beginTimeSpecs:Array = new Array();        // begin
         protected var endTimeSpecs:Array = new Array();          // end
+
+        protected var beginTimes:Array = new Array();    // begin time instances
+        protected var endTimes:Array = new Array();      // end time instances
+        protected var pastBeginTimes:Array = new Array();
+        protected var pastEndTimes:Array = new Array();
+        protected var active:Boolean = false;            // active time interval
+        protected var neverStarted:Boolean = true;
+        protected var restart:String = "always";
+        protected var scheduledDuration:Number;
+
+        // currentBeginTime,currentEndTime define the current active interval
+        // when inactive, they define the most recent active interval
+        protected var currentBeginTime:Number = -1;
+        protected var currentEndTime:Number = INDEFINITE;
+
 
         public function SVGTimedNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
             super(svgRoot, xml, original);
@@ -149,107 +120,158 @@ package org.svgweb.core
 
         protected function onSVGDocTimeUpdate(event:Event):void {
             lastDocTime = SVGEvent(event).docTime;
-            var nextCurrentTimeSpec:TimeSpec;
-            var nextCurrentTimeInterval:TimeInterval;
-            var timeSpec:TimeSpec;
-            var intervals:Array;
-            var interval:TimeInterval;
 
-            // Process skipped intervals
-            for each(timeSpec in beginTimeSpecs) {
-                intervals = timeSpec.getIntervals();
-                for each (interval in intervals) {
-                    if ( interval.endsBeforeTime(lastDocTime, this) && !interval.hasFiredStartEvent() ) {
-                        interval.startInterval();
-                        timeIntervalStarted();
-                        interval.endInterval();
-                        timeIntervalEnded();
-                    }
-                }
-            }
+            var beginInstance:Number;
+            var endInstance:Number;
+            // Keep looping as long as there is work being done. There may
+            // be a backlog of work that needs to be processed. 
+            while (true) {
+                beginInstance = getBeginInstance();
+                endInstance = getEndInstance();
 
-            // Determine current/next active interval
-            for each(timeSpec in beginTimeSpecs) {
-                intervals = timeSpec.getIntervals();
-                for each (interval in intervals) {
-                    if ( interval.hasTime(lastDocTime, this) ) {
-                        nextCurrentTimeSpec=timeSpec;
-                        nextCurrentTimeInterval=interval;
-                    }
-                }
-            }
+                if (!this.active) {
+                    // If not active, process begin instances.
 
-            // Has the interval changed?
-            if (currentTimeInterval != nextCurrentTimeInterval) {
-                // End previous interval
-                if (currentTimeInterval != null) {
-                    currentTimeInterval.endInterval();
-                    timeIntervalEnded();
-                }
-
-                // Start new interval
-                currentTimeSpec = nextCurrentTimeSpec;
-                currentTimeInterval = nextCurrentTimeInterval;
-                if (currentTimeInterval != null) {
-                    currentTimeInterval.startInterval();
-                    timeIntervalStarted();
-                    currentRepeatIndex=0;
-                    repeatIntervalStarted();
-                }
-            }
-            else {
-                if (currentTimeInterval != null) {
-                    while (currentRepeatIndex < currentTimeInterval.getRepeatIndex(lastDocTime, this)) {
-                        if (currentRepeatIndex >= 0) {
-                            repeatIntervalEnded();
+                    // Is the next begin instance ready to run?
+                    if (beginInstance <= lastDocTime) {
+                        // If restart is 'never', do not start more than one
+                        // interval.
+                        if ( (restart!="never")  || neverStarted) {
+                            timeIntervalStarted(beginInstance);
+                            this.active = true;
                         }
-                        repeatIntervalStarted();
-                        currentRepeatIndex++;
+                        // Whether we started or not, we have processed this
+                        // instance and so we move on to the next.
+                        pastBeginTimes.unshift(beginTimes.shift());
+                    }
+                    else break; // be sure to break anytime we need to wait
+                }
+                else {
+                    // Time interval is active, process end instances.
+
+                    // Discard moot events. These may exist if created
+                    // with a negative time offset or if the document
+                    // is seeked.
+
+                    // TODO: How does this affect cumulative animations?
+
+                    // Discard all endTimes up to currentBeginTime.
+                    while (endInstance < currentBeginTime) {
+                        endInstance = nextEndInstance();
+                    }
+                    // Discard all beginTimes up to currentBeginTime.
+                    while (beginInstance < currentBeginTime) {
+                        beginInstance = nextBeginInstance();
+                    }
+
+                    // Check for an end before (or at?) the next begin.
+                    var tmpEnd:Number = Math.min(endInstance, currentEndTime);
+                    if ( (tmpEnd <= lastDocTime) && (tmpEnd <= beginInstance)) {
+                        // If the end instance came first, then it is the
+                        // end time we are using.
+                        if (endInstance <= currentEndTime) {
+                            pastEndTimes.unshift(endTimes.shift());
+                        }
+                        processRepeatIntervals(tmpEnd);
+                        timeIntervalEnded(tmpEnd);
+                        this.active = false;
+                    }
+                    else {  //check for a restart
+                        if (beginInstance <= lastDocTime) {
+                            if (beginInstance >= currentBeginTime) {
+                                processRepeatIntervals(beginInstance);
+                                if (restart == "always") {
+                                    timeIntervalEnded(beginInstance);
+                                    timeIntervalStarted(beginInstance);
+                                    //this.active = true;
+                                }
+                            }
+                            pastBeginTimes.unshift(beginTimes.shift());
+                        }
+                        else break; // be sure to break anytime we need to wait
                     }
                 }
             }
+            if (this.active) processRepeatIntervals(lastDocTime);
         }
 
         protected function onSVGDocTimeSeek(event:Event):void {
             //this.dbg("docTimeSeek: documentTime: " + SVGEvent(event).docTime);
+            // To simplify this, we just start over and reprocess instances
+            // up to the current time. TODO: We should keep track of
+            // what time we have seeked to in order to avoid dispatching
+            // events for events which end up in the past.
+            while (pastBeginTimes.length > 0) {
+                beginTimes.unshift(pastBeginTimes.shift());
+            }
+            beginTimes.sort(Array.NUMERIC);
+
+            while (pastEndTimes.length > 0) {
+                endTimes.unshift(pastEndTimes.shift());
+            }
+            endTimes.sort(Array.NUMERIC);
+
         }
 
         // These are hooks that animations can use to trigger a redraw that would
         // not otherwise occur when there are no remaining active animations.
-        protected function timeIntervalStarted():void {
+        protected function timeIntervalStarted(docTime:Number):void {
+            currentBeginTime = docTime;
+            if (scheduledDuration == INDEFINITE) currentEndTime = INDEFINITE;
+            else currentEndTime = currentBeginTime + scheduledDuration;
+            currentRepeatIndex = 0;
+            neverStarted = false;
             var svgEvent:SVGEvent = new SVGEvent(SVGEvent._SVGAnimBegin);
+            svgEvent.setDocTime(docTime);
             this.dispatchEvent(svgEvent);
+            repeatIntervalStarted(currentBeginTime); // starts media
         }
         
-        protected function timeIntervalEnded():void {
+        protected function timeIntervalEnded(docTime:Number):void {
+            currentEndTime = docTime;
             var svgEvent:SVGEvent = new SVGEvent(SVGEvent._SVGAnimEnd);
+            svgEvent.setDocTime(docTime);
             this.dispatchEvent(svgEvent);
         }
 
-        public function getActiveInterval(docTime:Number):TimeInterval {
-            for each(var timeSpec:TimeSpec in beginTimeSpecs) {
-                var intervals:Array = timeSpec.getIntervals();
-                for each (var interval:TimeInterval in intervals) {
-                    if ( interval.hasTime(docTime, this) ) {
-                        return interval;
-                    }
+        /*
+            if active docseek back to currentBeginTime
+            else seek to earliest begin instance (forward or back)
+            else do a begin at current doctime
+        */
+        public function getHyperlinkDocTime():Number {
+            if (this.active) {
+                return currentBeginTime;
+            }
+
+            var minTime:Number = INDEFINITE;
+            for (var i:uint=0; i < pastBeginTimes.length; i++) {
+                if (pastBeginTimes[i] < minTime) {
+                    minTime = pastBeginTimes[i];
                 }
             }
-            return null;
+            for (i=0; i < beginTimes.length; i++) {
+                if (beginTimes[i] < minTime) {
+                    minTime = beginTimes[i];
+                }
+            }
+
+            if (minTime != INDEFINITE) {
+               return minTime;
+            } else {
+               return this.svgRoot.getDocTime();
+            }
         }
 
-        public function getHyperlinkDocTime():Number {
-            return 0;
-        }
-
-        protected function repeatIntervalStarted():void {
+        protected function repeatIntervalStarted(docTime:Number):void {
             if (currentRepeatIndex > 0) {
                 var svgEvent:SVGEvent = new SVGEvent(SVGEvent._SVGAnimRepeat);
+                svgEvent.setDocTime(docTime);
                 this.dispatchEvent(svgEvent);
             }
         }
 
-        protected function repeatIntervalEnded():void {
+        protected function repeatIntervalEnded(docTime:Number):void {
         }
 
         /**
@@ -264,8 +286,10 @@ package org.svgweb.core
             parseAllRepeatsDuration();  // repeatDuration
             parseMinIntervalDuration(); // min
             parseMaxIntervalDuration(); // max
+            parseRestart();             // restart
             parseEndTimeSpecs();        // end
             parseBeginTimeSpecs();      // begin
+            setScheduledDuration();
         }
 
         /**
@@ -280,61 +304,31 @@ package org.svgweb.core
             var timeSpecStrings:Array = begin.split(/;/);
             var timeSpecIndex:uint =0;
             for each(var timeSpecString:String in timeSpecStrings) {
-
-                var timeSpec:TimeSpec = TimeSpec.parseTimeSpec(timeSpecString, this);
+                var timeSpec:TimeSpec = TimeSpec.parseTimeSpec("begin", timeSpecString, this);
                 beginTimeSpecs.push(timeSpec);
 
                 // Simple offsets can resolve an interval right away
                 if (timeSpec is OffsetTimeSpec) {
-                    timeSpec.addInterval(new TimeInterval(timeSpec,
-                                                          this.endTimeSpecs,
-                                                          this.eachRepeatDuration,
-                                                          this.repeatCount,
-                                                          this.allRepeatsDuration,
-                                                          this.minIntervalDuration,
-                                                          this.maxIntervalDuration, this));
-
+                    addBeginInstance(OffsetTimeSpec(timeSpec).getOffset());
                 }
                 if (timeSpec is EventTimeSpec) {
                     var targetNode:SVGNode = this.svgRoot.getNode(EventTimeSpec(timeSpec).nodeID);
                     if (targetNode) {
                         switch (EventTimeSpec(timeSpec).eventType) {
-                            case "begin":
-                            case "end":
-                            case "repeatEvent":
-                               targetNode.addEventListener(EventTimeSpec(timeSpec).eventType, handleEvent);
+                            case SVGEvent._SVGAnimBegin:
+                            case SVGEvent._SVGAnimEnd:
+                            case SVGEvent._SVGAnimRepeat:
+                               targetNode.addEventListener(EventTimeSpec(timeSpec).eventType,
+                                                           EventTimeSpec(timeSpec).handleEvent);
                                break;
                             default: 
-                               targetNode.topSprite.addEventListener(EventTimeSpec(timeSpec).eventType, handleEvent);
+                               targetNode.topSprite.addEventListener(EventTimeSpec(timeSpec).eventType,
+                                                                     EventTimeSpec(timeSpec).handleEvent);
                                break;
                         }
                     }
                 }
                 timeSpecIndex++;
-            }
-        }
-
-        protected function handleEvent(event:Event):void {
-            var timeSpec:TimeSpec;
-            for each(timeSpec in beginTimeSpecs) {
-                if (   timeSpec is EventTimeSpec
-                    && EventTimeSpec(timeSpec).eventType == event.type) {
-                    var newInterval:TimeInterval =
-                                         new TimeInterval(timeSpec,
-                                                          this.endTimeSpecs,
-                                                          this.eachRepeatDuration,
-                                                          this.repeatCount,
-                                                          this.allRepeatsDuration,
-                                                          this.minIntervalDuration,
-                                                          this.maxIntervalDuration, this);
-
-                    newInterval.setCurrentBeginStartTime(this.svgRoot.getDocTime() + 
-                                                             EventTimeSpec(timeSpec).offset);
-                    timeSpec.addInterval(newInterval);
-                }
-            }
-            // XXX not implemented yet
-            for each(timeSpec in endTimeSpecs) {
             }
         }
 
@@ -351,13 +345,32 @@ package org.svgweb.core
 
             var timeSpecStrings:Array = endString.split(/;/);
             for each(var timeSpecString:String in timeSpecStrings) {
-                var timeSpec:TimeSpec = TimeSpec.parseTimeSpec(timeSpecString, this);
+                var timeSpec:TimeSpec = TimeSpec.parseTimeSpec("end", timeSpecString, this);
                 if (timeSpec) {
                     endTimeSpecs.push(timeSpec);
+                    if (timeSpec is OffsetTimeSpec) {
+                        addEndInstance(OffsetTimeSpec(timeSpec).getOffset());
+                    }
+                    if (timeSpec is EventTimeSpec) {
+                        var targetNode:SVGNode = this.svgRoot.getNode(EventTimeSpec(timeSpec).nodeID);
+                        if (targetNode) {
+                            switch (EventTimeSpec(timeSpec).eventType) {
+                                case SVGEvent._SVGAnimBegin:
+                                case SVGEvent._SVGAnimEnd:
+                                case SVGEvent._SVGAnimRepeat:
+                                   targetNode.addEventListener(EventTimeSpec(timeSpec).eventType,
+                                                               EventTimeSpec(timeSpec).handleEvent);
+                                   break;
+                                default:
+                                   targetNode.topSprite.addEventListener(EventTimeSpec(timeSpec).eventType,
+                                                                         EventTimeSpec(timeSpec).handleEvent);
+                                   break;
+                            }
+                        }
+                    }
                 }
             }
         }
-
 
         protected function parseEachRepeatDuration():void {
             // If no duration is specified, the spec says the default is indefinite
@@ -370,50 +383,74 @@ package org.svgweb.core
             }
         }
 
-
         protected function parseRepeatCount():void {
             // If no repeat is specified, the spec says the default is one
-            var repeatCountString:String = this.getAttribute('repeatCount', '1');
-            if (repeatCountString == 'indefinite') {
-                this.repeatCount = INDEFINITE;
-            }
-            else {
-                this.repeatCount = SVGUnits.cleanNumber(repeatCountString);
+            var repeatCountString:String = this.getAttribute('repeatCount', null);
+            repeatCountSpecified = repeatCountString != null;
+            this.repeatCount = 1;
+            if (repeatCountSpecified) {
+                if (repeatCountString == 'indefinite') {
+                    this.repeatCount = INDEFINITE;
+                }
+                else {
+                    this.repeatCount = SVGUnits.cleanNumber(repeatCountString);
+                }
             }
         }
 
         protected function parseAllRepeatsDuration():void {
             // repeatDuration parsed as allRepeatsDuration
-            var allRepeatsDurationString:String = this.getAttribute('repeatCount', String(eachRepeatDuration*repeatCount));
-            if (allRepeatsDurationString == 'indefinite') {
-                if (eachRepeatDuration != INDEFINITE) {
-                    allRepeatsDuration = eachRepeatDuration*repeatCount;
-                }
-                else {
+            var allRepeatsDurationString:String = this.getAttribute('repeatDur', null);
+            repeatDurSpecified = allRepeatsDurationString != null;
+            if (repeatDurSpecified) {
+                if (allRepeatsDurationString == 'indefinite') {
                     allRepeatsDuration = INDEFINITE;
                 }
+                else {
+                    allRepeatsDuration = SVGUnits.parseTimeVal(allRepeatsDurationString);
+                }
+                if (repeatCountSpecified && (eachRepeatDuration != INDEFINITE)) {
+                    allRepeatsDuration = Math.min(this.allRepeatsDuration, eachRepeatDuration*repeatCount);
+                }
             }
-            else {
-                allRepeatsDuration = SVGUnits.parseTimeVal(allRepeatsDurationString);
-                allRepeatsDuration = Math.min(this.allRepeatsDuration, eachRepeatDuration*repeatCount);
-            }
+            else allRepeatsDuration = eachRepeatDuration;
         }
 
         protected function parseMinIntervalDuration():void {
             var minString:String = this.getAttribute('min', '0');
-            this.minIntervalDuration = SVGUnits.parseTimeVal(minString);
+            if (minString == 'media') {
+                this.minIntervalDuration = 0;
+            }
+            else {
+                this.minIntervalDuration = SVGUnits.parseTimeVal(minString);
+                if (isNaN(this.minIntervalDuration)) {
+                    this.minIntervalDuration = 0;
+                }
+                else {
+                    this.minIntervalDuration = Math.max(0, this.minIntervalDuration);
+                }
+            }
         }
 
         protected function parseMaxIntervalDuration():void {
             var maxString:String = this.getAttribute('max', 'indefinite');
-            if (maxString == 'indefinite') {
+            if ( (maxString == 'indefinite') ||
+                 (maxString == 'media')) {
                 this.maxIntervalDuration = INDEFINITE;
             }
             else {
                 this.maxIntervalDuration = SVGUnits.parseTimeVal(maxString);
+                if (isNaN(this.maxIntervalDuration) ||
+                    (this.maxIntervalDuration < this.minIntervalDuration)) {
+                    this.maxIntervalDuration = INDEFINITE;
+                }
             }
         }
         
+        protected function parseRestart():void {
+            this.restart = this.getAttribute('restart', 'always');
+        }
+
         /**
          * Called when a node is created after page load with XML content
          * added as a child. Forces a parse.
@@ -425,6 +462,122 @@ package org.svgweb.core
             } 
         }
 
+        public function addBeginInstanceEvent(event:Event, offset:Number):void {
+            var docTime:Number;
+            if (event is SVGEvent) docTime = SVGEvent(event).docTime;
+            else docTime = this.svgRoot.getDocTime();
+            addBeginInstance(docTime + offset);
+        }
+
+        public function addEndInstanceEvent(event:Event, offset:Number):void {
+            var docTime:Number;
+            if (event is SVGEvent) docTime = SVGEvent(event).docTime;
+            else docTime = this.svgRoot.getDocTime();
+            addEndInstance(docTime + offset);
+        }
+
+        public function addBeginInstance(docTime:Number):void {
+            beginTimes.push(docTime);
+            beginTimes.sort(Array.NUMERIC);
+        }
+
+        public function addEndInstance(docTime:Number):void {
+            endTimes.push(docTime);
+            endTimes.sort(Array.NUMERIC);
+        }
+
+        protected function getBeginInstance():Number {
+            if (beginTimes.length > 0)
+                return(beginTimes[0]);
+            return(INDEFINITE);
+        }
+
+        protected function nextBeginInstance():Number {
+            pastBeginTimes.unshift(beginTimes.shift());
+            return(getBeginInstance());
+        }
+
+        protected function getEndInstance():Number {
+            if (endTimes.length > 0)
+                return(endTimes[0]);
+            return(INDEFINITE);
+        }
+
+        protected function nextEndInstance():Number {
+            pastEndTimes.unshift(endTimes.shift());
+            return(getEndInstance());
+        }
+
+        protected function setScheduledDuration():void {
+            if (repeatDurSpecified) scheduledDuration = allRepeatsDuration;
+            else if ((eachRepeatDuration == INDEFINITE) || (repeatCount == INDEFINITE))
+                scheduledDuration = INDEFINITE;
+            else scheduledDuration = eachRepeatDuration * repeatCount;
+            scheduledDuration = Math.min(maxIntervalDuration, scheduledDuration);
+            scheduledDuration = Math.max(minIntervalDuration, scheduledDuration);
+        }
+
+        private function processRepeatIntervals(docTime:Number):void {
+            while (currentRepeatIndex < getRepeatIndex(docTime)) {
+                var currentRepeatStartTime:Number = this.currentBeginTime + currentRepeatIndex * this.eachRepeatDuration;
+                if (currentRepeatIndex >= 0) {
+                    repeatIntervalEnded(currentRepeatStartTime);
+                }
+                repeatIntervalStarted(currentRepeatStartTime);
+                currentRepeatIndex++;
+            }
+        }
+
+        protected function getRepeatIndex(docTime:Number):Number {
+            // current active interval or most recently completed interval
+            if (this.eachRepeatDuration == INDEFINITE) return 0;
+            docTime = Math.min(docTime, this.currentEndTime);
+            var repeatIndex:Number;
+            repeatIndex = Math.floor( (docTime - currentBeginTime) / this.eachRepeatDuration);
+            var currentRepeatStartTime:Number = this.currentBeginTime + repeatIndex * this.eachRepeatDuration;
+            var repeatRunTime:Number = docTime - currentRepeatStartTime;
+            if (repeatRunTime == 0 && repeatIndex > 0) {
+                return repeatIndex -1;
+            }
+            else {
+                return repeatIndex;
+            }
+        }
+
+        protected function getRepeatIntervalFraction(docTime:Number):Number {
+            // current active interval or most recently completed interval
+            if (this.eachRepeatDuration == INDEFINITE) return 0;
+            docTime = Math.min(docTime, this.currentEndTime);
+            var currentRepeatStartTime:Number = this.currentBeginTime + this.getRepeatIndex(docTime) * this.eachRepeatDuration;
+            var repeatRunTime:Number = docTime - currentRepeatStartTime;
+
+            return Math.min(1.0, repeatRunTime / eachRepeatDuration);
+        }
+
+        public function beginElement():Boolean {
+            return beginElementAt(0);
+        }
+
+        public function beginElementAt(offset:Number):Boolean {
+            // XXX return value doesn't account for processing of pending time instances
+            var docTime:Number = this.svgRoot.getDocTime() + offset;
+            if (docTime < currentBeginTime) return(false);  // negative offset could cause this
+            addBeginInstance(docTime);
+            return ( (restart=="always") ||
+                     (!this.active && ( (restart!="never")  || neverStarted)));
+        }
+
+        public function endElement():Boolean {
+            return endElementAt(0);
+        }
+
+        public function endElementAt(offset:Number):Boolean {
+            // XXX return value doesn't account for processing of pending time instances
+            var docTime:Number = this.svgRoot.getDocTime() + offset;
+            if (docTime < currentBeginTime) return(false);  // negative offset could cause this
+            addEndInstance(docTime + offset);
+            return this.active;
+        }
 
     }
 }

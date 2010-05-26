@@ -18,23 +18,29 @@
 
 package org.svgweb.smil
 {
+    import flash.events.Event;
     import flash.events.MouseEvent;
     import org.svgweb.events.SVGEvent;
+    import org.svgweb.core.SVGTimedNode;
 
     public class EventTimeSpec extends TimeSpec
     {
+        public var instanceType:String = "begin";
         public var nodeID:String;
         public var eventName:String;
         public var eventParam:String;
         public var eventType:String;
         public var offset:Number;
+        public var node:SVGTimedNode;
 
-        public function EventTimeSpec(nodeID:String, eventName:String,
-                                      eventParam:String, offset:Number):void {
+        public function EventTimeSpec(instanceType:String, nodeID:String, eventName:String,
+                                      eventParam:String, offset:Number, node:SVGTimedNode):void {
+            this.instanceType = instanceType;
             this.nodeID = nodeID;
             this.eventName = eventName;
             this.eventParam = eventParam;
             this.offset = offset;
+            this.node = node;
             switch (eventName) {
                 case "click":
                     this.eventType = MouseEvent.CLICK;
@@ -60,7 +66,7 @@ package org.svgweb.smil
                 case "end":
                     this.eventType = SVGEvent._SVGAnimEnd;
                     break;
-                case "repeatEvent":
+                case "repeat":
                     this.eventType = SVGEvent._SVGAnimRepeat;
                     break;
                 case "accessKey":
@@ -68,5 +74,16 @@ package org.svgweb.smil
                     break;
             }
         }
+
+        public function handleEvent(event:Event):void {
+            if (instanceType == "end") {
+                node.addEndInstanceEvent(event, offset);
+            }
+            else {
+                node.addBeginInstanceEvent(event, offset);
+            }
+
+        }
+
     }
 }

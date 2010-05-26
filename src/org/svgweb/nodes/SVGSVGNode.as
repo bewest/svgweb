@@ -230,6 +230,10 @@ package org.svgweb.nodes
                 return 'visible';
             }
 
+            if (name == 'display') {
+                return 'inline';
+            }
+
             return defaultValue;
         }
 

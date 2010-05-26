@@ -1477,17 +1477,16 @@ package org.svgweb.core
             for each(animation in animations) {
                 if (animation.getAttributeName() == name) {
                     foundAnimation = true;
+                    break;
                 }
             }
             if (!foundAnimation)
                 return null;
  
             var isAdditive:Boolean = true;
-
             // Start with base value
             var baseVal:String = getAttribute(name, defaultValue, inherit, false,
                                               useStyle);
-
             var animVal:Number;
             if (baseVal) {
                 animVal = SVGUnits.cleanNumber(baseVal);
@@ -1498,26 +1497,41 @@ package org.svgweb.core
              
             // Handle discrete string values
             var discreteStringVal:String;
+            var isColor:Boolean = (baseVal != null) && SVGColors.isColor(baseVal);
+            var animValString:String = null;
             // XXX This should sort by priority (activation order) 
             // Add or replace with animations
             for each(animation in animations) {
                 if (   animation.getAttributeName() == name
                     && animation.isEffective() ) {
+                    animValString = animation.getAnimValue();
+                    if (animValString == null) continue;  // null is an error, or !isEffective
+                    isColor =  isColor || SVGColors.isColor(animValString);
                     if (animation.isAdditive()) {
-                        animVal = animVal + SVGUnits.cleanNumber(animation.getAnimValue());
+                        if (isColor) {
+                            animVal = SVGColors.addColors(animVal, SVGUnits.cleanNumber(animValString));
+                        } else {
+                            animVal = animVal + SVGUnits.cleanNumber(animValString);
+                        }
                     }
                     else {
-                        animVal = SVGUnits.cleanNumber(animation.getAnimValue());
+                        animVal = SVGUnits.cleanNumber(animValString);
                         if (isNaN(animVal)) {
-                           discreteStringVal = animation.getAnimValue();
+                           discreteStringVal = animValString;
                         }
                     }
                 }
             }
+            if (animValString == null) //no animations
+                return baseVal;
             if (discreteStringVal) {
                 return discreteStringVal;
             } else {
-                return String(animVal);
+                if (isColor) {
+                    return SVGColors.colorString(animVal);
+                } else {
+                    return String(animVal);
+                }
             }
         }
 

@@ -390,5 +390,28 @@ package org.svgweb.utils
             }
             return string;        
         }
+
+        // convert a number into a color string value
+        static public function colorString(colorVal:Number):String {
+            var color:String = colorVal.toString(16);
+            while (color.length < 6) {
+                color = "0" + color;
+            }
+            if (color.length > 6) color.slice(color.length-6, color.length);
+            color = "#" + color;
+            return color;
+        }
+
+        static public function addColors(a:Number, b:Number):Number {
+            var aR : uint = uint(a) >> 16;
+            var aG : uint = ( uint(a) >> 8 ) & 0xff;
+            var aB : uint = uint(a) & 0xff;
+
+            var bR : uint = Math.min(aR + ( (uint(b) >> 16) & 0xff), 0xff);
+            var bG : uint = Math.min(aG + ( (uint(b) >> 8 ) & 0xff), 0xff);
+            var bB : uint = Math.min(aB + (uint(b) & 0xff), 0xff);
+            return (bR << 16) | (bG << 8) | bB;
+        }
+
     }
 }

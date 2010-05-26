@@ -75,13 +75,13 @@ package org.svgweb.nodes
         protected function ioErrorHandler(event:IOErrorEvent):void {
         }
 
-        override protected function repeatIntervalStarted():void {
-            super.repeatIntervalStarted();
+        override protected function repeatIntervalStarted(docTime:Number):void {
+            super.repeatIntervalStarted(docTime);
             channel = sound.play(0);
         }
 
-        override protected function repeatIntervalEnded():void {
-            super.repeatIntervalEnded();
+        override protected function repeatIntervalEnded(docTime:Number):void {
+            super.repeatIntervalEnded(docTime);
             channel.stop();
         }
     }

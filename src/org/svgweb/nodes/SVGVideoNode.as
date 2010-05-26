@@ -76,8 +76,8 @@ package org.svgweb.nodes
             }
         }
 
-        override protected function repeatIntervalStarted():void {
-            super.repeatIntervalStarted();
+        override protected function repeatIntervalStarted(docTime:Number):void {
+            super.repeatIntervalStarted(docTime);
 
             // Get the video location
             videoHref = this.getAttribute('href');
@@ -104,8 +104,8 @@ package org.svgweb.nodes
             }
         }
 
-        override protected function repeatIntervalEnded():void {
-            super.repeatIntervalEnded();
+        override protected function repeatIntervalEnded(docTime:Number):void {
+            super.repeatIntervalEnded(docTime);
             if (netStream) {
                 netStream.pause();
             }
