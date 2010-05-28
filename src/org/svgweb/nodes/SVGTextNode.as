@@ -26,6 +26,7 @@ package org.svgweb.nodes
     import org.svgweb.utils.SVGUnits;
     
     import flash.display.Sprite;
+    import flash.display.DisplayObject;
     import flash.events.Event;
     import flash.text.TextField;
     import flash.text.TextFieldAutoSize;
@@ -103,11 +104,33 @@ package org.svgweb.nodes
             }
         }
 
+        protected function removeGlyphClone(glyph:SVGGlyphNode):void {
+            glyph.svgParent = null;
+
+            // unregister the element
+            this.svgRoot.unregisterNode(glyph);
+
+            // Remove from flash list.
+            if ( glyph.topSprite ) {
+                var child:DisplayObject;
+                var i:int = 0;
+                for (i = 0; i < viewBoxSprite.numChildren; i++) {
+                    child = viewBoxSprite.getChildAt(i);
+                    if (child == glyph.topSprite) {
+                        viewBoxSprite.removeChild(child);
+                    }
+                }
+            }
+
+        }
+
         protected function removeOldSVGFontGlyphs():void {
             var i:int = 0;
             while (i < this.svgChildren.length) {
-                if (this.svgChildren[i] is SVGGlyphNode)
-                    removeSVGChild(this.svgChildren[i]);
+                if (this.svgChildren[i] is SVGGlyphNode) {
+                    this.removeGlyphClone(this.svgChildren[i]);
+                    this.svgChildren.splice(i, 1);
+                }
                 else i++
             }
         }
@@ -334,13 +357,15 @@ package org.svgweb.nodes
             // and remove the old
             if (glyph == lastGlyph && newGlyphs != null) {
                 for (var i:uint=0; i < this.svgChildren.length; i++) {
-                    if (this.svgChildren[i] is SVGGlyphNode
-                        && newGlyphs.indexOf(this.svgChildren[i]) == -1) {
-                        removeSVGChild(this.svgChildren[i]);
-                        i--;
-                    }
-                    else {
-                        this.svgChildren[i].topSprite.visible=true;
+                    if (this.svgChildren[i] is SVGGlyphNode) {
+                        if (newGlyphs.indexOf(this.svgChildren[i]) == -1) {
+                            removeGlyphClone(this.svgChildren[i]);
+                            this.svgChildren.splice(i, 1);
+                            i--;
+                        }
+                        else {
+                            this.svgChildren[i].topSprite.visible=true;
+                        }
                     }
                 }
                 newGlyphs = null;
