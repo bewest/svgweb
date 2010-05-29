@@ -65,7 +65,7 @@ ifeq ($(COMPRESS), 1)
 build/src/svg.js: src/svg.js
 	cp src/svg.js build/src/svg-uncompressed.js
 	@echo Compressing svg.js file...
-	java -jar src/tools/lib/yuicompressor-2.4.1.jar --type js --nomunge --preserve-semi -o build/src/svg.js src/svg.js 2>&1
+	java -jar src/tools/lib/compiler.jar --js src/svg.js --js_output_file build/src/svg.js  2>&1
 	@echo Final size: svg.js \(`ls -lrt build/src/svg.js | awk '{print $$5}'` bytes\)
 else
 build/src/svg.js: src/svg.js
