@@ -1044,7 +1044,7 @@ svgRoot.currentTranslate.setXY(5 /* x */, -10 /* y */);
 
 <p>Note that we patch these methods into the native SVG environment for consistency, so the above will be available even when using SVG Web in a native environment on Firefox, Safari, etc.</p>
 
-<p id="known_issues25">* <code>currentTranslate</code> is supported on the SVG root tag (see the section <a href="#zoomAndPan">"Zooming and Panning with currentTranslate and currentScale"</a> for details). However, due to limitations in Internet Explorer the way to work with this is slightly different when using SVG Web than the SVG 1.1 standard. See the <a href="#zoomAndPan">section</a> for
+<p id="known_issues25">* <code>currentTranslate</code> is supported on the SVG root tag (see the section <a href="#zoomAndPan">"Zooming and Panning with currentTranslate and currentScale"</a> for details). However, due to limitations in Internet Explorer the way to work with this is slightly different when using SVG Web than the SVG 1.1 standard.
 
 <h1 id="known_issues">Known Issues and Errata</h1>
 
@@ -1383,7 +1383,7 @@ svgweb.appendChild(obj, container);</b>
 
 <p id="known_issues29">Transparently intercepting <code>window.onload</code>; any <code>onload</code> attributes on the HTML <code>body</code> tag; <code>window.addEventListener('load', ...)</code>; and <code>window.attachEvent('onload', ...)</code> is not supported. You must instead use a slightly different syntax as detailed <a href="#onload">here</a>.
   
-<p id="known_issues30">If you have code inside of an external SVG file that you bring in through the SVG OBJECT tag, you must subscribe to the onload event using the &lt;svg onload=""&gt; attribute as detailed <a href="workaround_for_onload_inside_svg_files">here</a>. We don't support using <code>window.addEventListener('SVGLoad', ...)</code> or <code>window.onsvgload = someFunc;</code> <i>inside</i> of an external SVG file. For example, the following would <em>not</em> work:
+<p id="known_issues30">If you have code inside of an external SVG file that you bring in through the SVG OBJECT tag, you must subscribe to the onload event using the &lt;svg onload=""&gt; attribute as detailed <a href="#workaround_for_onload_inside_svg_files">here</a>. We don't support using <code>window.addEventListener('SVGLoad', ...)</code> or <code>window.onsvgload = someFunc;</code> <i>inside</i> of an external SVG file. For example, the following would <em>not</em> work:
   
 <p>MyExternalSVGFile.svg:</p>
 
