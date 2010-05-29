@@ -3112,6 +3112,7 @@ extend(FlashHandler, {
                 altKey: msg.altKey,
                 ctrlKey: msg.ctrlKey,
                 shiftKey: msg.shiftKey,
+                button: 0, // flash only supports left button
                 preventDefault: function() { this.returnValue=false; }
               };
               
@@ -3143,6 +3144,7 @@ extend(FlashHandler, {
                     'altKey: ' + msg.altKey + ',\n' +
                     'ctrlKey: ' + msg.ctrlKey + ',\n' +
                     'shiftKey: ' + msg.shiftKey + ',\n' +
+                    'button: 0,\n' +
                     'preventDefault: function() { this.returnValue=false; }\n' +
                   '};\n';
 
