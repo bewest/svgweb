@@ -129,9 +129,9 @@
 <glyph unicode="~" glyph-name="asciitilde" d="M152 586V748Q251 856 399 856Q499 856 647 793Q777 737 848 737Q956 737 1075 858V696Q976 588 827 588Q727 588 580 651Q449 707 379 707Q271 707 152 586Z" />
 </font>
 </defs>
-<g style="font-family: 
+<g font-size="28" style="font-family: 
 Droid Sans Mono
-; font-size:18;fill:black"> 
+; fill:black"> 
 <text x="20" y="60"> !&quot;#$%&amp;&apos;()*+,-./0123456789:;&lt;&gt;?</text> 
 <text x="20" y="120">@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_</text> 
 <text x="20" y="180">`abcdefghijklmnopqrstuvwxyz|{}~</text> 

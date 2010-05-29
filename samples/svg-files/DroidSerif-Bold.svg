@@ -219,9 +219,9 @@
 748T809 745Q838 745 867 754T926 780T984 819T1036 866V709Q938 600 788 600Q759 600 735 602T683 612T622 631T541 664Z" />
 </font>
 </defs>
-<g style="font-family: 
+<g font-size="18" style="font-family: 
 Droid Serif
-; font-size:18;fill:black"> 
+; fill:black"> 
 <text x="20" y="60"> !&quot;#$%&amp;&apos;()*+,-./0123456789:;&lt;&gt;?</text> 
 <text x="20" y="120">@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_</text> 
 <text x="20" y="180">`abcdefghijklmnopqrstuvwxyz|{}~</text> 

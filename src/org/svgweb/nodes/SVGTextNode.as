@@ -220,6 +220,8 @@ package org.svgweb.nodes
 
             var startOffsetX:Number = 0.0;
             var advance:Number = 0.0;
+            var fontScale:Number = fontSizeNum / _svgFont.getUnitsPerEm();
+            
             // apply text anchor
             switch (textAnchor) {
                 case 'middle':
@@ -236,8 +238,8 @@ package org.svgweb.nodes
                     break;
             }
             //Add a glyph for each character in the text chunk
-            var glyphX:Number = startOffsetX + (currentPos.x - startPos.x) * (2048/fontSizeNum);
-            var glyphY:Number = (currentPos.y - startPos.y) * (-2048/fontSizeNum);
+            var glyphX:Number = startOffsetX + (currentPos.x - startPos.x) / fontScale;
+            var glyphY:Number = -(currentPos.y - startPos.y) / fontScale;
             for (i = 0; i < chunk.length; i++) {
                 glyphChar = chunk.charAt(i);
                 glyph = this._svgFont.getGlyph(glyphChar);
@@ -246,7 +248,7 @@ package org.svgweb.nodes
                     glyphClone.setAttribute('fill', fill);
                 }
                 glyphClone.setAttribute('transform',
-                          'scale(' + (fontSizeNum / 2048) + ') scale(1,-1)');
+                          'scale(' + fontScale + ') scale(1,-1)');
 
                 glyphClone.setAttribute('x', String(glyphX));
                 glyphClone.setAttribute('y', String(glyphY));
@@ -259,7 +261,7 @@ package org.svgweb.nodes
                 lastGlyph=glyphClone;
             }
             // update current text position
-            currentPos.x += chunkWidth * (fontSizeNum / 2048);
+            currentPos.x += chunkWidth * fontScale;
         }
 
         /**

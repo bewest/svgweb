@@ -27,6 +27,7 @@ package org.svgweb.nodes
         protected var glyphs:Array = new Array();
         protected var missingGlyph:SVGMissingGlyphNode;
         protected var fontFaceName:String = "";
+        protected var unitsPerEm:Number;
 
         public function SVGFontNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
             super(svgRoot, xml, original);
@@ -63,5 +64,20 @@ package org.svgweb.nodes
             return this.fontFaceName;
         }
 
+        override protected function parseChildren():void {
+            super.parseChildren();
+            unitsPerEm = 1000.0;
+            var i:uint;
+            for (i=0; i<this.svgChildren.length; i++) {
+                if (this.svgChildren[i] is SVGFontFaceNode) {
+                    unitsPerEm = Number(this.svgChildren[i].getAttribute("units-per-em", "1000.0", false, false));
+                    break;
+                }
+            }
+        }
+
+        public function getUnitsPerEm():Number {
+            return this.unitsPerEm;
+        }
     }
 }

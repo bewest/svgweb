@@ -169,10 +169,10 @@
 740T799 737Q827 737 857 746T916 772T974 811T1026 858V696Q927 588 778 588Q749 588 724 590T672 599T611 618T530 651Z" />
 </font>
 </defs>
-<g style="font-family:Droid Sans;font-size:18;fill:black"> 
-    <text style="fill:rgb(200, 200, 200); stroke: rgb(247, 170, 21);font-size:50" stroke="orange" x="20" y="300">SVG Open 2009</text> 
-    <text x="20" y="60"> !&quot;#$%&amp;&apos;()*+,-./0123456789:;&lt;&gt;?</text> 
-    <text x="20" y="120">@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_</text> 
-    <text x="20" y="180">`abcdefghijklmnopqrstuvwxyz|{}~</text> 
+<g style="font-family:Droid Sans;fill:black"> 
+    <text font-size="50" style="fill:rgb(200, 200, 200); stroke: rgb(247, 170, 21);" stroke="orange" x="20" y="300">SVG Open 2009</text> 
+    <text x="20" y="60" font-size="20"> !&quot;#$%&amp;&apos;()*+,-./0123456789:;&lt;&gt;?</text> 
+    <text x="20" y="120" font-size="20">@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_</text> 
+    <text x="20" y="180" font-size="20">`abcdefghijklmnopqrstuvwxyz|{}~</text> 
 </g>
 </svg>

@@ -177,9 +177,9 @@
 <glyph unicode="~" glyph-name="asciitilde" horiz-adv-x="1149" d="M250 551H129Q157 909 387 909Q481 909 635 774Q742 672 803 672Q860 672 887 734T928 909H1051Q1012 551 793 551Q696 551 555 680Q437 788 379 788Q319 788 290 730T250 551Z" />
 </font>
 </defs>
-<g style="font-family: 
+<g font-size="18" style="font-family: 
 Droid Serif
-; font-size:18;fill:black"> 
+; fill:black"> 
 <text x="20" y="60"> !&quot;#$%&amp;&apos;()*+,-./0123456789:;&lt;&gt;?</text> 
 <text x="20" y="120">@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_</text> 
 <text x="20" y="180">`abcdefghijklmnopqrstuvwxyz|{}~</text> 
