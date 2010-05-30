@@ -2977,11 +2977,11 @@ function testRemoveChild() {
   // remove a normal circle element _after_ appending to DOM
   // after getting circle element through getElementById
   rect = getDoc('mySVG').getElementById('myRect');
-  parent = rect.parentNode;
-  lengthBefore = parent.childNodes.length;
+  var svgParent = rect.parentNode;
+  lengthBefore = svgParent.childNodes.length;
   rect.parentNode.removeChild(rect);
-  assertEquals('parent.childNodes.length == lengthBefore - 1',
-               lengthBefore - 1, parent.childNodes.length);
+  assertEquals('svgParent.childNodes.length == lengthBefore - 1',
+               lengthBefore - 1, svgParent.childNodes.length);
   assertNull('rect.parentNode == null', rect.parentNode);
   assertNull('document.getElementById(myRect) == null',
              getDoc('mySVG').getElementById('myRect'));
@@ -2997,11 +2997,11 @@ function testRemoveChild() {
     }
   }
   assertExists('myText should exist', text);
-  parent = text.parentNode;
+  svgParent = text.parentNode;
   lengthBefore = text.parentNode.childNodes.length;
   origText = text.parentNode.removeChild(text);
   assertEquals('text.parentNode.childNodes.length == lengthBefore - 1',
-               lengthBefore - 1, parent.childNodes.length);
+               lengthBefore - 1, svgParent.childNodes.length);
   assertNull('text.parentNode == null', text.parentNode);
   assertNull('document.getElementById(myText) == null',
              getDoc('mySVG').getElementById('myText'));
@@ -3018,7 +3018,7 @@ function testRemoveChild() {
   assertNull('text node should be null after removal', text);
   origText.setAttribute('y', parseInt(origText.getAttribute('y')) + 50);
   origText.firstChild.data = 'Deleted then added again';
-  parent.appendChild(origText);
+  svgParent.appendChild(origText);
   
   // remove a text node _before_ appending to DOM on an SVG Title
   // element
@@ -4731,13 +4731,13 @@ function testStyle() {
   assertEqualsAny('rect.style.strokeLinejoin == round',
                   ['round'],
                   rect.style.strokeLinejoin);
-  assertEqualsAny('rect.style.strokeMiterlimit == 15',
-                  [15],
+  assertEqualsAny('rect.style.strokeMiterlimit == 15 or 15px',
+                  [15, '15px'],
                   rect.style.strokeMiterlimit);
   // Safari adds pixel info; FF adds spaces to strokeDasharray values
   assertEqualsAny('rect.style.strokeDasharray == '
                   + '5,3,2 or 5, 3, 2 or 5px, 3px, 2px',
-                  ['5,3,2', '5, 3, 2', '5px, 3px, 2px'],
+                  ['5,3,2', '5, 3, 2', '5px, 3px, 2px', '5px 3px 2px'],
                   rect.style.strokeDasharray);
   // Safari adds pixel info to strokeDashoffset
   assertEqualsAny('rect.style.strokeDashoffset == 3 or 3px',
@@ -4815,8 +4815,8 @@ function testStyle() {
                   ['none'],
                   path.style.fill);
   // fillOpacity gets rounded off on some browsers
-  assertEqualsAny('path.style.fillOpacity == 0.31948882 or 0.319489',
-                  [0.31948882, 0.319489],
+  assertEqualsAny('path.style.fillOpacity == 0.31948882 or 0.319489 or .32',
+                  [0.31948882, 0.319489, .32],
                   path.style.fillOpacity);
   // strokeWidth gets rounded differently on some browsers
   assertEqualsAny('path.style.strokeWidth == 1.29999995 '
@@ -4831,7 +4831,7 @@ function testStyle() {
                   ['miter'],
                   path.style.strokeLinejoin);
   assertEqualsAny('path.style.strokeMiterlimit == 4',
-                  ['4'],
+                  ['4', '4px'],
                   path.style.strokeMiterlimit);
   assertEqualsAny('path.style.strokeDasharray == none',
                   ['none'],
@@ -4993,7 +4993,7 @@ function testStyle() {
                   ['30px'],
                   text.style.fontSize);
   assertEqualsAny('text.style.fontWeight == bold',
-                  ['bold'],
+                  ['bold', '700'],
                   text.style.fontWeight);
   console.log('FIRST IMAGE: There should be some bolded text that says '
               + '"Some bolded text!"');
@@ -5012,7 +5012,7 @@ function testStyle() {
   rect2 = getDoc('mySVG').getElementById('anotherRect2');
   assertExists('anotherRect2 should exist', rect2);
   assertEqualsAny('anotherRect1.style.fill == blue or #0000FF or rgb(0, 0, 255)',
-                  ['blue', '#0000FF', 'rgb(0, 0, 255)'],
+                  ['blue', '#0000FF', '#0000ff', 'rgb(0, 0, 255)'],
                   rect1.style.fill);
   rect1.style.fill = 'green';
   assertEqualsAny('anotherRect1.style.fill == green or #008000 or rgb(0, 128, 0)',
@@ -5022,7 +5022,7 @@ function testStyle() {
               + 'rectangle');
   rect2.style.fill = 'yellow';
   assertEqualsAny('anotherRect2.style.fill == yellow or #0000FF or rgb(0, 0, 255)',
-                  ['yellow', '#FFFF00', 'rgb(255, 255, 0)'],
+                  ['yellow', '#FFFF00', '#ffff00', 'rgb(255, 255, 0)'],
                   rect2.style.fill);
   console.log('FIRST IMAGE: You should see a yellow rectangle, and _not_ a '
               + 'black rectangle');
@@ -5114,11 +5114,11 @@ function testStyle() {
                     rect.style.stroke); 
     assertEqualsAny('rect3926.style.strokeWidth == 3.1614 or '
                     + '3.1614px or 3.16145px or 3.16145396',
-                    [3.1614, '3.1614px', '3.16145px', 3.16145396],
+                    [3.1614, '3.1614px', '3.16145px', 3.16145396, '3.16px'],
                     rect.style.strokeWidth);
     assertEqualsAny('rect3926.style[strokeWidth] == 3.16145396 '
                     + 'or 3.16145396 or 3.16145px or 3.16145396',
-                    [3.16145396, '3.16145396', '3.16145px', 3.16145396],
+                    [3.16145396, '3.16145396', '3.16145px', 3.16145396, '3.16px'],
                     rect.style['strokeWidth']);
     assertEqualsAny('rect3926.style.strokeLinejoin == miter',
                     ['miter'],
@@ -5135,7 +5135,7 @@ function testStyle() {
     // do a style[] type access
     assertEqualsAny('rect3926.style[strokeWidth] == 3.16145396 '
                     + 'or 3.16145396 or 3.16145px',
-                    [3.16145396, '3.16145396', '3.16145px'],
+                    [3.16145396, '3.16145396', '3.16145px', '3.16px'],
                     rect.style['strokeWidth']);
   }
   // change a CSS value that is also used by HTML and make sure it changes
@@ -5295,7 +5295,7 @@ function testStyle() {
                   ['rgb(0, 0, 175)', '#0000AF', '#0000af'],
                   svg.lastChild.childNodes[0].style.fill);
   assertEqualsAny('text.style.color == red',
-                  ['red'],
+                  ['red', '#ff0000'],
                   svg.childNodes[svg.childNodes.length - 1]
                      .childNodes[1].style.color);
   assertEqualsAny('group.getAttribute(transform) == translate(90, 350)',
@@ -5867,12 +5867,12 @@ function testCreateSVGRoot() {
                  circle.style.stroke);
                  
     // make sure our parent is correct
-    parent = svg.parentNode;
+    var svgParent = svg.parentNode;
     assertExists('dynamic SVG root parent node should exist', parent);
     assertEquals('dynamic SVG root parent node should be document BODY',
-                 'body', parent.nodeName.toLowerCase());
+                 'body', svgParent.nodeName.toLowerCase());
     assertEquals('dynamic SVG root parent node == document.body',
-                 document.body, parent);
+                 document.body, svgParent);
                  
     // do a test for testGetElementsByTagNameNS
     matches = svg.getElementsByTagNameNS(svgns, 'circle');
@@ -6059,12 +6059,12 @@ function testCreateSVGRoot() {
                  circle.style.stroke);
                  
     // make sure our parent is correct
-    parent = svg.parentNode;
-    assertExists('dynamic SVG root parent node should exist', parent);
+    svgParent = svg.parentNode;
+    assertExists('dynamic SVG root parent node should exist', svgParent);
     assertEquals('dynamic SVG root parent node should be document BODY',
-                 'body', parent.nodeName.toLowerCase());
+                 'body', svgParent.nodeName.toLowerCase());
     assertEquals('dynamic SVG root parent node == document.body',
-                 document.body, parent);
+                 document.body, svgParent);
     
     console.log('EIGHTH IMAGE: You should see a small orange circle with '
                 + 'a brown outline as the whole XML image. The XML image '
@@ -8299,11 +8299,13 @@ function testBugFixes() {
   // IE gives the border dimensions in a different order
   assertEqualsAny('testHTMLH1.style.border == '
                   + '"3px solid black" or "black 3px solid"',
-                  ['3px solid black', 'black 3px solid'], elem.style.border);
+                  ['3px solid black', 'black 3px solid', '3px solid #000000'],
+                  elem.style.border);
   elem.style.border = '2px dashed purple';
   assertEqualsAny('testHTMLH1.style.border == '
                   + '"3px solid black" or "purple 2px dashed"',
-                  ['2px dashed purple', 'purple 2px dashed'], elem.style.border);
+                  ['2px dashed purple', 'purple 2px dashed', '2px dashed #800080'],
+                  elem.style.border);
   console.log('HTML: There should be a purple dashed box around the HTML '
               + 'H1 element that says "Test HTML H1"');
               
@@ -8319,7 +8321,7 @@ function testBugFixes() {
   // the Flash renderer we allow this to also just be undefined as well
   assertEqualsAny('testHTMLH1.style.fill == red or #FF0000 '
                   + 'or rgb(255, 0, 0) or undefined', 
-                  ['red', '#FF0000', 'rgb(255, 0, 0)', undefined], 
+                  ['red', '#FF0000', '#ff0000', 'rgb(255, 0, 0)', undefined], 
                   elem.style.fill);
                   
   // a test where we try to set an HTML style property, such as

@@ -2500,11 +2500,11 @@
       // remove a normal circle element _after_ appending to DOM
       // after getting circle element through getElementById
       rect = document.getElementById('rect5690');
-      parent = rect.parentNode;
-      lengthBefore = parent.childNodes.length;
+      var svgParent = rect.parentNode;
+      lengthBefore = svgParent.childNodes.length;
       rect.parentNode.removeChild(rect);
-      top.assertEquals('parent.childNodes.length == lengthBefore - 1',
-                   lengthBefore - 1, parent.childNodes.length);
+      top.assertEquals('svgParent.childNodes.length == lengthBefore - 1',
+                   lengthBefore - 1, svgParent.childNodes.length);
       top.assertNull('rect.parentNode == null', rect.parentNode);
       top.assertNull('doc.getElementById(rect5690) == null',
                  document.getElementById('rect5690'));
@@ -2828,12 +2828,12 @@
                       ['round'],
                       rect.style.strokeLinejoin);
       top.assertEqualsAny('rect.style.strokeMiterlimit == 15',
-                      [15],
+                      [15, '15px'],
                       rect.style.strokeMiterlimit);
       // Safari adds pixel info; FF adds spaces to strokeDasharray values
       top.assertEqualsAny('rect.style.strokeDasharray == '
                       + '5,3,2 or 5, 3, 2 or 5px, 3px, 2px',
-                      ['5,3,2', '5, 3, 2', '5px, 3px, 2px'],
+                      ['5,3,2', '5, 3, 2', '5px, 3px, 2px', '5px 3px 2px'],
                       rect.style.strokeDasharray);
       // Safari adds pixel info to strokeDashoffset
       top.assertEqualsAny('rect.style.strokeDashoffset == 3 or 3px',
@@ -2862,7 +2862,7 @@
                       ['30px'],
                       text.style.fontSize);
       top.assertEqualsAny('text.style.fontWeight == bold',
-                      ['bold'],
+                      ['bold', '700'],
                       text.style.fontWeight);
 
       // test on elements that have style settings in the markup and 
@@ -2909,11 +2909,11 @@
                         rect.style.stroke); 
         top.assertEqualsAny('rect3926.style.strokeWidth == 3.1614 or '
                         + '3.1614px or 3.16145px or 3.16145396',
-                        [3.1614, '3.1614px', '3.16145px', 3.16145396],
+                        [3.1614, '3.1614px', '3.16145px', 3.16145396, '3.16px'],
                         rect.style.strokeWidth);
         top.assertEqualsAny('rect3926.style[strokeWidth] == 3.16145396 '
                         + 'or 3.16145396 or 3.16145px or 3.16145396',
-                        [3.16145396, '3.16145396', '3.16145px', 3.16145396],
+                        [3.16145396, '3.16145396', '3.16145px', 3.16145396, '3.16px'],
                         rect.style['strokeWidth']);
         top.assertEqualsAny('rect3926.style.strokeLinejoin == miter',
                         ['miter'],
@@ -2930,7 +2930,7 @@
         // do a style[] type access
         top.assertEqualsAny('rect3926.style[strokeWidth] == 3.16145396 '
                         + 'or 3.16145396 or 3.16145px',
-                        [3.16145396, '3.16145396', '3.16145px'],
+                        [3.16145396, '3.16145396', '3.16145px', '3.16px'],
                         rect.style['strokeWidth']);
       }
       // change a CSS value that is also used by HTML and make sure it changes
