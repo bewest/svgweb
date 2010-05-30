@@ -3126,7 +3126,7 @@ extend(FlashHandler, {
           // then the function needs to be called in the 
           // proper sandbox (see below).
           // See tests/browser-tests/test_events.html tests 10, 38
-          listener.call(evt.target, evt);
+          listener.call(evt.currentTarget, evt);
         }
     }
     if (msg.scriptCode != null) {
@@ -3150,12 +3150,12 @@ extend(FlashHandler, {
 
         // prepare the code for the correct object context.
         var executeInContext = ';(function (evt) { ' + msg.scriptCode + '; }' +
-                                    ').call(evt.target, evt);\n';
+                                    ').call(evt.currentTarget, evt);\n';
         // execute the code within the correct window context.
         this.sandbox_eval(this._svgObject._sandboxedScript(defineEvtCode + executeInContext));
       } else {
         var eventFunc = new Function(msg.scriptCode);
-        eventFunc.call(evt.target, evt);
+        eventFunc.call(evt.currentTarget, evt);
       }
     }
   },

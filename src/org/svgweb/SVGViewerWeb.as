@@ -1052,22 +1052,22 @@ package org.svgweb
 
                     switch(event.type) {
                         case MouseEvent.CLICK:
-                            scriptCode = targetNode.getAttribute('onclick');
+                            scriptCode = currentTargetNode.getAttribute('onclick');
                             break;
                         case MouseEvent.MOUSE_DOWN:
-                            scriptCode = targetNode.getAttribute('onmousedown');
+                            scriptCode = currentTargetNode.getAttribute('onmousedown');
                             break;
                         case MouseEvent.MOUSE_MOVE:
-                            scriptCode = targetNode.getAttribute('onmousemove');
+                            scriptCode = currentTargetNode.getAttribute('onmousemove');
                             break;
                         case MouseEvent.MOUSE_OUT:
-                            scriptCode = targetNode.getAttribute('onmouseout');
+                            scriptCode = currentTargetNode.getAttribute('onmouseout');
                             break;
                         case MouseEvent.MOUSE_OVER:
-                            scriptCode = targetNode.getAttribute('onmouseover');
+                            scriptCode = currentTargetNode.getAttribute('onmouseover');
                             break;
                         case MouseEvent.MOUSE_UP:
-                            scriptCode = targetNode.getAttribute('onmouseup');
+                            scriptCode = currentTargetNode.getAttribute('onmouseup');
                             break;
                     }
 

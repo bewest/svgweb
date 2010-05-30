@@ -186,7 +186,7 @@ function runTests(embedTypes) {
   //testImportNode();
   // NOTE: testTranslateScale is called from the async callback of one of the
   // test objects in testCreateSVGObject()
-  //testEventHandlers();
+  testEventHandlers();
   testBugFixes();
       
   // TODO: Rename the ID of nodes (including the SVG root) and make sure
@@ -278,7 +278,7 @@ function runTests(embedTypes) {
   }
   
   console.log('Waiting for final setTimeout check to run and ensure '
-              + 'everything passes (10 seconds)...');
+              + 'everything passes (20 seconds)...');
   
   // set a timeout before reporting success in case a flash
   // error occurred; our various onloads in embed2.svg can also run after
@@ -412,7 +412,7 @@ function runTests(embedTypes) {
     if (!_flashError) {
       console.log('All tests passed');
     }
-  }, 10000);
+  }, 20000);
 }
 
 function testScope() {
@@ -5498,18 +5498,18 @@ function testCreateSVGObject() {
     // do some tests to help testTranslateScale on our object
     testTranslateScale(this.contentDocument.rootElement);
     
-    /*
-    // TODO: Get inline event handlers working and uncomment this
     // do inline event handler tests for inline on* event handlers on the 
     // SVG root tag here rather than in testEventHandlers()
     // svg root element
     svg = obj1.contentDocument.rootElement;
     assertExists('dynamic1 should exist', svg);
+
     // add these to the window object so they are 'visible' from inside the
     // markup
     doc = obj1.contentDocument;
     assertExists("dynamic1's document should exist", doc);
     // NOTE: makeEventHandler() is defined in testEventHandlers()
+    svg.setAttribute('id', 'dynamic1');
     doc.svgOnClick = makeEventHandler('onclick', 'dynamic1', svg, 
                                       ['svg', 'rect'], ['svg']);
     doc.svgOnMouseDown = makeEventHandler('onmousedown', 'dynamic1', svg,
@@ -5520,6 +5520,8 @@ function testCreateSVGObject() {
                                           ['svg', 'rect'], ['svg']);
     doc.svgOnMouseOut = makeEventHandler('onmouseout', 'dynamic1', svg,
                                          ['svg', 'rect'], ['svg']);
+
+    /*
     // make sure these event handlers 'show up' using getAttribute and
     // someElement.on* syntax
     assertExists('dynamic1.onclick should exist', svg.onclick);
@@ -5631,9 +5633,6 @@ function testCreateSVGObject() {
     assertEquals('obj2.getAttribute(camelCaseName) == "camelCaseValue"', 
                  'camelCaseValue', obj2.getAttribute('camelCaseName'));
                  
-    /*
-    // TODO: Get inline event handlers working and uncomment these
-    
     // Do tests for removing inline event handlers here instead of in 
     // testEventHandlers(). We remove the inline event handlers from the SVG
     // root for the second and third dynamic object (dynamic2 and dynamic3)
@@ -5641,6 +5640,10 @@ function testCreateSVGObject() {
     assertExists('dynamic2 should exist', svg);
     doc = obj2.contentDocument;
     assertExists("dynamic2's document should exist", doc);
+    svg.setAttribute('id', 'dynamic2');
+
+    /*
+    // TODO: Get inline event handlers working and uncomment these
     // remove event handlers in various ways
     svg.onclick = null;
     svg.onmouseover = undefined;
@@ -5699,14 +5702,16 @@ function testCreateSVGObject() {
     // make sure 'this' points to the right thing
     assertEquals('this == SVG OBJECT', obj3, this);
     
-    /*
-    // TODO: Get inline event handlers working and uncomment these
     
     // remove inline event handlers
     svg = obj3.contentDocument.rootElement;
     assertExists('dynamic3 should exist', svg);
     doc = obj3.contentDocument;
     assertExists("dynamic3's document should exist", doc);
+    svg.setAttribute('id', 'dynamic3');
+
+    /*
+    // TODO: Get inline event handlers working and uncomment these
     svg.onclick = null;
     svg.onmouseover = null;
     svg.onmouseout = null;
@@ -8051,10 +8056,13 @@ function testEventHandlers() {
   makeEventHandler = function(handlerName, idName, correctInstanceVar,
                               targetNameArray, currentTargetNameArray) {
     return function(evt, thisVar) {
-      //console.log('Event handler for ' + handlerName+', evt='+evt+', thisVar='+thisVar);
+      //console.log('Event handler for ' + handlerName+', evt.target.id='+evt.target.id+', evt.currentTarget.id='+evt.currentTarget.id+', thisVar.id='+thisVar.id);
       assertExists('Event object for ' + handlerName + ' should exist', evt);
       assertExists('This variable for ' + handlerName + ' should exist', 
                    thisVar);
+      assertEquals('Id of this variable for ' + handlerName + ' should point '
+                   + 'to the ' + idName + ' DOM node',
+                   correctInstanceVar.getAttribute('id'), thisVar.getAttribute('id'));
       assertEquals('This variable for ' + handlerName + ' should point '
                    + 'to the ' + idName + ' DOM node',
                    correctInstanceVar, thisVar);
@@ -8085,23 +8093,26 @@ function testEventHandlers() {
   }
   
   // group element
-  group = getDoc('svg11242').getElementById('g11138');
+  doc = getDoc('svg11242');
+  group = doc.getElementById('g11138');
   assertExists('g11138 should exist', group);
+
   // add these to the window object so they are 'visible' from inside the
   // markup
-  doc = getDoc('svg11242');
   doc.g11138OnClick = makeEventHandler('onclick', 'g11138', group, 
-                                       ['path'], ['g']);
+                                       ['path', 'rect'], ['g']);
   doc.g11138OnMouseDown = makeEventHandler('onmousedown', 'g11138', group, 
-                                       ['path'], ['g']);
+                                       ['path', 'rect'], ['g']);
   doc.g11138OnMouseUp = makeEventHandler('onmouseup', 'g11138', group, 
-                                       ['path'], ['g']);
+                                       ['path', 'rect'], ['g']);
   doc.g11138OnMouseOver = makeEventHandler('onmouseover', 'g11138', group, 
-                                       ['path'], ['g']);
+                                       ['path', 'rect'], ['g']);
   doc.g11138OnMouseOut = makeEventHandler('onmouseout', 'g11138', group, 
-                                       ['path'], ['g']);
+                                       ['path', 'rect'], ['g']);
   // make sure these event handlers 'show up' using getAttribute and
   // someElement.on* syntax
+/* TODO:
+ * These work with firefox native handlers but not flash.
   assertExists('g11138.onclick should exist', group.onclick);
   assertEquals('typeof g11138.onclick == function', 'function',
                typeof group.onclick);
@@ -8119,7 +8130,7 @@ function testEventHandlers() {
   assertEquals('typeof g11138.onmousedown == function', 'function',
                typeof group.onmousedown);
   assertEquals('g11138.onmousedown == '
-                  + 'function onmousedown(evt){'
+                  + 'function onmousedown(evt,this){'
                   + 'document.g11138OnMouseDown(evt, this);'
                   + '}',
                   'function onmousedown(evt){'
@@ -8137,9 +8148,22 @@ function testEventHandlers() {
                   + 'document.g11138OnClick(evt, this)',
                   'document.g11138OnClick(evt, this)',
                   group.getAttribute('onclick'));
+*/
+  group = doc.getElementById('g4337');
+  doc.g4337OnClick = makeEventHandler('onclick', 'g4337', group, 
+                                       ['path', 'circle', 'rect'], ['g']);
+  doc.g4337OnMouseDown = makeEventHandler('onmousedown', 'g4337', group, 
+                                       ['path', 'circle', 'rect'], ['g']);
+  doc.g4337OnMouseUp = makeEventHandler('onmouseup', 'g4337', group, 
+                                       ['path', 'circle', 'rect'], ['g']);
+  doc.g4337OnMouseOver = makeEventHandler('onmouseover', 'g4337', group, 
+                                       ['path', 'circle', 'rect'], ['g']);
+  doc.g4337OnMouseOut = makeEventHandler('onmouseout', 'g4337', group, 
+                                       ['path', 'circle', 'rect'], ['g']);
+             
   console.log('THIRD IMAGE: Run your mouse into and out of the scimitar; also '
               + 'click the mouse button');
-              
+
   // NOTE: the test for on* event handlers on the SVG root element happens
   // inside of the dynamic1 SVG OBJECT onload callback inside of 
   // testCreateSVGObject()

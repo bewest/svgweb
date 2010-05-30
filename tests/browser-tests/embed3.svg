@@ -1036,9 +1036,9 @@
        ]]></script><g
      transform="matrix(0.658246,0,0,0.658246,300.47258,71.37439)"
      id="g4337" 
-      onclick="var customVar = 'foo'; document.g4337OnClick(customVar);"
-      onmouseover="g4337OnMouseOver('hello world')"
-      onmouseout="document.g4337OnMouseOut()"><path
+      onclick="document.g4337OnClick(evt, this);"
+      onmouseover="document.g4337OnMouseOver(evt, this)"
+      onmouseout="document.g4337OnMouseOut(evt, this)"><path
        d="M 423.07205 253.04457 A 168.24873 99.097961 0 1 1  86.574585,253.04457 A 168.24873 99.097961 0 1 1  423.07205 253.04457 z"
        transform="matrix(2.0763665,0,0,1.9761102,-626.81548,-401.18495)"
        style="color:#000000;fill:#2e2e2e;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:3.25200009;stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;filter:url(#filter6426);enable-background:accumulate"
@@ -1211,10 +1211,10 @@
       <g
          transform="matrix(0.7664195,0,0,0.7664195,-4.7078914,247.90097)"
          id="g11138"
-         onclick="document.g11138OnClick(event, this)"
-         onmousedown="document.g11138OnMouseDown(this)"
-         onmouseup="g11138OnMouseUp(evt, this)"
-         onmouseover="g11138OnMouseOver(event, this)"
+         onclick="document.g11138OnClick(evt, this)"
+         onmousedown="document.g11138OnMouseDown(evt, this)"
+         onmouseup="document.g11138OnMouseUp(evt, this)"
+         onmouseover="document.g11138OnMouseOver(evt, this)"
          onmouseout="document.g11138OnMouseOut(evt, this)"
          >
         <path
