@@ -16,7 +16,7 @@
            > Manual </a>]--></span></h1>
     <label>Select SVG:
     </label>
-    <select id="selectSVG" onclick="showSVG();" >
+    <select id="selectSVG" onchange="showSVG();">
         <option value="scim">scimitar
         <option value="scim-anim">scimitar-anim
         <option value="anim1">anim1 - animate
@@ -489,13 +489,13 @@
     </select>
     <input type="button" onclick="showNext()" value="next" style="margin-right:10px" />
     <p id='selectModeP'><span>Select Display Mode:</span>
-    <select id="selectMode" onclick="setMode(this.selectedIndex);">
+    <select id="selectMode" onchange="setMode(this.selectedIndex);">
         <option value="image">image
         <option value="xml">xml
     </select>
     </p>
     <p><span>Select Renderer:</span>
-    <select id="selectRenderer" onclick="changeRenderer(this.value);">
+    <select id="selectRenderer" onchange="changeRenderer(this.value);">
         <option value="flash">rendered by Flash
         <option value="native">browser native svg
     </select>

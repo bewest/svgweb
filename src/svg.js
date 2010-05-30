@@ -940,11 +940,15 @@ extend(SVGWeb, {
         // been registered inside this object; see _SVGWindow.setTimeout
         // for details
         var iframeWin = nodeHandler.document.defaultView;
-        for (var i = 0; i < iframeWin._intervalIDs.length; i++) {
-          iframeWin.clearInterval(iframeWin._intervalIDs[i]);
+        if (iframeWin._intervalIDs) {
+          for (var i = 0; i < iframeWin._intervalIDs.length; i++) {
+            iframeWin.clearInterval(iframeWin._intervalIDs[i]);
+          }
         }
-        for (var i = 0; i < iframeWin._timeoutIDs.length; i++) {
-          iframeWin.clearTimeout(iframeWin._timeoutIDs[i]);
+        if (iframeWin._timeoutIDs) {
+          for (var i = 0; i < iframeWin._timeoutIDs.length; i++) {
+            iframeWin.clearTimeout(iframeWin._timeoutIDs[i]);
+          }
         }
       
         // remove keyboard event handlers; we added a record of these for
