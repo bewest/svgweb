@@ -1607,7 +1607,7 @@ package org.svgweb.core
                          || (name == 'style' && value != null &&
                               ( value.indexOf('visibility') != -1
                               || value.indexOf('display') != -1 ))
-                         || (this is SVGGroupNode) ) {
+                         || (this is SVGGroupNode || this is SVGTextNode) ) {
                         this.invalidateChildren();
                     }
                     break;
@@ -1632,15 +1632,7 @@ package org.svgweb.core
             this.updateStyle();
             this.parseStyle();
             
-            this.updateClones();
-
-            this.invalidateDisplay();
-            if (   (name == 'display' || name == 'visibility')
-                || (name == 'style' &&
-                        (   (value.indexOf('visibility') != -1 )
-                         || (value.indexOf('display') != -1 ) ) ) ) {
-                this.invalidateChildren();
-            }
+            handleAttrChange(name, value, null);
         }
         
         /** Gets a style attribute from the style="" string. Note that this

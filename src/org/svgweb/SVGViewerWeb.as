@@ -608,7 +608,7 @@ package org.svgweb
 
             var element:SVGNode = this.svgRoot.getNodeByGUID(elementGUID);
             if (!element) {
-                this.error('setAttribute: GUID not found: ' + elementGUID);
+                this.error('removeAttribute: GUID not found: ' + elementGUID);
             }
 
             if (ns == null && localName == 'id') {

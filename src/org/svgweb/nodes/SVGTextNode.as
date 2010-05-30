@@ -303,17 +303,17 @@ package org.svgweb.nodes
             }
             var fontWeight:String = this.getStyleOrAttr('font-weight');
 
-                var textAnchor:String = this.getStyleOrAttr('text-anchor');
-                var currentNode:SVGNode = this;
-                while (textAnchor == 'inherit') {
-                    if (currentNode.svgParent != null) {
-                        currentNode = currentNode.svgParent;
-                        textAnchor = currentNode.getStyleOrAttr('text-anchor');
-                    }
-                    else {
-                        textAnchor = null;
-                    }
+            var textAnchor:String = this.getStyleOrAttr('text-anchor');
+            var currentNode:SVGNode = this;
+            while (textAnchor == 'inherit') {
+                if (currentNode.svgParent != null) {
+                    currentNode = currentNode.svgParent;
+                    textAnchor = currentNode.getStyleOrAttr('text-anchor');
                 }
+                else {
+                    textAnchor = null;
+                }
+            }
 
             // process text chunks
             var glyphXOffsets:Array = new Array();
@@ -352,7 +352,7 @@ package org.svgweb.nodes
                 if (this._svgFont != null) addSVGFontChunk(chunk, startPos, currentPos, fontSizeNum, textAnchor, fill);
                 else addTextFieldChunk(chunk, startPos, currentPos, fontFamily, fontSizeNum, textAnchor, fontWeight, fill);
             }
-                }
+        }
         
         public function onDrawGlyph(glyph:SVGNode):void {
             // when they are ready, unhide the new characters,

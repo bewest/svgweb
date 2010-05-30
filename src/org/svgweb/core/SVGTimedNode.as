@@ -153,8 +153,6 @@ package org.svgweb.core
                     // with a negative time offset or if the document
                     // is seeked.
 
-                    // TODO: How does this affect cumulative animations?
-
                     // Discard all endTimes up to currentBeginTime.
                     while (endInstance < currentBeginTime) {
                         endInstance = nextEndInstance();
