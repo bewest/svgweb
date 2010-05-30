@@ -3631,9 +3631,7 @@ NativeHandler._patchSvgFileAddEventListener = function(win, doc) {
     if (type.toLowerCase() != 'svgload') {
       _addEventListener(type, listener, useCapture);
     } else {
-      if (doc.readyState == 'complete') {
-        listener();
-      }
+      listener();
     }
   }
   
@@ -7356,7 +7354,7 @@ function _SVGWindow(handler) {
 
 extend(_SVGWindow, {
   addEventListener: function(type, listener, capture) {
-    if (type.toLowerCase() == 'SVGLoad') {
+    if (type.toLowerCase() == 'svgload' || type.toLowerCase() == 'load') {
       this._onloadListeners.push(listener);
     }
   },
