@@ -5816,7 +5816,7 @@ function testCreateSVGRoot() {
                   ['block'], 
                   svg.style.display);
   assertEqualsAny('svg.style.border == 2px solid black or black 2px solid', 
-                  ['2px solid black', 'black 2px solid'], 
+                  ['2px solid black', 'black 2px solid', '2px solid #000000'], 
                   svg.style.border);
   svg.id = 'dynamicRoot1';
   // make sure ownerDocument is correct before appending
@@ -5863,12 +5863,12 @@ function testCreateSVGRoot() {
                  ['brown'],
                  circle.getAttribute('fill'));
     assertEqualsAny('circle.style.stroke == orange', 
-                 ['orange', '#FFA500'],
+                 ['orange', '#FFA500', '#ffa500'],
                  circle.style.stroke);
                  
     // make sure our parent is correct
     var svgParent = svg.parentNode;
-    assertExists('dynamic SVG root parent node should exist', parent);
+    assertExists('dynamic SVG root parent node should exist', svgParent);
     assertEquals('dynamic SVG root parent node should be document BODY',
                  'body', svgParent.nodeName.toLowerCase());
     assertEquals('dynamic SVG root parent node == document.body',
@@ -5928,7 +5928,7 @@ function testCreateSVGRoot() {
                  ['brown'],
                  temp2.getAttribute('fill'));
     assertEqualsAny('temp2.style.stroke == orange', 
-                   ['orange', '#FFA500'],
+                   ['orange', '#FFA500', '#ffa500'],
                    temp2.style.stroke);
     assertExists('temp2.ownerDocument should exist', temp2.ownerDocument);
     assertEquals('temp.ownerDocument == document',
@@ -6055,7 +6055,7 @@ function testCreateSVGRoot() {
                  ['orange'],
                  circle.getAttribute('fill'));
     assertEqualsAny('circle.style.stroke == brown', 
-                 ['brown', '#A52A2A'],
+                 ['brown', '#A52A2A', '#a52a2a'],
                  circle.style.stroke);
                  
     // make sure our parent is correct
