@@ -81,13 +81,36 @@ package org.svgweb.nodes
 
                 // from most common to least common encountered
                 
-                if ((code >= 48 && code <= 57) || code == 45 || code == 101 || code == 46) {
-                    // 0 through 9, -, e-, or .
+               if ((code >= 48 && code <= 57) || code == 45 || code == 46 || code == 43) {
+                    // start of a number 0..9, -, ., +
+                    var period:Number = 46;  // used to terminate on encountering a second '.'
+                    // a sequence like 1.234.456 or 1..2 is valid
+                    // equvalent to 1.234 .567 or 1. .2
                     do {
+                        if (code == 46) period = 34;  // change to '"' so loop stops on next '.'
                         results += data.charAt(i);
                         i++;
                         code = data.charCodeAt(i);
-                    } while (((code >= 48 && code <= 57) || code == 46) && code);
+                    } while (code && ((code >= 48 && code <= 57) || code == period));
+                    // check for exponent e or E
+                    // assume never have a number starting with -e or .e or +e
+                    if (code && (code == 101 || code == 69)) {
+                        results += 'e';
+                        i++;
+                        code = data.charCodeAt(i);
+                        if (code && (code == 43 || code == 45)) {
+                            // optional +/-
+                            results += data.charAt(i);
+                            i++;
+                            code = data.charCodeAt(i);
+                        }
+                        while (code && (code >= 48 && code <= 57)) {
+                            // collect a digit-sequence
+                            results += data.charAt(i);
+                            i++;
+                            code = data.charCodeAt(i);
+                        }
+                    }
                     results += ',';
                 } else if (code == 44 || code == 32 || code == 10 || code == 13) {
                     // just ignore delimiters since we are adding in our own
@@ -98,7 +121,7 @@ package org.svgweb.nodes
                     results += data.charAt(i) + ',';
                     i++;
                 } else {
-                    // unknown character
+                    // unknown/unexpected character
                     i++;
                 }
             }
