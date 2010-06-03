@@ -870,7 +870,7 @@ package org.svgweb.core
             var line_alpha:Number;
             var line_width:Number;
 
-            var stroke:String = this.getStyleOrAttr('stroke');
+            var stroke:String = this.getStyleOrAttr('stroke', 'black');
             if ( (stroke == 'none') || (stroke == '') || (this.getStyleOrAttr('visibility') == 'hidden') ) {
                 line_alpha = 0;
                 line_color = 0;

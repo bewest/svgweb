@@ -278,7 +278,7 @@ function runTests(embedTypes) {
   }
   
   console.log('Waiting for final setTimeout check to run and ensure '
-              + 'everything passes (20 seconds)...');
+              + 'everything passes (15 seconds)...');
   
   // set a timeout before reporting success in case a flash
   // error occurred; our various onloads in embed2.svg can also run after
@@ -412,7 +412,7 @@ function runTests(embedTypes) {
     if (!_flashError) {
       console.log('All tests passed');
     }
-  }, 20000);
+  }, 15000);
 }
 
 function testScope() {

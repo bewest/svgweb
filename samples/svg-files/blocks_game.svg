@@ -390,7 +390,10 @@ function tick() {
   if (ticker) {
     clearTimeout(ticker);
   }
-  ticker = setTimeout("tick()", tickTime);
+  // If window is unloaded, setTimeout might go away.
+  if (setTimeout) {
+    ticker = setTimeout("tick()", tickTime);
+  }
 }
 
 function time(tickTime) {

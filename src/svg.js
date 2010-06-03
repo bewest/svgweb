@@ -2981,7 +2981,15 @@ extend(FlashHandler, {
       this._redrawManager.batch(invoke, message);
     } else {
       // send things over to Flash
-      return this.flash[invoke](message);
+      try {
+        return this.flash[invoke](message);
+      } catch(exp) {
+        // This code is for crashing exception in Opera
+        // that occurs with scripts running in relation
+        // to an object that is unloaded.
+        console.log("Call to flash but flash is not present! " +
+                    invoke + ": " + this.debugMsg(message) + ": "+exp);
+      }
     }
   },
   
@@ -3628,6 +3636,15 @@ NativeHandler._patchStyleObject = function(win) {
   
   @param win The owner window to patch.
   @param doc The owner document to work with.
+
+  Note that there are different possible ways script code might get into a
+  patched window.addEventListener:
+     If it is called during onload or script tag code, then the script is
+  likely patched to run __svgHandler.window.addEventListener where
+  __svgHandler.window is a fake _SVGWindow object with a fake addEventListener.
+     If the script gets a hold of the real window object, it calls in the
+  patched 'real window' method. The following code is the code that patches
+  the real window.
 */
 NativeHandler._patchSvgFileAddEventListener = function(win, doc) {
   var _addEventListener = win.addEventListener;
@@ -3946,7 +3963,14 @@ extend(_RedrawManager, {
     this._timeoutIDs['_' + id] = timeoutID;
     
     // tell Flash to stop rendering
-    this._handler.flash.jsSuspendRedraw();
+    // there is a chance that suspendRedraw is called while the page
+    // is unloading from a setTimout interval; surround everything with a 
+    // try/catch block to prevent an exception from blocking page unload
+    try {
+      this._handler.flash.jsSuspendRedraw();
+    } catch (exp) {
+      console.log("suspendRedraw exception: " + exp);
+    }
     
     return id;
   },
@@ -7143,7 +7167,7 @@ extend(_SVGObject, {
     
     // add our onload handler to the list of scripts to execute at the
     // beginning
-    var onload = root.getAttribute('onload');
+    var onload = rootXML.getAttribute('onload');
     if (onload) {
       // we want 'this' inside of the onload handler to point to our
       // SVG root; the 'document.documentElement' will get rewritten later by
@@ -7153,7 +7177,7 @@ extend(_SVGObject, {
                     'currentTarget: document.getElementById("' + root.getAttribute('id') + '") ,' +
                     'preventDefault: function() { this.returnValue=false; }' +
                   '};';
-      onload = '(function(){' + defineEvtCode + onload + '}).apply(document.documentElement);';
+      onload = ';(function(){' + defineEvtCode + onload + '}).apply(document.documentElement);';
       this._scriptsToExec.push(onload);
     }
     
@@ -7236,17 +7260,33 @@ extend(_SVGObject, {
     // Add code to set back an eval function we can use for further execution.
     // Code adapted from blog post by YuppY:
     // http://dean.edwards.name/weblog/2006/11/sandbox/
-    script = script + ';__svgHandler.sandbox_eval = ' +
+    script = script + ';if (__svgHandler) __svgHandler.sandbox_eval = ' +
              (isIE ? 'window.eval;'
                    : 'function(scriptCode) { return window.eval(scriptCode) };');
 
-    // now insert the script into the iframe to execute it in a siloed way
-    iframeDoc.write('<script>' + script + '</script>');
-    iframeDoc.close();
+    if (isOpera) {
+        var _win = this;
+        // Opera 10.53 just kills this event thread (see test_js2.html),
+        // so we switch to a new execution context to buy more time on a
+        // more appropriate thread.
+        var timeoutFunc =
+          setTimeout((function(_handlerwin, iframeWin, script) {
+                      return function() {
+                        // Opera 10.53 hangs on creating the script tag (see
+                        // test_js2.html), so try running the code this way.
+                        iframeWin.eval.apply(iframeWin, [script]);
+                        _handlerwin._fireOnload();
+                      };
+                    })(this._handler.window, iframeWin, script), 1);
+    } else {
+      // now insert the script into the iframe to execute it in a siloed way
+      iframeDoc.write('<script>' + script + '</script>');
+      iframeDoc.close();
+      // execute any addEventListener(onloads) that might have been
+      // registered
+      this._handler.window._fireOnload();
+    }
     
-    // execute any addEventListener(onloads) that might have been
-    // registered
-    this._handler.window._fireOnload();
   },
 
   _sandboxedScript: function(script) {
