@@ -1042,7 +1042,8 @@ package org.svgweb
                     var targetNode:SVGNode = SVGSprite(event.target).svgNode;
                 }
                 else {
-                    targetNode = SVGSprite(event.currentTarget).svgNode;
+                    // Need to walk up an extra parent for text fields
+                    targetNode = SVGSprite(event.target.parent).svgNode;
                 }
                 var currentTargetNode:SVGNode = SVGSprite(event.currentTarget).svgNode;
                 var scriptCode:String;
