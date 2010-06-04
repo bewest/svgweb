@@ -57,7 +57,8 @@ package org.svgweb.nodes
             if (stopData.colors.length > 0) { //Don't fill if there are no stops
                 node.drawSprite.graphics.lineGradientStyle(GradientType.RADIAL, stopData.colors,
                                                            stopData.alphas, stopData.ratios,
-                                                           matrix, spreadMethod, InterpolationMethod.RGB);
+                                                           matrix, spreadMethod,
+                                                           InterpolationMethod.RGB, this.focalLen);
             }
         }
 
@@ -114,12 +115,14 @@ package org.svgweb.nodes
                 this.focalLen = Math.sqrt(dx*dx + dy*dy) / r;
 
                 matr.scale(sx, sy);
-                matr.translate(cx, cy);
                 matr.rotate(angle);
+                matr.translate(cx, cy);
                 if (matrGrTr != null) {
                     matr.concat(matrGrTr);
                 }
-                matr.translate(-objectX, -objectY);
+                if (!(node is SVGCircleNode) && !(node is SVGEllipseNode)) {
+                    matr.translate(-objectX, -objectY);
+                }
 
                 return matr;
             }
