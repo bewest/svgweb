@@ -1969,7 +1969,16 @@ extend(SVGWeb, {
           // fetch the root so that our 'this' context correctly
           // points to the root node inside of our onload function
           var root = document.getElementById(handler.id);
-          f.apply(root);
+          if (isOpera) {
+            // Opera 10.53 does not like this thread, probably because
+            // it originated from flash. Strange problems occur, like the
+            // thread just stops in various places. setTimeout seems to
+            // set up a better thread. This is the same workaround as
+            // in _SVGObject._executeScript().
+            setTimeout(function() { f.apply(root);f=null;root=null; }, 1);
+          } else {
+            f.apply(root);
+          }
         } catch (exp) {
           console.log('Error while firing onload listener: ' 
                       + exp.message || exp);
