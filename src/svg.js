@@ -737,6 +737,9 @@ extend(SVGWeb, {
       level rather than on individual handlers because a removed node
       might have never been associated with a real DOM or a real handler. */
   _removedNodes: [],
+
+  /** Used to lookup namespaces **/
+  _allSVGNamespaces: [],
   
   /** Adds an event listener to know when both the page, the internal SVG
       machinery, and any SVG SCRIPTS or OBJECTS are finished loading.
@@ -2695,6 +2698,10 @@ FlashHandler._createElementNS = function(ns, qname) {
   // only use our overridden createElementNS if they are using
   // a namespace we have never seen before
   if (!isIE) {
+    // Check namespaces from unattached svg elements
+    if (svgweb._allSVGNamespaces['_' + ns]) {
+      namespaceFound = true;
+    }
     for (var i = 0; !namespaceFound && i < svgweb.handlers.length; i++) {
       if (svgweb.handlers[i].type == 'script'
           && svgweb.handlers[i].document._namespaces['_' + ns]) {
@@ -2709,11 +2716,17 @@ FlashHandler._createElementNS = function(ns, qname) {
   }
   
   var prefix;
-  for (var i = 0; i < svgweb.handlers.length; i++) {
-    if (svgweb.handlers[i].type == 'script') {
-      prefix = svgweb.handlers[i].document._namespaces['_' + ns];
-      if (prefix) {
-        break;
+  // Check namespaces from unattached svg elements
+  if (svgweb._allSVGNamespaces['_' + ns]) {
+    prefix = svgweb._allSVGNamespaces['_' + ns];
+  } else {
+    // Check attached svg elements
+    for (var i = 0; i < svgweb.handlers.length; i++) {
+      if (svgweb.handlers[i].type == 'script') {
+        prefix = svgweb.handlers[i].document._namespaces['_' + ns];
+        if (prefix) {
+          break;
+        }
       }
     }
   }
@@ -6004,6 +6017,22 @@ extend(_Element, {
         this._nodeXML.setAttribute(qName, attrValue);
       } else {
         this._nodeXML.setAttributeNS(ns, qName, attrValue);
+      }
+    }
+
+    // If this is a namespace attribute, add it to the global
+    // list of SVG related namespaces so that we know whether
+    // to create fake elements or native elements for that
+    // namespace. See Issue 507.
+    if (/^xmlns:?(.*)$/.test(qName)) {
+      var m = qName.match(/^xmlns:?(.*)$/);
+      var prefix = (m[1] ? m[1] : 'xmlns');
+      var namespaceURI = attrValue;
+
+      // don't add duplicates
+      if (!svgweb._allSVGNamespaces['_' + prefix]) {
+        svgweb._allSVGNamespaces['_' + prefix] = namespaceURI;
+        svgweb._allSVGNamespaces['_' + namespaceURI] = prefix;
       }
     }
 
