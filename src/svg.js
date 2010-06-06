@@ -3204,6 +3204,11 @@ extend(FlashHandler, {
     
     // create or get an _Element for this XML DOM node for node
     node = FlashHandler._getNode(nodeXML, this);
+
+    // _guidLookup holds _Nodes, so if this is an HTC node, get the _Node instead
+    if(isIE && node._fakeNode) {
+        node = node._fakeNode;
+    }
     node._passThrough = true;
     
     return node;
