@@ -279,10 +279,12 @@ package org.svgweb.nodes
             this._svgFont = this.svgRoot.getFont(fontFamily);
             if (this._svgFont != null) {
                 removeOldTextFields();
+                _textFields = new Array();
                 newGlyphs = new Array();
                 }
             else {
                 removeOldSVGFontGlyphs();
+                newGlyphs = new Array();
                 _textFields = new Array();
             }
 
