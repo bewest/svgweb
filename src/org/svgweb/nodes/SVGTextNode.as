@@ -28,6 +28,7 @@ package org.svgweb.nodes
     import flash.display.Sprite;
     import flash.display.DisplayObject;
     import flash.events.Event;
+    import flash.geom.Matrix;
     import flash.text.TextField;
     import flash.text.TextFieldAutoSize;
     import flash.text.TextFormat;
@@ -194,6 +195,28 @@ package org.svgweb.nodes
             // scale the TextField to the required size
             textField.scaleX = fontScale;
             textField.scaleY = fontScale;
+
+            // Issue 158: Native fonts do not display if skewed or
+            // rotated. So, we need to use the rotationZ=0 trick
+            // to convert to a bitmap, otherwise the text disappears.
+            // Note we need to check the parents for transforms also.
+            var svgNode:SVGNode = this;
+            var concatMatrix:Matrix = new Matrix();
+            var oldMatrix:Matrix;
+            while (svgNode) {
+                if (svgNode.getAttribute('transform') != null) {
+                    oldMatrix = this.parseTransform(svgNode.getAttribute('transform'));
+                    oldMatrix.concat(concatMatrix);
+                    concatMatrix = oldMatrix;
+                }
+                if (svgNode is SVGSVGNode) {
+                    break;
+                }
+                svgNode = svgNode.svgParent;
+            }
+            if (concatMatrix.b != 0 || concatMatrix.c != 0) {
+                textField.rotationZ = 0;
+            }
 
             // add textField to _textFields
             _textFields.push(textField);

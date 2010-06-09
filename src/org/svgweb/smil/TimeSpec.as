@@ -18,9 +18,9 @@
 
 package org.svgweb.smil
 {
+    import org.svgweb.utils.SVGColors;
     import org.svgweb.utils.SVGUnits;
     import org.svgweb.core.SVGTimedNode;
-    import mx.utils.StringUtil;
 
     public class TimeSpec
     {
@@ -87,16 +87,16 @@ package org.svgweb.smil
 
                 if (eventSpec.indexOf("+") != -1) {
                     eventParts = eventSpec.split(/\+/);
-                    eventName =  StringUtil.trim(eventParts[0]);
+                    eventName =  SVGColors.trim(eventParts[0]);
                     offset=SVGUnits.parseTimeVal(eventParts[1]);
                 }
                 else if (eventSpec.indexOf("-") != -1) {
                     eventParts = eventSpec.split(/-/);
-                    eventName =  StringUtil.trim(eventParts[0]);
+                    eventName =  SVGColors.trim(eventParts[0]);
                     offset= -1*SVGUnits.parseTimeVal(eventParts[1]);
                 }
                 else {
-                    eventName =  StringUtil.trim(eventSpec);
+                    eventName =  SVGColors.trim(eventSpec);
                     offset= 0;
                 }
 

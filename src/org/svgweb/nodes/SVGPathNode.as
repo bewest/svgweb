@@ -21,8 +21,8 @@ package org.svgweb.nodes
 {
     import org.svgweb.utils.EllipticalArc;
     import org.svgweb.core.SVGNode;
+    import org.svgweb.utils.SVGColors;
     
-    import mx.utils.StringUtil;
     
     public class SVGPathNode extends SVGNode
     {        
@@ -57,7 +57,7 @@ package org.svgweb.nodes
             //var totalTime:int = new Date().getTime();
             
             var data:String = this.getAttribute('d');
-            data = StringUtil.trim(data);
+            data = SVGColors.trim(data);
             
             // In the algorithm below, we are doing a few things. It is
             // unfortunately complicated but it was found to be the primary

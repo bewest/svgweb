@@ -19,7 +19,7 @@
 
 package org.svgweb.nodes
 {
-    import mx.utils.StringUtil;
+    import org.svgweb.utils.SVGColors;
     import org.svgweb.core.SVGNode;
     
     public class SVGPolygonNode extends SVGNode
@@ -35,7 +35,7 @@ package org.svgweb.nodes
             
             this._graphicsCommands = new  Array();
             
-            var pointsString:String = StringUtil.trim(this.getAttribute('points',''));
+            var pointsString:String = SVGColors.trim(this.getAttribute('points',''));
             
             pointsString = pointsString.replace(/\s+/sg,","); //Replace spaces with a comma
             pointsString = pointsString.replace(/,{2,}/sg,","); // Remove any extra commas
