@@ -101,7 +101,7 @@
           svgSetXYWH(video, -vidw/2, -vidh/2, vidw, vidh);
           video.setAttribute("type", "video/flv");
           video.setAttribute("repeatCount", "indefinite");
-          video.setAttributeNS(XLINK, "href", url);
+          video.setAttributeNS(XLINK, "xlink:href", url);
           g.appendChild(video);
 
           var rect = document.createElementNS(SVG, "rect");
