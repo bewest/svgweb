@@ -154,7 +154,7 @@ package org.svgweb.nodes
             }
 
             if (fontFamily != null) {
-                fontFamily = fontFamily.replace("'", '');
+                fontFamily = fontFamily.replace(/'/g, '');
                 textFormat.font = fontFamily;
             }
             // choose a (nominal) size
