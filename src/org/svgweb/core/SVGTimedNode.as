@@ -571,8 +571,8 @@ package org.svgweb.core
 
         public function endElementAt(offset:Number):Boolean {
             // XXX return value doesn't account for processing of pending time instances
-            var docTime:Number = this.svgRoot.getDocTime() + offset;
-            if (docTime < currentBeginTime) return(false);  // negative offset could cause this
+            var docTime:Number = this.svgRoot.getDocTime();
+            if ( (docTime + offset) < currentBeginTime) return(false);  // negative offset could cause this
             addEndInstance(docTime + offset);
             return this.active;
         }
