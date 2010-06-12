@@ -1922,8 +1922,7 @@ extend(SVGWeb, {
           current = null;
         } else {
           current = current.parentNode;
-          if (current.nodeType != 1
-              || current.nodeName.toUpperCase() == 'SVG') {
+          if (current.nodeType != 1) {
             current = null;
           }
         }
@@ -4966,9 +4965,10 @@ extend(_Node, {
     }
     
     // are we the root SVG node when being embedded by an SVG SCRIPT?
-    if (this.nodeName == 'svg' && this._handler.type == 'script') {
+    // If _handler is not set, this element is a nested svg element.
+    if (this.nodeName == 'svg' && this._handler && this._handler.type == 'script') {
       return this._handler.flash.parentNode;
-    } else if (this.nodeName == 'svg' && this._handler.type == 'object') {
+    } else if (this.nodeName == 'svg' && this._handler && this._handler.type == 'object') {
       // if we are the root SVG node and are embedded by an SVG OBJECT, then
       // our parent is a #document object
       return this._handler.document;
@@ -5024,7 +5024,8 @@ extend(_Node, {
     }
     
     // are we the root SVG object when being embedded by an SVG SCRIPT?
-    if (this.nodeName == 'svg' && this._handler.type == 'script') {
+    // If _handler is not set, this element is a nested svg element.
+    if (this.nodeName == 'svg' && this._handler && this._handler.type == 'script') {
       var sibling = this._handler.flash.previousSibling;
       // is our previous sibling also an SVG object?
       if (sibling && sibling.nodeType == 1 && sibling.className 
@@ -5057,7 +5058,8 @@ extend(_Node, {
     }
       
     // are we the root SVG object when being embedded by an SVG SCRIPT?
-    if (this.nodeName == 'svg' && this._handler.type == 'script') {
+    // If _handler is not set, this element is a nested svg element.
+    if (this.nodeName == 'svg' && this._handler && this._handler.type == 'script') {
       var sibling = this._handler.flash.nextSibling;
       
       // is our previous sibling also an SVG object?
@@ -5771,6 +5773,7 @@ function _Element(nodeName, prefix, namespaceURI, nodeXML, handler,
     // track .style changes; 
     if (isIE 
         && this._attached 
+        && this._handler
         && this._handler.type == 'script' 
         && this.nodeName == 'svg') {
       // do nothing now -- if we are IE and are being embedded with an
@@ -5783,6 +5786,7 @@ function _Element(nodeName, prefix, namespaceURI, nodeXML, handler,
     // handle style changes for HTCs
     if (isIE 
         && this._attached
+        && this._handler
         && this._handler.type == 'script' 
         && this.nodeName == 'svg') {
       // do nothing now - if we are IE we delay creating the style property
@@ -6560,8 +6564,8 @@ extend(_Style, {
       
       // root SVGSVGElement nodes have some extra properties from being in an
       // HTML context
-      // FIXME: Make sure nested SVG nodes don't hit this code
-      if (this._element.nodeName == 'svg') {
+      // If _handler is not set, this element is a nested svg element.
+      if (this._element.nodeName == 'svg' && this._element._handler) {
         for (var i = 0; i < _Style._allRootStyles.length; i++) {
           var styleName = _Style._allRootStyles[i];
           this._defineAccessor(styleName);
