@@ -761,33 +761,12 @@ package org.svgweb.core
         }
 
         protected function draw():void {
-            var firstX:Number = 0;
-            var firstY:Number = 0;
-
             for each (var command:Array in this._graphicsCommands) {
                 switch(command[0]) {
-                    case "SF":
+                    case "PATH":
                         this.nodeBeginFill();
-                        break;
-                    case "EF":
-                        drawSprite.graphics.lineStyle(0, 0, 0);
+                        drawSprite.graphics.drawPath(command[1].commands, command[1].data, command[1].winding);
                         this.nodeEndFill();
-                        break;
-                    case "M":
-                        drawSprite.graphics.lineStyle(0, 0, 0);
-                        drawSprite.graphics.moveTo(command[1], command[2]);
-                        firstX = command[1];
-                        firstY = command[2];
-                        this.nodeBeginStroke();
-                        break;
-                    case "L":
-                        drawSprite.graphics.lineTo(command[1], command[2]);
-                        break;
-                    case "C":
-                        drawSprite.graphics.curveTo(command[1], command[2],command[3], command[4]);
-                        break;
-                    case "Z":
-                        drawSprite.graphics.lineTo(firstX, firstY);
                         break;
                     case "LINE":
                         this.nodeBeginFill();

@@ -22,6 +22,8 @@ package org.svgweb.nodes
     import org.svgweb.utils.SVGColors;
     import org.svgweb.core.SVGNode;
 
+    import flash.display.GraphicsPath;
+    import flash.display.GraphicsPathWinding;
     
     public class SVGPolylineNode extends SVGNode
     {        
@@ -35,6 +37,10 @@ package org.svgweb.nodes
         protected override function generateGraphicsCommands():void {
             
             this._graphicsCommands = new  Array();
+            var fillRule:String = this.getStyleOrAttr('fill-rule', 'nonzero');
+            var path:GraphicsPath = new GraphicsPath(new Vector.<int>(), new Vector.<Number>(),
+                                                     fillRule=='evenodd' ? GraphicsPathWinding.EVEN_ODD
+                                                                         : GraphicsPathWinding.NON_ZERO);
             
             var pointsString:String = SVGColors.trim(this.getAttribute('points',''));
             
@@ -53,17 +59,15 @@ package org.svgweb.nodes
                 pY = points[i + 1];    
                             
                 if (i == 0) {
-                    this._graphicsCommands.push(['SF']);
-                    this._graphicsCommands.push(['M', pX, pY]);
-                }
-                else if (i == (points.length - 2)) {
-                    this._graphicsCommands.push(['L', pX, pY]);
-                    this._graphicsCommands.push(['EF']);
+                    path.moveTo(pX, pY);
                 }
                 else {
-                    this._graphicsCommands.push(['L', pX, pY]);
-                }   
-                
+                    path.lineTo(pX, pY);
+                }                
+                // If at the end, push the drawing command
+                if (i == (points.length - 2)) {
+                    this._graphicsCommands.push(['PATH', path]);
+                }
                 //Width/height calculations for gradients
                 this.setXMinMax(pX);
                 this.setYMinMax(pY);

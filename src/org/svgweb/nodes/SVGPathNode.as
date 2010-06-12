@@ -23,6 +23,8 @@ package org.svgweb.nodes
     import org.svgweb.core.SVGNode;
     import org.svgweb.utils.SVGColors;
     
+    import flash.display.GraphicsPath;
+    import flash.display.GraphicsPathWinding;
     
     public class SVGPathNode extends SVGNode
     {        
@@ -34,6 +36,8 @@ package org.svgweb.nodes
 
         private var lastCurveControlX:Number;
         private var lastCurveControlY:Number;
+
+        private var path:GraphicsPath;
         
         public function SVGPathNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
             super(svgRoot, xml, original);
@@ -138,7 +142,11 @@ package org.svgweb.nodes
             //var startTime:int = new Date().getTime();
             //var pieceTime:int;
             this._graphicsCommands = new Array();
-            
+
+            var fillRule:String = this.getStyleOrAttr('fill-rule', 'nonzero');
+            this.path = new GraphicsPath(new Vector.<int>(), new Vector.<Number>(),
+                                         fillRule=='evenodd' ? GraphicsPathWinding.EVEN_ODD
+                                                             : GraphicsPathWinding.NON_ZERO);
             var command:String;
 
             var lineAbs:Boolean;
@@ -148,8 +156,6 @@ package org.svgweb.nodes
             var szSegs:Array = this.normalizeSVGData();
             //increment('generateGraphicsCommands_normalizeSVGData', (new Date().getTime() - pieceTime));   
             
-            this._graphicsCommands.push(['SF']);
-
             var firstMove:Boolean = true;
             var loopTime:int = new Date().getTime();
             var szSegsLength:int = szSegs.length;
@@ -244,14 +250,14 @@ package org.svgweb.nodes
                         break;
                 }            
             }        
-            this._graphicsCommands.push(['EF']); 
+            this._graphicsCommands.push(['PATH', this.path]); 
             
             //increment('generateGraphicsCommands_totalLoop', (new Date().getTime() - loopTime)); 
             //increment('generateGraphicsCommands_path', (new Date().getTime() - startTime));   
         }
         
         private function closePath():void {
-            this._graphicsCommands.push(['Z']);
+            this.path.lineTo(this.startX, this.startY);
 
             this.currentX = this.startX;
             this.currentY = this.startY;
@@ -263,7 +269,7 @@ package org.svgweb.nodes
                 y += this.currentY;
             }
 
-            this._graphicsCommands.push(['M', x, y]);
+            this.path.moveTo(x, y);
             this.currentX = x;
             this.currentY = y;
             
@@ -304,7 +310,7 @@ package org.svgweb.nodes
                 this.currentX += x;
                 this.currentY += y;                
             }            
-            this._graphicsCommands.push(['L', this.currentX, this.currentY]);
+            this.path.lineTo(this.currentX, this.currentY);
 
             this.lastCurveControlX = this.currentX;
             this.lastCurveControlY = this.currentY;        
@@ -321,7 +327,7 @@ package org.svgweb.nodes
             }
                         
             EllipticalArc.drawArc(rx, ry, xAxisRotation, Boolean(largeArcFlag), Boolean(sweepFlag),
-                                  x, y, this.currentX, this.currentY, this._graphicsCommands);
+                                  x, y, this.currentX, this.currentY, this.path);
             
             this.currentX = x;
             this.currentY = y;
@@ -359,7 +365,7 @@ package org.svgweb.nodes
                 y+= this.currentY;
             }
             
-            this._graphicsCommands.push(['C',x1, y1, x, y]);    
+            this.path.curveTo(x1, y1, x, y);
             
             this.currentX = x;
             this.currentY = y;
@@ -437,10 +443,10 @@ package org.svgweb.nodes
             var Pa_3:Object = getMiddle(Pc_3, Pc_4);
             
             // draw the four quadratic subsegments
-            this._graphicsCommands.push(['C', Pc_1.x, Pc_1.y, Pa_1.x, Pa_1.y]);
-            this._graphicsCommands.push(['C', Pc_2.x, Pc_2.y, Pa_2.x, Pa_2.y]);
-            this._graphicsCommands.push(['C', Pc_3.x, Pc_3.y, Pa_3.x, Pa_3.y]);
-            this._graphicsCommands.push(['C', Pc_4.x, Pc_4.y, P3.x, P3.y]);        
+            this.path.curveTo(Pc_1.x, Pc_1.y, Pa_1.x, Pa_1.y);
+            this.path.curveTo(Pc_2.x, Pc_2.y, Pa_2.x, Pa_2.y);
+            this.path.curveTo(Pc_3.x, Pc_3.y, Pa_3.x, Pa_3.y);
+            this.path.curveTo(Pc_4.x, Pc_4.y, P3.x, P3.y);
 
             this.currentX = x;
             this.currentY = y;

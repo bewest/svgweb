@@ -20,6 +20,8 @@
 
 package org.svgweb.utils
 {
+    import flash.display.GraphicsPath;
+
     /**
     * Functions from degrafa
     * com.degrafa.geometry.utilities.ArcUtils
@@ -140,7 +142,8 @@ package org.svgweb.utils
          * @private
          * Create quadratic circle graphics commands from an elliptical arc
          **/
-        private static function drawEllipticalArc(x:Number, y:Number, startAngle:Number, arc:Number, radius:Number,yRadius:Number, xAxisRotation:Number, commandStack:Array):void
+        private static function drawEllipticalArc(x:Number, y:Number, startAngle:Number, arc:Number,
+                                    radius:Number, yRadius:Number, xAxisRotation:Number, path:GraphicsPath):void
         {
             // Circumvent drawing more than is needed
             if (Math.abs(arc)>360) 
@@ -188,7 +191,7 @@ package org.svgweb.utils
                     x1 = x + (radius * cosangle * cosbeta - yRadius * sinangle * sinbeta);
                     y1 = y + (radius * cosangle * sinbeta + yRadius * sinangle * cosbeta);
 
-                    commandStack.push(["C", cx, cy, x1, y1]);
+                    path.curveTo(cx, cy, x1, y1);
                 }
             }
         }
@@ -214,12 +217,12 @@ package org.svgweb.utils
          * 
          * @param LastPointY starting y value of arc
          * 
-         * @param graphicCommands array to hold graphics commands
+         * @param path GraphicsPath to hold graphics commands
          **/ 
         public static function drawArc(rx:Number, ry:Number,angle:Number,largeArcFlag:Boolean,sweepFlag:Boolean,
-                                                x:Number,y:Number,LastPointX:Number, LastPointY:Number, graphicCommands:Array):void {
+                                                x:Number,y:Number,LastPointX:Number, LastPointY:Number, path:GraphicsPath):void {
             var ellipticalArc:Object = EllipticalArc.computeSvgArc(rx, ry, angle, largeArcFlag, sweepFlag, x, y, LastPointX, LastPointY);    
-            EllipticalArc.drawEllipticalArc(ellipticalArc.cx, ellipticalArc.cy, ellipticalArc.startAngle, ellipticalArc.arc, ellipticalArc.radius, ellipticalArc.yRadius, ellipticalArc.xAxisRotation, graphicCommands);
+            EllipticalArc.drawEllipticalArc(ellipticalArc.cx, ellipticalArc.cy, ellipticalArc.startAngle, ellipticalArc.arc, ellipticalArc.radius, ellipticalArc.yRadius, ellipticalArc.xAxisRotation, path);
                                                     
         }
         
