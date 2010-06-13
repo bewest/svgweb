@@ -47,6 +47,9 @@
          rdf:about=""
          id="myCCWork"><dc:format>image/svg+xml</dc:format><dc:type id="myDCType"
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata>
+  <svg id="nestedSVG" > 
+  <rect id="nestedRect"/>
+  </svg>
   <script type="text/javascript"><![CDATA[
     var sodipodi_ns = 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd';
     var dc_ns = "http://purl.org/dc/elements/1.1/";
@@ -193,6 +196,7 @@
       testSuspendRedraw();
       testDocumentFragment();
       testCloneNode();
+      testNestedSVGElements();
       
       // print out what should be visible after all tests
       top.console.log('2ND IMAGE: There should be blue text saying '
@@ -1400,7 +1404,7 @@
       rects = document.getElementsByTagNameNS(svgns, 'rect');
       top.assertExists("doc.getElementsByTagNameNS(svgns, 'rect')", rects);
       top.assertEquals("doc.getElementsByTagNameNS(svgns, 'rect').length "
-                  + "should be 5", 5, rects.length);
+                  + "should be 6", 6, rects.length);
 
       sodipodi = document.getElementsByTagNameNS(sodipodi_ns, '*');
       top.assertExists("doc.getElementsByTagNameNS(sodipodi_ns, '*')", sodipodi);
@@ -3275,6 +3279,14 @@
                  (clone.childNodes[0] != textNode));
       top.console.log('SECOND IMAGE: You should see the text '
                       + '"Deleted then added again" in yellow');
+    }
+
+    function testNestedSVGElements() {
+      top.console.log('Inside SVG OBJECT: Testing nested SVG Elements...');
+      var svg = document.getElementById('nestedSVG');
+      top.assertExists('nestedSVG element should exist', svg);
+      var rect = document.getElementById('nestedRect');
+      top.assertExists('nestedRect element should exist', rect);
     }
   ]]></script>
   <g
