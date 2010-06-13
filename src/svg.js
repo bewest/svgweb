@@ -3065,6 +3065,8 @@ extend(FlashHandler, {
     // create proxy objects representing the Document and SVG root; these
     // kick off creating the Flash internally
     this.document = new _Document(this._xml, this);
+    // Note that documentElement starts off as a fake node and transforms
+    // to a proxy node in onRenderingFinished.
     this.document.documentElement = 
             new _SVGSVGElement(this._xml.documentElement, this._svgString,
                                this._scriptNode, this);
@@ -4965,13 +4967,16 @@ extend(_Node, {
     }
     
     // are we the root SVG node when being embedded by an SVG SCRIPT?
-    // If _handler is not set, this element is a nested svg element.
-    if (this.nodeName == 'svg' && this._handler && this._handler.type == 'script') {
-      return this._handler.flash.parentNode;
-    } else if (this.nodeName == 'svg' && this._handler && this._handler.type == 'object') {
-      // if we are the root SVG node and are embedded by an SVG OBJECT, then
-      // our parent is a #document object
-      return this._handler.document;
+    // If _handler is not set, this element is a detached svg element.
+    if (this._handler &&
+        this._getProxyNode() == this._handler.document.rootElement) {
+      if (this._handler.type == 'script') {
+        return this._handler.flash.parentNode;
+      } else if (this._handler.type == 'object') {
+        // if we are the root SVG node and are embedded by an SVG OBJECT, then
+        // our parent is a #document object
+        return this._handler.document;
+      }
     }
     
     var parentXML = this._nodeXML.parentNode;
@@ -5025,7 +5030,9 @@ extend(_Node, {
     
     // are we the root SVG object when being embedded by an SVG SCRIPT?
     // If _handler is not set, this element is a nested svg element.
-    if (this.nodeName == 'svg' && this._handler && this._handler.type == 'script') {
+    if (this._handler && 
+        this._getProxyNode() == this._handler.document.rootElement
+                      && this._handler.type == 'script') {
       var sibling = this._handler.flash.previousSibling;
       // is our previous sibling also an SVG object?
       if (sibling && sibling.nodeType == 1 && sibling.className 
@@ -5059,7 +5066,9 @@ extend(_Node, {
       
     // are we the root SVG object when being embedded by an SVG SCRIPT?
     // If _handler is not set, this element is a nested svg element.
-    if (this.nodeName == 'svg' && this._handler && this._handler.type == 'script') {
+    if (this._handler &&
+        this._getProxyNode() == this._handler.document.rootElement
+                      && this._handler.type == 'script') {
       var sibling = this._handler.flash.nextSibling;
       
       // is our previous sibling also an SVG object?
@@ -5427,9 +5436,10 @@ extend(_Node, {
             current = current._fakeNode;
           }
 
-          if (current && 
-                  (current.nodeType != 1 || 
-                   current.nodeName.toUpperCase() == 'SVG')) {
+          // Do not traverse non-elements or retrace up past the root
+          if (current && ((current.nodeType != 1)
+              || (current._handler
+                  && current._getProxyNode() == current._handler.document.rootElement ))) { 
             current = null;
           }
         }
@@ -6565,7 +6575,8 @@ extend(_Style, {
       // root SVGSVGElement nodes have some extra properties from being in an
       // HTML context
       // If _handler is not set, this element is a nested svg element.
-      if (this._element.nodeName == 'svg' && this._element._handler) {
+      if (this._element._handler
+            && this._element._getProxyNode() == this._element._handler.document.rootElement) {
         for (var i = 0; i < _Style._allRootStyles.length; i++) {
           var styleName = _Style._allRootStyles[i];
           this._defineAccessor(styleName);

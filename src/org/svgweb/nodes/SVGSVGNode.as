@@ -322,11 +322,19 @@ package org.svgweb.nodes
         }
         
         public function registerGUID(node:SVGNode):void {
-            _guidLookup[node.guid] = node;
+            if (parentSVGRoot) {
+                parentSVGRoot.registerGUID(node);
+            } else {
+                _guidLookup[node.guid] = node;
+            }
         }
 
         public function unregisterGUID(node:SVGNode):void {
-            delete _guidLookup[node.guid];
+            if (parentSVGRoot) {
+                parentSVGRoot.unregisterGUID(node);
+            } else {
+                delete _guidLookup[node.guid];
+            }
         }
 
         override protected function registerSelf():void {
