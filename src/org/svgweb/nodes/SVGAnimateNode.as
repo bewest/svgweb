@@ -84,8 +84,8 @@ package org.svgweb.nodes
             }
         }
 
-        override protected function onSVGLoad(evt:Event):void {
-            super.onSVGLoad(evt);
+        override protected function initialize():void {
+            super.initialize();
             if (targetNode) {
                 targetNode.addAnimation(this);
             }

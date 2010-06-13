@@ -114,6 +114,18 @@ package org.svgweb.core
         }
 
         protected function onSVGLoad(evt:Event):void {
+            initialize();
+        }
+		
+        override protected function onAdded():void {
+            // If we have been added to the SVG tree AFTER it has already been
+            // loaded, then we need to immediately initialize ourselves
+            if (this.svgRoot && this.svgRoot.isLoaded()) {
+                initialize();
+            }
+        }
+        
+        protected function initialize():void {
             // Process the timing parameters
             parseParameters();
         }

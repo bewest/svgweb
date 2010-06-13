@@ -1935,6 +1935,7 @@ package org.svgweb.core
                 this.invalidateDisplay();
             }
 
+            node.onRemoved();
             
             return node;
         }
@@ -1964,6 +1965,7 @@ package org.svgweb.core
                 viewBoxSprite.addChildAt(newChild.topSprite, displayPosition);
                 this.invalidateDisplay();
             }
+            newChild.onAdded();
         }
         
         public function addSVGChildAt(child:SVGNode, index:int):SVGNode {
@@ -1997,7 +1999,22 @@ package org.svgweb.core
                 }
                 viewBoxSprite.addChildAt(child.topSprite, displayIndex);
             }
+            child.onAdded();
             return child;
+        }
+        
+        /**
+         * Called when a node is added to its parent.
+         */
+        protected function onAdded():void {
+            
+        }
+
+        /**
+         * Called when a node is removed from its parent.
+         */
+        protected function onRemoved():void {
+            
         }
 
         /**
@@ -2050,6 +2067,7 @@ package org.svgweb.core
                 this.viewBoxSprite.addChild(child.topSprite);
                 child.svgRoot.renderPending();
             }
+            child.onAdded();
         }
 
         public function addSVGChildMask(child:SVGNode):void {
