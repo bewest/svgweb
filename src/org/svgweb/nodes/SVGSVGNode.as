@@ -300,6 +300,35 @@ package org.svgweb.nodes
             }
         }
         
+        public function isLoaded():Boolean {
+            if (parentSVGRoot) {
+                return parentSVGRoot.isLoaded();
+            } else {
+                return firedOnLoad;
+            }
+        }
+        
+        override public function addEventListener (type:String, listener:Function, useCapture:Boolean = false,
+                                                   priority:int = 0, useWeakReference:Boolean = false):void {
+            if (parentSVGRoot && (type == SVGEvent.SVGLoad ||
+                                  type == SVGEvent._SVGDocTimeUpdate ||
+                                  type == SVGEvent._SVGDocTimeSeek)) {
+                parentSVGRoot.addEventListener(type, listener, useCapture, priority, useWeakReference);
+            } else {
+                super.addEventListener(type, listener, useCapture, priority, useWeakReference);
+            }
+        }
+        
+        override public function removeEventListener (type:String, listener:Function, useCapture:Boolean = false):void {
+            if (parentSVGRoot && (type == SVGEvent.SVGLoad ||
+                                  type == SVGEvent._SVGDocTimeUpdate ||
+                                  type == SVGEvent._SVGDocTimeSeek)) {
+                parentSVGRoot.removeEventListener(type, listener, useCapture);
+            } else {
+                super.removeEventListener(type, listener, useCapture);
+            }
+        }
+        
         public function unregisterNode(node:SVGNode):void {
             if (this.parentSVGRoot) {
                 this.parentSVGRoot.unregisterNode(node);
@@ -310,13 +339,17 @@ package org.svgweb.nodes
         }
         
         public function registerID(node:SVGNode):void {
-            if (node.id) {
+            if (parentSVGRoot) {
+                parentSVGRoot.registerID(node);
+            } else if (node.id) {
                 _idLookup[node.id] = node;
             }
         }
 
         public function unregisterID(node:SVGNode):void {
-            if (node.id) {
+            if (parentSVGRoot) {
+                parentSVGRoot.unregisterID(node);
+            } else if (node.id) {
                 delete _idLookup[node.id];
             }
         }
@@ -417,7 +450,9 @@ package org.svgweb.nodes
         }
 
         public function getNodeByGUID(guid:String):SVGNode {            
-            if (_guidLookup.hasOwnProperty(guid)) {
+            if (parentSVGRoot) {
+                return parentSVGRoot.getNodeByGUID(guid);
+            } else if (_guidLookup.hasOwnProperty(guid)) {
                 return _guidLookup[guid];
             }
             return null;
@@ -434,10 +469,10 @@ package org.svgweb.nodes
              }
             else {
                 _fonts[font.getFontFaceName()] = font;
-            }
 
-            for each(var node:SVGNode in fontListeners) {
-                node.onRegisterFont(font.getFontFaceName());
+                for each(var node:SVGNode in fontListeners) {
+                    node.onRegisterFont(font.getFontFaceName());
+                }
             }
          }
          
