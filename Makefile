@@ -9,6 +9,23 @@ SVGSTAGE='codinginparadise.org:~/codinginparadise.org/html/projects/svgweb-stagi
 # Whether to compress JavaScript
 COMPRESS=0
 
+# Handle different path delimiters in cygwin
+UNAME=$(shell uname)
+ifeq ($(findstring CYGWIN,$(UNAME)), CYGWIN)
+CLASSPATH_DELIMITER=\;
+else
+CLASSPATH_DELIMITER=:
+endif
+
+# Release name for context menu
+RELEASE_NAME=
+
+# Release number for context menu (defaults to current svn repos rev)
+RELEASE_NUMBER=$(shell svnversion)
+
+# Compiler constants for mxmlc command line
+COMPILER_CONSTANTS=-define=BUILD::releaseName,\'$(RELEASE_NAME)\' -define=BUILD::releaseNumber,\'$(RELEASE_NUMBER)\'
+
 # Whether to copy over tests to our build
 COPY_TESTS=0
 
@@ -42,24 +59,24 @@ build/COPYING.txt:
 
 build/src/svg.swf: src/org/svgweb/SVGViewerWeb.as src/org/svgweb/core/*.as src/org/svgweb/nodes/*.as src/org/svgweb/utils/*.as src/org/svgweb/smil/*.as
 	@echo Building svg.swf file...
-	(cd src/org/svgweb;mxmlc -output ../../../build/src/svg.swf -use-network=false -warnings=true -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../ -- SVGViewerWeb.as)
+	(cd src/org/svgweb;mxmlc $(COMPILER_CONSTANTS) -output ../../../build/src/svg.swf -use-network=false -warnings=true -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../ -- SVGViewerWeb.as)
 	cp build/src/svg.swf src/
 
 build/samples/flash-samples/svgflashtest.swf: src/org/svgweb/tests/SVGViewerFlashTest.as src/org/svgweb/core/*.as src/org/svgweb/nodes/*.as src/org/svgweb/utils/*.as src/org/svgweb/smil/*.as
 	@echo Building svgflashtest.swf file...
-	(cd src/org/svgweb/tests;mxmlc -output ../../../../build/samples/flash-samples/svgflashtest.swf -use-network=false -warnings=true -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- SVGViewerFlashTest.as)
+	(cd src/org/svgweb/tests;mxmlc $(COMPILER_CONSTANTS) -output ../../../../build/samples/flash-samples/svgflashtest.swf -use-network=false -warnings=true -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- SVGViewerFlashTest.as)
 
 build/samples/flex-samples/svgflextest.swf: src/org/svgweb/tests/svgflextest.mxml src/org/svgweb/SVGViewerFlex.as src/org/svgweb/core/*.as src/org/svgweb/nodes/*.as src/org/svgweb/utils/*.as src/org/svgweb/smil/*.as
 	@echo Building svgflex.swf file...
-	(cd src/org/svgweb/tests;mxmlc -output ../../../../build/samples/flex-samples/svgflextest.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- svgflextest.mxml)
+	(cd src/org/svgweb/tests;mxmlc $(COMPILER_CONSTANTS) -output ../../../../build/samples/flex-samples/svgflextest.swf -use-network=false -warnings=false -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../../ -- svgflextest.mxml)
 
 # SWF files for Issue 452 (http://code.google.com/p/svgweb/issues/detail?id=452)
 tests/non-licensed/perf/test6/Main.swf: tests/non-licensed/perf/test6/*.as
-	(cd tests/non-licensed/perf/test6;mxmlc -output Main.swf -use-network=false -warnings=true -compiler.strict=true -compiler.optimize=true -compiler.debug=true -compiler.source-path . -- Main.as)
+	(cd tests/non-licensed/perf/test6;mxmlc $(COMPILER_CONSTANTS) -output Main.swf -use-network=false -warnings=true -compiler.strict=true -compiler.optimize=true -compiler.debug=true -compiler.source-path . -- Main.as)
 
 tests/non-licensed/perf/test7/svg.swf: tests/non-licensed/perf/test7/src/org/svgweb/SVGViewerWeb.as tests/non-licensed/perf/test7/src/org/svgweb/core/*.as tests/non-licensed/perf/test7/src/org/svgweb/nodes/*.as tests/non-licensed/perf/test7/src/org/svgweb/utils/*.as tests/non-licensed/perf/test7/src/org/svgweb/smil/*.as
 	@echo Building test7/svg.swf file...
-	(cd tests/non-licensed/perf/test7/src/org/svgweb;mxmlc -output ../../svg.swf -use-network=false -warnings=true -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../ -- SVGViewerWeb.as)
+	(cd tests/non-licensed/perf/test7/src/org/svgweb;mxmlc $(COMPILER_CONSTANTS) -output ../../svg.swf -use-network=false -warnings=true -compiler.strict=true -compiler.optimize=true -compiler.debug=false -compiler.source-path ../../ -- SVGViewerWeb.as)
 
 ifeq ($(COMPRESS), 1)
 build/src/svg.js: src/svg.js
@@ -107,7 +124,7 @@ build/src/tools/webserver.jar: src/tools/webserver-src/WebServer.java src/tools/
 	mkdir -p build/src/tools/lib/
 	cp src/tools/lib/jetty-*.jar build/src/tools/lib/
 	cp src/tools/lib/servlet-*.jar build/src/tools/lib/
-	javac -Xlint:unchecked -classpath src/tools/lib/jetty-6.1.19.jar:src/tools/lib/jetty-util-6.1.19.jar:src/tools/lib/servlet-api-2.5-20081211.jar:src/tools/webserver-src/ -d build/src/tools/ src/tools/webserver-src/WebServer.java
+	javac -Xlint:unchecked -classpath src/tools/lib/jetty-6.1.19.jar$(CLASSPATH_DELIMITER)src/tools/lib/jetty-util-6.1.19.jar$(CLASSPATH_DELIMITER)src/tools/lib/servlet-api-2.5-20081211.jar$(CLASSPATH_DELIMITER)src/tools/webserver-src/ -d build/src/tools/ src/tools/webserver-src/WebServer.java
 	jar -cvfm build/src/tools/webserver.jar src/tools/webserver-src/MANIFEST.MF -C build/src/tools/ WebServer.class
 	rm -f build/src/tools/*.class
 

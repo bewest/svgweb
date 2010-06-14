@@ -92,13 +92,17 @@ package org.svgweb.core
         public function customizeContextMenu():void {
             context = new ContextMenu();
             
-            // Rev below is a Subversion keyword that will get replaced
-            // by the latest release number in our Subversion repository
-            // Issue 356: Show SVG Web Release Name and Revision in Right Click Menu
-            // http://code.google.com/p/svgweb/issues/detail?id=356
-            // We only show the release number for now
-            var releaseNumber:String = "$Rev$".replace(/Rev./g, "").replace(/\$/g, "");
-            var itemAbout:ContextMenuItem = new ContextMenuItem("About SVG Web (r" + releaseNumber + ")");
+            // Compiler constants are used to specify the release name and
+            // release number.  If the release name is not specified, none
+            // will be shown.  If the release number is not specified, the
+            // SVN revision of this source file is shown
+            var releaseName:String = ''+BUILD::releaseName;
+            if (releaseName.length!=0)
+                releaseName += ' ';
+            var releaseNumber:String = ''+BUILD::releaseNumber;
+            if (releaseNumber.length == 0)
+                releaseNumber = "$Rev$".replace(/[^0-9]/g, "");
+            var itemAbout:ContextMenuItem = new ContextMenuItem("About SVG Web (" + releaseName + "r" + releaseNumber + ")");
             var itemBug:ContextMenuItem = new ContextMenuItem("Report Issue with SVG Web ");
             itemAbout.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, aboutSVGWeb);
             itemBug.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, reportBug);
