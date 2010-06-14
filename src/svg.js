@@ -6189,7 +6189,7 @@ extend(_Element, {
     
     // When doing wildcards on local name and namespace text nodes
     // can also sometimes be included; filter them out
-    if (ns == '*' && localName == '*') {
+    if ((ns == '*' || ns == svgnsFake) && localName == '*') {
       var temp = [];
       for (var i = 0; i < results.length; i++) {
         if (results[i].nodeType == _Node.ELEMENT_NODE
