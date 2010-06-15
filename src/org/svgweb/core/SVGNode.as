@@ -810,7 +810,7 @@ package org.svgweb.core
             var fill_alpha:Number = 0;
 
             var fill:String = this.getStyleOrAttr('fill');
-            if ( (fill != 'none') && (fill != null) && (this.getStyleOrAttr('visibility') != 'hidden') ) {
+            if ( this.getStyleOrAttr('visibility') != 'hidden' ) {
                 var matches:Array = fill.match(/url\(#([^\)]+)\)/si);
                 if (matches != null && matches.length > 0) {
                     var fillName:String = matches[1];
@@ -831,10 +831,13 @@ package org.svgweb.core
                     if (fill == 'currentColor') {
                         fill = this.getStyleOrAttr('color');
                     }
-                    color_and_alpha = SVGColors.getColorAndAlpha(fill);
-                    color_core = color_and_alpha[0];
-                    color_alpha = color_and_alpha[1];
-                    fill_alpha = SVGColors.cleanNumber( this.getStyleOrAttr('fill-opacity') ) * color_alpha;
+                    // Still draw for fill 'none' in order to get mouse events.
+                    if (fill != 'none') {
+                        color_and_alpha = SVGColors.getColorAndAlpha(fill);
+                        color_core = color_and_alpha[0];
+                        color_alpha = color_and_alpha[1];
+                        fill_alpha = SVGColors.cleanNumber( this.getStyleOrAttr('fill-opacity') ) * color_alpha;
+                    }
                     drawSprite.graphics.beginFill(color_core, fill_alpha);
                 }
             }
