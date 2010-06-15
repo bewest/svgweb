@@ -1580,6 +1580,17 @@ package org.svgweb.core
                     this.applyViewBox();
                     break;
 
+                case 'pointer-events':
+                    if (value  == 'none') {
+                        topSprite.mouseEnabled = false;
+                        topSprite.mouseChildren = false;
+                    }
+                    else {
+                        topSprite.mouseEnabled = true;
+                        topSprite.mouseChildren = true;
+                    }
+                    break;
+
                 default:
                     this.invalidateDisplay();
                     if (    (name == 'display' || name == 'visibility')
