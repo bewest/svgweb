@@ -3148,7 +3148,8 @@ extend(FlashHandler, {
                 ctrlKey: msg.ctrlKey,
                 shiftKey: msg.shiftKey,
                 button: 0, // flash only supports left button
-                preventDefault: function() { this.returnValue=false; }
+                preventDefault: function() { this.returnValue=false; },
+                stopPropagation: function() { /* TODO */ }
               };
               
     var handlers = currentTarget._listeners[msg.eventType];
@@ -3180,7 +3181,8 @@ extend(FlashHandler, {
                     'ctrlKey: ' + msg.ctrlKey + ',\n' +
                     'shiftKey: ' + msg.shiftKey + ',\n' +
                     'button: 0,\n' +
-                    'preventDefault: function() { this.returnValue=false; }\n' +
+                    'preventDefault: function() { this.returnValue=false; },\n' +
+                    'stopPropagation: function() { }\n' +
                   '};\n';
 
         // prepare the code for the correct object context.
