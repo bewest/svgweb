@@ -3162,7 +3162,11 @@ extend(FlashHandler, {
           // then the function needs to be called in the 
           // proper sandbox (see below).
           // See tests/browser-tests/test_events.html tests 10, 38
-          listener.call(evt.currentTarget, evt);
+          if (typeof listener == 'object') {
+            listener.handleEvent.call(listener, evt);
+          } else {
+            listener.call(evt.currentTarget, evt);
+          }
         }
     }
     if (msg.scriptCode != null) {
@@ -3682,7 +3686,11 @@ NativeHandler._patchSvgFileAddEventListener = function(win, doc) {
     if (type.toLowerCase() != 'svgload') {
       _addEventListener(type, listener, useCapture);
     } else {
-      listener();
+      if (typeof listener == 'object') {
+        listener.handleEvent.call(listener, undefined);
+      } else {
+        listener();
+      }
     }
   }
   
@@ -4742,7 +4750,11 @@ extend(_Node, {
                                     }
                                   }
                                   // call the developer's listener now
-                                  listener(evt);
+                                  if (typeof listener == 'object') {
+                                    listener.handleEvent.call(listener, evt);
+                                  } else {
+                                    listener(evt);
+                                  }
                                 }
                               })(listener);
       // persist information about this listener so we can easily remove
