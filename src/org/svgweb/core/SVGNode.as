@@ -831,14 +831,21 @@ package org.svgweb.core
                     if (fill == 'currentColor') {
                         fill = this.getStyleOrAttr('color');
                     }
-                    // Still draw for fill 'none' in order to get mouse events.
+                    // Still may draw for fill 'none' in order to get mouse events.
                     if (fill != 'none') {
                         color_and_alpha = SVGColors.getColorAndAlpha(fill);
                         color_core = color_and_alpha[0];
                         color_alpha = color_and_alpha[1];
                         fill_alpha = SVGColors.cleanNumber( this.getStyleOrAttr('fill-opacity') ) * color_alpha;
                     }
-                    drawSprite.graphics.beginFill(color_core, fill_alpha);
+                    var pointerEvents:String = this.getStyleOrAttr('pointer-events');
+                    // Begin fill if there is a fill set, or if we need an invisible fill to get mouse events
+                    if ( (fill != 'none') ||
+                           (pointerEvents != null && pointerEvents != '' &&
+                            pointerEvents != 'visiblePainted') ) {
+                        drawSprite.graphics.beginFill(color_core, fill_alpha);
+                    }
+
                 }
             }
             nodeBeginStroke();
