@@ -3579,10 +3579,14 @@ NativeHandler._patchAddEventListener = function(root) {
   // so we can re-use this method (this is probably the source of the issue).
   // We later use this NativeHandler._objectAddEventListener cached instance 
   // inside of our custom addEventListener.
-  if (!NativeHandler._objectAddEventListener) {
+  if (root.nodeName == 'object' && !NativeHandler._objectAddEventListener) {
     NativeHandler._objectAddEventListener = root.addEventListener;
   }
-  root._addEventListener = NativeHandler._objectAddEventListener;
+  if (root.nodeName == 'object') {
+    root._addEventListener = NativeHandler._objectAddEventListener;
+  } else {
+    root._addEventListener = root.addEventListener
+  }
   root._onloadListeners = [];
   root.addEventListener = (function(self) {
     return function(type, f, useCapture) {
