@@ -2673,8 +2673,11 @@ FlashHandler._getElementsByTagNameNS = function(ns, localName) {
     a memory leak on IE. Note that this function runs in the global
     scope, so 'this' will not refer to our object instance but rather
     the window object. */
-FlashHandler._createElementNS = function(ns, qname) {
+FlashHandler._createElementNS = function(ns, qname, forSVG) {
   //console.log('createElementNS, ns='+ns+', qname='+qname);
+  if (forSVG === undefined) {
+     forSVG = false;
+  }
   if (ns === null || ns == 'http://www.w3.org/1999/xhtml') {
     if (isIE) {
       return document.createElement(qname);
@@ -2696,7 +2699,7 @@ FlashHandler._createElementNS = function(ns, qname) {
   // someone might be using this library on an XHTML page;
   // only use our overridden createElementNS if they are using
   // a namespace we have never seen before
-  if (!isIE) {
+  if (!isIE && !forSVG) {
     // Check namespaces from unattached svg elements
     if (svgweb._allSVGNamespaces['_' + ns]) {
       namespaceFound = true;
@@ -2731,7 +2734,14 @@ FlashHandler._createElementNS = function(ns, qname) {
   }
   
   if (prefix == 'xmlns' || !prefix) { // default SVG namespace
-    prefix = null;
+    // If this is a new namespace, we may have to assume the
+    // prefix from the qname
+    if (qname.indexOf(':') != -1) {
+      prefix=qname.substring(0, qname.indexOf(':'))
+    }
+    else {
+      prefix = null;
+    }
   }
 
   var node = new _Element(qname, prefix, ns);
@@ -8727,7 +8737,14 @@ extend(_Document, {
     var prefix = this._namespaces['_' + ns];
     
     if (prefix == 'xmlns' || !prefix) { // default SVG namespace
-      prefix = null;
+      // If this is a new namespace, we may have to assume the
+      // prefix from the qname
+      if (qname.indexOf(':') != -1) {
+        prefix=qname.substring(0, qname.indexOf(':'))
+      }
+      else {
+       prefix = null;
+      }
     }
 
     var node = new _Element(qname, prefix, ns);
