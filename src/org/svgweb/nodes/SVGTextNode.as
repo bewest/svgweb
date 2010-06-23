@@ -196,28 +196,6 @@ package org.svgweb.nodes
             textField.scaleX = fontScale;
             textField.scaleY = fontScale;
 
-            // Issue 158: Native fonts do not display if skewed or
-            // rotated. So, we need to use the rotationZ=0 trick
-            // to convert to a bitmap, otherwise the text disappears.
-            // Note we need to check the parents for transforms also.
-            var svgNode:SVGNode = this;
-            var concatMatrix:Matrix = new Matrix();
-            var oldMatrix:Matrix;
-            while (svgNode) {
-                if (svgNode.getAttribute('transform') != null) {
-                    oldMatrix = this.parseTransform(svgNode.getAttribute('transform'));
-                    oldMatrix.concat(concatMatrix);
-                    concatMatrix = oldMatrix;
-                }
-                if (svgNode is SVGSVGNode) {
-                    break;
-                }
-                svgNode = svgNode.svgParent;
-            }
-            if (concatMatrix.b != 0 || concatMatrix.c != 0) {
-                textField.rotationZ = 0;
-            }
-
             // add textField to _textFields
             _textFields.push(textField);
             // update current text position
@@ -399,6 +377,36 @@ package org.svgweb.nodes
             }
         }
 
+        override public function handleAttrChange(name:String, value:String, attrNamespace:String = null):void {
+            super.handleAttrChange(name, value, attrNamespace);
+            if (this._svgFont == null && name == 'transform' && isSkewed() ) {
+                invalidateDisplay();
+            }
+        }
+
+        public function isSkewed():Boolean {
+            // Issue 158: Native fonts do not display if skewed or
+            // rotated. So, we need to use the rotationZ=0 trick
+            // to convert to a bitmap, otherwise the text disappears.
+            // Note we need to check the parents for transforms also.
+            var svgNode:SVGNode = this;
+            var concatMatrix:Matrix = new Matrix();
+            var oldMatrix:Matrix;
+            while (svgNode) {
+                if (svgNode.getAttribute('transform') != null) {
+                    oldMatrix = this.parseTransform(svgNode.getAttribute('transform'));
+                    oldMatrix.concat(concatMatrix);
+                    concatMatrix = oldMatrix;
+                }
+                if (svgNode is SVGSVGNode) {
+                    break;
+                }
+                svgNode = svgNode.svgParent;
+            }
+            return (concatMatrix.b != 0 || concatMatrix.c != 0);
+        }
+
+
         override public function getAttribute(name:String, defaultValue:* = null,
                                               inherit:Boolean = true,
                                               applyAnimations:Boolean = true,
@@ -454,9 +462,13 @@ package org.svgweb.nodes
         override protected function draw():void {
             super.draw();
             removeOldTextFields();
+            var isSkewed:Boolean = isSkewed();
             // add the new textFields
             if (_textFields != null) {
                 for (var i:uint=0; i<this._textFields.length; i++) {
+                    if (isSkewed) {
+                        this._textFields[i].rotationZ = 0;
+                    }
                     drawSprite.addChild(this._textFields[i]);
                 }
             }
