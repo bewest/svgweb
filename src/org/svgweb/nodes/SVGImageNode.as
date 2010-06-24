@@ -149,6 +149,12 @@ package org.svgweb.nodes
             this.bitmapData = null;
             bitmap.opaqueBackground = null;
             bitmap.smoothing = true;
+            if (this.getStyleOrAttr('display') == 'none') {
+              this.topSprite.visible = false;
+            }
+            else {
+              this.topSprite.visible = true;
+            }
 
             drawSprite.addChild(bitmap);
             this.finishDrawNode();
@@ -209,6 +215,12 @@ package org.svgweb.nodes
             }
             if (name == 'x' || name == 'y') {
                 this.applyDefaultMask();
+            }
+            if (name == 'display' && value == 'none') {
+              this.topSprite.visible = false;
+            }
+            else {
+              this.topSprite.visible = true;
             }
         }
 
