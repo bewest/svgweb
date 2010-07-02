@@ -5440,8 +5440,10 @@ extend(_Node, {
         // this node was detached
         for (var i = 0; i < current._detachedListeners.length; i++) {
           var addMe = current._detachedListeners[i];
-          current.addEventListener(addMe.type, addMe.listener, 
+          if (addMe) {
+            current.addEventListener(addMe.type, addMe.listener, 
                                    addMe.useCapture, true);
+          }
         }
         current._detachedListeners = [];
       }
