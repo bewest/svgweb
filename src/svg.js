@@ -3998,9 +3998,12 @@ extend(_RedrawManager, {
     this._batch.push(method + ':' + message);
   },
   
-  suspendRedraw: function(ms) {
+  suspendRedraw: function(ms, notifyFlash) {
     if (ms === undefined) {
       throw 'Not enough arguments to suspendRedraw';
+    }
+    if (notifyFlash === undefined) {
+      notifyFlash = true;
     }
     
     // generate an ID
@@ -4022,16 +4025,21 @@ extend(_RedrawManager, {
     // there is a chance that suspendRedraw is called while the page
     // is unloading from a setTimout interval; surround everything with a 
     // try/catch block to prevent an exception from blocking page unload
-    try {
-      this._handler.flash.jsSuspendRedraw();
-    } catch (exp) {
-      console.log("suspendRedraw exception: " + exp);
+    if (notifyFlash) {
+      try {
+        this._handler.flash.jsSuspendRedraw();
+      } catch (exp) {
+        console.log("suspendRedraw exception: " + exp);
+      }
     }
-    
+      
     return id;
   },
   
-  unsuspendRedraw: function(id) {
+  unsuspendRedraw: function(id, notifiedFlash) {
+    if (notifiedFlash === undefined) {
+      notifiedFlash = true;
+    }
     
     var idx = -1;
     for (var i = 0; i < this._ids.length; i++) {
@@ -4054,7 +4062,11 @@ extend(_RedrawManager, {
     delete this._timeoutIDs['_' + id];
   
     // other suspendRedraws in effect or nothing to do?
-    if (this.isSuspended()) {
+    // Even if the length is zero, if flash was notified of the suspension
+    // then it needs to be notified of the unsuspension. If the caller
+    // knows flash was never notified of the suspension, they pass notifyFlash=false
+    // and we are free to exit here if there is no suspended work.
+    if (this.isSuspended() || (this._batch.length == 0 && !notifiedFlash)) {
       return;
     }
   
@@ -5394,13 +5406,12 @@ extend(_Node, {
     var suspendID;
     if (child.nodeType == _Node.DOCUMENT_FRAGMENT_NODE) {
       current = this._getFakeNode(child._getFirstChild());
-      
-      // turn on suspendRedraw so adding our event handlers happens in one go
-      if (attached && passThrough) {
-        suspendID = this._handler._redrawManager.suspendRedraw(10000);
-      }
     } else {
       current = child;
+    }
+    // turn on suspendRedraw so adding our event handlers happens in one go
+    if (attached && passThrough) {
+      suspendID = this._handler._redrawManager.suspendRedraw(10000, false);
     }
 
     while (current) {
@@ -5424,9 +5435,7 @@ extend(_Node, {
         } else if (this._handler.type == 'object') {
           current.ownerDocument = this._handler.document;
         }
-      }
-    
-      if (attached) {
+
         // register and send over any event listeners that were added while
         // this node was detached
         for (var i = 0; i < current._detachedListeners.length; i++) {
@@ -5482,11 +5491,9 @@ extend(_Node, {
       lastVisited._passThrough = passThrough;
     }
     
-    // turn off suspendRedraw if dealing with a DocumentFragment; all 
-    // event handlers should shoot through now
-    if (child.nodeType == _Node.DOCUMENT_FRAGMENT_NODE 
-        && attached && passThrough) {
-      this._handler._redrawManager.unsuspendRedraw(suspendID);
+    // turn off suspendRedraw. all event handlers should shoot through now
+    if (attached && passThrough) {
+      this._handler._redrawManager.unsuspendRedraw(suspendID, false);
     }
   },
   
