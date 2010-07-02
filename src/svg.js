@@ -2184,6 +2184,10 @@ extend(SVGWeb, {
       window.addEventListener = function(type, f, useCapture) {
         if (type.toLowerCase() == 'svgload') {
           svgweb.addOnLoad(f);
+        } else {
+          if (isIE && window.attachEvent) {
+            return window.attachEvent('on' + type, f);
+          }
         }
       }
     }
