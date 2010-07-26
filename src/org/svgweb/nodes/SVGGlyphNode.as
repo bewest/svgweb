@@ -73,6 +73,23 @@ package org.svgweb.nodes {
             }
             return null;
         }
-
+ 
+        override public function clone():SVGNode {
+            var node:SVGNode = super.clone();
+            generateGraphicsCommands();
+            SVGGlyphNode(node).setGraphicsCommands(_graphicsCommands);
+            return node;
+        }
+ 
+        protected override function generateGraphicsCommands():void {
+            if (this._graphicsCommands == null) {
+                super.generateGraphicsCommands();
+            }
+        }
+ 
+        public function setGraphicsCommands(cmds:Array):void {
+            _graphicsCommands = cmds;
+        }
+ 
     }
 }

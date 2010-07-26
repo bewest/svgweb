@@ -99,11 +99,15 @@ package org.svgweb.nodes
         
         protected override function onAddedToStage(event:Event):void {
             super.onAddedToStage(event);
-            topSprite.addEventListener(Event.ENTER_FRAME, updateAnimations);
+            if (!this.parentSVGRoot) {
+                topSprite.addEventListener(Event.ENTER_FRAME, updateAnimations);
+            }
         }
 
         protected override function onRemovedFromStage(event:Event):void {
-            topSprite.removeEventListener(Event.ENTER_FRAME, updateAnimations);
+            if (!this.parentSVGRoot) {
+                topSprite.removeEventListener(Event.ENTER_FRAME, updateAnimations);
+            }
             super.onRemovedFromStage(event);
         }
 
@@ -132,18 +136,13 @@ package org.svgweb.nodes
             this.lastFrameTime=getTimer();
         */
 
-            if (this.parentSVGRoot) {
-                this.parentSVGRoot.updateAnimations(event);
+            // Nothing to do while the document is loading
+            if (this.loadTime == -1) {
+                return;
             }
-            else {
-                // Nothing to do while the document is loading
-                if (this.loadTime == -1) {
-                    return;
-                }
-                var svgEvent:SVGEvent = new SVGEvent(SVGEvent._SVGDocTimeUpdate);
-                svgEvent.setDocTime( (getTimer() - this.loadTime) / 1000.0 );
-                this.dispatchEvent(svgEvent);
-            }
+            var svgEvent:SVGEvent = new SVGEvent(SVGEvent._SVGDocTimeUpdate);
+            svgEvent.setDocTime( (getTimer() - this.loadTime) / 1000.0 );
+            this.dispatchEvent(svgEvent);
         }
 
         public function seekToDocTime(docTime:Number):void {

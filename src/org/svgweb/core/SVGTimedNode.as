@@ -21,6 +21,7 @@ package org.svgweb.core
 {
     import org.svgweb.core.SVGNode;
     import org.svgweb.nodes.SVGSVGNode;
+    import org.svgweb.nodes.SVGVideoNode;
     import org.svgweb.utils.SVGUnits;
     import org.svgweb.events.SVGEvent;
     import org.svgweb.smil.TimeSpec;
@@ -128,6 +129,30 @@ package org.svgweb.core
         protected function initialize():void {
             // Process the timing parameters
             parseParameters();
+        }
+
+        override protected function drawNode(event:Event = null):void {
+            if (this is SVGVideoNode) {
+                return super.drawNode(event);
+            }
+            topSprite.visible = false;
+            if ( (topSprite.parent != null) && (this._invalidDisplay) ) {
+                this._invalidDisplay = false;
+
+                if (this._xml != null) {
+                    if (!this._parsedChildren) {
+                        this.parseChildren();
+                        this._parsedChildren = true;
+                    }
+                }
+                topSprite.removeEventListener(Event.ENTER_FRAME, drawNode);
+            }
+
+            if (!this._initialRenderDone && topSprite.parent) {
+                this._initialRenderDone = true;
+                this.svgRoot.renderFinished();
+            }
+
         }
 
         protected function onSVGDocTimeUpdate(event:Event):void {

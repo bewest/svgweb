@@ -439,26 +439,6 @@ package org.svgweb.nodes
             }
         }
         
-        override protected function setVisibility(visible:String, 
-                                                  recursive:Boolean = false):void {
-            // Surprisingly, this.alpha does not work as expected on
-            // text system fonts; a work around is needed. See
-            // http://oddhammer.com/tutorials/alpha_dynamic_text/
-            // for details. Basically you have to embed the text into
-            // a filter which turns it into a bitmap, and then apply the
-            // alpha!
-            if (visible == 'hidden') {
-                var filter:GlowFilter = new GlowFilter(0x000000, .1, 16, 16, 
-                                                       0, 3, false, false);
-                this.drawSprite.filters = new Array(filter);
-                this.drawSprite.alpha = 0;
-            }
-            else {
-                this.drawSprite.filters = new Array();
-                super.setVisibility(visible);
-            }
-        }
-        
         override protected function draw():void {
             super.draw();
             removeOldTextFields();

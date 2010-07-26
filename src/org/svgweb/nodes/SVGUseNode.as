@@ -63,18 +63,19 @@ package org.svgweb.nodes
                     // sets x, y, rotate, and opacity
                     this.setAttributes();
 
-                    if (this.getStyleOrAttr('display') == 'none') {
+                    if (this.getStyleOrAttr('display', null, false) == 'none') {
                         topSprite.visible = false;
                     }
                     else {
-                        this.generateGraphicsCommands();
-                        this.transformNode();
-                        this.draw();
-
-                        this.applyClipPathMask();
-                        this.applyViewBox();
-                        this.setupFilters();
+                        topSprite.visible = true;
                     }
+                    this.generateGraphicsCommands();
+                    this.transformNode();
+                    this.draw();
+
+                    this.applyClipPathMask();
+                    this.applyViewBox();
+                    this.setupFilters();
     
                 }
 

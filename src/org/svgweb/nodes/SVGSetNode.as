@@ -25,6 +25,7 @@ package org.svgweb.nodes
     {
         public function SVGSetNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
             super(svgRoot, xml, original);
+            doInvalidate = false;
         }
         
         override public function getAnimValue():String {

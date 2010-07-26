@@ -61,6 +61,7 @@ package org.svgweb.nodes
             //var totalTime:int = new Date().getTime();
             
             var data:String = this.getAttribute('d');
+            if (data == null) return null;  // space ' ' glyph can have missing path
             data = SVGColors.trim(data);
             
             // In the algorithm below, we are doing a few things. It is
@@ -142,20 +143,19 @@ package org.svgweb.nodes
             //var startTime:int = new Date().getTime();
             //var pieceTime:int;
             this._graphicsCommands = new Array();
+            //pieceTime = new Date().getTime();
+            var szSegs:Array = this.normalizeSVGData();
+            //increment('generateGraphicsCommands_normalizeSVGData', (new Date().getTime() - pieceTime));   
+            if (szSegs == null) return; // space ' ' glyph can have missing path.
+            
 
             var fillRule:String = this.getStyleOrAttr('fill-rule', 'nonzero');
             this.path = new GraphicsPath(new Vector.<int>(), new Vector.<Number>(),
                                          fillRule=='evenodd' ? GraphicsPathWinding.EVEN_ODD
                                                              : GraphicsPathWinding.NON_ZERO);
             var command:String;
-
             var lineAbs:Boolean;
             var isAbs:Boolean;
-
-            //pieceTime = new Date().getTime();
-            var szSegs:Array = this.normalizeSVGData();
-            //increment('generateGraphicsCommands_normalizeSVGData', (new Date().getTime() - pieceTime));   
-            
             var firstMove:Boolean = true;
             var loopTime:int = new Date().getTime();
             var szSegsLength:int = szSegs.length;

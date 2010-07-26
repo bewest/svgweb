@@ -55,6 +55,7 @@ package org.svgweb.nodes
               
         protected var animValue:String;
         protected var frozen:Boolean = false;
+        protected var doInvalidate:Boolean = true;
 
         public function SVGAnimateNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
             super(svgRoot, xml, original);
@@ -62,27 +63,16 @@ package org.svgweb.nodes
         
         override protected function onSVGDocTimeUpdate(event:Event):void {
             super.onSVGDocTimeUpdate(event);
+            // allow descendents to skip this code below
+            // primarily SVGSetNode
+            if (!doInvalidate) return;
 
             // Depending on the type of animation, trigger a redraw
-            // or just a transform update
+            // or a lesser update
             if (targetNode && this.active) {
-                switch (attributeName) {
-                    case 'transform':
-                    case 'viewBox':
-                    case 'x':
-                    case 'y':
-                    case 'rotation':
-                        targetNode.transformNode();
-                        targetNode.applyViewBox();
-                        break;
-                    default:
-                        targetNode.invalidateDisplay();
-                        targetNode.invalidateChildren();
-                        break;
+                targetNode.invalidateAttribute(attributeName);
                 }
-
             }
-        }
 
         override protected function initialize():void {
             super.initialize();
@@ -256,21 +246,13 @@ package org.svgweb.nodes
         override protected function timeIntervalStarted(docTime:Number):void {
             super.timeIntervalStarted(docTime);
             frozen = false;
-            targetNode.invalidateDisplay();
-            // transform changes do not require a redraw
-            if (attributeName != "transform") {
-                targetNode.invalidateChildren();
+            targetNode.invalidateAttribute(attributeName);
             }
-        }
 
         override protected function timeIntervalEnded(docTime:Number):void {
             super.timeIntervalEnded(docTime);
-            targetNode.invalidateDisplay();
-            // transform changes do not require a redraw
-            if (attributeName != "transform") {
-                targetNode.invalidateChildren();
+            targetNode.invalidateAttribute(attributeName);
             }
-        }
 
         protected function interpolate(fromVal:Number, toVal:Number,
                                        fraction:Number, keySpline:String,

@@ -46,6 +46,12 @@ package org.svgweb.core
                                                 'gradientTransform', 'opacity', 'mask', 'clip-path', 'href', 'target',
                                                 'viewBox', 'preserveAspectRatio'];
         
+        public static const INVALID_ATTR_NONE:uint        = 0;
+        public static const INVALID_ATTR_OPACITY:uint     = 1;
+        public static const INVALID_ATTR_TRANSFORM:uint   = 2;
+        public static const INVALID_ATTR_VISIBILITY:uint  = 4;
+        public static const INVALID_ATTR_DISPLAY:uint     = 8;
+
         public namespace xlink = 'http://www.w3.org/1999/xlink';
         public namespace svg = 'http://www.w3.org/2000/svg';
         public namespace aaa = 'http://www.w3.org/XML/1998/namespace';
@@ -69,6 +75,7 @@ package org.svgweb.core
 
         protected var _xml:XML;
         protected var _invalidDisplay:Boolean = false;
+        protected var _invalidAttribute:uint = INVALID_ATTR_NONE;
         protected var _id:String = null;
         protected var _graphicsCommands:Array;
         protected var _styles:Object;
@@ -423,39 +430,43 @@ package org.svgweb.core
                     }
                     
                     //pieceTime = new Date().getTime();
-                    if (this.getStyleOrAttr('display') == 'none') {
+                    if (this.getStyleOrAttr('display', null, false) == 'none') {
                         this.topSprite.visible = false;
                     }
                     else {
                         //increment('drawNode_getStyleOrAttr(display)', new Date().getTime() - pieceTime);
                         this.topSprite.visible = true;
-                        //pieceTime = new Date().getTime();
-                        // <svg> nodes get an implicit mask of their height and width
-                        if (this is SVGSVGNode) {
-                            this.applyDefaultMask();
-                        }
-                        //increment('drawNode_applyDefaultMask', new Date().getTime() - pieceTime);
-
-                        //pieceTime = new Date().getTime();
-                        this.generateGraphicsCommands();
-                        //increment('drawNode_generateGraphicsCommands', new Date().getTime() - pieceTime);
-                        //pieceTime = new Date().getTime();
-                        this.transformNode();
-                        //increment('drawNode_transformNode', new Date().getTime() - pieceTime);
-                        //pieceTime = new Date().getTime();
-                        this.draw();
-                        //increment('drawNode_draw', new Date().getTime() - pieceTime);
-
-                        //pieceTime = new Date().getTime();
-                        this.applyClipPathMask();
-                        //increment('drawNode_applyClipPathMask', new Date().getTime() - pieceTime);
-                        //pieceTime = new Date().getTime();
-                        this.applyViewBox();
-                        //increment('drawNode_applyViewBox', new Date().getTime() - pieceTime);
-                        //pieceTime = new Date().getTime();
-                        this.setupFilters();
-                        //increment('drawNode_setupFilters', new Date().getTime() - pieceTime);
                     }
+                    // Continue to draw even if display="none".  Animation of
+                    // display attribute independent of drawNode() relies on the
+                    // correct drawing state
+
+                    //pieceTime = new Date().getTime();
+                    // <svg> nodes get an implicit mask of their height and width
+                    if (this is SVGSVGNode) {
+                        this.applyDefaultMask();
+                    }
+                    //increment('drawNode_applyDefaultMask', new Date().getTime() - pieceTime);
+
+                    //pieceTime = new Date().getTime();
+                    this.generateGraphicsCommands();
+                    //increment('drawNode_generateGraphicsCommands', new Date().getTime() - pieceTime);
+                    //pieceTime = new Date().getTime();
+                    this.transformNode();
+                    //increment('drawNode_transformNode', new Date().getTime() - pieceTime);
+                    //pieceTime = new Date().getTime();
+                    this.draw();
+                    //increment('drawNode_draw', new Date().getTime() - pieceTime);
+
+                    //pieceTime = new Date().getTime();
+                    this.applyClipPathMask();
+                    //increment('drawNode_applyClipPathMask', new Date().getTime() - pieceTime);
+                    //pieceTime = new Date().getTime();
+                    this.applyViewBox();
+                    //increment('drawNode_applyViewBox', new Date().getTime() - pieceTime);
+                    //pieceTime = new Date().getTime();
+                    this.setupFilters();
+                    //increment('drawNode_setupFilters', new Date().getTime() - pieceTime);
                 }
                 
                 //pieceTime = new Date().getTime();
@@ -550,8 +561,10 @@ package org.svgweb.core
             //this.dbg('setVisibility, this='+this.xml.localName()+', visible='+visible+', recursive='+recursive);
             // ignore if we have our own visibility value and we are a recursive
             // call
-            if (drawSprite && (this.getStyleOrAttr('visibility', null, false) == null 
-                               || recursive == false) ) {
+            if (recursive && (this.getStyleOrAttr('visibility', null, false) != null)) {
+                return;
+            }
+            if (drawSprite) {
                 if (visible == 'visible') {
                     drawSprite.alpha = SVGColors.cleanNumber(this.getStyleOrAttr('opacity'));
                 } else {
@@ -560,6 +573,9 @@ package org.svgweb.core
             }
             
             // set on all our children
+            // ??? setting alpha on the node affects all the children
+            // setting alpha = 0 means all children are hidden, regardless
+            // of their own alpha values
             var child:SVGNode;
             for (var i:uint = 0; i < this.svgChildren.length; i++) {
                 child = this.svgChildren[i];
@@ -810,43 +826,43 @@ package org.svgweb.core
             var fill_alpha:Number = 0;
 
             var fill:String = this.getStyleOrAttr('fill');
-            if ( this.getStyleOrAttr('visibility') != 'hidden' ) {
-                var matches:Array = fill.match(/url\(#([^\)]+)\)/si);
-                if (matches != null && matches.length > 0) {
-                    var fillName:String = matches[1];
-                    this.svgRoot.addReference(this, fillName);
-                    var fillNode:SVGNode = this.svgRoot.getNode(fillName);
-                    if (!fillNode) {
-                         // this happens normally
-                         //this.dbg("Gradient " + fillName + " not (yet?) available for " + this.xml.@id);
-                    }
-                    if (fillNode is SVGGradient) {
-                        SVGGradient(fillNode).beginGradientFill(this);
-                    }
-                    else if (fillNode is SVGPatternNode) {
-                        SVGPatternNode(fillNode).beginPatternFill(this);
-                    }
+            // draw even if visibility = "hidden".  May be required for
+            // pointer-events. Animation of visibility attribute independent of
+            // drawNode() relies on the correct drawing state
+            var matches:Array = fill.match(/url\(#([^\)]+)\)/si);
+            if (matches != null && matches.length > 0) {
+                var fillName:String = matches[1];
+                this.svgRoot.addReference(this, fillName);
+                var fillNode:SVGNode = this.svgRoot.getNode(fillName);
+                if (!fillNode) {
+                     // this happens normally
+                     //this.dbg("Gradient " + fillName + " not (yet?) available for " + this.xml.@id);
                 }
-                else {
-                    if (fill == 'currentColor') {
-                        fill = this.getStyleOrAttr('color');
-                    }
-                    // Still may draw for fill 'none' in order to get mouse events.
-                    if (fill != 'none') {
-                        color_and_alpha = SVGColors.getColorAndAlpha(fill);
-                        color_core = color_and_alpha[0];
-                        color_alpha = color_and_alpha[1];
-                        fill_alpha = SVGColors.cleanNumber( this.getStyleOrAttr('fill-opacity') ) * color_alpha;
-                    }
-                    var pointerEvents:String = this.getStyleOrAttr('pointer-events');
-                    // Begin fill if there is a fill set, or if we need an invisible fill to get mouse events
-                    if ( (fill != 'none') ||
-                           (pointerEvents != null && pointerEvents != '' &&
-                            pointerEvents != 'visiblePainted') ) {
-                        drawSprite.graphics.beginFill(color_core, fill_alpha);
-                    }
+                if (fillNode is SVGGradient) {
+                    SVGGradient(fillNode).beginGradientFill(this);
+                }
+                else if (fillNode is SVGPatternNode) {
+                    SVGPatternNode(fillNode).beginPatternFill(this);
+                }
+            }
+            else {
+                if (fill == 'currentColor') {
+                    fill = this.getStyleOrAttr('color');
+                }
+                // Still may draw for fill 'none' in order to get mouse events.
+                if (fill != 'none') {
+                    color_and_alpha = SVGColors.getColorAndAlpha(fill);
+                    color_core = color_and_alpha[0];
+                    color_alpha = color_and_alpha[1];
+                    fill_alpha = SVGColors.cleanNumber( this.getStyleOrAttr('fill-opacity') ) * color_alpha;
+                }
+                var pointerEvents:String = this.getStyleOrAttr('pointer-events', 'visiblePainted');
+                // Begin fill if there is a fill set, or if we need an invisible fill to get mouse events
+                if (   (fill != 'none' && getStyleOrAttr('visibility') != 'hidden') 
+                    || (pointerEvents == 'all') ) {
+                    drawSprite.graphics.beginFill(color_core, fill_alpha);
+                }
 
-                }
             }
             nodeBeginStroke();
         }
@@ -922,8 +938,10 @@ package org.svgweb.core
             
             drawSprite.graphics.lineStyle(line_width, line_color, line_alpha, false, LineScaleMode.NORMAL,
                                           capsStyle, jointStyle, SVGColors.cleanNumber(miterLimit));
-
-            if ( (stroke != 'none') && (stroke != '')  && (this.getStyleOrAttr('visibility') != 'hidden') ) {
+            // draw even if visibility = "hidden".  May be required for
+            // pointer-events. Animation of visibility attribute independent of
+            // drawNode() relies on the correct drawing state
+            if ( (stroke != 'none') && (stroke != '') ) {
                 var strokeMatches:Array = stroke.match(/url\(#([^\)]+)\)/si);
                 if (strokeMatches != null && strokeMatches.length > 0) {
                     var strokeName:String = strokeMatches[1];
@@ -1797,7 +1815,12 @@ package org.svgweb.core
             if (this._invalidDisplay == false && topSprite) {
                 this._invalidDisplay = true;
                 topSprite.addEventListener(Event.ENTER_FRAME, drawNode);
-            }            
+                if (this._invalidAttribute) {
+                    // if _invalidAttribute is already set then reset to prevent
+                    // repeat processing performed by drawNode.
+                    this._invalidAttribute = INVALID_ATTR_NONE;
+                }            
+            }
         }
 
         public function invalidateChildren():void {
@@ -1816,6 +1839,74 @@ package org.svgweb.core
             }
         }
  
+        public function invalidateAttribute(attributeName:String):void {
+            if (!this.topSprite || !this.topSprite.parent || this._invalidDisplay) return;
+            var attr:uint = INVALID_ATTR_NONE;
+            switch (attributeName) {
+                case 'transform':
+                case 'viewBox':
+                case 'x':
+                case 'y':
+                case 'rotation':
+                    attr = INVALID_ATTR_TRANSFORM;
+                    break;
+                case 'opacity' :
+                    attr = INVALID_ATTR_OPACITY;
+                    break;
+                case 'visibility' :
+                    attr = INVALID_ATTR_VISIBILITY;
+                    break;
+                case 'display' :
+                    attr = INVALID_ATTR_DISPLAY;
+                    break;
+                default:
+                    this.invalidateDisplay();
+                    this.invalidateChildren();
+                    break;
+            }
+            if (attr != INVALID_ATTR_NONE) {
+                 if (this._invalidAttribute == INVALID_ATTR_NONE) {
+                     topSprite.addEventListener(Event.ENTER_FRAME, invalidateAttributeHandler);
+                 }
+                 this._invalidAttribute |= attr;
+            }
+        }
+
+        public function invalidateAttributeHandler(event:Event):void {
+            // are we in the middle of a suspendRedraw operation?
+            if (this.svgRoot.viewer && this.svgRoot.viewer.isSuspended) {
+                return;
+            }
+            this.topSprite.removeEventListener(Event.ENTER_FRAME, invalidateAttributeHandler);
+
+            if (this._invalidAttribute != INVALID_ATTR_NONE) {
+                if (this._invalidAttribute & INVALID_ATTR_DISPLAY) {
+                    if (this.getStyleOrAttr('display') == 'none') {
+                        this.topSprite.visible = false;
+                    }
+                    else {
+                        this.topSprite.visible = true;
+                    }
+                }
+                if (this._invalidAttribute & INVALID_ATTR_OPACITY) {
+                    if (this.drawSprite)
+                      this.drawSprite.alpha = SVGColors.cleanNumber(this.getStyleOrAttr('opacity'));
+                }
+                if (this._invalidAttribute & INVALID_ATTR_VISIBILITY) {
+                     if (this.getStyleOrAttr('visibility') == 'hidden') {
+                        this.setVisibility('hidden');
+                    } else {
+                        this.setVisibility('visible');
+                    }
+                }
+                if (this._invalidAttribute & INVALID_ATTR_TRANSFORM) {
+                    this.transformNode();
+                    this.applyViewBox();
+                }
+                this._invalidAttribute = INVALID_ATTR_NONE;
+            }
+        }
+
         /*
          * Clone Handlers
          */

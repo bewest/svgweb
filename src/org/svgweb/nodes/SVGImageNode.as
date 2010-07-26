@@ -149,7 +149,7 @@ package org.svgweb.nodes
             this.bitmapData = null;
             bitmap.opaqueBackground = null;
             bitmap.smoothing = true;
-            if (this.getStyleOrAttr('display') == 'none') {
+            if (this.getStyleOrAttr('display', null, false) == 'none') {
               this.topSprite.visible = false;
             }
             else {
