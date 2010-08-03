@@ -59,6 +59,7 @@ package org.svgweb.core
         public var svgRoot:SVGSVGNode = null;
         public var svgParent:SVGNode = null;
         public var svgChildren:Array = new Array();
+        public var svgClipPathMask:SVGNode = null;
         public var isMask:Boolean = false;
 
         //Used for gradients
@@ -152,8 +153,8 @@ package org.svgweb.core
 
             // This handle strange gradient bugs with negative transforms
             // by separating the transform from the drawing object
-            if ( (xml.@['transform']).toString() != "" 
-                  || (xml.@['clip-path']).toString() != "" ) {
+            if ( getAttribute('transform') != "" 
+                  || getStyleOrAttr('clip-path') != "" ) {
                 clipSprite = new SVGSprite(this);
                 topSprite.addChild(clipSprite);
             }
@@ -168,9 +169,9 @@ package org.svgweb.core
             // filter is applied to the child.
             // FIXME: Currently x and y are on the drawSprite. Try to move
             // to transform sprite.
-            if ( (xml.@['clip-path']).toString() != ""
-                       || (xml.@['x']).toString() != ""
-                       || (xml.@['y']).toString() != "" ) {
+            if ( getStyleOrAttr('clip-path') != ""
+                       || getAttribute('x') != ""
+                       || getAttribute('y') != "" ) {
                 drawSprite = new SVGSprite(this);
                 clipSprite.addChild(drawSprite);
             }
@@ -182,7 +183,7 @@ package org.svgweb.core
             // children of the object, so create a child sprite to hold the transform.
             // If the object is a text node, we put the TextField on the drawSprite instead of
             // the viewBoxSprite because it is simpler all children of viewBoxSprite are SVGSprites.
-            if ( (xml.@['viewBox']).toString() != ""
+            if ( getAttribute('viewBox') != ""
                     || (this is SVGSVGNode)  || (this is SVGTextNode) ) {
                 viewBoxSprite = new SVGSprite(this);
                 drawSprite.addChild(viewBoxSprite);
@@ -1169,10 +1170,9 @@ package org.svgweb.core
             var node:SVGNode;
             var matrix:Matrix;
 
-            this.removeMask();
             attr = this.getStyleOrAttr('mask');
             if (!attr) {
-                attr = this.getAttribute('clip-path');
+                attr = this.getStyleOrAttr('clip-path');
             }
 
             if (attr) {
@@ -1180,7 +1180,13 @@ package org.svgweb.core
                if (match.length == 2) {
                    attr = match[1];
                    node = this.svgRoot.getNode(attr);
+                   if (svgClipPathMask == node) {
+                       return;
+                   }
+                   this.removeMask();
                    if (node) {
+                       svgClipPathMask = node;
+
                        var newMask:SVGNode = node.clone();
                        newMask.isMask = true;
 
@@ -1202,12 +1208,16 @@ package org.svgweb.core
                    }
                }
             }
+            else {
+                this.removeMask();
+            }
         }
 
         protected function removeMask():void {
             if (clipSprite != topSprite && clipSprite.mask) {
                 clipSprite.mask.parent.removeChild(clipSprite.mask);
                 clipSprite.mask = null;
+                svgClipPathMask = null;
             }
         }
 
@@ -2197,16 +2207,15 @@ package org.svgweb.core
             if (this.viewBoxSprite) {
                 this.clearSVGChildren();
             }
-            else {
+
+            this._parsedChildren = false;
+            this.parseStyle();
+
+            if (!this.viewBoxSprite) {
                 this.createSVGSprites();
             }
 
-            if (_xml) {
-                this._parsedChildren = false;
-                this.parseStyle();
-                this.invalidateDisplay();
-            }
-
+            this.invalidateDisplay();
             this.updateClones();
         }
         
