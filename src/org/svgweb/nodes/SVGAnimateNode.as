@@ -21,6 +21,7 @@ package org.svgweb.nodes
 {
     import org.svgweb.utils.SVGUnits;
     import org.svgweb.utils.SVGColors;
+    import org.svgweb.utils.PathParser;
     import org.svgweb.core.SVGNode;
     import org.svgweb.core.SVGTimedNode;
     import org.svgweb.smil.TimeSpec;
@@ -92,8 +93,6 @@ package org.svgweb.nodes
         }
 
         public function getAnimValue():String {
-            var previousCount:int;
-
             if (this.isEffective()) {
                 if (frozen) {
                     return animValue;
@@ -102,8 +101,6 @@ package org.svgweb.nodes
                 var repeatFraction:Number = getRepeatIntervalFraction(lastDocTime);
                 var fromString:String;
                 var toString:String;
-                var fromVal:Number;
-                var toVal:Number;
 
                 var keyTimeIndex:Number = getKeyTimeIndex(repeatFraction);
                 var keyTimeSpline:String = getKeyTimeSpline(keyTimeIndex);
@@ -134,70 +131,143 @@ package org.svgweb.nodes
                     animValue = null;
                     return null;
                 }
-                if (calcModeParameter == "discrete") {
-                    if (accumulateParameter == "sum") {  // assume additive attribute
-                        fromVal = SVGColors.cleanNumber(fromString);
-                        toVal = SVGColors.cleanNumber(toString);
-                        previousCount = getRepeatIndex(lastDocTime);
-                        if (previousCount > 0) {
-                            // XXX For "values", should use the last value, not to
-                            // XXX complications also from "inherit" - need to keep a running total?
-                            fromVal += toVal * previousCount;
-                            toVal   += toVal * previousCount;
-                        }
-                        if (keyTimeFraction >= keyTimeThreshold) {
-                            animValue = String(toVal);
-                        }
-                        else {
-                            animValue = String(fromVal);
-                        }
-                    }
-                    else {
-                        if (keyTimeFraction >= keyTimeThreshold) {
-                            animValue = toString;
-                        }
-                        else {
-                            animValue = fromString;
-                        }
-                    }
-                    return animValue;
-                }
-
-                // from here, everything should be numbers
-                fromVal = SVGColors.cleanNumber(fromString);
-                toVal = SVGColors.cleanNumber(toString);
-                var isColor:Boolean = false;
-                if (SVGColors.isColor(fromString)
-                    && SVGColors.isColor(toString) ) {
-                    isColor = true;
-                }
-                var animVal:Number;
-                if (accumulateParameter == "sum") {
-                    previousCount = getRepeatIndex(lastDocTime);
-                    if (previousCount > 0) {
-                        // XXX For "values", should use the last value, not to
-                        fromVal += toVal * previousCount;
-                        toVal   += toVal * previousCount;
-                    }
-
-                    animVal = interpolate(fromVal, toVal,
-                                          keyTimeFraction, keyTimeSpline,
-                                          isColor);
+                if(attributeName == 'd') {
+                    animValue = getPathAnimValue(fromString, toString, keyTimeFraction, keyTimeThreshold, keyTimeSpline);
                 }
                 else {
-                    animVal = interpolate(fromVal, toVal,
-                                          keyTimeFraction, keyTimeSpline,
-                                          isColor);
-                }
-                if (isColor) {  // convert animVal to color string value
-                    animValue = SVGColors.colorString(animVal);
-                }
-                else { 
-                    animValue = String(animVal);
+                    animValue = getSingleAnimValue(fromString, toString, keyTimeFraction, keyTimeThreshold, keyTimeSpline);
                 }
                 return animValue;
             }
             return null;
+        }
+
+        protected function getPathAnimValue(fromString:String, toString:String, keyTimeFraction:Number, keyTimeThreshold:Number, keyTimeSpline:String):String {
+            var from:Array = PathParser.parseSVGPath(fromString);
+            var to:Array = PathParser.parseSVGPath(toString);
+            var fromLength:int = from.length;
+            var toLength:int = to.length;
+            var result:String = '';
+
+            for(var pos:int = 0; pos < fromLength && pos < toLength; ) {
+                var command:String = from[pos++];
+                var segs:int = 0;
+                switch(command) {
+                    case "M":
+                    case "m":
+                        segs = 2;
+                        break;
+                    case "A":
+                    case "a":
+                        segs = 7;
+                        break;                        
+                    case "C":
+                    case "c":
+                        segs = 6;
+                        break;
+                    case "S":
+                    case "s":
+                    case "Q":
+                    case "q":
+                        segs = 4;
+                        break;
+                    case "T":
+                    case "t":
+                    case "L":
+                    case "l":
+                        segs = 2;
+                        break;
+                    case "H":
+                    case "h":
+                    case "V":
+                    case "v":
+                        segs = 1;
+                        break;
+                    default:
+                        trace("Unknown Segment Type in Anim Value: " + command);
+                    case "Z":
+                    case "z":
+                        segs = 0;
+                        break;
+                }
+                result += command;
+                for (var seg:int = 0; seg < segs; seg++) {    
+                    result += getSingleAnimValue(from[pos + seg], to[pos + seg], keyTimeFraction, keyTimeThreshold, keyTimeSpline) + ' ';
+                }
+                pos += segs;
+            }
+            return result;                                     
+        }
+
+        protected function getSingleAnimValue(fromString:String, toString:String, keyTimeFraction:Number, keyTimeThreshold:Number, keyTimeSpline:String):String {
+            var previousCount:int;
+
+            var fromVal:Number;
+            var toVal:Number;
+            var result:String;
+
+            if (calcModeParameter == "discrete") {
+                if (accumulateParameter == "sum") {  // assume additive attribute
+                    fromVal = SVGColors.cleanNumber(fromString);
+                    toVal = SVGColors.cleanNumber(toString);
+                    previousCount = getRepeatIndex(lastDocTime);
+                    if (previousCount > 0) {
+                        // XXX For "values", should use the last value, not to
+                        // XXX complications also from "inherit" - need to keep a running total?
+                        fromVal += toVal * previousCount;
+                        toVal   += toVal * previousCount;
+                    }
+                    if (keyTimeFraction >= keyTimeThreshold) {
+                        result = String(toVal);
+                    }
+                    else {
+                        result = String(fromVal);
+                    }
+                }
+                else {
+                    if (keyTimeFraction >= keyTimeThreshold) {
+                        result = toString;
+                    }
+                    else {
+                        result = fromString;
+                    }
+                }
+                return result;
+            }
+
+            // from here, everything should be numbers
+            fromVal = SVGColors.cleanNumber(fromString);
+            toVal = SVGColors.cleanNumber(toString);
+            var isColor:Boolean = false;
+            if (SVGColors.isColor(fromString)
+                      && SVGColors.isColor(toString) ) {
+                isColor = true;
+            }
+            var animVal:Number;
+            if (accumulateParameter == "sum") {
+                previousCount = getRepeatIndex(lastDocTime);
+                if (previousCount > 0) {
+                    // XXX For "values", should use the last value, not to
+                    fromVal += toVal * previousCount;
+                    toVal   += toVal * previousCount;
+                }
+
+                animVal = interpolate(fromVal, toVal,
+                                          keyTimeFraction, keyTimeSpline,
+                                          isColor);
+            }
+            else {
+                animVal = interpolate(fromVal, toVal,
+                                          keyTimeFraction, keyTimeSpline,
+                                          isColor);
+            }
+            if (isColor) {  // convert animVal to color string value
+                result = SVGColors.colorString(animVal);
+            }
+            else { 
+                result = String(animVal);
+            }
+            return result;
         }
         
         // Which key time does the repeatFraction fall at?
@@ -460,7 +530,7 @@ package org.svgweb.nodes
                             strValue = targetNode.svgParent.getAttribute(attributeName, null, true, false);
                         if (strValue == null) strValue = "inherit";
                     }
-                    if (SVGColors.isColor(strValue)) {
+                    if (attributeName == 'd' || SVGColors.isColor(strValue)) {
                         return;
                     }
                     var keyVal:Number = parseInt(strValue);
@@ -482,7 +552,7 @@ package org.svgweb.nodes
                             paramString = targetNode.svgParent.getAttribute(attributeName, null, true, false);
                         if (paramString == null) paramString = "inherit";
                     }
-                    if (!SVGColors.isColor(paramString)) {
+                    if (attributeName != 'd' && !SVGColors.isColor(paramString)) {
                         var fromVal:Number = parseInt(paramString);
                         if ( isNaN(fromVal) || fromVal > int.MAX_VALUE || fromVal < int.MIN_VALUE ) {
                             calcModeParameter = "discrete";
@@ -497,7 +567,7 @@ package org.svgweb.nodes
                             paramString = targetNode.svgParent.getAttribute(attributeName, null, true, false);
                         if (paramString == null) paramString = "inherit";
                     }
-                    if (!SVGColors.isColor(paramString)) {
+                    if (attributeName != 'd' && !SVGColors.isColor(paramString)) {
                         var toVal:Number = parseInt(paramString);
                         if ( isNaN(toVal) || toVal > int.MAX_VALUE || toVal < int.MIN_VALUE ) {
                             calcModeParameter = "discrete";

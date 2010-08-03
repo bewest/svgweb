@@ -1494,17 +1494,18 @@ package org.svgweb.core
             // Start with base value
             var baseVal:String = getAttribute(name, defaultValue, inherit, false,
                                               useStyle);
+            var isPath:Boolean = name=='d';
             var animVal:Number;
             if (baseVal) {
                 animVal = SVGUnits.cleanNumber(baseVal);
             }
-            else {
+            else if (!isPath) {
                 animVal= 0;
             }
              
             // Handle discrete string values
             var discreteStringVal:String;
-            var isColor:Boolean = (baseVal != null) && SVGColors.isColor(baseVal);
+            var isColor:Boolean = (baseVal != null) && !isPath && SVGColors.isColor(baseVal);
             var animValString:String = null;
             // XXX This should sort by priority (activation order) 
             // Add or replace with animations
@@ -1513,17 +1514,16 @@ package org.svgweb.core
                     && animation.isEffective() ) {
                     animValString = animation.getAnimValue();
                     if (animValString == null) continue;  // null is an error, or !isEffective
-                    isColor =  isColor || SVGColors.isColor(animValString);
+                    isColor = !isPath && (isColor || SVGColors.isColor(animValString));
                     if (animation.isAdditive()) {
                         if (isColor) {
                             animVal = SVGColors.addColors(animVal, SVGUnits.cleanNumber(animValString));
-                        } else {
+                        } else if (!isPath) {
                             animVal = animVal + SVGUnits.cleanNumber(animValString);
                         }
                     }
                     else {
-                        animVal = SVGUnits.cleanNumber(animValString);
-                        if (isNaN(animVal)) {
+                        if (isPath || isNaN(animVal = SVGUnits.cleanNumber(animValString))) {
                            discreteStringVal = animValString;
                         }
                     }

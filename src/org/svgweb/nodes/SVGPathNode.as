@@ -20,6 +20,7 @@
 package org.svgweb.nodes
 {
     import org.svgweb.utils.EllipticalArc;
+    import org.svgweb.utils.PathParser;
     import org.svgweb.core.SVGNode;
     import org.svgweb.utils.SVGColors;
     
@@ -43,110 +44,15 @@ package org.svgweb.nodes
             super(svgRoot, xml, original);
         }
         
-        /**
-         * Normalize SVG Path Data into an array we can work with.
-         */
-        public function normalizeSVGData():Array {
-            // NOTE: This code is very performance sensitive and was 
-            // a bottleneck affecting page load; rewritten to not use
-            // regular expressions as well as other tricks that were shown
-            // to be faster (like caching data.length, parsing right into
-            // an array instead of an intermediate string, etc.).
-            // Be careful when changing this code without seeing what the
-            // performance is before and after. See 
-            // Issue 229 for details:
-            // "Speedup page load time of MichaelN's static map page on IE"
-            // http://code.google.com/p/svgweb/issues/detail?id=229
-            
-            //var totalTime:int = new Date().getTime();
-            
-            var data:String = this.getAttribute('d');
-            if (data == null) return null;  // space ' ' glyph can have missing path
-            data = SVGColors.trim(data);
-            
-            // In the algorithm below, we are doing a few things. It is
-            // unfortunately complicated but it was found to be the primary
-            // bottleneck when dealing with lots of PATH statements. 
-            // We use the charCode since as a number it is much faster than
-            // dealing with strings. We test the value against the Unicode
-            // values for the numerical and alphabetical ranges for our 
-            // commands, which is fast. We also order our IF statements from
-            // most common (numbers) to least common (letter commands). Testing
-            // also paradoxically found that simply building up another 
-            // string is much faster than having an intermediate array; arrays
-            // in ActionScript are very slow, and the final split() method 
-            // is very fast at producing an array we can work with
-            var results:String = '';
-            var dataLength:int = data.length; // found to be faster
-            var c:String;
-            var code:Number;
-            var i:int = 0;
-            while (i < dataLength) {
-                code = data.charCodeAt(i);
-
-                // from most common to least common encountered
-                
-               if ((code >= 48 && code <= 57) || code == 45 || code == 46 || code == 43) {
-                    // start of a number 0..9, -, ., +
-                    var period:Number = 46;  // used to terminate on encountering a second '.'
-                    // a sequence like 1.234.456 or 1..2 is valid
-                    // equvalent to 1.234 .567 or 1. .2
-                    do {
-                        if (code == 46) period = 34;  // change to '"' so loop stops on next '.'
-                        results += data.charAt(i);
-                        i++;
-                        code = data.charCodeAt(i);
-                    } while (code && ((code >= 48 && code <= 57) || code == period));
-                    // check for exponent e or E
-                    // assume never have a number starting with -e or .e or +e
-                    if (code && (code == 101 || code == 69)) {
-                        results += 'e';
-                        i++;
-                        code = data.charCodeAt(i);
-                        if (code && (code == 43 || code == 45)) {
-                            // optional +/-
-                            results += data.charAt(i);
-                            i++;
-                            code = data.charCodeAt(i);
-                        }
-                        while (code && (code >= 48 && code <= 57)) {
-                            // collect a digit-sequence
-                            results += data.charAt(i);
-                            i++;
-                            code = data.charCodeAt(i);
-                        }
-                    }
-                    results += ',';
-                } else if (code == 44 || code == 32 || code == 10 || code == 13) {
-                    // just ignore delimiters since we are adding in our own
-                    // in the correct places
-                    i++;
-                } else if (code >= 65 && code <= 122) {
-                    // A-Z and a-z
-                    results += data.charAt(i) + ',';
-                    i++;
-                } else {
-                    // unknown/unexpected character
-                    i++;
-                }
-            }
-            
-            // remove trailing comma, but outside of big loop above
-            if (results.charAt(results.length - 1) == ',') {
-                results = results.substring(0, results.length - 1);
-            }
-            
-            return results.split(',');
-        }
-        
         protected override function generateGraphicsCommands():void {
             //var startTime:int = new Date().getTime();
             //var pieceTime:int;
             this._graphicsCommands = new Array();
             //pieceTime = new Date().getTime();
-            var szSegs:Array = this.normalizeSVGData();
+            var d:String = this.getAttribute('d');
+            if (d == null) return; // space ' ' glyph can have missing path.
+            var szSegs:Array = PathParser.parseSVGPath(d);
             //increment('generateGraphicsCommands_normalizeSVGData', (new Date().getTime() - pieceTime));   
-            if (szSegs == null) return; // space ' ' glyph can have missing path.
             
 
             var fillRule:String = this.getStyleOrAttr('fill-rule', 'nonzero');
