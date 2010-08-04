@@ -1910,6 +1910,11 @@ package org.svgweb.core
                     }
                 }
                 if (this._invalidAttribute & INVALID_ATTR_TRANSFORM) {
+                    if (this is SVGSVGNode) {
+                        this.loadAttribute('x');
+                        this.loadAttribute('y');
+                        this.applyDefaultMask();
+                    }
                     this.transformNode();
                     this.applyViewBox();
                 }
