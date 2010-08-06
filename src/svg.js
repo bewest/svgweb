@@ -8433,6 +8433,7 @@ extend(FlashInserter, {
     SVG root element is being embedded by an SVG OBJECT.
     @param handler The FlashHandler that we are a part of. */
 function _SVGSVGElement(nodeXML, svgString, scriptNode, handler) {
+  this._attached = true;
   // superclass constructor
   _Element.apply(this, ['svg', null, svgns, nodeXML, handler]);
 
