@@ -1292,6 +1292,7 @@ package org.svgweb.core
         }
 
         protected function onRemovedFromStage(event:Event):void {
+            topSprite.removeEventListener(Event.ENTER_FRAME, drawNode);
             this.unregisterSelf();
             if (this.original) {
                 this.original.unregisterClone(this);
