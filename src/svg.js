@@ -2568,10 +2568,10 @@ FlashHandler._getNode = function(nodeXML, handler) {
   if (!node && !fakeTextNode && nodeXML.nodeType == _Node.ELEMENT_NODE) {
     // never seen before -- we'll have to create a new _Element now
     node = new _Element(nodeXML.nodeName, nodeXML.prefix, 
-                        nodeXML.namespaceURI, nodeXML, handler, true);
+                        nodeXML.namespaceURI, nodeXML, handler);
   } else if (!node && (nodeXML.nodeType == _Node.TEXT_NODE || fakeTextNode)) {
     node = new _Node('#text', _Node.TEXT_NODE, null, null, nodeXML,
-                     handler, false);
+                     handler);
   } else if (!node) {
     throw new Error('Unknown node type given to _getNode: ' 
                     + nodeXML.nodeType);
@@ -3243,7 +3243,8 @@ extend(FlashHandler, {
     if(isIE && node._fakeNode) {
         node = node._fakeNode;
     }
-    node._passThrough = true;
+    // _getElementByGuid is called for mouse events, assume element is attached
+    node._attached = true;
     
     return node;
   },
@@ -4133,8 +4134,7 @@ extend(_DOMImplementation, {
 // Note: Only element, text nodes, document nodes, and document fragment nodes
 // are supported for now. We don't parse and retain comments, processing 
 // instructions, etc. CDATA nodes are turned into text nodes.
-function _Node(nodeName, nodeType, prefix, namespaceURI, nodeXML, handler, 
-               passThrough) {
+function _Node(nodeName, nodeType, prefix, namespaceURI, nodeXML, handler) {
   if (nodeName === undefined && nodeType === undefined) {
     // prototype subclassing
     return;
@@ -4154,15 +4154,9 @@ function _Node(nodeName, nodeType, prefix, namespaceURI, nodeXML, handler,
     namespaceURI = svgns;
   }
   
-  // determine whether we are attached
-  this._attached = true;
-  if (!this._handler) {
-    this._attached = false;
-  }
-  
   // handle nodes that were created with createElementNS but are not yet
   // attached to the document yet
-  if (nodeType == _Node.ELEMENT_NODE && !this._nodeXML && !this._handler) {
+  if (nodeType == _Node.ELEMENT_NODE && !this._nodeXML) {
     // build up an empty XML node for this element
     var xml = '<?xml version="1.0"?>\n';
     if (namespaceURI == svgns && !prefix) {
@@ -4230,14 +4224,9 @@ function _Node(nodeName, nodeType, prefix, namespaceURI, nodeXML, handler,
   // set to 'document'
   this.ownerDocument = document;
   // if we are an SVG OBJECT set to our fake pseudo _Document
-  if (this._attached && this._handler.type == 'object') {
+  if (this._handler && this._handler.type == 'object') {
     this.ownerDocument = this._handler.document;
   }
-  
-  if (passThrough === undefined) {
-    passThrough = false;
-  }
-  this._passThrough = passThrough;
   
   // create empty stub methods for certain methods to help IE's HTC be
   // smaller, which has a very strong affect on performance
@@ -4354,8 +4343,7 @@ extend(_Node, {
     for (var i = 0; i < importMe.length; i++) {
       var importedNode = this._importNode(importMe[i], false);
       this._nodeXML.insertBefore(importedNode, refChild._nodeXML);
-      this._processAppendedChildren(importMe[i], this, this._attached, 
-                                    this._passThrough);
+      this._processAppendedChildren(importMe[i], this, this._attached);
     }
     
     // inform Flash about the change
@@ -4378,8 +4366,10 @@ extend(_Node, {
     // clear out the child if it is a DocumentFragment
     if (newChild.nodeType == _Node.DOCUMENT_FRAGMENT_NODE) {
       newChild._reset();
+    } else {
+      newChild._attached = this._attached;
     }
-    
+
     return newChild._getProxyNode();
   },
   
@@ -4482,8 +4472,7 @@ extend(_Node, {
     }
     
     // now process the newChild's node
-    this._processAppendedChildren(newChild, this, this._attached, 
-                                  this._passThrough);
+    this._processAppendedChildren(newChild, this, this._attached);
     
     // recursively set the removed node to be unattached and to not
     // pass through changes to Flash anymore
@@ -4495,6 +4484,8 @@ extend(_Node, {
     // clear out the child if it is a DocumentFragment
     if (newChild.nodeType == _Node.DOCUMENT_FRAGMENT_NODE) {
       newChild._reset();
+    } else {
+      newChild._attached = this._attached;
     }
     
     return oldChild._getProxyNode();
@@ -4653,12 +4644,13 @@ extend(_Node, {
     }
 
     // process the children (cache important info, add a handler, etc.)
-    this._processAppendedChildren(child, this, this._attached, 
-                                  this._passThrough);
+    this._processAppendedChildren(child, this, this._attached);
 
     // clear out the child if it is a DocumentFragment
     if (child.nodeType == _Node.DOCUMENT_FRAGMENT_NODE) {
       child._reset();
+    } else {
+      child._attached = this._attached;
     }
 
     return child._getProxyNode();
@@ -5012,7 +5004,7 @@ extend(_Node, {
     
     // are we the root SVG node when being embedded by an SVG SCRIPT?
     // If _handler is not set, this element is a detached svg element.
-    if (this._handler &&
+    if (this._attached && this._handler &&
         this._getProxyNode() == this._handler.document.rootElement) {
       if (this._handler.type == 'script') {
         return this._handler.flash.parentNode;
@@ -5030,6 +5022,7 @@ extend(_Node, {
     }
     
     var node = FlashHandler._getNode(parentXML, this._handler);
+    this._getFakeNode(node)._attached = this._attached;
     
     return node;
   },
@@ -5045,7 +5038,7 @@ extend(_Node, {
     }
     
     var node = FlashHandler._getNode(childXML, this._handler);
-    this._getFakeNode(node)._passThrough = this._passThrough;
+    this._getFakeNode(node)._attached = this._attached;
         
     return node;
   },
@@ -5061,7 +5054,7 @@ extend(_Node, {
     }
     
     var node = FlashHandler._getNode(childXML, this._handler);
-    this._getFakeNode(node)._passThrough = this._passThrough;
+    this._getFakeNode(node)._attached = this._attached;
     
     return node;
   },
@@ -5074,7 +5067,7 @@ extend(_Node, {
     
     // are we the root SVG object when being embedded by an SVG SCRIPT?
     // If _handler is not set, this element is a nested svg element.
-    if (this._handler && 
+    if (this._attached && this._handler &&
         this._getProxyNode() == this._handler.document.rootElement
                       && this._handler.type == 'script') {
       var sibling = this._handler.flash.previousSibling;
@@ -5097,7 +5090,7 @@ extend(_Node, {
     }
     
     var node = FlashHandler._getNode(siblingXML, this._handler);
-    this._getFakeNode(node)._passThrough = this._passThrough;
+    this._getFakeNode(node)._attached = this._attached;
     
     return node;
   },
@@ -5110,7 +5103,7 @@ extend(_Node, {
       
     // are we the root SVG object when being embedded by an SVG SCRIPT?
     // If _handler is not set, this element is a nested svg element.
-    if (this._handler &&
+    if (this._attached && this._handler &&
         this._getProxyNode() == this._handler.document.rootElement
                       && this._handler.type == 'script') {
       var sibling = this._handler.flash.nextSibling;
@@ -5132,7 +5125,7 @@ extend(_Node, {
     }
     
     var node = FlashHandler._getNode(siblingXML, this._handler);
-    this._getFakeNode(node)._passThrough = this._passThrough;
+    this._getFakeNode(node)._attached = this._attached;
 
     return node;
   },
@@ -5143,22 +5136,17 @@ extend(_Node, {
   // TODO: It would be nice to support the ElementTraversal spec here as well
   // since it cuts down on code size:
   // http://www.w3.org/TR/ElementTraversal/
-  
-  /** The passthrough flag controls whether we 'pass through' any changes
-      to this object to the underlying Flash viewer. For example, if a
-      Node has been created but is not yet attached to the document, any 
-      changes to its attributes should not pass through to the Flash viewer,
-      and this flag would therefore be false. After the Node is attached
-      through appendChild(), passThrough would become true and everything
-      would get passed through to Flash for rendering. */
-  _passThrough: false,
+
+
+  /** A flag used to supress events to flash. **/
+  _passThrough: true,
   
   /** The attached flag indicates whether this node is attached to a live
       DOM yet. For example, if you call createElementNS, you can set
       values on this node before actually appending it using appendChild
       to a node that is connected to the actual visible DOM, ready to
       be rendered. */
-  _attached: true,
+  _attached: false,
   
   /** A flag we put on our _Nodes and _Elements to indicate they are fake;
       useful if someone wants to 'break' the abstraction and see if a node
@@ -5244,7 +5232,7 @@ extend(_Node, {
     this._childNodes.__defineGetter__(i, function() {
       var childXML = self._nodeXML.childNodes[i];
       var node = FlashHandler._getNode(childXML, self._handler);
-      node._passThrough = self._passThrough;
+      node._attached = self._attached;
       return node;
     });
   },
@@ -5294,7 +5282,7 @@ extend(_Node, {
       for (var i = 0; i < this._nodeXML.childNodes.length; i++) {
         var childXML = this._nodeXML.childNodes[i];
         var node = FlashHandler._getNode(childXML, this._handler);
-        node._fakeNode._passThrough = this._passThrough;
+        node._fakeNode._attached = this._attached;
         if (returnFakeNodes) {
           node = node._fakeNode;
         }
@@ -5394,11 +5382,9 @@ extend(_Node, {
       
       @param child _Node to work with.
       @param parent The parent of this child.
-      @param attached Boolean on whether we are attached or not yet.
-      @param passThrough Boolean on whether to pass values through
-      to Flash or not. */
-  _processAppendedChildren: function(child, parent, attached, passThrough) {
-    //console.log('processAppendedChildren, this.nodeName='+this.nodeName+', child.nodeName='+child.nodeName+', attached='+attached+', passThrough='+passThrough);
+      @param attached Boolean on whether we are attached or not yet. */
+  _processAppendedChildren: function(child, parent, attached) {
+    //console.log('processAppendedChildren, this.nodeName='+this.nodeName+', child.nodeName='+child.nodeName+', attached='+attached);
     // walk the DOM from the child using an iterative algorithm, which was 
     // found to be faster than a recursive one; for each node visited we will
     // store some important reference information
@@ -5410,7 +5396,7 @@ extend(_Node, {
       current = child;
     }
     // turn on suspendRedraw so adding our event handlers happens in one go
-    if (attached && passThrough) {
+    if (attached) {
       suspendID = this._handler._redrawManager.suspendRedraw(10000, false);
     }
 
@@ -5435,6 +5421,7 @@ extend(_Node, {
         } else if (this._handler.type == 'object') {
           current.ownerDocument = this._handler.document;
         }
+        current._attached = true;
 
         // register and send over any event listeners that were added while
         // this node was detached
@@ -5487,14 +5474,10 @@ extend(_Node, {
           }
         }
       }
-      
-      // set our attached information
-      lastVisited._attached = attached;
-      lastVisited._passThrough = passThrough;
     }
     
     // turn off suspendRedraw. all event handlers should shoot through now
-    if (attached && passThrough) {
+    if (attached) {
       this._handler._redrawManager.unsuspendRedraw(suspendID, false);
     }
   },
@@ -5620,7 +5603,7 @@ extend(_Node, {
   },
   
   /** After a node is unattached, such as through a removeChild, this method
-      recursively sets _attached and _passThrough to false on this node
+      recursively sets _attached to false on this node
       and all of its children.  */
   _setUnattached: function() {   
     // set each child to be unattached
@@ -5633,7 +5616,6 @@ extend(_Node, {
       child._setUnattached();
     }
     this._attached = false;
-    this._passThrough = false;
     this._handler = null;
   },
   
@@ -5795,10 +5777,8 @@ extend(_Node, {
     @param namespaceURI The namespace URI. If undefined, defaults to null.
     @param nodeXML The parsed XML DOM node for this element.
     @param handler The FlashHandler rendering this node. 
-    @param passThrough Optional boolean on whether any changes to this
     element 'pass through' and cause changes in the Flash renderer. */                 
-function _Element(nodeName, prefix, namespaceURI, nodeXML, handler, 
-                  passThrough) {
+function _Element(nodeName, prefix, namespaceURI, nodeXML, handler) {
   if (nodeName === undefined && namespaceURI === undefined 
       && nodeXML === undefined && handler === undefined) {
     // prototype subclassing
@@ -5807,7 +5787,7 @@ function _Element(nodeName, prefix, namespaceURI, nodeXML, handler,
   
   // superclass constructor
   _Node.apply(this, [nodeName, _Node.ELEMENT_NODE, prefix, namespaceURI, 
-                     nodeXML, handler, passThrough]);
+                     nodeXML, handler]);
                      
   // setup our attributes
   this._attributes = {};
@@ -6245,7 +6225,7 @@ extend(_Element, {
     var nodes = createNodeList();
     for (var i = 0; i < results.length; i++) {
       var elem = FlashHandler._getNode(results[i], this._handler);
-      elem._passThrough = true;
+      elem._attached = true;
       nodes.push(elem);
     }
     
@@ -6941,10 +6921,9 @@ extend(_Style, {
     // change our style value; however, don't pass this through to Flash
     // because Flash might not even know about our existence yet, because we
     // are still being run from the _Element constructor
-    var origPassThrough = this._element._passThrough;
     this._element._passThrough = false;
     this._element.setAttribute('style', results);
-    this._element._passThrough = origPassThrough;
+    this._element._passThrough = true;
   },
   
   /** For Internet Explorer, this method is called whenever a
@@ -8455,7 +8434,7 @@ extend(FlashInserter, {
     @param handler The FlashHandler that we are a part of. */
 function _SVGSVGElement(nodeXML, svgString, scriptNode, handler) {
   // superclass constructor
-  _Element.apply(this, ['svg', null, svgns, nodeXML, handler, true]);
+  _Element.apply(this, ['svg', null, svgns, nodeXML, handler]);
 
   this._nodeXML = nodeXML;
   this._svgString = svgString;
@@ -8810,7 +8789,7 @@ extend(_Document, {
     
     // create or get an _Element for this XML DOM node for node
     node = FlashHandler._getNode(nodeXML, this._handler);
-    node._passThrough = true;
+    node._attached = true;
     return node;
   },
   
