@@ -280,8 +280,8 @@ package org.svgweb.nodes
                 this._pendingRenderCount--;
                 if (this._pendingRenderCount == 0) {
                     if (!this.firedOnLoad) {
-                        this.handleOnLoad();
                         this.firedOnLoad = true;
+                        this.handleOnLoad();
                     }
                 }
                 if (this._pendingRenderCount < 0 && !this.firedOnLoad) {
