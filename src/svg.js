@@ -8740,7 +8740,7 @@ extend(_Document, {
       }
     }
 
-    var node = new _Element(qname, prefix, ns);
+    var node = new _Element(qname, prefix, ns, undefined, this._handler);
     
     return node._getProxyNode();
   },
