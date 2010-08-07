@@ -36,6 +36,7 @@ package org.svgweb.core
     import flash.events.EventDispatcher;
     import flash.events.MouseEvent;
     import flash.geom.Matrix;
+    import flash.geom.Rectangle;
     import flash.utils.getDefinitionByName;
     import flash.utils.getQualifiedClassName;
 
@@ -1849,7 +1850,13 @@ package org.svgweb.core
                 child.invalidateChildren();
             }
         }
- 
+
+        // This is called when the element has not rendered yet.
+        // TODO: When possible, compute the bounds without rendering.
+        public function getBounds():Rectangle {
+            return new Rectangle(0,0,0,0);
+        }
+
         public function invalidateAttribute(attributeName:String):void {
             if (!this.topSprite || !this.topSprite.parent || this._invalidDisplay) return;
             var attr:uint = INVALID_ATTR_NONE;

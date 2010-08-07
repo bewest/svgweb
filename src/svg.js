@@ -6359,7 +6359,14 @@ extend(_Element, {
   createSVGRect: function() {
     return new _SVGRect(0, 0, 0, 0);
   },
-  
+
+  getBBox: function() {
+    var msg = this._handler.sendToFlash('jsGetBBox', [ this._guid ]);
+    msg = this._handler._stringToMsg(msg);
+    return new _SVGRect(new Number(msg.x), new Number(msg.y),
+                        new Number(msg.width), new Number(msg.height));
+  },
+
   /** Extracts the unit value and trims off the measurement type. For example, 
       if you pass in 14px, this method will return 14. Null will return null. */
   _trimMeasurement: function(value) {
@@ -8532,7 +8539,6 @@ extend(_SVGSVGElement, {
   
   // TODO: Implement the following methods
   
-  getBBox: function() /* SVGRect */ {},
   getTransformToElement: function(element /* SVGElement */) /* SVGMatrix */ {
     /* throws SVGException */
   },

@@ -53,6 +53,7 @@ package org.svgweb
     import flash.events.ContextMenuEvent;
     import flash.external.ExternalInterface;
     import flash.geom.Matrix;
+    import flash.geom.Rectangle;
     import flash.geom.Point;
     import flash.net.URLLoader;
     import flash.net.URLRequest;
@@ -243,6 +244,7 @@ package org.svgweb
                 ExternalInterface.addCallback("jsGetAttribute", js_getAttribute);
                 ExternalInterface.addCallback("jsAppendChild", js_appendChild);
                 ExternalInterface.addCallback("jsGetScreenCTM", js_getScreenCTM);
+                ExternalInterface.addCallback("jsGetBBox", js_getBBox);
                 ExternalInterface.addCallback("jsMatrixInvert", js_matrixInvert);
                 ExternalInterface.addCallback("jsSetCurrentScale", js_setCurrentScale);
                 ExternalInterface.addCallback("jsSetCurrentTranslate", js_setCurrentTranslate);
@@ -917,6 +919,35 @@ package org.svgweb
             }
             else {
                 this.error("getScreenCTM: GUID not found: " 
+                           + elementGUID);
+            }
+            return null;
+        }
+
+        public function js_getBBox(msg:String):String {
+            // msg is a string delimited by __SVG__DELIMIT with fields in
+            // the following order: elementGUID
+            var args:Array = msg.split(DELIMITER);
+            var elementGUID:String = args[0];
+            
+            // Get the element to add the event listener to
+            var element:SVGNode = this.svgRoot.getNodeByGUID(elementGUID);
+
+            if (element) {
+                var r:Rectangle;
+                if (element._initialRenderDone) {
+                  //element.displayBounds(null);
+                  r = element.drawSprite.getBounds(element.drawSprite);
+                } else {
+                  r = element.getBounds();
+                }
+                return this.msgToString({ type: 'SVGRect',
+                                          x: Math.round(r.x), y: Math.round(r.y),
+                                          width: Math.round(r.width), height: Math.round(r.height)
+                                        });
+            }
+            else {
+                this.error("getBBox: GUID not found: " 
                            + elementGUID);
             }
             return null;

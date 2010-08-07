@@ -72,6 +72,7 @@ The 'lightWeight' attribute below is important for two reasons:
     <method name="removeEventListener" />
     <method name="getScreenCTM" />
     <method name="getCTM" />
+    <method name="getBBox" />
     <method name="createSVGPoint" />
     <method name="createSVGRect" />
     <method name="cloneNode" />
@@ -111,6 +112,7 @@ The 'lightWeight' attribute below is important for two reasons:
   function removeEventListener(t, l, u) { return this._fakeNode.removeEventListener(t, l, u); }
   function getScreenCTM() { return this._fakeNode.getScreenCTM(); }
   function getCTM() { return this._fakeNode.getCTM(); }
+  function getBBox() { return this._fakeNode.getBBox(); }
   function createSVGPoint() { return this._fakeNode.createSVGPoint(); }
   function createSVGRect() { return this._fakeNode.createSVGRect(); }
   function cloneNode(d) { return this._fakeNode.cloneNode(d); }
