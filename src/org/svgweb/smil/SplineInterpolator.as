@@ -69,10 +69,10 @@ package org.svgweb.smil {
             }
             else {
                 var points:Array = keySpline.split(/\s+/);//Split by white space
-                var x1:Number = SVGUnits.cleanNumber(points[0]);
-                var y1:Number = SVGUnits.cleanNumber(points[1]);
-                var x2:Number = SVGUnits.cleanNumber(points[2]);
-                var y2:Number = SVGUnits.cleanNumber(points[3]);
+                var x1:Number = SVGUnits.parseNum(points[0]);
+                var y1:Number = SVGUnits.parseNum(points[1]);
+                var x2:Number = SVGUnits.parseNum(points[2]);
+                var y2:Number = SVGUnits.parseNum(points[3]);
 
                 cachedSplines[keySpline] = new SplineInterpolator(x1,y1,x2,y2,node);
                 return cachedSplines[keySpline];

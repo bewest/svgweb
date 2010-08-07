@@ -38,7 +38,7 @@ package org.svgweb.utils
             
             //var totalTime:int = new Date().getTime();
 
-            data = SVGColors.trim(data);
+            data = SVGUnits.trim(data);
 
             // In the algorithm below, we are doing a few things. It is
             // unfortunately complicated but it was found to be the primary

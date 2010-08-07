@@ -2055,7 +2055,7 @@ extend(SVGWeb, {
     for (var i = 0; i < svgweb.handlers.length; i++) {      
       if (svgweb.handlers[i].type == 'object') {
         var removeMe = svgweb.handlers[i].flash;
-        if (removeMe.parentNode) { // attachment may have been interrupted
+        if (removeMe && removeMe.parentNode) { // attachment may have been interrupted
           svgweb.removeChild(removeMe, removeMe.parentNode);
         }
       } else {

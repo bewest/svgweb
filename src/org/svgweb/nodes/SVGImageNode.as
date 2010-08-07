@@ -21,7 +21,7 @@ package org.svgweb.nodes
 {
     import org.svgweb.utils.Base64;
     import org.svgweb.core.SVGNode;
-    import org.svgweb.utils.SVGColors;
+    import org.svgweb.utils.SVGUnits;
 
     import flash.display.Bitmap;
     import flash.display.BitmapData;
@@ -183,12 +183,12 @@ package org.svgweb.nodes
                             var clip:SVGRectNode=SVGRectNode(node.svgChildren[0]);
                             // Subtract the current position from the clip to get the
                             // image position
-                            return new Rectangle(SVGColors.cleanNumber2(clip.getStyleOrAttr('x'), this.getWidth())
-                                                   - SVGColors.cleanNumber2(this.getStyleOrAttr('x'), this.getWidth()),
-                                                 SVGColors.cleanNumber2(clip.getStyleOrAttr('y'), this.getHeight())
-                                                   - SVGColors.cleanNumber2(this.getStyleOrAttr('y'), this.getHeight()),
-                                                 SVGColors.cleanNumber2(clip.getStyleOrAttr('width'), this.getWidth()),
-                                                 SVGColors.cleanNumber2(clip.getStyleOrAttr('height'), this.getHeight()));
+                            return new Rectangle(SVGUnits.parseNumPct(clip.getStyleOrAttr('x'), this.getWidth())
+                                                   - SVGUnits.parseNumPct(this.getStyleOrAttr('x'), this.getWidth()),
+                                                 SVGUnits.parseNumPct(clip.getStyleOrAttr('y'), this.getHeight())
+                                                   - SVGUnits.parseNumPct(this.getStyleOrAttr('y'), this.getHeight()),
+                                                 SVGUnits.parseNumPct(clip.getStyleOrAttr('width'), this.getWidth()),
+                                                 SVGUnits.parseNumPct(clip.getStyleOrAttr('height'), this.getHeight()));
                         }
                     }
                 }

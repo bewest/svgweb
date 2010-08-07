@@ -20,7 +20,7 @@
 package org.svgweb.nodes
 {
     import org.svgweb.core.SVGNode;
-    import org.svgweb.utils.SVGColors;
+    import org.svgweb.utils.SVGUnits;
 
     public class SVGEllipseNode extends SVGNode
     {
@@ -54,16 +54,16 @@ package org.svgweb.nodes
 
         public function getEllipseXY():Array {
             var cxString:String = this.getAttribute('cx', '0');
-            var cx:Number = SVGColors.cleanNumber2(cxString, svgParent.getWidth());
+            var cx:Number = SVGUnits.parseNumPct(cxString, svgParent.getWidth());
 
             var cyString:String = this.getAttribute('cy', '0');
-            var cy:Number = SVGColors.cleanNumber2(cyString, svgParent.getHeight());
+            var cy:Number = SVGUnits.parseNumPct(cyString, svgParent.getHeight());
 
             var rxString:String = this.getAttribute('rx','0');
-            var rx:Number = SVGColors.cleanNumber2(rxString, svgParent.getWidth());
+            var rx:Number = SVGUnits.parseNumPct(rxString, svgParent.getWidth());
 
             var ryString:String = this.getAttribute('ry','0');
-            var ry:Number = SVGColors.cleanNumber2(ryString, svgParent.getWidth());
+            var ry:Number = SVGUnits.parseNumPct(ryString, svgParent.getWidth());
             return [ cx - rx, cy - ry ];
         }
     }

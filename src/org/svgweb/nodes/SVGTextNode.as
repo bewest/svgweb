@@ -22,7 +22,6 @@ package org.svgweb.nodes
 {
     import org.svgweb.SVGViewerWeb;
     import org.svgweb.core.SVGNode;
-    import org.svgweb.utils.SVGColors;
     import org.svgweb.utils.SVGUnits;
     
     import flash.display.Sprite;
@@ -163,7 +162,7 @@ package org.svgweb.nodes
             var fontScale:Number = fontSizeNum / nomSize;  // used to scale the TextField to produce the correct size
 
             if (fill != null) {
-                textFormat.color = SVGColors.getColor(fill);
+                textFormat.color = SVGUnits.getColor(fill);
             }
             textField.setTextFormat(textFormat);
             var textLineMetrics:TextLineMetrics = textField.getLineMetrics(0);
@@ -216,7 +215,7 @@ package org.svgweb.nodes
             for (i = 0; i < chunk.length; i++) {
                 glyphChar = chunk.charAt(i);
                 glyph = this._svgFont.getGlyph(glyphChar);
-                chunkWidth += SVGUnits.cleanNumber(glyph.getAttribute('horiz-adv-x'));
+                chunkWidth += SVGUnits.parseNum(glyph.getAttribute('horiz-adv-x'));
             }
 
             var startOffsetX:Number = 0.0;
@@ -254,7 +253,7 @@ package org.svgweb.nodes
                 glyphClone.setAttribute('x', String(glyphX));
                 glyphClone.setAttribute('y', String(glyphY));
 
-                glyphX += SVGUnits.cleanNumber(glyph.getAttribute('horiz-adv-x'));
+                glyphX += SVGUnits.parseNum(glyph.getAttribute('horiz-adv-x'));
 
                 glyphClone.topSprite.visible=false;
                 newGlyphs.push(glyphClone);
@@ -292,7 +291,7 @@ package org.svgweb.nodes
             var fontSize:String = this.getStyleOrAttr('font-size');
             var fontSizeNum:Number = 12.0;  // default
             if (fontSize != null) {
-                fontSizeNum = SVGUnits.cleanNumber(fontSize);
+                fontSizeNum = SVGUnits.parseNum(fontSize);
                 //Font size can be in user units, pixels (px), or points (pt); if no
                 //measurement type given defaults to user units
                 if (SVGUnits.getType(fontSize) == SVGUnits.PT) {
@@ -414,9 +413,9 @@ package org.svgweb.nodes
             if (name == 'stroke-width' && this._svgFont != null) {
                 // Relevant to SVG Fonts only
                 var fontSize:String = this.getStyleOrAttr('font-size');
-                var fontSizeNum:Number = SVGUnits.cleanNumber(fontSize);
+                var fontSizeNum:Number = SVGUnits.parseNum(fontSize);
                 var strokeWidthStr:String = super.getAttribute(name, defaultValue, inherit, true, true);
-                var strokeWidth:Number = SVGUnits.cleanNumber(strokeWidthStr);
+                var strokeWidth:Number = SVGUnits.parseNum(strokeWidthStr);
                 strokeWidth = strokeWidth * (1024 / fontSizeNum);
                 return String(strokeWidth);  
             } else if ( (name == "x" || name == "y") ) {

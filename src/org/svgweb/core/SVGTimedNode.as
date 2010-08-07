@@ -428,7 +428,7 @@ package org.svgweb.core
                     this.repeatCount = INDEFINITE;
                 }
                 else {
-                    this.repeatCount = SVGUnits.cleanNumber(repeatCountString);
+                    this.repeatCount = SVGUnits.parseNum(repeatCountString);
                 }
             }
         }

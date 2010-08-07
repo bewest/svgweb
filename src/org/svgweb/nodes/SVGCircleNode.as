@@ -20,7 +20,7 @@
 package org.svgweb.nodes
 {
     import org.svgweb.core.SVGNode;
-    import org.svgweb.utils.SVGColors;
+    import org.svgweb.utils.SVGUnits;
 
     public class SVGCircleNode extends SVGNode
     {
@@ -36,13 +36,13 @@ package org.svgweb.nodes
             this._graphicsCommands = new  Array();
             
             var cxString:String = this.getAttribute('cx', '0');
-            var cx:Number = SVGColors.cleanNumber2(cxString, svgParent.getWidth());
+            var cx:Number = SVGUnits.parseNumPct(cxString, svgParent.getWidth());
 
             var cyString:String = this.getAttribute('cy', '0');
-            var cy:Number = SVGColors.cleanNumber2(cyString, svgParent.getHeight());
+            var cy:Number = SVGUnits.parseNumPct(cyString, svgParent.getHeight());
 
             var rString:String = this.getAttribute('r','0');
-            var r:Number = SVGColors.cleanNumber2(rString, svgParent.getWidth());
+            var r:Number = SVGUnits.parseNumPct(rString, svgParent.getWidth());
 
             //Width/height calculations for gradients
             this.setXMinMax(cx - r);
@@ -56,13 +56,13 @@ package org.svgweb.nodes
         }
         public function getCircleXY():Array {
             var cxString:String = this.getAttribute('cx', '0');
-            var cx:Number = SVGColors.cleanNumber2(cxString, svgParent.getWidth());
+            var cx:Number = SVGUnits.parseNumPct(cxString, svgParent.getWidth());
 
             var cyString:String = this.getAttribute('cy', '0');
-            var cy:Number = SVGColors.cleanNumber2(cyString, svgParent.getHeight());
+            var cy:Number = SVGUnits.parseNumPct(cyString, svgParent.getHeight());
 
             var rString:String = this.getAttribute('r','0');
-            var r:Number = SVGColors.cleanNumber2(rString, svgParent.getWidth());
+            var r:Number = SVGUnits.parseNumPct(rString, svgParent.getWidth());
             return [ cx - r, cy - r ];
         }
         

@@ -19,7 +19,6 @@
 package org.svgweb.nodes
 {
     import org.svgweb.core.SVGNode;
-    import org.svgweb.utils.SVGColors;
     import org.svgweb.utils.SVGUnits;
     import flash.geom.Matrix;
 
@@ -80,24 +79,24 @@ package org.svgweb.nodes
             toString = toString.replace(/,/sg," "); //Replace commas with spaces
             if (typeParameter == "translate") {
                 // Parse From
-                parts = SVGColors.trim(fromString).split(/\s+/);
+                parts = SVGUnits.trim(fromString).split(/\s+/);
                 fromX = parts[0];
                 fromY = "0";
                 if (parts.length == 2) {
                     fromY = parts[1];
                 }
-                fromXVal = SVGUnits.cleanNumber(fromX);
-                fromYVal = SVGUnits.cleanNumber(fromY);
+                fromXVal = SVGUnits.parseNum(fromX);
+                fromYVal = SVGUnits.parseNum(fromY);
 
                 // Parse To
-                parts = SVGColors.trim(toString).split(/\s+/);
+                parts = SVGUnits.trim(toString).split(/\s+/);
                 toX = parts[0];
                 toY = "0";
                 if (parts.length == 2) {
                     toY = parts[1];
                 }
-                toXVal = SVGUnits.cleanNumber(toX);
-                toYVal = SVGUnits.cleanNumber(toY);
+                toXVal = SVGUnits.parseNum(toX);
+                toYVal = SVGUnits.parseNum(toY);
 
                 animX = interpolate(fromXVal, toXVal,
                                                keyTimeFraction, keyTimeSpline);
@@ -113,24 +112,24 @@ package org.svgweb.nodes
 
             if (typeParameter == "scale") {
                 // Parse From
-                parts = SVGColors.trim(fromString).split(/\s+/);
+                parts = SVGUnits.trim(fromString).split(/\s+/);
                 fromX = parts[0];
                 fromY = parts[0];
                 if (parts.length == 2) {
                     fromY = parts[1];
                 }
-                fromXVal = SVGUnits.cleanNumber(fromX);
-                fromYVal = SVGUnits.cleanNumber(fromY);
+                fromXVal = SVGUnits.parseNum(fromX);
+                fromYVal = SVGUnits.parseNum(fromY);
 
                 // Parse To
-                parts = SVGColors.trim(toString).split(/\s+/);
+                parts = SVGUnits.trim(toString).split(/\s+/);
                 toX = parts[0];
                 toY = parts[0];
                 if (parts.length == 2) {
                     toY = parts[1];
                 }
-                toXVal = SVGUnits.cleanNumber(toX);
-                toYVal = SVGUnits.cleanNumber(toY);
+                toXVal = SVGUnits.parseNum(toX);
+                toYVal = SVGUnits.parseNum(toY);
 
                 animX = interpolate(fromXVal, toXVal,
                                                keyTimeFraction, keyTimeSpline);
@@ -147,7 +146,7 @@ package org.svgweb.nodes
                 var toCY:String = "0";
 
                 // Parse From
-                parts = SVGColors.trim(fromString).split(/\s+/);
+                parts = SVGUnits.trim(fromString).split(/\s+/);
                 var fromAngleString:String = parts[0];
                 var fromCXString:String = "0";
                 var fromCYString:String = "0";
@@ -157,12 +156,12 @@ package org.svgweb.nodes
                 if (parts.length >= 3) {
                     fromCYString = parts[2];
                 }
-                var fromAngleVal:Number = SVGUnits.cleanNumber(fromAngleString);
-                var fromCXVal:Number = SVGUnits.cleanNumber(fromCXString);
-                var fromCYVal:Number = SVGUnits.cleanNumber(fromCYString);
+                var fromAngleVal:Number = SVGUnits.parseNum(fromAngleString);
+                var fromCXVal:Number = SVGUnits.parseNum(fromCXString);
+                var fromCYVal:Number = SVGUnits.parseNum(fromCYString);
 
                 // Parse To
-                parts = SVGColors.trim(toString).split(/\s+/);
+                parts = SVGUnits.trim(toString).split(/\s+/);
                 var toAngleString:String = parts[0];
                 var toCXString:String = "0";
                 var toCYString:String = "0";
@@ -172,9 +171,9 @@ package org.svgweb.nodes
                 if (parts.length >= 3) {
                     toCYString = parts[2];
                 }
-                var toAngleVal:Number = SVGUnits.cleanNumber(toAngleString);
-                var toCXVal:Number = SVGUnits.cleanNumber(toCXString);
-                var toCYVal:Number = SVGUnits.cleanNumber(toCYString);
+                var toAngleVal:Number = SVGUnits.parseNum(toAngleString);
+                var toCXVal:Number = SVGUnits.parseNum(toCXString);
+                var toCYVal:Number = SVGUnits.parseNum(toCYString);
 
                 var animAngle:Number = interpolate(fromAngleVal, toAngleVal,
                                                     keyTimeFraction, keyTimeSpline);
@@ -244,9 +243,9 @@ package org.svgweb.nodes
         static protected function getParameterValues(param:String):Array {
             var parts:Array;
             var values:Array = new Array();
-            parts = SVGColors.trim(param).split(/\s+/);
+            parts = SVGUnits.trim(param).split(/\s+/);
             for each (var part:String in parts) {
-                values.push(SVGUnits.cleanNumber(part));
+                values.push(SVGUnits.parseNum(part));
             }
             return(values);
         }

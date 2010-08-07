@@ -21,7 +21,6 @@ package org.svgweb.nodes
 {
     import org.svgweb.core.SVGNode;
     import org.svgweb.core.SVGTimedNode;
-    import org.svgweb.utils.SVGColors;
     import flash.events.Event;
     import flash.events.ProgressEvent;
     import flash.events.IOErrorEvent;

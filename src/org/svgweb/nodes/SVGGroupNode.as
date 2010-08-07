@@ -20,7 +20,7 @@
 package org.svgweb.nodes
 {
     import org.svgweb.core.SVGNode;
-    import org.svgweb.utils.SVGColors;
+    import org.svgweb.utils.SVGUnits;
     import flash.display.BlendMode;
 
 
@@ -41,7 +41,7 @@ package org.svgweb.nodes
             // Group nodes with opacity need to use the layer blend mode to make it work.
             // We only do this when necessary because this consumes resources.
             if (name == 'opacity') {
-                if (SVGColors.cleanNumber(this.getStyleOrAttr(name)) < 1.0) {
+                if (SVGUnits.parseNum(this.getStyleOrAttr(name)) < 1.0) {
                     topSprite.blendMode = BlendMode.LAYER;
                 }
                 else {

@@ -22,7 +22,7 @@ package org.svgweb.nodes
 {
     import org.svgweb.core.SVGNode;
     import org.svgweb.core.SVGGradient;
-    import org.svgweb.utils.SVGColors;
+    import org.svgweb.utils.SVGUnits;
     import flash.geom.Matrix;
     import flash.display.GradientType;
     import flash.display.InterpolationMethod;
@@ -96,8 +96,8 @@ package org.svgweb.nodes
             var x2String:String = this.getAttribute('x2', '100%', false);         
             var y1String:String = this.getAttribute('y1', '0%', false);
             var y2String:String = this.getAttribute('y2', '0%', false);
-            var objectX:Number = Math.round(SVGColors.cleanNumber2(xString, node.svgParent.getWidth()));
-            var objectY:Number = Math.round(SVGColors.cleanNumber2(yString, node.svgParent.getHeight()));
+            var objectX:Number = Math.round(SVGUnits.parseNumPct(xString, node.svgParent.getWidth()));
+            var objectY:Number = Math.round(SVGUnits.parseNumPct(yString, node.svgParent.getHeight()));
 
             /*
                Flash requires us to pass it a matrix that converts from virtual flash gradient
@@ -145,10 +145,10 @@ package org.svgweb.nodes
             var matr:Matrix= new Matrix();
 
             if (gradientUnits == 'userSpaceOnUse') {
-                var x1:Number = Math.round(SVGColors.cleanNumber2(x1String, node.svgParent.getWidth()));
-                var y1:Number = Math.round(SVGColors.cleanNumber2(y1String, node.svgParent.getHeight()));
-                var x2:Number = Math.round(SVGColors.cleanNumber2(x2String, node.svgParent.getWidth()));
-                var y2:Number = Math.round(SVGColors.cleanNumber2(y2String, node.svgParent.getHeight()));
+                var x1:Number = Math.round(SVGUnits.parseNumPct(x1String, node.svgParent.getWidth()));
+                var y1:Number = Math.round(SVGUnits.parseNumPct(y1String, node.svgParent.getHeight()));
+                var x2:Number = Math.round(SVGUnits.parseNumPct(x2String, node.svgParent.getWidth()));
+                var y2:Number = Math.round(SVGUnits.parseNumPct(y2String, node.svgParent.getHeight()));
 
                 var gradientWidth:Number = Math.abs(x2 - x1);
                 var gradientHeight:Number = Math.abs(y2 - y1);
@@ -191,28 +191,28 @@ package org.svgweb.nodes
                 
                 // Get gradient coordinates in objectBoundingBox units
                 if (x1String.search('%') > -1) {
-                    x1 = SVGColors.cleanNumber(x1String) / 100;
+                    x1 = SVGUnits.parseNum(x1String) / 100;
                 }
                 else {
-                    x1 = SVGColors.cleanNumber(x1String);
+                    x1 = SVGUnits.parseNum(x1String);
                 }
                 if (y1String.search('%') > -1) {
-                    y1 = SVGColors.cleanNumber(y1String) / 100;
+                    y1 = SVGUnits.parseNum(y1String) / 100;
                 }
                 else {
-                    y1 = SVGColors.cleanNumber(y1String);
+                    y1 = SVGUnits.parseNum(y1String);
                 }
                 if (x2String.search('%') > -1) {
-                    x2 =  SVGColors.cleanNumber(x2String) / 100;
+                    x2 =  SVGUnits.parseNum(x2String) / 100;
                 }
                 else {
-                    x2 = SVGColors.cleanNumber(x2String);
+                    x2 = SVGUnits.parseNum(x2String);
                 }
                 if (y2String.search('%') > -1) {
-                    y2 =  SVGColors.cleanNumber(y2String) / 100;
+                    y2 =  SVGUnits.parseNum(y2String) / 100;
                 }
                 else {
-                    y2 = SVGColors.cleanNumber(y2String);
+                    y2 = SVGUnits.parseNum(y2String);
                 }
                 
                 // Scale from flash gradient area to bounding box

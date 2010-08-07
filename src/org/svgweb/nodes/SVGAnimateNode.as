@@ -20,7 +20,6 @@
 package org.svgweb.nodes
 {
     import org.svgweb.utils.SVGUnits;
-    import org.svgweb.utils.SVGColors;
     import org.svgweb.utils.PathParser;
     import org.svgweb.core.SVGNode;
     import org.svgweb.core.SVGTimedNode;
@@ -211,8 +210,8 @@ package org.svgweb.nodes
 
             if (calcModeParameter == "discrete") {
                 if (accumulateParameter == "sum") {  // assume additive attribute
-                    fromVal = SVGColors.cleanNumber(fromString);
-                    toVal = SVGColors.cleanNumber(toString);
+                    fromVal = SVGUnits.parseNum(fromString);
+                    toVal = SVGUnits.parseNum(toString);
                     previousCount = getRepeatIndex(lastDocTime);
                     if (previousCount > 0) {
                         // XXX For "values", should use the last value, not to
@@ -239,11 +238,11 @@ package org.svgweb.nodes
             }
 
             // from here, everything should be numbers
-            fromVal = SVGColors.cleanNumber(fromString);
-            toVal = SVGColors.cleanNumber(toString);
+            fromVal = SVGUnits.parseNum(fromString);
+            toVal = SVGUnits.parseNum(toString);
             var isColor:Boolean = false;
-            if (SVGColors.isColor(fromString)
-                      && SVGColors.isColor(toString) ) {
+            if (SVGUnits.isColor(fromString)
+                      && SVGUnits.isColor(toString) ) {
                 isColor = true;
             }
             var animVal:Number;
@@ -265,7 +264,7 @@ package org.svgweb.nodes
                                           isColor);
             }
             if (isColor) {  // convert animVal to color string value
-                result = SVGColors.colorString(animVal);
+                result = SVGUnits.colorString(animVal);
             }
             else { 
                 result = String(animVal);
@@ -277,7 +276,7 @@ package org.svgweb.nodes
         public function getKeyTimeIndex(repeatFraction:Number):uint {
             var i:uint;
             for (i=1; i < keyTimes.length; i++) {
-                if (repeatFraction < SVGUnits.cleanNumber(keyTimes[i])) {
+                if (repeatFraction < SVGUnits.parseNum(keyTimes[i])) {
                     return i-1;
                 }
             }
@@ -308,7 +307,7 @@ package org.svgweb.nodes
 
         public function getKeyTimeValue(keyTimeIndex:uint):String {
             var parts:Array = valuesParameter.split(/;/);
-            return SVGColors.trim(parts[keyTimeIndex]);
+            return SVGUnits.trim(parts[keyTimeIndex]);
         }
 
         public function isEffective():Boolean {
@@ -429,23 +428,23 @@ package org.svgweb.nodes
             // convert into a from-to
             if (byParameter != null) {
                 if ( (fromParameter == null) || (fromParameter == "inherit")) {
-                    if (SVGColors.isColor(byParameter)) fromParameter = "#000000";
+                    if (SVGUnits.isColor(byParameter)) fromParameter = "#000000";
                     else fromParameter = "0";
                     toParameter = byParameter;
                     _isAdditive = true;  // added to underlying value at getAnimValue
                 }
                 else {
                     // XXX byParameter could be "inherit"
-                    if (SVGColors.isColor(fromParameter)) {
-                        var fromVal:Number = SVGColors.getColor(fromParameter);
-                        var byVal:Number = SVGColors.getColor(byParameter);
-                        var toVal:Number = SVGColors.addColors(SVGColors.getColor(fromParameter),
-                                                               SVGColors.getColor(byParameter));
-                        toParameter = SVGColors.colorString(toVal);
+                    if (SVGUnits.isColor(fromParameter)) {
+                        var fromVal:Number = SVGUnits.getColor(fromParameter);
+                        var byVal:Number = SVGUnits.getColor(byParameter);
+                        var toVal:Number = SVGUnits.addColors(SVGUnits.getColor(fromParameter),
+                                                               SVGUnits.getColor(byParameter));
+                        toParameter = SVGUnits.colorString(toVal);
                     }
                     else {
-                        toParameter = String(SVGUnits.cleanNumber(fromParameter) +
-                                              SVGUnits.cleanNumber(byParameter));  // assuming additive
+                        toParameter = String(SVGUnits.parseNum(fromParameter) +
+                                              SVGUnits.parseNum(byParameter));  // assuming additive
                     }
                 }
             }
@@ -482,7 +481,7 @@ package org.svgweb.nodes
             }
             if (keyTimes.length < numValues) {
                 var numTimesToAdd:uint = numValues - keyTimes.length;
-                var lastValueAdded:Number = SVGUnits.cleanNumber(keyTimes[keyTimes.length-1]);
+                var lastValueAdded:Number = SVGUnits.parseNum(keyTimes[keyTimes.length-1]);
                 var span:Number = 1.0 - lastValueAdded;
                 for (var i:uint=1; i <= numTimesToAdd; i++) {
                     keyTimes.push(String(lastValueAdded + span/numTimesToAdd));
@@ -538,7 +537,7 @@ package org.svgweb.nodes
                             strValue = targetNode.svgParent.getAttribute(attributeName, null, true, false);
                         if (strValue == null) strValue = "inherit";
                     }
-                    if (attributeName == 'd' || SVGColors.isColor(strValue)) {
+                    if (attributeName == 'd' || SVGUnits.isColor(strValue)) {
                         return;
                     }
                     var keyVal:Number = parseInt(strValue);
@@ -560,7 +559,7 @@ package org.svgweb.nodes
                             paramString = targetNode.svgParent.getAttribute(attributeName, null, true, false);
                         if (paramString == null) paramString = "inherit";
                     }
-                    if (attributeName != 'd' && !SVGColors.isColor(paramString)) {
+                    if (attributeName != 'd' && !SVGUnits.isColor(paramString)) {
                         var fromVal:Number = parseInt(paramString);
                         if ( isNaN(fromVal) || fromVal > int.MAX_VALUE || fromVal < int.MIN_VALUE ) {
                             calcModeParameter = "discrete";
@@ -575,7 +574,7 @@ package org.svgweb.nodes
                             paramString = targetNode.svgParent.getAttribute(attributeName, null, true, false);
                         if (paramString == null) paramString = "inherit";
                     }
-                    if (attributeName != 'd' && !SVGColors.isColor(paramString)) {
+                    if (attributeName != 'd' && !SVGUnits.isColor(paramString)) {
                         var toVal:Number = parseInt(paramString);
                         if ( isNaN(toVal) || toVal > int.MAX_VALUE || toVal < int.MIN_VALUE ) {
                             calcModeParameter = "discrete";

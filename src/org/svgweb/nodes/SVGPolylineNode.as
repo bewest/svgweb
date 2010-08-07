@@ -19,7 +19,7 @@
 
 package org.svgweb.nodes
 {
-    import org.svgweb.utils.SVGColors;
+    import org.svgweb.utils.SVGUnits;
     import org.svgweb.core.SVGNode;
 
     import flash.display.GraphicsPath;
@@ -42,7 +42,7 @@ package org.svgweb.nodes
                                                      fillRule=='evenodd' ? GraphicsPathWinding.EVEN_ODD
                                                                          : GraphicsPathWinding.NON_ZERO);
             
-            var pointsString:String = SVGColors.trim(this.getAttribute('points',''));
+            var pointsString:String = SVGUnits.trim(this.getAttribute('points',''));
             
             pointsString = pointsString.replace(/\s+/sg,","); //Replace spaces with a comma
             pointsString = pointsString.replace(/,{2,}/sg,","); // Remove any extra commas

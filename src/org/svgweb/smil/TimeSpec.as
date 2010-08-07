@@ -18,7 +18,6 @@
 
 package org.svgweb.smil
 {
-    import org.svgweb.utils.SVGColors;
     import org.svgweb.utils.SVGUnits;
     import org.svgweb.core.SVGTimedNode;
 
@@ -87,16 +86,16 @@ package org.svgweb.smil
 
                 if (eventSpec.indexOf("+") != -1) {
                     eventParts = eventSpec.split(/\+/);
-                    eventName =  SVGColors.trim(eventParts[0]);
+                    eventName =  SVGUnits.trim(eventParts[0]);
                     offset=SVGUnits.parseTimeVal(eventParts[1]);
                 }
                 else if (eventSpec.indexOf("-") != -1) {
                     eventParts = eventSpec.split(/-/);
-                    eventName =  SVGColors.trim(eventParts[0]);
+                    eventName =  SVGUnits.trim(eventParts[0]);
                     offset= -1*SVGUnits.parseTimeVal(eventParts[1]);
                 }
                 else {
-                    eventName =  SVGColors.trim(eventSpec);
+                    eventName =  SVGUnits.trim(eventSpec);
                     offset= 0;
                 }
 

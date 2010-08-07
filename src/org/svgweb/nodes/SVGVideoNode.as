@@ -52,8 +52,8 @@ package org.svgweb.nodes
             }
             netStream.client = {onMetaData:onMetaDataHandler};
        
-            var _width:Number = SVGUnits.cleanNumber(this.getAttribute('width', '0'));
-            var _height:Number = SVGUnits.cleanNumber(this.getAttribute('height', '0'));
+            var _width:Number = SVGUnits.parseNum(this.getAttribute('width', '0'));
+            var _height:Number = SVGUnits.parseNum(this.getAttribute('height', '0'));
             video = new Video(_width, _height);
             video.attachNetStream(netStream);
 
@@ -71,8 +71,8 @@ package org.svgweb.nodes
         override protected function setAttributes():void {
             super.setAttributes();
             if (video) {
-                video.width = SVGUnits.cleanNumber(this.getAttribute('width', '0'));
-                video.height = SVGUnits.cleanNumber(this.getAttribute('height', '0'));
+                video.width = SVGUnits.parseNum(this.getAttribute('width', '0'));
+                video.height = SVGUnits.parseNum(this.getAttribute('height', '0'));
             }
         }
 

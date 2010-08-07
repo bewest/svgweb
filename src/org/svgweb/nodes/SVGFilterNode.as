@@ -21,7 +21,7 @@ package org.svgweb.nodes
 {
     import org.svgweb.core.SVGNode;
     import org.svgweb.nodes.SVGSVGNode;
-    import org.svgweb.utils.SVGColors;
+    import org.svgweb.utils.SVGUnits;
     
     import flash.filters.BlurFilter;
     import flash.geom.Matrix;
@@ -84,8 +84,8 @@ package org.svgweb.nodes
                         stdDeviationX = stdDeviationY = values[0];
                     }
                 }
-                var blurAmountX:Number = SVGColors.cleanNumber(stdDeviationX);
-                var blurAmountY:Number = SVGColors.cleanNumber(stdDeviationY);
+                var blurAmountX:Number = SVGUnits.parseNum(stdDeviationX);
+                var blurAmountY:Number = SVGUnits.parseNum(stdDeviationY);
                 blurAmountX = blurAmountX * concatMatrix.a;
                 blurAmountY = blurAmountY * concatMatrix.a;
 

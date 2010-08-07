@@ -22,7 +22,6 @@ package org.svgweb.nodes
     import org.svgweb.utils.EllipticalArc;
     import org.svgweb.utils.PathParser;
     import org.svgweb.core.SVGNode;
-    import org.svgweb.utils.SVGColors;
     
     import flash.display.GraphicsPath;
     import flash.display.GraphicsPathWinding;

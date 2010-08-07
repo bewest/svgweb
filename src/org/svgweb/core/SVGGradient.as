@@ -23,7 +23,7 @@ package org.svgweb.core
 {
     import org.svgweb.nodes.SVGSVGNode;
     import org.svgweb.nodes.SVGStopNode;
-    import org.svgweb.utils.SVGColors;
+    import org.svgweb.utils.SVGUnits;
 
     import flash.display.DisplayObject;
     import flash.display.SpreadMethod;
@@ -97,15 +97,15 @@ package org.svgweb.core
 
                     match = ratio.match(/([^%]+)%/s);
                     if (match) {
-                        ratioNum = 255 * (SVGColors.cleanNumber(match[1]) / 100);
+                        ratioNum = 255 * (SVGUnits.parseNum(match[1]) / 100);
                     }
                     else {
-                        ratioNum = 255 * SVGColors.cleanNumber(ratio);
+                        ratioNum = 255 * SVGUnits.parseNum(ratio);
                     }
 
-                    colors.push(SVGColors.getColor(color));
+                    colors.push(SVGUnits.getColor(color));
                     ratios.push(ratioNum);
-                    alphas.push(SVGColors.cleanNumber(alpha) * line_alpha);
+                    alphas.push(SVGUnits.parseNum(alpha) * line_alpha);
                 }
             }
 

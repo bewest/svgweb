@@ -20,7 +20,7 @@
 package org.svgweb.nodes
 {
     import org.svgweb.core.SVGNode;
-    import org.svgweb.utils.SVGColors;
+    import org.svgweb.utils.SVGUnits;
     
     public class SVGRectNode extends SVGNode
     {                
@@ -36,8 +36,8 @@ package org.svgweb.nodes
             
             var widthStr:String = this.getAttribute('width','0');
             var heightStr:String = this.getAttribute('height','0');
-            var width:Number = SVGColors.cleanNumber2(widthStr, getWidth());
-            var height:Number = SVGColors.cleanNumber2(heightStr, getHeight());
+            var width:Number = SVGUnits.parseNumPct(widthStr, getWidth());
+            var height:Number = SVGUnits.parseNumPct(heightStr, getHeight());
             
             var rx:String = this.getAttribute('rx');
             var ry:String = this.getAttribute('ry');
@@ -51,7 +51,7 @@ package org.svgweb.nodes
             
             //x & y loaded in setAttributes()
             if (rx != null) {
-                this._graphicsCommands.push(['RECT', 0, 0, width, height, (SVGColors.cleanNumber(rx) * 2), SVGColors.cleanNumber(ry) * 2]);                
+                this._graphicsCommands.push(['RECT', 0, 0, width, height, (SVGUnits.parseNum(rx) * 2), SVGUnits.parseNum(ry) * 2]);                
             }
             else {
                 this._graphicsCommands.push(['RECT', 0, 0, width, height]);

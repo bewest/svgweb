@@ -21,7 +21,6 @@
 package org.svgweb.nodes {
 
     import org.svgweb.core.SVGNode;
-    import org.svgweb.utils.SVGUnits;
 
     public class SVGStopNode extends SVGNode {
 

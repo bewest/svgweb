@@ -39,7 +39,6 @@ package org.svgweb
     import org.svgweb.nodes.SVGDOMTextNode;
     import org.svgweb.events.SVGEvent;
     import org.svgweb.utils.SVGUnits;
-    import org.svgweb.utils.SVGColors;
     
     import flash.display.Sprite;
     import flash.display.StageScaleMode;
@@ -412,8 +411,8 @@ package org.svgweb
             var objectURL:String = args[0];
             var pageURL:String = args[1];
             // Flash/JS bridge transforms nulls/undefined into '' empty strings
-            this.objectWidth = SVGUnits.cleanNumber(args[2]);
-            this.objectHeight = SVGUnits.cleanNumber(args[3]);
+            this.objectWidth = SVGUnits.parseNum(args[2]);
+            this.objectHeight = SVGUnits.parseNum(args[3]);
             var ignoreWhiteSpace:Boolean = (args[4] === 'true') ? true : false;
             var svgString:String = this.decodeFlashData(args[5]);
             
@@ -433,8 +432,8 @@ package org.svgweb
             // msg is a string delimited by __SVG__DELIMIT with fields in
             // the following order: objectWidth, objectHeight
             var args:Array = msg.split(DELIMITER);
-            this.objectWidth = SVGUnits.cleanNumber(args[0]);
-            this.objectHeight = SVGUnits.cleanNumber(args[1]);
+            this.objectWidth = SVGUnits.parseNum(args[0]);
+            this.objectHeight = SVGUnits.parseNum(args[1]);
             //this.debug("js_handlResize: object size: " + objectWidth + "," + objectHeight);
             this.scaleX = (this.stage.stageWidth/this.objectWidth)
                            * (this.objectWidth / this.getWidth());
@@ -901,8 +900,8 @@ package org.svgweb
                 m.invert();
                 var xStr:String = element.getStyleOrAttr('x');
                 var yStr:String = element.getStyleOrAttr('y');
-                m.translate(SVGColors.cleanNumber2(xStr, element.getWidth()),
-                            SVGColors.cleanNumber2(yStr, element.getHeight()));
+                m.translate(SVGUnits.parseNumPct(xStr, element.getWidth()),
+                            SVGUnits.parseNumPct(yStr, element.getHeight()));
                 m.invert();
 
                 // native getScreenCTM ignores zoom and so shall we.
@@ -915,7 +914,6 @@ package org.svgweb
                                           c: m.c, d: m.d,
                                           e: m.tx, f: m.ty
                                         });
-                return retVal;
             }
             else {
                 this.error("getScreenCTM: GUID not found: " 

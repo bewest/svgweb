@@ -23,7 +23,6 @@ package org.svgweb.core
     import org.svgweb.core.SVGViewer;
     import org.svgweb.SVGViewerWeb;
     import org.svgweb.nodes.*;
-    import org.svgweb.utils.SVGColors;
     import org.svgweb.utils.SVGUnits;
     
     import flash.display.CapsStyle;
@@ -534,16 +533,16 @@ package org.svgweb.core
             if (tmp != null) {
                 switch (name) {
                     case 'x':
-                        drawSprite[field] = SVGColors.cleanNumber2(tmp, this.getWidth());
+                        drawSprite[field] = SVGUnits.parseNumPct(tmp, this.getWidth());
                         break;
                     case 'y':
-                        drawSprite[field] = SVGColors.cleanNumber2(tmp, this.getHeight());
+                        drawSprite[field] = SVGUnits.parseNumPct(tmp, this.getHeight());
                         break;
                     case 'rotate':
-                        drawSprite[field] = SVGColors.cleanNumber(tmp);
+                        drawSprite[field] = SVGUnits.parseNum(tmp);
                         break;
                     case 'opacity':
-                        drawSprite[field] = SVGColors.cleanNumber(tmp);
+                        drawSprite[field] = SVGUnits.parseNum(tmp);
                         break;
                 }
             }
@@ -568,7 +567,7 @@ package org.svgweb.core
             }
             if (drawSprite) {
                 if (visible == 'visible') {
-                    drawSprite.alpha = SVGColors.cleanNumber(this.getStyleOrAttr('opacity'));
+                    drawSprite.alpha = SVGUnits.parseNum(this.getStyleOrAttr('opacity'));
                 } else {
                     drawSprite.alpha = 0;
                 }
@@ -853,10 +852,10 @@ package org.svgweb.core
                 }
                 // Still may draw for fill 'none' in order to get mouse events.
                 if (fill != 'none') {
-                    color_and_alpha = SVGColors.getColorAndAlpha(fill);
+                    color_and_alpha = SVGUnits.getColorAndAlpha(fill);
                     color_core = color_and_alpha[0];
                     color_alpha = color_and_alpha[1];
-                    fill_alpha = SVGColors.cleanNumber( this.getStyleOrAttr('fill-opacity') ) * color_alpha;
+                    fill_alpha = SVGUnits.parseNum( this.getStyleOrAttr('fill-opacity') ) * color_alpha;
                 }
                 var pointerEvents:String = this.getStyleOrAttr('pointer-events', 'visiblePainted');
                 // Begin fill if there is a fill set, or if we need an invisible fill to get mouse events
@@ -887,9 +886,9 @@ package org.svgweb.core
                 if (stroke == 'currentColor') {
                     stroke = this.getStyleOrAttr('color');
                 }
-                line_color = SVGColors.cleanNumber(SVGColors.getColor(stroke));
-                line_alpha = SVGColors.cleanNumber(this.getStyleOrAttr('stroke-opacity'));
-                line_width = SVGColors.cleanNumber(this.getStyleOrAttr('stroke-width'));
+                line_color = SVGUnits.parseNum(SVGUnits.getColor(stroke));
+                line_alpha = SVGUnits.parseNum(this.getStyleOrAttr('stroke-opacity'));
+                line_width = SVGUnits.parseNum(this.getStyleOrAttr('stroke-width'));
             }
 
             var capsStyle:String = this.getStyleOrAttr('stroke-linecap');
@@ -939,7 +938,7 @@ package org.svgweb.core
             }
             
             drawSprite.graphics.lineStyle(line_width, line_color, line_alpha, false, LineScaleMode.NORMAL,
-                                          capsStyle, jointStyle, SVGColors.cleanNumber(miterLimit));
+                                          capsStyle, jointStyle, SVGUnits.parseNum(miterLimit));
             // draw even if visibility = "hidden".  May be required for
             // pointer-events. Animation of visibility attribute independent of
             // drawNode() relies on the correct drawing state
@@ -1043,10 +1042,10 @@ package org.svgweb.core
                 if (viewBox != null) {
                     viewBox = viewBox.replace(/,/sg," "); //Replace commas with spaces
                     var points:Array = viewBox.split(/\s+/); //Split by white space 
-                    viewX = SVGColors.cleanNumber(points[0]);
-                    viewY = SVGColors.cleanNumber(points[1]);
-                    viewWidth = SVGColors.cleanNumber(points[2]);
-                    viewHeight = SVGColors.cleanNumber(points[3]);
+                    viewX = SVGUnits.parseNum(points[0]);
+                    viewY = SVGUnits.parseNum(points[1]);
+                    viewWidth = SVGUnits.parseNum(points[2]);
+                    viewHeight = SVGUnits.parseNum(points[3]);
                 }
                 else {
                     viewX = 0;
@@ -1509,7 +1508,7 @@ package org.svgweb.core
             var isPath:Boolean = name=='d';
             var animVal:Number;
             if (baseVal) {
-                animVal = SVGUnits.cleanNumber(baseVal);
+                animVal = SVGUnits.parseNum(baseVal);
             }
             else if (!isPath) {
                 animVal= 0;
@@ -1517,7 +1516,7 @@ package org.svgweb.core
              
             // Handle discrete string values
             var discreteStringVal:String;
-            var isColor:Boolean = (baseVal != null) && !isPath && SVGColors.isColor(baseVal);
+            var isColor:Boolean = (baseVal != null) && !isPath && SVGUnits.isColor(baseVal);
             var animValString:String = null;
             // XXX This should sort by priority (activation order) 
             // Add or replace with animations
@@ -1526,16 +1525,16 @@ package org.svgweb.core
                     && animation.isEffective() ) {
                     animValString = animation.getAnimValue();
                     if (animValString == null) continue;  // null is an error, or !isEffective
-                    isColor = !isPath && (isColor || SVGColors.isColor(animValString));
+                    isColor = !isPath && (isColor || SVGUnits.isColor(animValString));
                     if (animation.isAdditive()) {
                         if (isColor) {
-                            animVal = SVGColors.addColors(animVal, SVGUnits.cleanNumber(animValString));
+                            animVal = SVGUnits.addColors(animVal, SVGUnits.parseNum(animValString));
                         } else if (!isPath) {
-                            animVal = animVal + SVGUnits.cleanNumber(animValString);
+                            animVal = animVal + SVGUnits.parseNum(animValString);
                         }
                     }
                     else {
-                        if (isPath || isNaN(animVal = SVGUnits.cleanNumber(animValString))) {
+                        if (isPath || isNaN(animVal = SVGUnits.parseNum(animValString))) {
                            discreteStringVal = animValString;
                         }
                     }
@@ -1547,7 +1546,7 @@ package org.svgweb.core
                 return discreteStringVal;
             } else {
                 if (isColor) {
-                    return SVGColors.colorString(animVal);
+                    return SVGUnits.colorString(animVal);
                 } else {
                     return String(animVal);
                 }
@@ -1771,8 +1770,8 @@ package org.svgweb.core
                 for each(var style:String in styles) {
                     var styleSet:Array = style.split(':');
                     if (styleSet.length == 2) {
-                        var attrName:String = SVGColors.trim(styleSet[0]);
-                        var attrValue:String = SVGColors.trim(styleSet[1]);                        
+                        var attrName:String = SVGUnits.trim(styleSet[0]);
+                        var attrValue:String = SVGUnits.trim(styleSet[1]);                        
                         this._styles[attrName] = attrValue;
                     }
                 }
@@ -1908,7 +1907,7 @@ package org.svgweb.core
                 }
                 if (this._invalidAttribute & INVALID_ATTR_OPACITY) {
                     if (this.drawSprite)
-                      this.drawSprite.alpha = SVGColors.cleanNumber(this.getStyleOrAttr('opacity'));
+                      this.drawSprite.alpha = SVGUnits.parseNum(this.getStyleOrAttr('opacity'));
                 }
                 if (this._invalidAttribute & INVALID_ATTR_VISIBILITY) {
                      if (this.getStyleOrAttr('visibility') == 'hidden') {
@@ -1995,7 +1994,7 @@ package org.svgweb.core
                 parentWidth = this.svgParent.getWidth();
             }
             if (this.getAttribute('width') != null) {
-                return SVGColors.cleanNumber2(this.getAttribute('width'), parentWidth);
+                return SVGUnits.parseNumPct(this.getAttribute('width'), parentWidth);
             }
 
             // defaults to 100%
@@ -2011,7 +2010,7 @@ package org.svgweb.core
                 parentHeight=this.svgParent.getHeight();
             }
             if (this.getAttribute('height') != null) {
-                return SVGColors.cleanNumber2(this.getAttribute('height'), parentHeight);
+                return SVGUnits.parseNumPct(this.getAttribute('height'), parentHeight);
             }
 
             // defaults to 100%

@@ -60,16 +60,16 @@ package org.svgweb.nodes {
 
             var tmp:String = this.getAttribute('width');
             if (tmp) {
-                patternWidth = SVGUnits.cleanNumber(tmp);
+                patternWidth = SVGUnits.parseNum(tmp);
             }
 
             tmp = this.getAttribute('height');
             if (tmp) {
-                patternHeight = SVGUnits.cleanNumber(tmp);
+                patternHeight = SVGUnits.parseNum(tmp);
             }
 
-            var patternX:Number = SVGUnits.cleanNumber(this.getAttribute('x'));
-            var patternY:Number = SVGUnits.cleanNumber(this.getAttribute('y'));
+            var patternX:Number = SVGUnits.parseNum(this.getAttribute('x'));
+            var patternY:Number = SVGUnits.parseNum(this.getAttribute('y'));
 
             var matrix:Matrix
             tmp = this.getAttribute('patternTransform');
