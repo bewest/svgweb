@@ -63,6 +63,9 @@ package org.svgweb.nodes
         }
         
         override protected function onSVGDocTimeUpdate(event:Event):void {
+            if (!targetNode) {
+                parseParameters();
+            }
             super.onSVGDocTimeUpdate(event);
             // allow descendents to skip this code below
             // primarily SVGSetNode
@@ -72,16 +75,16 @@ package org.svgweb.nodes
             // or a lesser update
             if (targetNode && this.active) {
                 targetNode.invalidateAttribute(attributeName);
-                }
             }
+        }
 
         override protected function initialize():void {
             super.initialize();
+            if (!targetNode) {
+                this.parseParameters();
+            }
             if (targetNode) {
                 targetNode.addAnimation(this);
-            }
-            else {
-                this.dbg("No target for animation " + id);
             }
         }
 
@@ -119,7 +122,7 @@ package org.svgweb.nodes
                 }
                 if ( (fromString == "inherit") || (toString == "inherit")) {
                     var inheritedValue:String = null;
-                    if (targetNode.svgParent != null) {
+                    if (targetNode && targetNode.svgParent != null) {
                         inheritedValue = targetNode.svgParent.getAttribute(attributeName, null, true, true);
                     }
                     if (fromString == "inherit") fromString = inheritedValue;
@@ -316,13 +319,18 @@ package org.svgweb.nodes
         override protected function timeIntervalStarted(docTime:Number):void {
             super.timeIntervalStarted(docTime);
             frozen = false;
-            targetNode.invalidateAttribute(attributeName);
+            if (!targetNode) {
+                parseParameters();
             }
+            if (targetNode) {
+                targetNode.invalidateAttribute(attributeName);
+            }
+        }
 
         override protected function timeIntervalEnded(docTime:Number):void {
             super.timeIntervalEnded(docTime);
             targetNode.invalidateAttribute(attributeName);
-            }
+        }
 
         protected function interpolate(fromVal:Number, toVal:Number,
                                        fraction:Number, keySpline:String,
@@ -526,7 +534,7 @@ package org.svgweb.nodes
                 var values:Array = valuesParameter.split(";");
                 for each (var strValue:String in values) {
                     if (strValue == "inherit") {
-                        if (targetNode.svgParent != null)
+                        if (targetNode && targetNode.svgParent != null)
                             strValue = targetNode.svgParent.getAttribute(attributeName, null, true, false);
                         if (strValue == null) strValue = "inherit";
                     }
@@ -548,7 +556,7 @@ package org.svgweb.nodes
                 if (fromParameter != null) {
                     paramString = fromParameter;
                     if (paramString == "inherit") {
-                        if (targetNode.svgParent != null)
+                        if (targetNode && targetNode.svgParent != null)
                             paramString = targetNode.svgParent.getAttribute(attributeName, null, true, false);
                         if (paramString == null) paramString = "inherit";
                     }
@@ -563,7 +571,7 @@ package org.svgweb.nodes
                 if (toParameter != null) {
                     paramString = toParameter;
                     if (paramString == "inherit") {
-                        if (targetNode.svgParent != null)
+                        if (targetNode && targetNode.svgParent != null)
                             paramString = targetNode.svgParent.getAttribute(attributeName, null, true, false);
                         if (paramString == null) paramString = "inherit";
                     }
@@ -582,7 +590,7 @@ package org.svgweb.nodes
             var result:String = fromParameter;
 
             if (result != null) return result;
-            else {  // not specified
+            else if (targetNode) {  // not specified
                 result = targetNode.getAttribute(attributeName, null, false, false, false);
             }
             if (result==null) {
@@ -593,6 +601,10 @@ package org.svgweb.nodes
                 result = "inherit";
             }
             return result;
+        }
+
+        override public function handleAttrChange(name:String, value:String, attrNamespace:String = null):void {
+           // override to avoid drawing done in SVGNode.handleAttrChange() 
         }
     }
 }
