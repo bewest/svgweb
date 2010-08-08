@@ -226,7 +226,8 @@ svgnsFake = 'urn:__fake__internal__namespace';
  
 // browser detection adapted from Dojo
 var isOpera = false, isSafari = false, isMoz = false, isIE = false, 
-    isAIR = false, isKhtml = false, isFF = false, isXHTML = false;
+    isAIR = false, isKhtml = false, isFF = false, isXHTML = false,
+    isChrome = false;
     
 function _detectBrowsers() {
   var n = navigator,
@@ -255,6 +256,7 @@ function _detectBrowsers() {
   if (document.all && !isOpera) {
     isIE = parseFloat(dav.split('MSIE ')[1]) || undefined;
   }
+  if (dua.indexOf('Chrome') >= 0) { isChrome = 1; }
 
   // compatMode deprecated on IE8 in favor of documentMode
   if (document.documentMode) {
@@ -2173,14 +2175,14 @@ extend(SVGWeb, {
     if (window.addEventListener) {
       window._addEventListener = window.addEventListener;
       window.addEventListener = function(type, f, useCapture) {
-        if (type.toLowerCase() != 'svgload') {
-          return window._addEventListener(type, f, useCapture);
-        } else {
+        if (type.toLowerCase() == 'svgload') {
           svgweb.addOnLoad(f);
+        } else {
+          return window._addEventListener(type, f, useCapture);
         }
       }
     } else {
-      // patch in addEventListener just for the svgload event
+      // patch in addEventListener for IE!
       window.addEventListener = function(type, f, useCapture) {
         if (type.toLowerCase() == 'svgload') {
           svgweb.addOnLoad(f);
@@ -2195,13 +2197,14 @@ extend(SVGWeb, {
     if (isIE && window.attachEvent) {
       window._attachEvent = window.attachEvent;
       window.attachEvent = function(type, f) {
-        if (type.toLowerCase() != 'onsvgload') {
-          return window._attachEvent(type, f);
-        } else {
+        if (type.toLowerCase() == 'onsvgload') {
           svgweb.addOnLoad(f);
+        } else {
+          return window._attachEvent(type, f);
         }
       }
     }
+
   },
   
   _saveWindowOnload: function() {
@@ -2509,6 +2512,10 @@ function FlashHandler(args) {
   }
 }
 
+// Track keyboard listeners on the top level document in case
+// flash traps any keyboard events.
+FlashHandler._keyboardListeners = [];
+
 // start of 'static' singleton functions and properties
 
 // when someone calls createElementNS or createTextNode we are not attached
@@ -2591,26 +2598,79 @@ FlashHandler._patchBrowserObjects = function(win, doc) {
   // Instead, we capture the original versions on the document object
   // itself but with a _ prefix.
   
-  document._getElementById = document.getElementById;
-  document.getElementById = FlashHandler._getElementById;
+  doc._getElementById = doc.getElementById;
+  doc.getElementById = FlashHandler._getElementById;
   
-  document._getElementsByTagNameNS = document.getElementsByTagNameNS;
-  document.getElementsByTagNameNS = FlashHandler._getElementsByTagNameNS;
+  doc._getElementsByTagNameNS = doc.getElementsByTagNameNS;
+  doc.getElementsByTagNameNS = FlashHandler._getElementsByTagNameNS;
   
-  document._createElementNS = document.createElementNS;
-  document.createElementNS = FlashHandler._createElementNS;
+  doc._createElementNS = doc.createElementNS;
+  doc.createElementNS = FlashHandler._createElementNS;
   
-  document._createElement = document.createElement;
-  document.createElement = FlashHandler._createElement;
+  doc._createElement = doc.createElement;
+  doc.createElement = FlashHandler._createElement;
     
-  document._createTextNode = document.createTextNode;
-  document.createTextNode = FlashHandler._createTextNode;
+  doc._createTextNode = doc.createTextNode;
+  doc.createTextNode = FlashHandler._createTextNode;
   
-  document._importNodeFunc = FlashHandler._importNodeFunc;
+  doc._importNodeFunc = FlashHandler._importNodeFunc;
   
-  document._createDocumentFragment = document.createDocumentFragment;
-  document.createDocumentFragment = FlashHandler._createDocumentFragment;
+  doc._createDocumentFragment = doc.createDocumentFragment;
+  doc.createDocumentFragment = FlashHandler._createDocumentFragment;
+
+  doc._addEventListener = doc.addEventListener;
+  doc.addEventListener = FlashHandler._addEventListener;
 };
+
+
+/** Patches the fake window and document object "inside" an SVG loaded with object tag */
+/* Implemented for FlashHandler only */
+FlashHandler._patchFakeObjects = function(win, doc) {
+  doc._addEventListener = doc.addEventListener;
+  doc.addEventListener = FlashHandler._addEventListener;
+};
+
+
+FlashHandler._addEventListener = function(type, listener, useCapture) {
+
+  if (type == 'keydown') {
+    // prevent closure by using an inline method
+    var wrappedListener = (function(listener) {
+                              return function(evt) {
+                                // shim in preventDefault function for IE
+                                if (!evt.preventDefault) {
+                                  evt.preventDefault = function() {
+                                    this.returnValue = false;
+                                    evt = null;
+                                  }
+                                }
+                                // call the developer's listener now
+                                if (typeof listener == 'object') {
+                                  listener.handleEvent.call(listener, evt);
+                                } else {
+                                  listener(evt);
+                                }
+                              }
+                            })(listener);
+    // persist information about this listener so we can easily remove
+    // it later
+    wrappedListener.__type = type;
+    wrappedListener.__listener = listener;
+    wrappedListener.__useCapture = useCapture; 
+    
+    // save keyboard listeners for later so we can clean them up
+    // later if the parent SVG document is removed from the DOM
+    if (this._handler) {
+      this._handler._keyboardListeners.push(wrappedListener);
+    } else {
+      FlashHandler._keyboardListeners.push(wrappedListener);
+    }
+  }
+  if (this._addEventListener) {
+    this._addEventListener(type, listener, useCapture);
+  }
+}
+
 
 /** Our implementation of getElementById, which we patch into the 
     document object. We do it here to prevent a closure and therefore
@@ -3104,6 +3164,9 @@ extend(FlashHandler, {
     if (msg.eventType.substr(0, 5) == 'mouse' || msg.eventType == 'click') {
       this._onMouseEvent(msg);
       return;
+    } else if (msg.eventType == 'keydown') {
+      this._onKeyboardEvent(msg);
+      return;
     } else if (msg.eventType == 'onRenderingFinished') {
       if (this.type == 'script') {
         this.document.documentElement._onRenderingFinished(msg);
@@ -3213,6 +3276,78 @@ extend(FlashHandler, {
         eventFunc.call(evt.currentTarget, evt);
       }
     }
+  },
+
+  _onKeyboardEvent: function(msg) {
+    //console.log('_onKeyEvent, msg='+this.debugMsg(msg));
+    var target = this._getElementByGuid(msg.targetGUID);
+    var currentTarget = this._getElementByGuid(msg.currentTargetGUID);
+    var evt = { target: target._getProxyNode(),
+                currentTarget: currentTarget._getProxyNode(),
+                type: msg.eventType,
+                keyCode: Number(msg.keyCode),
+                altKey: msg.altKey,
+                ctrlKey: msg.ctrlKey,
+                shiftKey: msg.shiftKey,
+                preventDefault: function() { this.returnValue=false; },
+                stopPropagation: function() { /* TODO */ }
+              };
+
+    // If the svg is inline, call all the top document level
+    // keyboard listeners 
+    if (this.type == 'script') {
+      for (var i = 0; i < FlashHandler._keyboardListeners.length; i++) {
+        var listener = FlashHandler._keyboardListeners[i];
+        if ( (isFF || isChrome) && 
+             this.flash.getAttribute('wmode') == 'transparent' ) {
+          // Under this circumstance, the browser also passes the keystroke
+          // to any document listener, so we do not need to simulate it.
+          // In other words, flash does not eat the keystroke here.
+          continue;
+        }
+        listener.call(evt.currentTarget, evt);
+      }
+    }
+    // Call any svg document or element keyboard listeners.
+    var listeners = this._keyboardListeners;
+    for (var i = 0; i < listeners.length; i++) {
+      var listener = listeners[i];
+      listener.call(evt.currentTarget, evt);
+    }
+  },
+
+
+  // This is used by elements that listen to the keyboard.
+  // Documents that listen use the FlashHandler.addKeyboardListener
+  addKeyboardListener: function(type, listener, useCapture) {
+      // prevent closure by using an inline method
+      var wrappedListener = (function(listener) {
+                                return function(evt) {
+                                  // shim in preventDefault function for IE
+                                  if (!evt.preventDefault) {
+                                    evt.preventDefault = function() {
+                                      this.returnValue = false;
+                                      evt = null;
+                                    }
+                                  }
+                                  // call the developer's listener now
+                                  if (typeof listener == 'object') {
+                                    listener.handleEvent.call(listener, evt);
+                                  } else {
+                                    listener(evt);
+                                  }
+                                }
+                              })(listener);
+      // persist information about this listener so we can easily remove
+      // it later
+      wrappedListener.__type = type;
+      wrappedListener.__listener = listener;
+      wrappedListener.__useCapture = useCapture; 
+      
+      // save keyboard listeners for later so we can clean them up
+      // later if the parent SVG document is removed from the DOM
+      this._keyboardListeners.push(wrappedListener);
+      return;
   },
 
   _getElementByGuid: function(guid) {
@@ -3351,7 +3486,7 @@ function NativeHandler(args) {
 
 // start of 'static' singleton functions, mostly around patching the 
 // document object with some bug fixes
-NativeHandler._patchBrowserObjects = function(win, doc) {
+NativeHandler._patchBrowserObjects = function(doc, win) {
   if (doc._getElementById) {
     // already defined before
     return;
@@ -4736,7 +4871,8 @@ extend(_Node, {
     // NOTE: capturing not supported
     
     if (this.nodeType != _Node.ELEMENT_NODE
-        && this.nodeType != _Node.TEXT_NODE) {
+        && this.nodeType != _Node.TEXT_NODE
+        && (this.nodeType != _Node.DOCUMENT_NODE || type != 'keydown')) {
       throw 'Not supported';
     }
     
@@ -4756,42 +4892,7 @@ extend(_Node, {
     this._listeners[type]['_' + listener.toString() + ':' + useCapture] = listener;
                                         
     if (type == 'keydown') {
-      // TODO: Be able to handle key events on individual SVG graphics 
-      // (g, rect, etc.) that might have focus
-      // TODO: FIXME: do we want to be adding this listener to 'document'
-      // when dealing with SVG OBJECTs?
-      
-      // prevent closure by using an inline method
-      var wrappedListener = (function(listener) {
-                                return function(evt) {
-                                  // shim in preventDefault function for IE
-                                  if (!evt.preventDefault) {
-                                    evt.preventDefault = function() {
-                                      this.returnValue = false;
-                                      evt = null;
-                                    }
-                                  }
-                                  // call the developer's listener now
-                                  if (typeof listener == 'object') {
-                                    listener.handleEvent.call(listener, evt);
-                                  } else {
-                                    listener(evt);
-                                  }
-                                }
-                              })(listener);
-      // persist information about this listener so we can easily remove
-      // it later
-      wrappedListener.__type = type;
-      wrappedListener.__listener = listener;
-      wrappedListener.__useCapture = useCapture; 
-      
-      // save keyboard listeners for later so we can clean them up
-      // later if the parent SVG document is removed from the DOM
-      this._handler._keyboardListeners.push(wrappedListener);
-      
-      // now actually subscribe to the event
-      this._addEvent(document, type, wrappedListener);
-      return;
+      this._handler.addKeyboardListener(type, listener, useCapture);
     }
 
     this._handler.sendToFlash('jsAddEventListener', [ this._guid, type ]);
@@ -7249,6 +7350,8 @@ extend(_SVGObject, {
     
     // our fake document object should point to our fake window object
     doc.defaultView = this._handler.window;
+    
+    FlashHandler._patchFakeObjects(doc.defaultView, doc);
     
     // add our onload handler to the list of scripts to execute at the
     // beginning

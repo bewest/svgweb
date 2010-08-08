@@ -47,6 +47,7 @@ package org.svgweb
     import flash.events.Event;
     import flash.events.EventDispatcher;
     import flash.events.MouseEvent;
+    import flash.events.KeyboardEvent;
     import flash.events.IOErrorEvent;
     import flash.events.SecurityErrorEvent;
     import flash.events.ContextMenuEvent;
@@ -100,6 +101,7 @@ package org.svgweb
             //this.debug('SVGViewerWeb constructor');
             this.addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
             stage.addEventListener(Event.RESIZE, handleResize);
+            stage.addEventListener(KeyboardEvent.KEY_DOWN, handleAction);
             super();
         }
 
@@ -1053,6 +1055,9 @@ package org.svgweb
                 case MouseEvent.MOUSE_UP:
                     js_sendMouseEvent(MouseEvent(event));
                     break;
+                case KeyboardEvent.KEY_DOWN:
+                    js_sendKeyboardEvent(KeyboardEvent(event));
+                    break;
 
                 default:
                     trace("handleAction: Event not found");
@@ -1131,6 +1136,36 @@ package org.svgweb
                     catch(error:SecurityError) {
                     }
                 }
+            }
+        }
+
+        public function js_sendKeyboardEvent(event:KeyboardEvent):void {
+            var scriptCode:String;
+
+            switch(event.type) {
+                case KeyboardEvent.KEY_DOWN:
+                    scriptCode = svgRoot.getAttribute('onkeydown');
+                    break;
+            }
+
+            try {
+                ExternalInterface.call(this.js_handler + "onMessage",
+                   this.msgToString(
+                           { type: 'event',
+                             uniqueId: this.js_uniqueId,
+                             targetGUID: svgRoot.guid,
+                             currentTargetGUID: svgRoot.guid,
+                             eventType: event.type.toLowerCase(),
+                             keyCode: event.keyCode,
+                             altKey: event.altKey,
+                             ctrlKey: event.ctrlKey,
+                             shiftKey: event.shiftKey,
+                             scriptCode: scriptCode
+                           } 
+                    )
+                );
+            }
+            catch(error:SecurityError) {
             }
         }
 
