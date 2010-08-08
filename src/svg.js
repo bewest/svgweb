@@ -3486,7 +3486,7 @@ function NativeHandler(args) {
 
 // start of 'static' singleton functions, mostly around patching the 
 // document object with some bug fixes
-NativeHandler._patchBrowserObjects = function(doc, win) {
+NativeHandler._patchBrowserObjects = function(win, doc) {
   if (doc._getElementById) {
     // already defined before
     return;
