@@ -82,9 +82,6 @@ package org.svgweb.nodes
             if (!targetNode) {
                 this.parseParameters();
             }
-            if (targetNode) {
-                targetNode.addAnimation(this);
-            }
         }
 
         override protected function onRemovedFromStage(event:Event):void {
@@ -407,6 +404,9 @@ package org.svgweb.nodes
                 else {
                     targetNode = this.svgParent;
                 }
+            }
+            if (targetNode) {
+                targetNode.addAnimation(this);
             }
         }
 
