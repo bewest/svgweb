@@ -1684,7 +1684,7 @@ extend(SVGWeb, {
       }
       
       // capture anything between > and < tags
-      pieces[1] = pieces[1].replace(/>([^>]+)</g, '><__text>$1</__text><');
+      pieces[1] = pieces[1].replace(/>([^<]+)</g, '><__text>$1</__text><');
       
       // re-assemble our CDATA blocks
       if (hasCData) {
