@@ -6326,7 +6326,7 @@ extend(_Element, {
     var nodes = createNodeList();
     for (var i = 0; i < results.length; i++) {
       var elem = FlashHandler._getNode(results[i], this._handler);
-      elem._attached = true;
+      this._getFakeNode(elem)._attached = true;
       nodes.push(elem);
     }
     
@@ -8899,7 +8899,7 @@ extend(_Document, {
     
     // create or get an _Element for this XML DOM node for node
     node = FlashHandler._getNode(nodeXML, this._handler);
-    node._attached = true;
+    this._getFakeNode(node)._attached = true;
     return node;
   },
   
