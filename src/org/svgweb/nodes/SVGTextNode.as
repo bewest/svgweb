@@ -52,8 +52,9 @@ package org.svgweb.nodes
         private var _text:String = '';
 
         protected var newGlyphs:Array = null;
-        protected var newViewBoxSprite:Sprite = new Sprite();
         protected var lastGlyph:SVGNode;
+
+        protected var addedTextChunks:Boolean = false;
         
         public function SVGTextNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
             super(svgRoot, xml, original);
@@ -270,9 +271,15 @@ package org.svgweb.nodes
          * Call SVGNode.parse()
          **/
         override protected function parseChildren():void {
-            var i:uint;
-
             super.parseChildren();
+            // We need a parent to implement inheritance.
+            if (this.topSprite.parent) {
+                addTextChunks();
+            }
+        }
+
+        protected function addTextChunks():void {
+            var i:uint;
             
             //Check for SVGFont
             var fontFamily:String = this.getStyleOrAttr('font-family');
@@ -354,6 +361,7 @@ package org.svgweb.nodes
                 if (this._svgFont != null) addSVGFontChunk(chunk, startPos, currentPos, fontSizeNum, textAnchor, fill);
                 else addTextFieldChunk(chunk, startPos, currentPos, fontFamily, fontSizeNum, textAnchor, fontWeight, fill);
             }
+            this.addedTextChunks = true;
         }
         
         public function onDrawGlyph(glyph:SVGNode):void {
@@ -439,6 +447,9 @@ package org.svgweb.nodes
         }
         
         override protected function draw():void {
+            if (!addedTextChunks) {
+                addTextChunks();
+            }
             super.draw();
             removeOldTextFields();
             var isSkewed:Boolean = isSkewed();
