@@ -95,6 +95,7 @@ package org.svgweb.core
         protected var currentBeginTime:Number = -1;
         protected var currentEndTime:Number = INDEFINITE;
 
+        protected var inParseParameters:Boolean = false;
 
         public function SVGTimedNode(svgRoot:SVGSVGNode, xml:XML, original:SVGNode = null):void {
             super(svgRoot, xml, original);
@@ -157,7 +158,11 @@ package org.svgweb.core
 
         protected function onSVGDocTimeUpdate(event:Event):void {
             lastDocTime = SVGEvent(event).docTime;
+            checkBeginInstances(SVGEvent(event).docTime);
+        }
 
+        protected function checkBeginInstances(newDocTime:Number):void {
+            lastDocTime = newDocTime;
             var beginInstance:Number;
             var endInstance:Number;
             // Keep looping as long as there is work being done. There may
@@ -316,6 +321,11 @@ package org.svgweb.core
          **/
 
         protected function parseParameters():void {
+            // prevents endless loop:
+            // parseParameters -> checkBeginInstances -> timeIntervalStarted -> parseParameters
+            if (inParseParameters)
+                return;
+            inParseParameters = true;
             parseEachRepeatDuration();  // duration
             parseRepeatCount();         // repeatCount
             parseAllRepeatsDuration();  // repeatDuration
@@ -325,6 +335,10 @@ package org.svgweb.core
             parseEndTimeSpecs();        // end
             parseBeginTimeSpecs();      // begin
             setScheduledDuration();
+            // jump start immediate animations so they run in order
+            var now:Number =this.svgRoot.getDocTime();
+            checkBeginInstances(now);
+            inParseParameters = false;
         }
 
         /**
@@ -502,6 +516,9 @@ package org.svgweb.core
             if (event is SVGEvent) docTime = SVGEvent(event).docTime;
             else docTime = this.svgRoot.getDocTime();
             addBeginInstance(docTime + offset);
+            // jump start immediate animations so they run in order
+            var now:Number =this.svgRoot.getDocTime();
+            checkBeginInstances(now);
         }
 
         public function addEndInstanceEvent(event:Event, offset:Number):void {
@@ -598,6 +615,9 @@ package org.svgweb.core
             var docTime:Number = this.svgRoot.getDocTime() + offset;
             if (docTime < currentBeginTime) return(false);  // negative offset could cause this
             addBeginInstance(docTime);
+            // jump start immediate animations so they run in order
+            var now:Number =this.svgRoot.getDocTime();
+            checkBeginInstances(now);
             return ( (restart=="always") ||
                      (!this.active && ( (restart!="never")  || neverStarted)));
         }

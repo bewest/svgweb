@@ -319,6 +319,7 @@ package org.svgweb.nodes
                 parseParameters();
             }
             if (targetNode) {
+                targetNode.activateAnimation(this)
                 targetNode.invalidateAttribute(attributeName);
             }
         }

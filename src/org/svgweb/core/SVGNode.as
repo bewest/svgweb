@@ -1518,7 +1518,6 @@ package org.svgweb.core
             var discreteStringVal:String;
             var isColor:Boolean = (baseVal != null) && !isPath && SVGUnits.isColor(baseVal);
             var animValString:String = null;
-            // XXX This should sort by priority (activation order) 
             // Add or replace with animations
             for each(animation in animations) {
                 if (   animation.getAttributeName() == name
@@ -1979,6 +1978,14 @@ package org.svgweb.core
             if (animations.indexOf(animation) != -1) {
                 animations.splice(animations.indexOf(animation), 1);
             }
+        }
+
+        // Move animation to the end of the list so it takes precedence.
+        public function activateAnimation(animation:SVGAnimateNode):void {
+            if (animations.indexOf(animation) != -1) {
+                animations.splice(animations.indexOf(animation), 1);
+            }
+            animations.push(animation);
         }
 
         /*
