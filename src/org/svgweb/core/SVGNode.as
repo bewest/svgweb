@@ -1614,7 +1614,7 @@ package org.svgweb.core
                 case 'viewBox':
                 case 'x':
                 case 'y':
-                case 'rotation':
+                case 'rotate':
                     this.transformNode();
                     this.applyViewBox();
                     break;
@@ -1864,7 +1864,7 @@ package org.svgweb.core
                 case 'viewBox':
                 case 'x':
                 case 'y':
-                case 'rotation':
+                case 'rotate':
                     attr = INVALID_ATTR_TRANSFORM;
                     break;
                 case 'opacity' :
