@@ -3293,18 +3293,22 @@ extend(FlashHandler, {
                 stopPropagation: function() { /* TODO */ }
               };
 
+    // Under this circumstance, the browser also passes the keystroke
+    // to any document listener, so we do not need to simulate it.
+    // In other words, flash does not eat the keystroke here.
+    // IE does not bubble the event, so call object listeners below.
+    // Best practice: Subscribe to top level document event and any svg object's
+    // document's event. SVG Web will make sure only one event is dispatched.
+    if ( (isFF || isChrome) && 
+         this.flash.getAttribute('wmode') == 'transparent' ) {
+         return;
+    }
+
     // If the svg is inline, call all the top document level
     // keyboard listeners 
     if (this.type == 'script') {
       for (var i = 0; i < FlashHandler._keyboardListeners.length; i++) {
         var listener = FlashHandler._keyboardListeners[i];
-        if ( (isFF || isChrome) && 
-             this.flash.getAttribute('wmode') == 'transparent' ) {
-          // Under this circumstance, the browser also passes the keystroke
-          // to any document listener, so we do not need to simulate it.
-          // In other words, flash does not eat the keystroke here.
-          continue;
-        }
         listener.call(evt.currentTarget, evt);
       }
     }
