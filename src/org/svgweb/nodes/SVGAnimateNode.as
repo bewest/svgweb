@@ -319,7 +319,7 @@ package org.svgweb.nodes
                 parseParameters();
             }
             if (targetNode) {
-                targetNode.activateAnimation(this)
+                targetNode.activateAnimation(this);
                 targetNode.invalidateAttribute(attributeName);
             }
         }
@@ -374,6 +374,11 @@ package org.svgweb.nodes
 
         override protected function parseParameters():void {
             super.parseParameters();
+
+            // If we have already parsed the target, do not continue
+            if (targetNode) {
+                return;
+            }
 
             parseAttributeNameParameter();
             parseHrefParameter();

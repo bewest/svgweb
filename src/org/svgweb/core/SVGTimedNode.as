@@ -90,6 +90,9 @@ package org.svgweb.core
         protected var restart:String = "always";
         protected var scheduledDuration:Number;
 
+        protected var beginTargetNode:SVGNode;
+        protected var endTargetNode:SVGNode;
+
         // currentBeginTime,currentEndTime define the current active interval
         // when inactive, they define the most recent active interval
         protected var currentBeginTime:Number = -1;
@@ -157,7 +160,6 @@ package org.svgweb.core
         }
 
         protected function onSVGDocTimeUpdate(event:Event):void {
-            lastDocTime = SVGEvent(event).docTime;
             checkBeginInstances(SVGEvent(event).docTime);
         }
 
@@ -347,11 +349,14 @@ package org.svgweb.core
          *
          **/
         protected function parseBeginTimeSpecs():void {
+            // do not add event listeners more than once
+            if (beginTargetNode)
+               return;
+
             // If no begin is specified, the spec says the default is zero
             var begin:String = this.getAttribute('begin', '0');
 
             var timeSpecStrings:Array = begin.split(/;/);
-            var timeSpecIndex:uint =0;
             for each(var timeSpecString:String in timeSpecStrings) {
                 var timeSpec:TimeSpec = TimeSpec.parseTimeSpec("begin", timeSpecString, this);
                 beginTimeSpecs.push(timeSpec);
@@ -361,23 +366,22 @@ package org.svgweb.core
                     addBeginInstance(OffsetTimeSpec(timeSpec).getOffset());
                 }
                 if (timeSpec is EventTimeSpec) {
-                    var targetNode:SVGNode = this.svgRoot.getNode(EventTimeSpec(timeSpec).nodeID);
-                    if (targetNode) {
+                    beginTargetNode = this.svgRoot.getNode(EventTimeSpec(timeSpec).nodeID);
+                    if (beginTargetNode) {
                         switch (EventTimeSpec(timeSpec).eventType) {
                             case SVGEvent._SVGAnimBegin:
                             case SVGEvent._SVGAnimEnd:
                             case SVGEvent._SVGAnimRepeat:
-                               targetNode.addEventListener(EventTimeSpec(timeSpec).eventType,
-                                                           EventTimeSpec(timeSpec).handleEvent);
+                               SVGTimedNode(beginTargetNode).addEventListener(EventTimeSpec(timeSpec).eventType,
+                                                                              EventTimeSpec(timeSpec).handleEvent);
                                break;
                             default: 
-                               targetNode.topSprite.addEventListener(EventTimeSpec(timeSpec).eventType,
-                                                                     EventTimeSpec(timeSpec).handleEvent);
+                               beginTargetNode.topSprite.addEventListener(EventTimeSpec(timeSpec).eventType,
+                                                                          EventTimeSpec(timeSpec).handleEvent);
                                break;
                         }
                     }
                 }
-                timeSpecIndex++;
             }
         }
 
@@ -389,6 +393,10 @@ package org.svgweb.core
          *
          **/
         protected function parseEndTimeSpecs():void {
+            // do not add event listeners more than once
+            if (endTargetNode)
+               return;
+
             // If no end is specified, the spec says the default is indefinite
             var endString:String = this.getAttribute('end', 'indefinite');
 
@@ -401,18 +409,20 @@ package org.svgweb.core
                         addEndInstance(OffsetTimeSpec(timeSpec).getOffset());
                     }
                     if (timeSpec is EventTimeSpec) {
-                        var targetNode:SVGNode = this.svgRoot.getNode(EventTimeSpec(timeSpec).nodeID);
-                        if (targetNode) {
+                        endTargetNode = this.svgRoot.getNode(EventTimeSpec(timeSpec).nodeID);
+                        if (endTargetNode) {
                             switch (EventTimeSpec(timeSpec).eventType) {
                                 case SVGEvent._SVGAnimBegin:
                                 case SVGEvent._SVGAnimEnd:
                                 case SVGEvent._SVGAnimRepeat:
-                                   targetNode.addEventListener(EventTimeSpec(timeSpec).eventType,
-                                                               EventTimeSpec(timeSpec).handleEvent);
+                                   if (endTargetNode is SVGTimedNode) {
+                                       SVGTimedNode(endTargetNode).addEventListener(EventTimeSpec(timeSpec).eventType,
+                                                                                    EventTimeSpec(timeSpec).handleEvent);
+                                   }
                                    break;
                                 default:
-                                   targetNode.topSprite.addEventListener(EventTimeSpec(timeSpec).eventType,
-                                                                         EventTimeSpec(timeSpec).handleEvent);
+                                   endTargetNode.topSprite.addEventListener(EventTimeSpec(timeSpec).eventType,
+                                                                            EventTimeSpec(timeSpec).handleEvent);
                                    break;
                             }
                         }
