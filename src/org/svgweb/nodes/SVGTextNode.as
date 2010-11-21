@@ -361,6 +361,17 @@ package org.svgweb.nodes
                 if (this._svgFont != null) addSVGFontChunk(chunk, startPos, currentPos, fontSizeNum, textAnchor, fill);
                 else addTextFieldChunk(chunk, startPos, currentPos, fontFamily, fontSizeNum, textAnchor, fontWeight, fill);
             }
+            // If there are no chunks, the lastGlyph check in onDrawGlyph will never trigger,
+            // so we remove the old chunks right here instead.
+            if (numChunks == 0) {
+                for (i=0; i < this.svgChildren.length; i++) {
+                    if (this.svgChildren[i] is SVGGlyphNode) {
+                        removeGlyphClone(this.svgChildren[i]);
+                        this.svgChildren.splice(i, 1);
+                        i--;
+                    }
+                }
+            }
             this.addedTextChunks = true;
         }
         
