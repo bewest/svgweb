@@ -102,6 +102,7 @@ package org.svgweb
             this.addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
             stage.addEventListener(Event.RESIZE, handleResize);
             stage.addEventListener(KeyboardEvent.KEY_DOWN, handleAction);
+            stage.addEventListener(KeyboardEvent.KEY_UP, handleAction);
             super();
         }
 
@@ -1056,6 +1057,7 @@ package org.svgweb
                     js_sendMouseEvent(MouseEvent(event));
                     break;
                 case KeyboardEvent.KEY_DOWN:
+                case KeyboardEvent.KEY_UP:
                     js_sendKeyboardEvent(KeyboardEvent(event));
                     break;
 
@@ -1145,6 +1147,9 @@ package org.svgweb
             switch(event.type) {
                 case KeyboardEvent.KEY_DOWN:
                     scriptCode = svgRoot.getAttribute('onkeydown');
+                    break;
+                case KeyboardEvent.KEY_UP:
+                    scriptCode = svgRoot.getAttribute('onkeyup');
                     break;
             }
 

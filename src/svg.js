@@ -962,11 +962,14 @@ extend(SVGWeb, {
           var l = nodeHandler._keyboardListeners[i];
           if (isIE) {
             document.detachEvent('onkeydown', l);
+            document.detachEvent('onkeyup', l);
           } else {
             // we aren't sure whether the event listener is a useCapture or
             // not; just try to remove both
             document.removeEventListener('keydown', l, true);
             document.removeEventListener('keydown', l, false);
+            document.removeEventListener('keyup', l, true);
+            document.removeEventListener('keyup', l, false);
           }
         }
       }
@@ -2633,7 +2636,7 @@ FlashHandler._patchFakeObjects = function(win, doc) {
 
 FlashHandler._addEventListener = function(type, listener, useCapture) {
 
-  if (type == 'keydown') {
+  if (type.substring(0,3) == 'key') {
     // prevent closure by using an inline method
     var wrappedListener = (function(listener) {
                               return function(evt) {
@@ -3166,7 +3169,7 @@ extend(FlashHandler, {
     if (msg.eventType.substr(0, 5) == 'mouse' || msg.eventType == 'click') {
       this._onMouseEvent(msg);
       return;
-    } else if (msg.eventType == 'keydown') {
+    } else if (msg.eventType.substr(0,3) == 'key') {
       this._onKeyboardEvent(msg);
       return;
     } else if (msg.eventType == 'onRenderingFinished') {
@@ -3311,14 +3314,18 @@ extend(FlashHandler, {
     if (this.type == 'script') {
       for (var i = 0; i < FlashHandler._keyboardListeners.length; i++) {
         var listener = FlashHandler._keyboardListeners[i];
-        listener.call(evt.currentTarget, evt);
+        if (listener.__type == evt.type) {
+          listener.call(evt.currentTarget, evt);
+        }
       }
     }
     // Call any svg document or element keyboard listeners.
     var listeners = this._keyboardListeners;
     for (var i = 0; i < listeners.length; i++) {
       var listener = listeners[i];
-      listener.call(evt.currentTarget, evt);
+      if (listener.__type == evt.type) {
+        listener.call(evt.currentTarget, evt);
+      }
     }
   },
 
@@ -4878,7 +4885,7 @@ extend(_Node, {
     
     if (this.nodeType != _Node.ELEMENT_NODE
         && this.nodeType != _Node.TEXT_NODE
-        && (this.nodeType != _Node.DOCUMENT_NODE || type != 'keydown')) {
+        && (this.nodeType != _Node.DOCUMENT_NODE || type.substring(0,3) != 'key')) {
       throw 'Not supported';
     }
     
@@ -4897,7 +4904,7 @@ extend(_Node, {
                                  useCapture: useCapture });
     this._listeners[type]['_' + listener.toString() + ':' + useCapture] = listener;
                                         
-    if (type == 'keydown') {
+    if (type.substring(0,3) == 'key') {
       this._handler.addKeyboardListener(type, listener, useCapture);
     }
 
@@ -4933,7 +4940,7 @@ extend(_Node, {
       delete this._listeners[type]['_' + listener.toString() + ':' + useCapture];
     }
     
-    if (type == 'keydown') {
+    if (type.substring(0,3) == 'key') {
       // FIXME: We really need to remove keypress logic from being handled by us
       pos = this._findListener(this._keyboardListeners, type, listener, useCapture);
       if (pos !== null) {
