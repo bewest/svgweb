@@ -2668,6 +2668,8 @@ FlashHandler._addEventListener = function(type, listener, useCapture) {
   }
   if (this._addEventListener) {
     this._addEventListener(type, listener, useCapture);
+  } else if (this.attachEvent) {
+    this.attachEvent('on' + type, listener);
   }
 }
 
