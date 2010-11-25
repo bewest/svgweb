@@ -24,6 +24,7 @@ package org.svgweb.core
     import org.svgweb.SVGViewerWeb;
     import org.svgweb.nodes.*;
     import org.svgweb.utils.SVGUnits;
+    import org.svgweb.utils.SVGCoordinate;
     
     import flash.display.CapsStyle;
     import flash.display.DisplayObject;
@@ -301,6 +302,9 @@ package org.svgweb.core
                     break;
                 case "missing-glyph":                        
                     childNode = new SVGMissingGlyphNode(this.svgRoot, childXML);
+                    break;
+                case "mpath":
+                    childNode = new SVGMPathNode(this.svgRoot, childXML);
                     break;
                 case "pattern":
                     childNode = new SVGPatternNode(this.svgRoot, childXML);
@@ -689,6 +693,14 @@ package org.svgweb.core
                   animMatrix.concat(newMatrix);
                 }
                 topSprite.transform.matrix = animMatrix;
+            }
+
+            // Apply animateMotion
+            var motionPos:SVGCoordinate = this.getAllAnimsMotion();
+            if (!motionPos.isZero()) {
+                var motiontx:Matrix = topSprite.transform.matrix.clone();
+                motiontx.translate(motionPos.x, motionPos.y);
+                topSprite.transform.matrix = motiontx;
             }
         }
 
@@ -1581,6 +1593,22 @@ package org.svgweb.core
             return [ animTransform, isAdditive ];
         }
 
+        public function getAllAnimsMotion():SVGCoordinate {
+            var pos:SVGCoordinate = new SVGCoordinate(0,0);
+            var mAnim:SVGAnimateMotionNode;
+            for each(var animation:SVGAnimateNode in animations) {
+                if (animation is SVGAnimateMotionNode && animation.isEffective()) {
+                    mAnim = SVGAnimateMotionNode(animation);
+                    if (!mAnim.isAdditive()) {
+                        pos.zero();
+                    }
+                    var animPos:SVGCoordinate = mAnim.getAnimMotionPos();
+                    if (animPos != null) pos.add(animPos);
+                }
+            }
+            return pos;
+        }
+
         public function setAttribute(name:String, value:String, attrNamespace:String = null):void {
             if (name == "style") {
                 this._xml.@style = value;
@@ -1864,6 +1892,7 @@ package org.svgweb.core
                 case 'x':
                 case 'y':
                 case 'rotate':
+                case 'motion':
                     attr = INVALID_ATTR_TRANSFORM;
                     break;
                 case 'opacity' :

@@ -31,7 +31,7 @@ package org.svgweb.utils
         /** 
          * @private
          **/
-        private static function computeSvgArc(rx:Number, ry:Number,angle:Number,largeArcFlag:Boolean,sweepFlag:Boolean,
+        public static function computeSvgArc(rx:Number, ry:Number,angle:Number,largeArcFlag:Boolean,sweepFlag:Boolean,
                                                 x:Number,y:Number,LastPointX:Number, LastPointY:Number):Object {
             //store before we do anything with it     
             var xAxisRotation:Number = angle;     
