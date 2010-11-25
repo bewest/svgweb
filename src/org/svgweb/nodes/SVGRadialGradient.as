@@ -196,7 +196,7 @@ package org.svgweb.nodes
                 if (node is SVGCircleNode || node is SVGEllipseNode) {
                     matr.translate(objectX, objectY);
                 }
-                if (node is SVGPathNode) {
+                if (node is SVGPathNode || node is SVGPolygonNode) {
                     matr.translate(node.xMin, node.yMin);
                 }
 

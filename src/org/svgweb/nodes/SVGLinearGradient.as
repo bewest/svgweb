@@ -87,6 +87,11 @@ package org.svgweb.nodes
                 var xString:Number = xy[0].toString();
                 var yString:Number = xy[1].toString();
             }
+            else if (node is SVGEllipseNode) {
+                xy = SVGEllipseNode(node).getEllipseXY();
+                xString = xy[0].toString();
+                yString = xy[1].toString();
+            }
             else {
                 xString = node.getAttribute('x', '0', false);
                 yString = node.getAttribute('y', '0', false);
@@ -243,8 +248,11 @@ package org.svgweb.nodes
 
                 // A special adjustment is needed for circles for unknown reasons.
                 // This adjustment was determined empirically. See Issues 349 and 371.
-                if (node is SVGCircleNode) {
+                if (node is SVGCircleNode || node is SVGEllipseNode) {
                     matr.translate(objectX, objectY);
+                }
+                if (node is SVGPathNode || node is SVGPolygonNode) {
+                    matr.translate(node.xMin, node.yMin);
                 }
                 return matr;
             }
