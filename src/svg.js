@@ -7331,6 +7331,7 @@ extend(_SVGObject, {
     var rootID = rootXML.getAttribute('id');
     var root = new _SVGSVGElement(rootXML, null, null, this._handler);
     var doc = this._handler.document;
+    doc._attached = true;
     doc.documentElement = root._getProxyNode();
     doc.rootElement = root._getProxyNode();
     // add to our lookup tables so that fetching this node in the future works
