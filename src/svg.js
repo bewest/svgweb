@@ -7497,7 +7497,14 @@ extend(_SVGObject, {
     // and setInterval functions for the iframe where we will execute things
     // so we can clear out all timing functions if the SVG OBJECT is later
     // removed with a call to svgweb.removeChild
-    var addToTop = 'var __svgHandler = top.svgweb.handlers["' 
+    var svgwebObject = 'top.svgweb';
+    if (!top.svgweb && self.frameElement) {
+        if(!self.frameElement.id) {
+            self.frameElement.id = svgweb._generateID('__svg__random__', '__iframe');
+        }
+        svgwebObject = 'top.document.getElementById("'+self.frameElement.id+'").contentWindow.svgweb';
+    }
+    var addToTop = 'var __svgHandler = '+svgwebObject+'.handlers["' 
                   + this._handler.id + '"];\n'
                   + 'window.svgns = "' + svgns + '";\n'
                   + 'window.xlinkns = "' + xlinkns + '";\n';
