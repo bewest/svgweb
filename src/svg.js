@@ -4906,9 +4906,9 @@ extend(_Node, {
                                         
     if (type.substring(0,3) == 'key') {
       this._handler.addKeyboardListener(type, listener, useCapture);
+    } else {
+      this._handler.sendToFlash('jsAddEventListener', [ this._guid, type ]);
     }
-
-    this._handler.sendToFlash('jsAddEventListener', [ this._guid, type ]);
   },
   
   removeEventListener: function(type, listener /* Function */, useCapture) {
