@@ -6339,7 +6339,7 @@ extend(_Element, {
     var nodes = createNodeList();
     for (var i = 0; i < results.length; i++) {
       var elem = FlashHandler._getNode(results[i], this._handler);
-      this._getFakeNode(elem)._attached = true;
+      this._getFakeNode(elem)._attached = this._attached;
       nodes.push(elem);
     }
     
