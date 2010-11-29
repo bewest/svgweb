@@ -1199,7 +1199,7 @@ extend(SVGWeb, {
       and the content property set to the data path. */
   _getLibraryPath: function() {
     // determine the path to our HTC and Flash files
-    var libraryPath = './';
+    var libraryPath = null;
     
     var meta = document.getElementsByTagName('meta');
     for (var i = 0; i < meta.length; i++) {
@@ -1211,11 +1211,21 @@ extend(SVGWeb, {
     
     var scripts = document.getElementsByTagName('script');
     for (var i = 0; i < scripts.length; i++) {
-      if (/svg(?:\-uncompressed)?\.js/.test(scripts[i].src)
-          && scripts[i].getAttribute('data-path')) {
-        libraryPath = scripts[i].getAttribute('data-path');
+      if (/svg(?:\-uncompressed)?\.js/.test(scripts[i].src)) {
+        if (scripts[i].getAttribute('data-path')) {
+          libraryPath = scripts[i].getAttribute('data-path');
+        } else if (libraryPath === null) {
+          var fullPath = scripts[i].getAttribute('src');
+          var parts = fullPath.split('/');
+          parts.length = parts.length - 1;
+          libraryPath = parts.join('/');
+        }
         break;
       }
+    }
+
+    if (libraryPath === null) {
+        libraryPath = './';
     }
     
     if (libraryPath.charAt(libraryPath.length - 1) != '/') {
