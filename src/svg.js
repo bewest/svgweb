@@ -1584,6 +1584,22 @@ extend(SVGWeb, {
       svg = svg.replace(/\]\]>\s*/, '');
     }
 
+    // expand ENTITY definitions
+    // Issue 221: "DOCTYPE ENTITYs not expanded on certain 
+    // browsers (safari, opera)"
+    // http://code.google.com/p/svgweb/issues/detail?id=221
+    // NOTE: entity expansion is performance sensitive; see 
+    // Issue 218 for details 
+    // (http://code.google.com/p/svgweb/issues/detail?id=218)
+    RegExp.lastIndex = 0;
+    var match;
+    var entityRE = /<!ENTITY\s+(\S+)\s+"([^"]*)"/g;
+    while ((match = entityRE.exec(svg)) != null) {
+      var entityName = RegExp.$1;
+      var entityValue = RegExp.$2;
+      svg = svg.split('&' + entityName + ';').join(entityValue);
+    }
+    
     if (addMissing) {
       // add any missing things (XML declaration, SVG namespace, etc.)
       if (/\<\?xml/m.test(svg) == false) { // XML declaration
@@ -1605,22 +1621,6 @@ extend(SVGWeb, {
     // remove leading whitespace before XML declaration
     if (svg.charAt(0) != '<') {
       svg = svg.replace(/\s*<\?xml/, '<?xml');
-    }
-    
-    // expand ENTITY definitions
-    // Issue 221: "DOCTYPE ENTITYs not expanded on certain 
-    // browsers (safari, opera)"
-    // http://code.google.com/p/svgweb/issues/detail?id=221
-    // NOTE: entity expansion is performance sensitive; see 
-    // Issue 218 for details 
-    // (http://code.google.com/p/svgweb/issues/detail?id=218)
-    RegExp.lastIndex = 0;
-    var match;
-    var entityRE = /<!ENTITY\s+(\S+)\s+"([^"]*)"/g;
-    while ((match = entityRE.exec(svg)) != null) {
-      var entityName = RegExp.$1;
-      var entityValue = RegExp.$2;
-      svg = svg.split('&' + entityName + ';').join(entityValue);
     }
     
     if (normalizeWhitespace) {
