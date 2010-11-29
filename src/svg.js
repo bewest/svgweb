@@ -2267,16 +2267,16 @@ function RenderConfig() {
   // if not, see if this browser has Flash and the correct Flash version (9+)
   var info = new FlashInfo();
   if (info.capable) {
-    if (info.isVersionOrAbove(9, 0, 0)) {
+    if (info.isVersionOrAbove(10, 0, 0)) {
       this.supported = true;
       this.use = 'flash';
     } else { // has Flash but wrong version
       this.supported = false;
-      this.reason = 'Flash 9+ required';
+      this.reason = 'Flash 10+ required';
     }
   } else { // no Flash present
     this.supported = false;
-    this.reason = 'Flash 9+ or a different browser required';
+    this.reason = 'Flash 10+ or a different browser required';
   }
 }
 
@@ -8507,7 +8507,7 @@ extend(FlashInserter, {
             + 'codebase="'
             + protocol
             + '://fpdownload.macromedia.com/pub/shockwave/cabs/flash/'
-            + 'swflash.cab#version=9,0,0,0"\n '
+            + 'swflash.cab#version=10,0,0,0"\n '
             + 'width="' + size.width + '"\n '
             + 'height="' + size.height + '"\n '
             + 'id="' + this._handler.flashID + '"\n '
