@@ -1337,6 +1337,10 @@ extend(SVGWeb, {
     // NativeHandler and actual implementations for the FlashHandler
     this.renderer._patchBrowserObjects(window, document);
 
+    // Issue 573: Unless we keep this reference, IE 9 seems to garbage collect
+    // the 'document' object and the patches to it are lost.
+    this.renderer.documentRef = document;
+
     // there may be objects added later, so add our resize listener before
     // checking for whether there is any SVG content
     if (this.config.use == 'flash') {
@@ -6757,7 +6761,13 @@ extend(_Style, {
       }
       
       // set initial values for style.length
-      htcStyle.length = 0;
+      // Use try/catch; IE9 considers this read-only,
+      try {
+        htcStyle.length = 0;
+      }
+      catch (exp) {
+        // IE9 has length already set to zero anyway so it does not matter.
+      }
       
       // expose .length property on our custom _Style object to aid it 
       // being used internally
@@ -7347,11 +7357,6 @@ extend(_SVGObject, {
     // add to our lookup tables so that fetching this node in the future works
     doc._nodeById['_' + rootID] = root;
 
-    // add our contentDocument property
-    // TODO: This should be doc._getProxyNode(), but Issue 227 needs to be
-    // addressed first:
-    // http://code.google.com/p/svgweb/issues/detail?id=227
-    
     if (isIE) {
       // this workaround will prevent Issue 140:
       // "SVG OBJECT.contentDocument does not work when DOCTYPE specified 
@@ -7360,7 +7365,34 @@ extend(_SVGObject, {
       this._handler.flash.setAttribute('contentDocument', null);
     }
     
-    this._handler.flash.contentDocument = doc;
+    // add our contentDocument property
+    // TODO: This should be doc._getProxyNode(), but Issue 227 needs to be
+    // addressed first:
+    // http://code.google.com/p/svgweb/issues/detail?id=227
+    try {
+      this._handler.flash.contentDocument = doc;
+    }
+    catch (exp) {
+      // Issue 573: Solution for Issue 140 above only works up to IE version 8.
+      // IE 9 throws an exception.
+      try {
+        this._handler.flash.__contentDocument = doc;
+        var self = this;
+        Object.defineProperty(this._handler.flash, 'contentDocument', 
+          { get: function () {
+                   return self._handler.flash.__contentDocument;
+                 },
+            set: function (val) {
+                   self._handler.flash.__contentDocument = val;
+                 }
+          });
+      }
+      catch (exp) {
+        // This should work on IE 9. Have not seen an exception here.
+        console.log('This exception occurred setting object contentDocument: '
+                     + (exp.message || exp));
+      }
+    }
     
     // FIXME: NOTE: unfortunately we can't support the getSVGDocument() method; 
     // Firefox throws an error when we try to override it:
