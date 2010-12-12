@@ -919,7 +919,7 @@ extend(SVGWeb, {
       this.totalLoaded = this.totalLoaded == 0 ? 0 : this.totalLoaded - 1;
       
       // remove from our list of handlers
-      nodeID = node.getAttribute('id');
+      nodeID = node.id;
       nodeHandler = this.handlers[nodeID];
       var newHandlers = [];
       for (var i = 0; i < this.handlers.length; i++) {
