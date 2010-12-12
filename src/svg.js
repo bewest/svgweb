@@ -227,7 +227,7 @@ svgnsFake = 'urn:__fake__internal__namespace';
 // browser detection adapted from Dojo
 var isOpera = false, isSafari = false, isMoz = false, isIE = false, 
     isAIR = false, isKhtml = false, isFF = false, isXHTML = false,
-    isChrome = false;
+    isChrome = false, hasDOMParser = false, hasXMLSerializer = false;
     
 function _detectBrowsers() {
   var n = navigator,
@@ -272,6 +272,19 @@ function _detectBrowsers() {
              && document.constructor == XMLDocument) { /* Safari */
     isXHTML = true;
   }
+
+  // Do not use a DOMParser unless you can also use the XPathEvaluator
+  // and XML Serializer as well. 
+  // On IE up to IE 9, while DOMParser does exists, XPathEvaluator does
+  // not exist and XMLSerializer does not work in all cases, but xmlDoc.xml
+  // does. So, we need to use MSXML on IE until all of that works.
+  if (typeof DOMParser != 'undefined'
+     && typeof(XPathEvaluator) != 'undefined'
+     && typeof(XMLSerializer) != 'undefined') {
+    hasDOMParser = true;
+    hasXMLSerializer = true;
+  }
+  
 }
 
 _detectBrowsers();
@@ -488,7 +501,7 @@ function parseXML(xml, preserveWhiteSpace) {
   }
     
   var xmlDoc;
-  if (typeof DOMParser != 'undefined') { // non-IE browsers
+  if (hasDOMParser) { // non-IE browsers
     // parse the SVG using an XML parser
     var parser = new DOMParser();
     try { 
@@ -500,7 +513,7 @@ function parseXML(xml, preserveWhiteSpace) {
     var root = xmlDoc.documentElement;
     if (root.nodeName == 'parsererror') {
       throw new Error('There is a bug in your SVG: '
-                      + (new XMLSerializer().serializeToString(root)));
+                      + (hasXMLSerializer ? (new XMLSerializer().serializeToString(root)) : root.xml));
     }
   } else { // IE
     // only use the following two MSXML parsers:
@@ -566,7 +579,7 @@ function xmlToStr(node, namespaces) {
   var nodeXML = (node._nodeXML || node);
   var xml;
   
-  if (typeof XMLSerializer != 'undefined') { // non-IE browsers
+  if (hasXMLSerializer) { // non-IE browsers
     xml = (new XMLSerializer().serializeToString(nodeXML));
   } else {
     xml = nodeXML.xml;
@@ -1739,7 +1752,7 @@ extend(SVGWeb, {
     // XML tree we can use later; we do it here so that we don't have to
     // parse the XML twice for performance reasons
     var xml = this._addTracking(svg, normalizeWhitespace);
-    if (typeof XMLSerializer != 'undefined') { // non-IE browsers
+    if (hasXMLSerializer) { // non-IE browsers
       svg = (new XMLSerializer()).serializeToString(xml);
     } else { // IE
       svg = xml.xml;
@@ -5427,41 +5440,254 @@ extend(_Node, {
   _createHTC: function() {
     //console.log('createHTC');
     
-    // we store our HTC nodes into a hidden container located in the
-    // BODY of the document; either get it now or create one on demand
-    if (!this._htcContainer) {
-      this._htcContainer = document.getElementById('__htc_container');
-      if (!this._htcContainer) {
-        // NOTE: Strangely, onpropertychange does _not_ fire for HTC elements
-        // that are in the HEAD of the document, which is where we used
-        // to put the htc_container. Instead, we have to put it into the BODY
-        // of the document and position it offscreen.
-        var body = document.getElementsByTagName('body')[0];
-        var c = document.createElement('div');
-        c.id = '__htc_container';
-        // NOTE: style.display = 'none' does not work
-        c.style.position = 'absolute';
-        c.style.top = '-5000px';
-        c.style.left = '-5000px';
-        body.appendChild(c);
-        this._htcContainer = c;
-      }
-    }
-    
-    // now store our HTC UI node into this container; we will intercept
-    // all calls through the HTC, and implement all the real behavior
-    // inside ourselves (inside _Element)
-    // Note: we do svg: even if we are dealing with a non-SVG node on IE,
-    // such as sodipodi:namedview; this is necessary so that our svg.htc
-    // file gets invoked for all these nodes, which is by necessity bound to 
-    // the svg: namespace
-    var htcNode = document.createElement('svg:' + this.nodeName);
-    htcNode._fakeNode = this;
-    htcNode._handler = this._handler;
-    this._htcContainer.appendChild(htcNode);
-    this._htcNode = htcNode;
-  },
+    if (Object.defineProperty) {
+      this._htcNode = document.createElement('div');
+      this._htcNode.appendChild = function (c) { return this._fakeNode.appendChild(c); }
+      this._htcNode.addEventListener = function (t, l, u) { return this._fakeNode.addEventListener(t, l, u); }
+      this._htcNode.beginElement = function () { return this._fakeNode.beginElement(); }
+      this._htcNode.beginElementAt = function (o) { return this._fakeNode.beginElementAt(o); }
+      this._htcNode.endElement = function () { return this._fakeNode.endElement(); }
+      this._htcNode.endElementAt = function (o) { return this._fakeNode.endElementAt(o); }
+      this._htcNode._cloneNode = this._htcNode.cloneNode;
+      this._htcNode.cloneNode = function (d) { return this._fakeNode.cloneNode(d); }
+      this._htcNode.createSVGPoint = function () { return this._fakeNode.createSVGPoint(); }
+      this._htcNode.createSVGRect = function () { return this._fakeNode.createSVGRect(); }
+      this._htcNode.getAttribute = function(n) { return this._fakeNode.getAttribute(n); }
+      this._htcNode.getAttributeNS = function (ns, l) { return this._fakeNode.getAttributeNS(ns, l); }  
+      this._htcNode.getScreenCTM = function () { return this._fakeNode.getScreenCTM(); }
+      this._htcNode.getBBox = function () { return this._fakeNode.getBBox(); }
+      this._htcNode.getCTM = function () { return this._fakeNode.getCTM(); }
+      this._htcNode.getElementsByTagNameNS = function (n, l) { return this._fakeNode.getElementsByTagNameNS(n, l); }
+      this._htcNode.hasChildNodes = function () { return this._fakeNode.hasChildNodes(); }
+      this._htcNode.hasAttributes = function () { return this._fakeNode.hasAttributes(); }
+      this._htcNode.hasAttribute = function (l) { return this._fakeNode.hasAttribute(l); }
+      this._htcNode.hasAttributeNS = function (ns, l) { return this._fakeNode.hasAttributeNS(ns, l); }
+      this._htcNode.insertBefore = function (n, o) { return this._fakeNode.insertBefore(n, o); }
+      this._htcNode.isSupported = function (f, v) { return this._fakeNode.isSupported(f, v); }
+      this._htcNode.setAttribute = function (n, v) { return this._fakeNode.setAttribute(n, v); }  
+      this._htcNode.setAttributeNS = function (ns, qName, v) { return this._fakeNode.setAttributeNS(ns, qName, v); }
+      this._htcNode.removeChild = function (c) { return this._fakeNode.removeChild(c); }
+      this._htcNode.replaceChild = function (n, o) { return this._fakeNode.replaceChild(n, o); }
+      this._htcNode.removeAttribute = function (l) { return this._fakeNode.removeAttribute(l); }
+      this._htcNode.removeAttributeNS = function (ns, l) { return this._fakeNode.removeAttributeNS(ns, l); }
+      this._htcNode.removeEventListener = function (t, l, u) { return this._fakeNode.removeEventListener(t, l, u); }
+      this._htcNode.get = function (a) { return this._fakeNode.get(a); }
+      this._htcNode.set = function (a,o) { return this._fakeNode.set(a,o); }
+      this._htcNode.create = function (e,a,n,f,o) { return this._fakeNode.create(e,a,n,f,o); }
+      this._htcNode.createChild = function (e,a,i,n,f) { return this._fakeNode.createChild(e,a,i,n,f); }
+      this._htcNode.addChild = function (c,i) { return this._fakeNode.addChild(c,i); }
   
+      this._htcNode._getNodeName = function () { return this._fakeNode.nodeName; }
+      this._htcNode._getNodeType = function () { return this._fakeNode.nodeType; }
+      this._htcNode._getLocalName = function () { return this._fakeNode.localName; }
+      this._htcNode._getPrefix = function () { return this._fakeNode.prefix; }
+      this._htcNode._getNamespaceURI = function () { return this._fakeNode.namespaceURI; }
+    
+      this._htcNode._getChildNodes = function () { return this._fakeNode._getChildNodes(); }
+    
+      this._htcNode._getParentNode = function () { return this._fakeNode._getParentNode(); }
+      this._htcNode._getFirstChild = function () { return this._fakeNode._getFirstChild(); }
+      this._htcNode._getLastChild = function () { return this._fakeNode._getLastChild(); }
+      this._htcNode._getPreviousSibling = function () { return this._fakeNode._getPreviousSibling(); }
+      this._htcNode._getNextSibling = function () { return this._fakeNode._getNextSibling(); }
+    
+      this._htcNode._getNodeValue = function () { return this._fakeNode._nodeValue; }
+      this._htcNode._setNodeValue = function (v) { return this._fakeNode._setNodeValue(v); }
+    
+      this._htcNode._getTextContent = function () { return this._fakeNode._getTextContent(); }  
+      this._htcNode._setTextContent = function (v) { return this._fakeNode._setTextContent(v); }
+      this._htcNode._getData = function () { return this._fakeNode._getData(); }  
+      this._htcNode._setData = function (v) { return this._fakeNode._setData(v); }
+    
+      this._htcNode._getOwnerDocument = function () { return this._fakeNode.ownerDocument; }
+    
+      this._htcNode._getId = function () { return this._fakeNode._getId(); }
+      this._htcNode._setId = function (v) { return this._fakeNode._setId(v); }
+    
+      this._htcNode._getX = function () { return this._fakeNode._getX(); }  
+      this._htcNode._getY = function () { return this._fakeNode._getY(); }  
+      this._htcNode._getWidth = function () { return this._fakeNode._getWidth(); }
+      this._htcNode._getHeight = function () { return this._fakeNode._getHeight(); }
+      this._htcNode._getCurrentScale = function () { return this._fakeNode._getCurrentScale(); }
+      this._htcNode._setCurrentScale = function (v) { return this._fakeNode._setCurrentScale(v); }
+      this._htcNode._getCurrentTranslate = function () { return this._fakeNode._getCurrentTranslate(); }
+  
+      Object.defineProperty(this._htcNode, "currentScale", {
+          get : function () {
+              return this._getCurrentScale();
+          },
+          set : function (val) {
+              this._setCurrentScale(val);
+          }
+      });
+      Object.defineProperty(this._htcNode, "currentTranslate", {
+          get : function () {
+              return this._getCurrentTranslate();
+          },
+          set : function (val) {
+          }
+      });
+      Object.defineProperty(this._htcNode, "nodeName", {
+          get : function () {
+              return this._getNodeName();
+          },
+          set : function (val) {
+          }
+      });
+      Object.defineProperty(this._htcNode, "nodeType", {
+          get : function () {
+              return this._getNodeType();
+          },
+          set : function (val) {
+          }
+      });
+      Object.defineProperty(this._htcNode, "childNodes", {
+          get : function () {
+              return this._getChildNodes();
+          },
+          set : function (val) {
+          }
+      });
+      Object.defineProperty(this._htcNode, "parentNode", {
+          get : function () {
+              return this._getParentNode();
+          },
+          set : function (val) {
+          }
+      });
+      Object.defineProperty(this._htcNode, "firstChild", {
+          get : function () {
+              return this._getFirstChild();
+          },
+          set : function (val) {
+          }
+      });
+      Object.defineProperty(this._htcNode, "id", {
+          get : function () {
+              return this._getID();
+          },
+          set : function (val) {
+              this._setID(val);
+          }
+      });
+      Object.defineProperty(this._htcNode, "lastChild", {
+          get : function () {
+              return this._getLastChild();
+          },
+          set : function (val) {
+          }
+      });
+      Object.defineProperty(this._htcNode, "previousSibling", {
+          get : function () {
+              return this._getPreviousSibling();
+          },
+          set : function (val) {
+          }
+      });
+      Object.defineProperty(this._htcNode, "nextSibling", {
+          get : function () {
+              return this._getNextSibling();
+          },
+          set : function (val) {
+          }
+      });
+      Object.defineProperty(this._htcNode, "nodeValue", {
+          get : function () {
+              return this._getNodeValue();
+          },
+          set : function (val) {
+              this._setNodeValue(val);
+          }
+      });
+      Object.defineProperty(this._htcNode, "textContent", {
+          get : function () {
+              return this._getTextContent();
+          },
+          set : function (val) {
+              this._setTextContent(val);
+          }
+      });
+      Object.defineProperty(this._htcNode, "data", {
+          get : function () {
+              return this._getData();
+          },
+          set : function (val) {
+              this._setData(val);
+          }
+      });
+      Object.defineProperty(this._htcNode, "ownerDocument", {
+          get : function () {
+              return this._getOwnerDocument();
+          },
+          set : function (val) {
+          }
+      });
+      Object.defineProperty(this._htcNode, "x", {
+          get : function () {
+              return this._getX();
+          },
+          set : function (val) {
+          }
+      });
+      Object.defineProperty(this._htcNode, "y", {
+          get : function () {
+              return this._getY();
+          },
+          set : function (val) {
+          }
+      });
+      Object.defineProperty(this._htcNode, "width", {
+          get : function () {
+              return this._getWidth();
+          },
+          set : function (val) {
+          }
+      });
+      Object.defineProperty(this._htcNode, "height", {
+          get : function () {
+              return this._getHeight();
+          },
+          set : function (val) {
+          }
+      });
+      this._htcNode._fakeNode = this;
+      this._htcNode._handler = this._handler;
+    } else {
+      // we store our HTC nodes into a hidden container located in the
+      // BODY of the document; either get it now or create one on demand
+      if (!this._htcContainer) {
+        this._htcContainer = document.getElementById('__htc_container');
+        if (!this._htcContainer) {
+          // NOTE: Strangely, onpropertychange does _not_ fire for HTC elements
+          // that are in the HEAD of the document, which is where we used
+          // to put the htc_container. Instead, we have to put it into the BODY
+          // of the document and position it offscreen.
+          var body = document.getElementsByTagName('body')[0];
+          var c = document.createElement('div');
+          c.id = '__htc_container';
+          // NOTE: style.display = 'none' does not work
+          c.style.position = 'absolute';
+          c.style.top = '-5000px';
+          c.style.left = '-5000px';
+          body.appendChild(c);
+          this._htcContainer = c;
+        }
+      }
+    
+      // now store our HTC UI node into this container; we will intercept
+      // all calls through the HTC, and implement all the real behavior
+      // inside ourselves (inside _Element)
+      // Note: we do svg: even if we are dealing with a non-SVG node on IE,
+      // such as sodipodi:namedview; this is necessary so that our svg.htc
+      // file gets invoked for all these nodes, which is by necessity bound to 
+      // the svg: namespace
+      this._htcNode = document.createElement('svg:' + this.nodeName);
+      this._htcNode._fakeNode = this;
+      this._htcNode._handler = this._handler;
+      this._htcContainer.appendChild(this._htcNode);
+    }
+  },
+    
   _setNodeValue: function(newValue) {
     //console.log('setNodeValue, newValue='+newValue);
     if (this.nodeType != _Node.TEXT_NODE) {
@@ -8987,6 +9213,14 @@ extend(_Document, {
     // Make sure to include root SVG node in our results if that is what
     // is asked for!
     if (ns == svgns && localName == 'svg') {
+      // On some browsers a read-only HTMLCollection is returned
+      if (typeof(results.push) == 'undefined') {
+        var collection = results;
+        results = [];
+        for (var i=0; i<collection.length; i++) {
+          results.push(collection[i]);
+        }
+      }
       results.push(this.rootElement);
     }
     
