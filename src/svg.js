@@ -7329,7 +7329,8 @@ function _SVGObject(svgNode, handler) {
   this._scriptsToExec = [];
   
   // flags to know when the SWF file (and on IE the HTC file) are done loading
-  this._htcLoaded = false;
+  // If defineProperty is available, do not bother loading the htc.
+  this._htcLoaded = Object.defineProperty ? true : false;
   this._swfLoaded = false;
   
   // handle any onload event listeners that might be present for
@@ -8841,7 +8842,8 @@ function _SVGSVGElement(nodeXML, svgString, scriptNode, handler) {
   this._scriptNode = scriptNode;
   
   // flash that we use to know whether the HTC and SWF files are loaded
-  this._htcLoaded = false;
+  // If defineProperty is available, do not bother loading the htc.
+  this._htcLoaded = Object.defineProperty ? true : false;
   this._swfLoaded = false;
   
   // add to our nodeByID lookup table so that fetching this node in the
@@ -8939,7 +8941,7 @@ extend(_SVGSVGElement, {
   
   /** Called when the Microsoft Behavior HTC file is loaded. */
   _onHTCLoaded: function() {
-    //console.log('onHTCLoaded');
+    //console.log('SVGSVGElement.onHTCLoaded');
     //end('HTCLoading');
     //start('onHTCLoaded');
     
@@ -8983,7 +8985,7 @@ extend(_SVGSVGElement, {
   
   /** Called when the Flash is loaded initially, as well as the HTC file for IE. */
   _onEverythingLoaded: function() {
-    //console.log('_onEverythingLoaded');
+    //console.log('SVGSVGElement._onEverythingLoaded');
     
     // send the SVG over to Flash now
     //start('firstSendToFlash');
@@ -9004,7 +9006,7 @@ extend(_SVGSVGElement, {
   _onRenderingFinished: function(msg) {
     //end('firstSendToFlash');
     //start('onRenderingFinished');
-    //console.log('onRenderingFinished');
+    //console.log('SVGSVGElement.onRenderingFinished');
     
     if (this._handler.type == 'script') {
       // expose the root SVG element as 'documentElement' on the EMBED
