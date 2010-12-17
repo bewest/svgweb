@@ -278,6 +278,8 @@ function _detectBrowsers() {
   // On IE up to IE 9, while DOMParser does exists, XPathEvaluator does
   // not exist and XMLSerializer does not work in all cases, but xmlDoc.xml
   // does. So, we need to use MSXML on IE until all of that works.
+  // The only exception is IE 9 native mode, in which case we use DOMParser
+  // in order to produce a DOM tree that can be imported.
   if (typeof DOMParser != 'undefined'
      && typeof(XPathEvaluator) != 'undefined'
      && typeof(XMLSerializer) != 'undefined') {
@@ -716,7 +718,7 @@ function SVGWeb() {
   
   // prepare IE by inserting special markup into the page to have the HTC
   // be available
-  if (isIE) {
+  if (isIE && !Object.defineProperty) {
     FlashHandler._prepareBehavior(this.libraryPath, this.htcFilename);
   }
   
@@ -767,7 +769,20 @@ extend(SVGWeb, {
       OBJECT file; this is the window object inside the SVG OBJECT. */
   addOnLoad: function(listener, fromObject, objectWindow) {
     if (fromObject) { // addOnLoad called from an SVG file embedded with OBJECT
-      var obj = objectWindow.frameElement;
+      var obj;
+      if (objectWindow.frameElement) {
+        obj = objectWindow.frameElement;
+      } else {
+        // IE 9 does not appear to support frameElement for svg object elements
+        var h;
+        for (h=0; h < this.handlers.length; h++) {
+          if (this.handlers[h]._objNode &&
+              this.handlers[h]._objNode.contentDocument &&
+              this.handlers[h]._objNode.contentDocument.defaultView == objectWindow) {
+            obj =  this.handlers[h]._objNode;
+          }
+        }
+      }
       
       // if we are being called from an SVG OBJECT tag and are the Flash
       // renderer than just execute the onload listener now since we know
@@ -3109,6 +3124,10 @@ extend(FlashHandler, {
     } else {
       // send things over to Flash
       try {
+        // Flash callback functions may disappear on IE 9
+        if (typeof (this.flash[invoke]) == 'undefined') {
+          __flash__addCallback(this.flash, invoke);
+        }
         return this.flash[invoke](message);
       } catch(exp) {
         // This code is for crashing exception in Opera
@@ -3887,14 +3906,25 @@ NativeHandler._patchSvgFileAddEventListener = function(win, doc) {
       }
     }
   }
-  
-  win.__defineGetter__('onsvgload', function() {
-    return this.__onsvgload;
-  });
-  win.__defineSetter__('onsvgload', function(listener) {
-    this.__onsvgload = listener;
-    this.addEventListener('SVGLoad', listener, false);
-  });
+  if (Object.defineProperty) {
+    Object.defineProperty(win, 'onsvgload',
+                          { get : function() {
+                                    return this.__onsvgload;
+                                  },
+                            set : function(listener) {
+                                    this.__onsvgload = listener;
+                                    this.addEventListener('SVGLoad', listener, false);
+                                  }
+                          });
+  } else {
+    win.__defineGetter__('onsvgload', function() {
+      return this.__onsvgload;
+    });
+    win.__defineSetter__('onsvgload', function(listener) {
+      this.__onsvgload = listener;
+      this.addEventListener('SVGLoad', listener, false);
+    });
+  }
 };
 
 // end of static singleton functions
@@ -4042,7 +4072,16 @@ extend(NativeHandler, {
   
   /** Inserts the SVG back into the HTML page with the correct namespace. */
   _processSVGScript: function(xml, svgString, scriptNode) {
-   var importedSVG = document.importNode(xml.documentElement, true);
+   try {
+     var importedSVG = document.importNode(xml.documentElement, true);
+   } catch (e) {
+     // IE 9 cannot import an MSXML node, so create a standards based
+     // XML node to import, using DOMParser.
+     if (typeof DOMParser != 'undefined') {
+       xml = (new DOMParser()).parseFromString(svgString, 'application/xml');
+       var importedSVG = document.importNode(xml.documentElement, true);
+     }
+   }
    scriptNode.parentNode.replaceChild(importedSVG, scriptNode);
    this._svgRoot = importedSVG;
    
@@ -4203,6 +4242,10 @@ extend(_RedrawManager, {
     // try/catch block to prevent an exception from blocking page unload
     if (notifyFlash) {
       try {
+        // Flash callback functions may disappear on IE 9
+        if (typeof(this._handler.flash.jsSuspendRedraw) == 'undefined') {
+          __flash__addCallback(this._handler.flash, 'jsSuspendRedraw');
+        }
         this._handler.flash.jsSuspendRedraw();
       } catch (exp) {
         console.log("suspendRedraw exception: " + exp);
@@ -4260,6 +4303,10 @@ extend(_RedrawManager, {
     // is unloading from a setTimout interval; surround everything with a 
     // try/catch block to prevent an exception from blocking page unload
     try {
+      // Flash callback functions may disappear on IE 9
+      if (typeof(this._handler.flash.jsUnsuspendRedrawAll) == 'undefined') {
+        __flash__addCallback(this._handler.flash, 'jsUnsuspendRedrawAll');
+      }
       this._handler.flash.jsUnsuspendRedrawAll(sendMe);
     } catch (exp) {
       console.log('unsuspendRedraw exception: ' + exp);
@@ -7493,6 +7540,20 @@ extend(_SVGObject, {
   },
     
   _onFlashLoaded: function(msg) {
+    // On IE 9, the flash control may not actually be present in the DOM
+    // yet, even though it is active and calling javascript.
+    if (!document.getElementById(this._handler.flashID)) {
+      setTimeout((function(self, msg) {
+                    return function() {
+                      self._onFlashLoaded(msg);
+                    };
+                  })(this, msg), 1);
+    } else {
+      this._onFlashLoadedNow(msg);
+    }
+  },
+
+  _onFlashLoadedNow: function(msg) {
     //console.log('_SVGObject, onFlashLoaded, msg='+this._handler.debugMsg(msg));
 
     // store a reference to our Flash object
@@ -8134,6 +8195,10 @@ extend(FlashInserter, {
       // control.
       var self = this;
       window.setTimeout(function() {
+        // Remove ID from replaceMe DIV that also appears on the flash object.
+        // Otherwise in some circumstances, the DIV is retrieved instead of flash.
+        self._replaceMe.removeAttribute('id');
+        self._replaceMe.removeAttribute('name');
         self._replaceMe.outerHTML = flash;
         self = null; // IE memory leaks
       }, 1);
@@ -8968,7 +9033,7 @@ extend(_SVGSVGElement, {
     //end('SWFLoading');
     //start('onFlashLoaded');
     // the Flash object is done loading
-    //console.log('_onFlashLoaded');
+    //console.log('SVGSVGElement._onFlashLoaded');
     
     // store a reference to our Flash object
     this._handler.flash = document.getElementById(this._handler.flashID);
