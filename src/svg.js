@@ -4072,14 +4072,15 @@ extend(NativeHandler, {
   
   /** Inserts the SVG back into the HTML page with the correct namespace. */
   _processSVGScript: function(xml, svgString, scriptNode) {
+   var xml, importedSVG;
    try {
-     var importedSVG = document.importNode(xml.documentElement, true);
+     importedSVG = document.importNode(xml.documentElement, true);
    } catch (e) {
      // IE 9 cannot import an MSXML node, so create a standards based
-     // XML node to import, using DOMParser.
+     // XML node to adopt, using DOMParser.
      if (typeof DOMParser != 'undefined') {
        xml = (new DOMParser()).parseFromString(svgString, 'application/xml');
-       var importedSVG = document.importNode(xml.documentElement, true);
+       importedSVG = document.adoptNode(xml.documentElement, true);
      }
    }
    scriptNode.parentNode.replaceChild(importedSVG, scriptNode);

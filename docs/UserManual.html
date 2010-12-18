@@ -344,7 +344,7 @@ root.appendChild(el);</code></pre>
 so you can use setAttribute() instead of setAttributeNS(); using setAttributeNS
 is a common SVG mistake. You only need to do this for XLink attributes:</p>
 
-<pre><code>el.setAttributeNS(xlinkns, 'href');</code></pre>
+<pre><code>el.setAttributeNS(xlinkns, 'xlink:href', myURL);</code></pre>
 
 <p>If you like being pedantic and typing more you can use null for a namespace when working with SVG attributes:</p>
 
