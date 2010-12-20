@@ -114,17 +114,13 @@
            the data and src attributes to point to where your SVG file is
            relative to the HTML page. -->
            
-      <!--[if lt IE 9]>
-      <object src="../svg-files/helloworld.svg" classid="image/svg+xml"
-              width="200" height="200"
-              id="mySVGObject">
-      <![endif]-->
+      <!--[if lt IE 9]><!-- -->
+        <object src="../svg-files/helloworld.svg" classid="image/svg+xml"
+                width="200" height="200" id="mySVGObject"> <!--<![endif]-->
       <!--[if (!IE)|(gte IE 9)]><!-- -->
-      <object data="../svg-files/helloworld.svg" type="image/svg+xml" 
-              width="200" height="200"
-              id="mySVGObject">
-      <!--<![endif]-->
-      </object>
+        <object data="../svg-files/helloworld.svg" type="image/svg+xml" 
+                width="200" height="200" id="mySVGObject"> <!--<![endif]-->
+        </object>
     
   </body>
 </html>

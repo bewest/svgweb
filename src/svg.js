@@ -9026,11 +9026,25 @@ extend(_SVGSVGElement, {
     
     // TODO: we are not handling dynamically created nodes yet
   },
+
+  _onFlashLoaded: function(msg) {
+    // On IE 9, the flash control may not actually be present in the DOM
+    // yet, even though it is active and calling javascript.
+    if (!document.getElementById(this._handler.flashID)) {
+      setTimeout((function(self, msg) {
+                    return function() {
+                      self._onFlashLoaded(msg);
+                    };
+                  })(this, msg), 1);
+    } else {
+      this._onFlashLoadedNow(msg);
+    }
+  },
   
   /** Called when the Flash SWF file has been loaded. Note that this doesn't
       include the SVG being rendered -- at this point we haven't even
       sent the SVG to the Flash file for rendering yet. */
-  _onFlashLoaded: function(msg) {
+  _onFlashLoadedNow: function(msg) {
     //end('SWFLoading');
     //start('onFlashLoaded');
     // the Flash object is done loading

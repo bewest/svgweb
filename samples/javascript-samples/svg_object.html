@@ -16,16 +16,14 @@
   <body>
     <h1>Tests using the OBJECT syntax to embed an SVG file</h1>
 
-    <!--[if IE]>
-    <object src="../svg-files/photos.svg" classid="image/svg+xml"
-            width="1250" height="750">
-    <![endif]-->
-    <!--[if !IE]>-->
-    <object data="../svg-files/photos.svg" type="image/svg+xml" 
-            width="1250" height="750">
-    <!--<![endif]-->
-    </object>
-    
+    <!--[if lt IE 9]><!-- -->
+      <object src="../svg-files/photos.svg" classid="image/svg+xml"
+              width="1250" height="750" id="mySVGObject"> <!--<![endif]-->
+    <!--[if (!IE)|(gte IE 9)]><!-- -->
+      <object data="../svg-files/photos.svg" type="image/svg+xml" 
+              width="1250" height="750" id="mySVGObject"> <!--<![endif]-->
+      </object>
+
     <h1>Test HTML H1</h1>
   </body>
 </html>
