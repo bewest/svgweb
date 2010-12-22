@@ -5029,11 +5029,15 @@ extend(_Node, {
   },
 
   getScreenCTM: function() {
-    var msg = this._handler.sendToFlash('jsGetScreenCTM', [ this._guid ]); 
-    msg = this._handler._stringToMsg(msg);
-    return new _SVGMatrix(new Number(msg.a), new Number(msg.b), new Number(msg.c),
-                          new Number(msg.d), new Number(msg.e), new Number(msg.f),
-                          this._handler);
+    if (this._handler) {
+      var msg = this._handler.sendToFlash('jsGetScreenCTM', [ this._guid ]); 
+      msg = this._handler._stringToMsg(msg);
+      return new _SVGMatrix(new Number(msg.a), new Number(msg.b), new Number(msg.c),
+                            new Number(msg.d), new Number(msg.e), new Number(msg.f),
+                            this._handler);
+    } else {
+      return new _SVGMatrix(1,0,0,1,0,0);
+    }
   },
 
   getCTM: function() {
@@ -6763,10 +6767,14 @@ extend(_Element, {
   },
 
   getBBox: function() {
-    var msg = this._handler.sendToFlash('jsGetBBox', [ this._guid ]);
-    msg = this._handler._stringToMsg(msg);
-    return new _SVGRect(new Number(msg.x), new Number(msg.y),
-                        new Number(msg.width), new Number(msg.height));
+    if (this._handler) {
+      var msg = this._handler.sendToFlash('jsGetBBox', [ this._guid ]);
+      msg = this._handler._stringToMsg(msg);
+      return new _SVGRect(new Number(msg.x), new Number(msg.y),
+                          new Number(msg.width), new Number(msg.height));
+    } else {
+      return new _SVGRect(0,0,0,0);
+    }
   },
 
   /** Extracts the unit value and trims off the measurement type. For example, 
