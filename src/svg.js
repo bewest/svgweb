@@ -1443,7 +1443,7 @@ extend(SVGWeb, {
     this._detachResizeListener();
     for (var i = 0; i < this.handlers.length; i++) {
       var handler = this.handlers[i];
-      if (!handler._inserter || !handler.flash) {
+      if (!handler._inserter || !handler.flash || !handler._loaded) {
         // Flash still being rendered
         continue;
       }
