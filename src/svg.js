@@ -3268,10 +3268,10 @@ extend(FlashHandler, {
     var evt = { target: target._getProxyNode(),
                 currentTarget: currentTarget._getProxyNode(),
                 type: msg.eventType,
-                clientX: new Number(msg.stageX),
-                clientY: new Number(msg.stageY),
-                screenX: new Number(msg.stageX),
-                screenY: new Number(msg.stageY),
+                clientX: Math.round(new Number(msg.stageX)),
+                clientY: Math.round(new Number(msg.stageY)),
+                screenX: Math.round(new Number(msg.stageX)),
+                screenY: Math.round(new Number(msg.stageY)),
                 altKey: msg.altKey,
                 ctrlKey: msg.ctrlKey,
                 shiftKey: msg.shiftKey,
@@ -3305,10 +3305,10 @@ extend(FlashHandler, {
                     'currentTarget:document.getElementById("' +
                       currentTarget._getProxyNode().getAttribute('id') + '") ,\n' +
                     'type: "' + msg.eventType + '",\n' +
-                    'clientX: ' + new Number(msg.stageX) + ',\n' +
-                    'clientY: ' + new Number(msg.stageY) + ',\n' +
-                    'screenX: ' + new Number(msg.stageX) + ',\n' +
-                    'screenY: ' + new Number(msg.stageY) + ',\n' +
+                    'clientX: ' + Math.round(new Number(msg.stageX)) + ',\n' +
+                    'clientY: ' + Math.round(new Number(msg.stageY)) + ',\n' +
+                    'screenX: ' + Math.round(new Number(msg.stageX)) + ',\n' +
+                    'screenY: ' + Math.round(new Number(msg.stageY)) + ',\n' +
                     'altKey: ' + msg.altKey + ',\n' +
                     'ctrlKey: ' + msg.ctrlKey + ',\n' +
                     'shiftKey: ' + msg.shiftKey + ',\n' +
