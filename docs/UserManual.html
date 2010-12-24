@@ -27,7 +27,7 @@ non-XHTML HTML much easier, as was well as supporting using the OBJECT tag to
 easily bring in SVG files. Using SVG in backgrounds and with the IMAGE tag is 
 not currently supported.</p>
 
-<p>The SVG Web toolkit is currently in alpha. Please <a href="http://code.google.com/p/svgweb/issues/list">file issues</a> if you run into problems.</p>
+<p>The SVG Web toolkit is currently in Beta status. Please <a href="http://code.google.com/p/svgweb/issues/list">file issues</a> if you run into problems.</p>
 
 <h1 id="browser_support">Browser and Flash Support</h1>
 
@@ -38,7 +38,7 @@ support either Flash or SVG so is not supported. The iPhone before version
 2.1 does not natively support either Flash or SVG and therefore is not
 supported.</p>
 
-<p>Flash 9+ is required for the Flash renderer; this has close to 97% installed
+<p>Flash 10+ is required for the Flash renderer; this has close to 97% installed
 base so it is safe to depend on.</p>
 
 <p>The Adobe SVG Viewer (ASV) is not supported; it is a non-goal of this project to have support for the ASV viewer or its proprietary extensions.</p>
@@ -528,11 +528,17 @@ and _don't_ have () at the end -- i.e. it is 'var onloadFunc = doload' NOT
 
 <h1 id="compression">Compression</h1>
 
-<p>svgz (compressed SVG files) are not supported. However, it is recommended
-that you turn on GZip compression on your webserver for both SVG files
-and the svg.htc, svg.swf, and svg.js library files to have very significant size 
-savings equal to an svgz file as well as to pull down the SVG Web
-library files faster.</p>
+<p>It has been reported that svgz (compressed SVG) files work with SVG Web. For Apache, the following conf file directives will support that format:<p>
+
+<pre><code>
+  AddType image/svg+xml svgz
+  AddEncoding x-gzip .svgz 
+</code></pre>
+
+
+<p> It is also recommended that you turn on GZip compression on your webserver for the svg.htc, svg.swf,
+and svg.js library files. You may also wish to enable gzip compression for plain SVG files, if you are not using the .svgz format. As with all optimization techniques, be sure to test it on all the browsers you intend to support.
+</p>
 
 <h1 id="sizing">Width and Height</h1>
 
