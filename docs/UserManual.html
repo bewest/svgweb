@@ -901,16 +901,21 @@ need not be retrieved from the network).</p>
 
 <p>In markup, this would look like this:</p>
 
-<pre><code>&lt;!--[if IE]&gt;
-&lt;object id="testSVG" src='data:image/svg+xml,&lt;svg xmlns="http://www.w3.org/2000/svg"&gt;&lt;/svg&gt;'
-        classid="image/svg+xml" width="500" height="500"&gt;
-&lt;![endif]--&gt;
+<pre>
+<code>
 &lt;!--[if !IE]&gt;--&gt;
-&lt;object id="testSVG" data='data:image/svg+xml,&lt;svg xmlns="http://www.w3.org/2000/svg"&gt;&lt;/svg&gt;'
-        type="image/svg+xml" width="500" height="500"&gt;
-&lt;!--&lt;![endif]--&gt;
-&lt;/object&gt;
-</code></pre>
+  &lt;object data='data:image/svg+xml,&lt;svg xmlns="http://www.w3.org/2000/svg"&gt;&lt;/svg&gt;'
+          type="image/svg+xml" width="500" height="500" id="testSVG"&gt; &lt;!--&lt;![endif]--&gt;
+&lt;!--[if lt IE 9]&gt;
+  &lt;object src='data:image/svg+xml,&lt;svg xmlns="http://www.w3.org/2000/svg"&gt;&lt;/svg&gt;'
+          classid="image/svg+xml" width="500" height="500" id="testSVG"&gt; &lt;![endif]--&gt;
+&lt;!--[if gte IE 9]&gt;
+  &lt;object data='data:image/svg+xml,&lt;svg xmlns="http://www.w3.org/2000/svg"&gt;&lt;/svg&gt;'
+          type="image/svg+xml" width="500" height="500" id="testSVG"&gt; &lt;![endif]--&gt;
+  &lt;img src="scimitar.png" /&gt;
+  &lt;/object&gt;
+</code>
+</pre>
 
 <h2 id="dynamic_root">Dynamically Creating an SVG Root</h2>
 <p>Dynamically creating an SVG Root element is similar for direct embedding into
@@ -1252,16 +1257,21 @@ correctly with such IDs.</p>
 <p id="known_issues17">* If you are using OBJECT tags to embed your SVG into the page while using
 the Flash handler support:</p>
 
-<pre><code>&lt;!--[if IE]&gt;
-&lt;object id="mySVG" src="embed1.svg"
-        classid="image/svg+xml" width="500" height="500"&gt;
-&lt;![endif]--&gt;
+<pre>
+<code>
 &lt;!--[if !IE]&gt;--&gt;
-&lt;object id="mySVG" data="embed1.svg"
-        type="image/svg+xml" width="500" height="500"&gt;
-&lt;!--&lt;![endif]--&gt;
+  &lt;object data="embed1.svg" type="image/svg+xml"
+          width="500" height="500" id="testSVG"&gt; &lt;!--&lt;![endif]--&gt;
+&lt;!--[if lt IE 9]&gt;
+  &lt;object src="embed1.svg" classid="image/svg+xml"
+          width="500" height="500" id="testSVG"&gt; &lt;![endif]--&gt;
+&lt;!--[if gte IE 9]&gt;
+  &lt;object data="embed1.svg" type="image/svg+xml"
+          width="500" height="500" id="testSVG"&gt; &lt;![endif]--&gt;
   &lt;img src="scimitar.png" /&gt;
-&lt;/object&gt;</code></pre>
+  &lt;/object&gt;
+</code>
+</pre>
 
 <p>and call document.getElementsByTagName('object'), note that on Firefox 
 and Safari the OBJECT tag gets transformed into an EMBED tag by the browser 
