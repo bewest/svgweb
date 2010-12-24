@@ -5616,10 +5616,10 @@ extend(_Node, {
       });
       Object.defineProperty(this._htcNode, "id", {
           get : function () {
-              return this._getID();
+              return this._getId();
           },
           set : function (val) {
-              this._setID(val);
+              this._setId(val);
           }
       });
       Object.defineProperty(this._htcNode, "lastChild", {
