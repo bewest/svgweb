@@ -1,3 +1,6 @@
+<!DOCTYPE html>
+<html>
+<body>
 <h1 id="intro">Introduction</h1>
 
 <p>The SVG Web library makes it possible to use SVG across all of the major 
@@ -111,29 +114,35 @@ any further tricks:</p>
 <p>The second way to embed SVG is with the the OBJECT tag, which will work on 
 Internet Explorer as well. Example:</p>
 
-<pre><code>&lt;!--[if IE]&gt;
-&lt;object id="testSVG" src="scimitar.svg"
-        classid="image/svg+xml" width="1250" height="750"&gt;
-&lt;![endif]--&gt;
+<pre>
+<code>
 &lt;!--[if !IE]&gt;--&gt;
-&lt;object id="testSVG" data="scimitar.svg"
-        type="image/svg+xml" width="1250" height="750"&gt;
-&lt;!--&lt;![endif]--&gt;
+  &lt;object data="scimitar.svg" type="image/svg+xml"
+          width="1250" height="750" id="mySVGObject"&gt; &lt;!--&lt;![endif]--&gt;
+&lt;!--[if lt IE 9]&gt;
+  &lt;object src="scimitar.svg" classid="image/svg+xml"
+          width="1250" height="750" id="mySVGObject"&gt; &lt;![endif]--&gt;
+&lt;!--[if gte IE 9]&gt;
+  &lt;object data="scimitar.svg" type="image/svg+xml"
+          width="1250" height="750" id="mySVGObject"&gt; &lt;![endif]--&gt;
   &lt;h1&gt;Put optional fallback content here&lt;/h1&gt;
-&lt;/object&gt;</code></pre>
+  &lt;/object&gt;
+</code>
+</pre>
 
 <p>Notice the Internet Explorer conditional comments. The first OBJECT tag
-is for Internet Explorer, while the second one is for standards-compliant
-browsers. This format is necessary for robust IE support, including IE 6.</p>
+is for standards-compliant browsers while the second and third tags are 
+for Internet Explorer. This format is necessary for robust IE support, including
+IE 6, 7, 8, and 9.</p>
 
-<p>For the first OBJECT for Internet Explorer, you must specify a 'src' 
+<p>For the OBJECT tag for Internet Explorer prior to version 9, you must specify a 'src' 
 attribute pointing to your SVG file rather than using the standard 'data'
 attribute. Unfortunately again due to some limitations on
 Internet Explorer you should <i>not</i> include the 'type' attribute but rather
 must include a 'classid' attribute set to "image/svg+xml" for use with the
 SVG Web framework.</p>
 
-<p>The second OBJECT works according to the standard, which has a 'type'
+<p>The first and third OBJECT tags works according to the standard, which has a 'type'
 set to "image/svg+xml" and a 'data' attribute set to "scimitar.svg".</p>
 
 <p>Note that the URL given in the 'src' or 'data' attributes must be on the same 
@@ -201,10 +210,10 @@ query string to tell them to use your different HTC file:</p>
 
 <h1 id="renderer">Flash SVG Renderer Versus Native SVG Rendering</h1>
 
-<p>By default, the Flash renderer will be used on Internet Explorer 6+; versions
+<p>By default, the Flash renderer will be used on Internet Explorer 6 through 8; versions
 of Firefox before Firefox 3 (not yet supported); versions of Safari before Safari 3 (not yet supported); and
 versions of Opera before Opera 9 (not yet supported). The native SVG renderer will be used
-on Firefox 3+; Safari 3+; Chrome; and iPhone version 2.1+ Webkit.</p>
+on Firefox 3+; Safari 3+; Chrome; iPhone version 2.1+ Webkit, and Internet Explorer version 9+.</p>
 
 <h1 id="override">Overriding Which Renderer is Used</h1>
 
@@ -276,13 +285,20 @@ working as expected.</p>
 <p>If you have a SCRIPT block <i>inside</i> of your SVG then it will
 work correctly on <i>all browsers</i> with the Flash renderer as well:</p>
 
-<pre><code>&lt;!--[if IE]&gt;
-&lt;object src="blocks_game.svg" classid="image/svg+xml" width="500" height="500"&gt;
-&lt;![endif]--&gt;
+<pre>
+<code>
 &lt;!--[if !IE]&gt;--&gt;
-&lt;object data="blocks_game.svg" type="image/svg+xml" width="500" height="500"&gt;
-&lt;!--&lt;![endif]--&gt;
-&lt;/object&gt;</code></pre>
+  &lt;object data="blocks_game.svg" type="image/svg+xml"
+          width="500" height="500"&gt; &lt;!--&lt;![endif]--&gt;
+&lt;!--[if lt IE 9]&gt;
+  &lt;object src="blocks_game.svg" classid="image/svg+xml"
+          width="500" height="500"&gt; &lt;![endif]--&gt;
+&lt;!--[if gte IE 9]&gt;
+  &lt;object data="blocks_game.svg" type="image/svg+xml"
+          width="500" height="500"&gt; &lt;![endif]--&gt;
+  &lt;/object&gt;
+</code>
+</pre>
 
 <p>(inside of blocks_game.svg):</p>
 
@@ -308,15 +324,20 @@ work correctly on <i>all browsers</i> with the Flash renderer as well:</p>
 manipulated by external JavaScript as normal by using the contentDocument 
 property:</p>
 
-<pre><code>&lt;!--[if IE]&gt;
-&lt;object id="testSVG" src="scimitar.svg"
-        classid="image/svg+xml" width="1250" height="750"&gt;
-&lt;![endif]--&gt;
+<pre>
+<code>
 &lt;!--[if !IE]&gt;--&gt;
-&lt;object id="testSVG" data="scimitar.svg"
-        type="image/svg+xml" width="1250" height="750"&gt;
-&lt;!--&lt;![endif]--&gt;
-&lt;/object&gt;
+  &lt;object data="scimitar.svg" type="image/svg+xml"
+          width="1250" height="750" id="testSVG"&gt; &lt;!--&lt;![endif]--&gt;
+&lt;!--[if lt IE 9]&gt;
+  &lt;object src="scimitar.svg" classid="image/svg+xml"
+          width="1250" height="750" id="testSVG"&gt; &lt;![endif]--&gt;
+&lt;!--[if gte IE 9]&gt;
+  &lt;object data="scimitar.svg" type="image/svg+xml"
+          width="1250" height="750" id="testSVG"&gt; &lt;![endif]--&gt;
+  &lt;/object&gt;
+</code>
+</pre>
 
 &lt;script&gt;
   window.addEventListener('SVGLoad', function() {
@@ -440,14 +461,20 @@ has the following arguments:</p>
 
 <p>Containing HTML page:</p>
 
-<pre><code>&lt;!--[if IE]&gt;
-&lt;object src="photos.svg" classid="image/svg+xml" width="500" height="500"&gt;
-&lt;![endif]--&gt;
+<pre>
+<code>
 &lt;!--[if !IE]&gt;--&gt;
-&lt;object data="photos.svg"
-        type="image/svg+xml" width="500" height="500"&gt;
-&lt;!--&lt;![endif]--&gt;
-&lt;/object&gt;</code></pre>
+  &lt;object data="photos.svg" type="image/svg+xml"
+          width="500" height="500"&gt; &lt;!--&lt;![endif]--&gt;
+&lt;!--[if lt IE 9]&gt;
+  &lt;object src="photos.svg" classid="image/svg+xml"
+          width="500" height="500"&gt; &lt;![endif]--&gt;
+&lt;!--[if gte IE 9]&gt;
+  &lt;object data="photos.svg" type="image/svg+xml"
+          width="500" height="500"&gt; &lt;![endif]--&gt;
+  &lt;/object&gt;
+</code>
+</pre>
 
 <p>photos.svg:</p>
 
@@ -523,13 +550,20 @@ SVG OBJECT:</p>
 
 <p>or</p>
 
-<pre><code>&lt;!--[if IE]&gt;
-&lt;object src="example.svg" classid="image/svg+xml" width="30" height="30"&gt;
-&lt;![endif]--&gt;
+<pre>
+<code>
 &lt;!--[if !IE]&gt;--&gt;
-&lt;object data="example.svg" type="image/svg+xml" width="30" height="30"&gt;
-&lt;!--&lt;![endif]--&gt;
-&lt;/object&gt;</code></pre>
+  &lt;object data="example.svg" type="image/svg+xml"
+          width="30" height="30"&gt; &lt;!--&lt;![endif]--&gt;
+&lt;!--[if lt IE 9]&gt;
+  &lt;object src="example.svg" classid="image/svg+xml"
+          width="30" height="30"&gt; &lt;![endif]--&gt;
+&lt;!--[if gte IE 9]&gt;
+  &lt;object data="example.svg" type="image/svg+xml"
+          width="30" height="30"&gt; &lt;![endif]--&gt;
+  &lt;/object&gt;
+</code>
+</pre>
 
 <p>* A viewBox attribute on the SVG root element:</p>
 
@@ -592,17 +626,23 @@ the following style rule embedded into an HTML page which will not work:</p>
 rules. Currently you should directly set these on the SVG root element or 
 SVG OBJECT tag which is supported:</p>
 
-<pre><code>&lt;!--[if IE]&gt;
-&lt;object src="scimitar.svg" classid="image/svg+xml"
-        id="testSVG" width="1250" height="750"
-        style="display: inline; float: right; border: 1px solid black;"&gt;
-&lt;![endif]--&gt;
-&lt;!--[if !IE&gt;--&gt;
-  &lt;object data="scimitar.svg" type="image/svg+xml" 
-          id="testSVG" width="1250" height="750"
-          style="display: inline; float: right; border: 1px solid black;"&gt;
-&lt;!--&lt;![endif]--&gt;          
-&lt;/object&gt;</code></pre>
+<pre>
+<code>
+&lt;!--[if !IE]&gt;--&gt;
+  &lt;object data="scimitar.svg" type="image/svg+xml"
+          width="1250" height="750" id="testSVG"
+          style="display: inline; float: right; border: 1px solid black;"&gt; &lt;!--&lt;![endif]--&gt;
+&lt;!--[if lt IE 9]&gt;
+  &lt;object src="scimitar.svg" classid="image/svg+xml"
+          width="1250" height="750" id="testSVG"&gt; &lt;![endif]--&gt;
+          style="display: inline; float: right; border: 1px solid black;"&gt; &lt;![endif]--&gt;
+&lt;!--[if gte IE 9]&gt;
+  &lt;object data="scimitar.svg" type="image/svg+xml"
+          width="1250" height="750" id="testSVG"
+          style="display: inline; float: right; border: 1px solid black;"&gt; &lt;![endif]--&gt;
+  &lt;/object&gt;
+</code>
+</pre>
 
 <p>These properties are copied directly to the Flash rendering object. Changing
 any style properties like display, float, etc. through JavaScript
@@ -648,16 +688,21 @@ supported, only with the 'background-color' property.</p>
 inside of your OBJECT tag to be displayed; place it before the end &lt;/OBJECT&gt;
 tag:</p>
 
-<pre><code>&lt;!--[if IE]&gt;
-&lt;object id="mySVG" src="embed1.svg"
-        classid="image/svg+xml" width="500" height="500"&gt;
-&lt;![endif]--&gt;
+<pre>
+<code>
 &lt;!--[if !IE]&gt;--&gt;
-&lt;object id="mySVG" data="embed1.svg"
-        type="image/svg+xml" width="500" height="500"&gt;
-&lt;!--&lt;![endif]--&gt;
+  &lt;object data="embed1.svg" type="image/svg+xml"
+          width="500" height="500" id="mySVG"&gt; &lt;!--&lt;![endif]--&gt;
+&lt;!--[if lt IE 9]&gt;
+  &lt;object src="embed1.svg" classid="image/svg+xml"
+          width="500" height="500" id="mySVG"&gt; &lt;![endif]--&gt;
+&lt;!--[if gte IE 9]&gt;
+  &lt;object data="embed1.svg" type="image/svg+xml"
+          width="500" height="500" id="mySVG"&gt; &lt;![endif]--&gt;
   &lt;img src="scimitar.png" /&gt;
-&lt;/object&gt;</code></pre>
+  &lt;/object&gt;
+</code>
+</pre>
 
 <p>This will display the PNG file if SVG can't be used. (Note: Fallback content
 for SVG OBJECTs is not yet implemented).</p>
@@ -763,15 +808,21 @@ alert(h1.fake); // will alert(undefined)</code></pre>
 <p>If you embed SVG objects into your page using the OBJECT element, you can
 navigate into the SVG inside the OBJECT element using contentDocument:</p>
 
-<pre><code>&lt;!--[if IE]&gt;
-&lt;object id="testSVG" src="embed1.svg"
-        classid="image/svg+xml" width="500" height="500"&gt;
-&lt;![endif]--&gt;
+<pre>
+<code>
 &lt;!--[if !IE]&gt;--&gt;
-&lt;object id="testSVG" data="embed1.svg"
-        type="image/svg+xml" width="500" height="500"&gt;
-&lt;!--&lt;![endif]--&gt;
-&lt;/object&gt;
+  &lt;object data="embed1.svg" type="image/svg+xml"
+          width="500" height="500" id="testSVG"&gt; &lt;!--&lt;![endif]--&gt;
+&lt;!--[if lt IE 9]&gt;
+  &lt;object src="embed1.svg" classid="image/svg+xml"
+          width="500" height="500" id="testSVG"&gt; &lt;![endif]--&gt;
+&lt;!--[if gte IE 9]&gt;
+  &lt;object data="embed1.svg" type="image/svg+xml"
+          width="500" height="500" id="testSVG"&gt; &lt;![endif]--&gt;
+  &lt;img src="scimitar.png" /&gt;
+  &lt;/object&gt;
+</code>
+</pre>
 
 var obj = document.getElementById('testSVG');
 var doc = obj.contentDocument; // grab the document object inside your SVG file
@@ -1415,3 +1466,5 @@ svgweb.appendChild(obj, container);</b>
   <li id="breaking_change_addeventlistener_inside_svg_files">Also related, inside of external SVG files you must only use the <code>&lt;svg onload=""&gt;</code> attribute to wait for SVG Web to finish loading; <a href="#known_issues30">see this note</a> for details.</li>
   <li id="breaking_change_custom_prefixes">SVG Web no longer supports having the <code>svg:</code> prefix in your SVG markup, such as <code>&lt;svg:svg&gt;</code> or <code>&lt;some-custom-prefix:circle&gt;</code>. This was removed due to both spotty support, low usage, and the fact that it has a significant impact on the most common case performance for non-prefixed SVG.</li>
 </ul>
+</body>
+</html>

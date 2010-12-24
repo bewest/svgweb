@@ -1,3 +1,6 @@
+<!DOCTYPE html>
+<html>
+<body>
 <h1>Quick Start</h1>
 
 <p>This is a quick start guide to using the SVG Web toolkit.</p>
@@ -133,24 +136,27 @@ an <a href="http://code.google.com/p/svgweb/issues/list">Issue</a>.</b></p>
 
 <p>In an ideal world we would use a single OBJECT tag; unfortunately, we have a slightly more complex syntax to help Internet Explorer and have to repeat the OBJECT tag twice with slightly different attribute names. Here is an example from our <a href="http://127.0.0.1:8080/samples/javascript-samples/helloworld.html">helloworld.html</a> sample:</p>
 
-<pre><code>&lt;!--[if IE]&gt;
-&lt;object src="../svg-files/helloworld.svg" classid="image/svg+xml"
-        width="200" height="200"
-        id="mySVGObject"&gt;
-&lt;![endif]--&gt;
+<pre>
+<code>
 &lt;!--[if !IE]&gt;--&gt;
-&lt;object data="../svg-files/helloworld.svg" type="image/svg+xml" 
-        width="200" height="200"
-        id="mySVGObject"&gt;
-&lt;!--&lt;![endif]--&gt;
-&lt;/object&gt;</code></pre>
+  &lt;object data="../svg-files/helloworld.svg" type="image/svg+xml"
+          width="200" height="200" id="mySVGObject"&gt; &lt;!--&lt;![endif]--&gt;
+&lt;!--[if lt IE 9]&gt;
+  &lt;object src="../svg-files/helloworld.svg" classid="image/svg+xml"
+          width="200" height="200" id="mySVGObject"&gt; &lt;![endif]--&gt;
+&lt;!--[if gte IE 9]&gt;
+  &lt;object data="../svg-files/helloworld.svg" type="image/svg+xml"
+          width="200" height="200" id="mySVGObject"&gt; &lt;![endif]--&gt;
+  &lt;/object&gt;
+</code>
+</pre>
 
 <p>In general, you should copy the above syntax exactly and modify the following:</p>
 
 <ul>
-  <li>Change the <code>src</code> and <code>data</code> attributes to point to where your SVG file is on both OBJECT tags.</li>
-  <li>Change the <code>width</code> and <code>height</code> attributes on both OBJECT tags to the desired width and height.</li>
-  <li>If you have an <code>id</code> or <code>class</code> attribute, make sure it is on both OBJECT tags.</li>
+  <li>Change the <code>src</code> and <code>data</code> attributes to point to where your SVG file is on all OBJECT tags.</li>
+  <li>Change the <code>width</code> and <code>height</code> attributes on all OBJECT tags to the desired width and height.</li>
+  <li>If you have an <code>id</code> or <code>class</code> attribute, make sure it is on all OBJECT tags.</li>
 </ul>
 
 <p>Note that your SVG file must be served from the same host as the page is served from.</p>
@@ -479,3 +485,5 @@ circle.addEventListener('mousedown', function(evt) {
     
   <p>See the section on <a href="UserManual.html#document_fragment">DocumentFragments in the UserManual</a> for more details.</p>
 </ul>
+</body>
+</html>

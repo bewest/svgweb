@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <!-- Tests embedding SVG using an OBJECT tag, and manipulating it through
        JavaScript -->
@@ -42,15 +42,16 @@
    <h1>Tests embedding SVG using an OBJECT tag, and manipulating it through
         JavaScript</h1>
         
-   <!--[if IE]>
-   <object id="mySVG" src="../svg-files/mysvg.svg" classid="image/svg+xml"
-           width="250" height="150">
-   <![endif]-->
    <!--[if !IE]>-->
-   <object id="mySVG" data="../svg-files/mysvg.svg" type="image/svg+xml" 
-           width="250" height="150">
-   <!--<![endif]-->
-   </object>
+     <object data="../svg-files/mysvg.svg" type="image/svg+xml"
+             width="250" height="150" id="mySVG"> <!--<![endif]-->
+   <!--[if lt IE 9]>
+     <object src="../svg-files/mysvg.svg" classid="image/svg+xml"
+             width="250" height="150" id="mySVG"> <![endif]-->
+   <!--[if gte IE 9]>
+     <object data="../svg-files/mysvg.svg" type="image/svg+xml"
+             width="250" height="150" id="mySVG"> <![endif]-->
+     </object>
 
  </body>
 </html>

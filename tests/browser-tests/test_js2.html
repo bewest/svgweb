@@ -47,40 +47,43 @@
       <h1>Runs a suite of unit tests against our JavaScript SVG DOM
           on a normal text/html page using OBJECTs to embed the SVG</h1>
           
-      <!--[if IE]>
-      <object id="mySVG" src="embed1.svg"
-              classid="image/svg+xml" width="500" height="500">
-      <![endif]-->
       <!--[if !IE]>-->
-      <object id="mySVG" data="embed1.svg"
-              type="image/svg+xml" width="500" height="500">
-      <!--<![endif]-->
+        <object data="embed1.svg" type="image/svg+xml"
+                width="500" height="500" id="mySVG"> <!--<![endif]-->
+      <!--[if lt IE 9]>
+        <object src="embed1.svg" classid="image/svg+xml"
+                width="500" height="500" id="mySVG"> <![endif]-->
+        <!--[if gte IE 9]>
+        <object data="embed1.svg" type="image/svg+xml"
+                width="500" height="500" id="mySVG"> <![endif]-->
         <h1>Fallback content 1</h1>
-      </object>
+        </object>
       
-      <!--[if IE]>
-      <object id="svg2" src="embed2.svg?queryParam1=queryValue1&amp;queryParam2=query%20with%20spaces#someHash"
-              classid="image/svg+xml" width="450" height="450">
-      <![endif]-->
       <!--[if !IE]>-->
-      <object id="svg2" data="embed2.svg?queryParam1=queryValue1&amp;queryParam2=query%20with%20spaces#someHash"
-              type="image/svg+xml" width="450" height="450">
-      <!--<![endif]-->
+        <object data="embed2.svg?queryParam1=queryValue1&amp;queryParam2=query%20with%20spaces#someHash"
+                type="image/svg+xml" width="450" height="450" id="svg2"> <!--<![endif]-->
+      <!--[if lt IE 9]>
+        <object src="embed2.svg?queryParam1=queryValue1&amp;queryParam2=query%20with%20spaces#someHash"
+                classid="image/svg+xml" width="450" height="450" id="svg2"> <![endif]-->
+        <!--[if gte IE 9]>
+        <object data="embed2.svg?queryParam1=queryValue1&amp;queryParam2=query%20with%20spaces#someHash"
+                type="image/svg+xml" width="450" height="450" id="svg2"> <![endif]-->
         <param name="Param1" value="ParamValue1" />
         <param name="Param2" value="ParamValue2" />
         <h1>Fallback content 2</h1>
-      </object>
-      
-      <!--[if IE]>
-      <object id="svg11242" src="embed3.svg"
-              classid="image/svg+xml" width="466" height="265">
-      <![endif]-->
+        </object>
+
       <!--[if !IE]>-->
-      <object id="svg11242" data="embed3.svg"
-              type="image/svg+xml" width="466" height="265">
-      <!--<![endif]-->
+        <object data="embed3.svg"
+                type="image/svg+xml" width="466" height="265" id="svg11242"> <!--<![endif]-->
+      <!--[if lt IE 9]>
+        <object src="embed3.svg"
+                classid="image/svg+xml" width="466" height="265" id="svg11242"> <![endif]-->
+        <!--[if gte IE 9]>
+        <object data="embed3.svg"
+                type="image/svg+xml" width="466" height="265" id="svg11242"> <![endif]-->
         <h1>Fallback content 3</h1>
-      </object>
+        </object>
     
       <h1 id="testHTMLH1" style="border: 3px solid black;">Test HTML H1</h1>
     </div> <!-- end test_container -->
