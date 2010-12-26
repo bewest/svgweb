@@ -433,7 +433,12 @@ root.addEventListener('SVGLoad', function(evt) {
   console.log('SVG onload called');
   // now you can do things with the SVG root element, like add more children
 });
-svgweb.appendChild(root, document.body);</code></pre>
+if (window.svgweb) {
+  window.svgweb.appendChild(root, document.body);
+} else {
+  document.body.appendChild(root);
+}
+</code></pre>
 
 <p>Notice also that when we append our newly created SVG
 root that we must use the method <code>svgweb.appendChild</code>. This method
@@ -498,8 +503,8 @@ You should change the above to:</p>
         // want called when the page is truly ready
         var onloadFunc = doload;
         
-        if (top.svgweb) {
-          top.svgweb.addOnLoad(onloadFunc, true, window);
+        if (window.svgweb) {
+          window.svgweb.addOnLoad(onloadFunc, true, window);
         } else {
           onloadFunc();
         }
@@ -827,8 +832,6 @@ navigate into the SVG inside the OBJECT element using contentDocument:</p>
           width="500" height="500" id="testSVG"&gt; &lt;![endif]--&gt;
   &lt;img src="scimitar.png" /&gt;
   &lt;/object&gt;
-</code>
-</pre>
 
 var obj = document.getElementById('testSVG');
 var doc = obj.contentDocument; // grab the document object inside your SVG file
@@ -872,6 +875,15 @@ following:</p>
 <p>rather than:</p>
 
 <pre><code>document.body.appendChild(obj).</code></pre>
+
+<p>To write code that handles removal of SVG Web in the future, you would do the following:</p>
+<pre><code>
+if (window.svgweb) {
+  window.svgweb.appendChild(obj, document.body);
+} else {
+  document.body.appendChild(obj);
+}
+</code></pre>
 
 <p>The svgweb.appendChild() method takes the SVG OBJECT to append as its first 
 argument, and the parent to attach it to as its second argument.</p>
@@ -1343,7 +1355,12 @@ obj.setAttribute('data', 'myfile.svg');
 obj.addEventListener('SVGLoad', function() {
   alert(obj.parentNode); // will incorrectly return null!
 }, false);
-svgweb.appendChild(obj, myParentNode);</code></pre>
+if (window.svgweb) {
+  window.svgweb.appendChild(obj, myParentNode);
+} else {
+  myParentNode.appendChild(obj);
+}
+</code></pre>
 
 <p>Notice that we access 'obj.parentNode' after the SVG OBJECT has finished
 loading, and this incorrectly returns 'null' instead of the actual
@@ -1362,7 +1379,12 @@ obj.addEventListener('SVGLoad', function() {
   obj = this;
   alert(obj.parentNode); // correctly prints 'myParentNode'
 }, false);
-svgweb.appendChild(obj, myParentNode);</code></pre>
+if (window.svgweb) {
+  window.svgweb.appendChild(obj, myParentNode);
+} else {
+  myParentNode.appendChild(obj);
+}
+</code></pre>
 
 <p>You can also of course use getElementById if you gave your SVG OBJECT an id:</p>
 
@@ -1374,7 +1396,12 @@ obj.addEventListener('SVGLoad', function() {
   obj = document.getElementById('mySVG');
   alert(obj.parentNode); // correctly prints 'myParentNode'
 }, false);
-svgweb.appendChild(obj, myParentNode);</code></pre>
+if (window.svgweb) {
+  window.svgweb.appendChild(obj, myParentNode);
+} else {
+  myParentNode.appendChild(obj);
+}
+</code></pre>
 
 <p>Note that similar issues pertain to <code>svgweb.removeChild</code> when dealing with SVG OBJECT references. See <a href="#removeChildClosureReference">here</a> for more details.</p>
 
@@ -1416,7 +1443,11 @@ obj.style.zIndex = -1000;
 obj.style.top = '0px';
 obj.style.right = '0px';</b>
 
-svgweb.appendChild(obj, myPage);  
+if (window.svgweb) {
+  window.svgweb.appendChild(obj, myPage);
+} else {
+  myPage.appendChild(obj);
+}
 </code></pre> 
 
 <p>Instead, you should do your advanced styling on a <code>div</code> or <code>span</code> container and place the SVG OBJECT inside of that container:</p>
@@ -1438,7 +1469,12 @@ container.style.top = '0px';
 container.style.left = '0px';
 
 myPage.appendChild(container);
-svgweb.appendChild(obj, container);</b>
+if (window.svgweb) {
+  window.svgweb.appendChild(obj, container);
+} else {
+  container.appendChild(obj);
+}
+</b>
 </code></pre>
 
 <p id="known_issues25">* <code>currentTranslate</code> is supported on the SVG root tag (see the section <a href="#zoomAndPan">"Zooming and Panning with currentTranslate and currentScale"</a> for details). However, due to limitations in Internet Explorer the way to work with this is slightly different when using SVG Web than the SVG 1.1 standard. See the <a href="#zoomAndPan">section</a> for details.

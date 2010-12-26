@@ -42,14 +42,15 @@
   				}, false);
 				
   				var div = document.getElementById('container');
-  				if (typeof svgweb == 'undefined') {
-  				  div.appendChild(obj);
+
+  				if (window.svgweb) {
+  				  window.svgweb.appendChild(obj, div);
   				} else {
-  				  svgweb.appendChild(obj, div);
+  				  div.appendChild(obj);
   				}
   			}
             if (window.svgweb) {
-                svgweb.addOnLoad(init);
+                window.svgweb.addOnLoad(init);
             } else {
                 window.onload = init;
             }

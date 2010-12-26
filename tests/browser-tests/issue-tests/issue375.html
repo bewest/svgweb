@@ -25,7 +25,11 @@
           obj.setAttribute('height', '400');
         
           var container = document.getElementById('container');
-          svgweb.appendChild(obj, container);
+          if (window.svgweb) {
+            window.svgweb.appendChild(obj, container);
+          } else {
+            container.appendChild(obj);
+          }
         }, false);
       }
       

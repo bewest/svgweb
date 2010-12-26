@@ -44,7 +44,11 @@
 		    canvas.addEventListener('SVGLoad', function(evt) {
 				the_svg = this;
 		    }, false);    
-	    	svgweb.appendChild(canvas,document.getElementById('foo'));
+			if (window.svgweb) {
+			  window.svgweb.appendChild(canvas,document.getElementById('foo'));
+			} else {
+			  document.getElementById('foo').appendChild(canvas);
+			}
 		}
 		function dostuff() {
 			var rect = document.createElementNS(svgns,'rect');
