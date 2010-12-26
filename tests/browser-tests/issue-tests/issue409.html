@@ -1,6 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!DOCTYPE html>
+<html>
 <head>
 	<script src="../../../src/svg.js" data-path="../../../src"></script>
 </head>
@@ -23,17 +22,17 @@
 	</script>
 	<br/>
 	<h1>Object tag</h1>
-	<!--[if IE]>
-	<object src="issue409.svg" classid="image/svg+xml"
-	        width="100px" height="100px"
-	        id="objectSVG">
-	<![endif]-->
-	<!--[if !IE]>-->
-	<object data="issue409.svg" type="image/svg+xml" 
-	        width="100px" height="100px"
-	        id="objectSVG">
-	<!--<![endif]-->
-	</object>
+    <!--[if !IE]>-->
+      <object data="issue409.svg" type="image/svg+xml"
+              width="100px" height="100px" id="objectSVG"> <!--<![endif]-->
+    <!--[if lt IE 9]>
+      <object src="issue409.svg" classid="image/svg+xml"
+              width="100px" height="100px" id="objectSVG"> <![endif]-->
+    <!--[if gte IE 9]>
+      <object data="issue409.svg" type="image/svg+xml"
+              width="100px" height="100px" id="objectSVG"> <![endif]-->
+      </object>
+
 	<br/>
 	<script type="text/javascript">
 		var the_svg = null;

@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
   <head>
     
@@ -42,11 +43,13 @@
         results.innerHTML = '';
         results.appendChild(document.createTextNode(msg));
       }
+
+      svgweb.addOnLoad(ready);
     </script>
     
   </head>
   
-  <body onload="ready()">
+  <body>
     <p>Test case for <a href="http://code.google.com/p/svgweb/issues/detail?id=272">Issue 272</a> (<i>Fetching contentDocument on SVG OBJECT does not work in IE 8/Standards Mode</i>).</p>
     
     <p>If contentDocument can be fetched and we can navigate to the
@@ -54,13 +57,16 @@
        anything else appears then Issue 272 still fails.</p>
        
     <h2 id="testResults">Not Working!</h2>
-    
-    <!--[if IE]>
-    <object id="myObject" src="issue272.svg" classid="image/svg+xml" width="200" height="200">
-    <![endif]-->
     <!--[if !IE]>-->
-    <object id="myObject" data="issue272.svg" type="image/svg+xml" width="200" height="200">
-    <!--<![endif]-->
-    </object>
+      <object data="issue272.svg" type="image/svg+xml"
+              width="200" height="200" id="myObject"> <!--<![endif]-->
+    <!--[if lt IE 9]>
+      <object src="issue272.svg" classid="image/svg+xml"
+              width="200" height="200" id="myObject"> <![endif]-->
+    <!--[if gte IE 9]>
+      <object data="issue272.svg" type="image/svg+xml"
+              width="200" height="200" id="myObject"> <![endif]-->
+      </object>
+    
   </body>
 </html>

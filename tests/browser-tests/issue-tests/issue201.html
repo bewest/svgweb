@@ -1,5 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-
+<!DOCTYPE html>
 <html>
 
 	<head>
@@ -28,13 +27,15 @@
     			document.getElementById('bar').addEventListener('mousedown', function() { cloneRect();}, false);			
     
     			}
+
+            svgweb.addOnLoad(init);
 		
 		</script>
 
 	</head>
 
 
-	<body onload="init()">
+	<body>
 
 	<h1>Test case for <a href="http://code.google.com/p/svgweb/issues/detail?id=201">Issue 201</a></h1>
 	

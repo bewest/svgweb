@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <script src="../../../src/svg.js" 
@@ -29,7 +29,7 @@
     				             + " (should be 20, 20)");
   			}
 			
-  			window.onload = function(){
+  			function init() {
   				var url = '../../../samples/svg-files/couch.svg';
   				var obj = document.createElement('object', true);
   				obj.id = 'svgobj';
@@ -37,7 +37,7 @@
   				obj.setAttribute('data', url);
   				obj.setAttribute('width', '500');
   				obj.setAttribute('height', '500');
-  				obj.addEventListener('load', function(){
+  				obj.addEventListener('SVGLoad', function(){
   					testTranslate();
   				}, false);
 				
@@ -48,6 +48,11 @@
   				  svgweb.appendChild(obj, div);
   				}
   			}
+            if (window.svgweb) {
+                svgweb.addOnLoad(init);
+            } else {
+                window.onload = init;
+            }
     	</script>
     </head>
     <body>

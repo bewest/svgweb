@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
     <script src="../../../src/svg.js" data-path="../../../src" data-debug="true"></script>
@@ -103,18 +104,16 @@ window.onsvgload = function() {
     <button onclick="changeColors()" disabled>Site Group 1</button>
     <button onclick="changeSites()" disabled>Site Group 2</button>
   </div>
-  
-    <!--[if IE]>
-    <object src="issue111.svg" classid="image/svg+xml"
-            width="800" height="600"
-            id="mySVGObject">
-    <![endif]-->
     <!--[if !IE]>-->
-    <object data="issue111.svg" type="image/svg+xml" 
-            width="800" height="600"
-            id="mySVGObject">
-    <!--<![endif]-->
-    </object>
-    
+      <object data="issue111.svg" type="image/svg+xml"
+              width="800" height="600" id="mySVGObject"> <!--<![endif]-->
+    <!--[if lt IE 9]>
+      <object src="issue111.svg" classid="image/svg+xml"
+              width="800" height="600" id="mySVGObject"> <![endif]-->
+    <!--[if gte IE 9]>
+      <object data="issue111.svg" type="image/svg+xml"
+              width="800" height="600" id="mySVGObject"> <![endif]-->
+      </object>
+  
   </body>
 </html>
