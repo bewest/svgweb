@@ -4025,7 +4025,14 @@ extend(NativeHandler, {
     
     // we might have already been called before
     if (this._loaded) {
-      return; // nothing to do
+      // If we are being called by addOnLoad, we still need to run the
+      // onload listener being added, even if the object has already loaded.
+      // This behavior only appears to occur on IE 9, which has been
+      // observed firing the object load event before the svg onload event.
+      if (func) {
+        func.apply(win);
+      }
+      return;
     }
     
     // flag that we are loaded
