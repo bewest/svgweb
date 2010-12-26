@@ -118,7 +118,11 @@
           svg.appendChild(group);
         }, false);
         // append our new SVG root element to the page
-        svgweb.appendChild(svg, document.body);
+        if (window.svgweb) {
+          window.svgweb.appendChild(svg, document.body);
+        } else {
+          document.body.appendChild(svg);
+        }
       }
       
       window.onsvgload = function() {

@@ -82,7 +82,11 @@
 
           setInterval(loop, 10);
         }, false);
-        svgweb.appendChild(root, document.body);
+        if (window.svgweb) {
+          window.svgweb.appendChild(root, document.body);
+        } else {
+          document.body.appendChild(root);
+        }
       };
     </script>
   
