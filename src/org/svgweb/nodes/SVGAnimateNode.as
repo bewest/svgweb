@@ -326,7 +326,9 @@ package org.svgweb.nodes
 
         override protected function timeIntervalEnded(docTime:Number):void {
             super.timeIntervalEnded(docTime);
-            targetNode.invalidateAttribute(attributeName);
+            if (targetNode) {
+                targetNode.invalidateAttribute(attributeName);
+            }
         }
 
         protected function interpolate(fromVal:Number, toVal:Number,
