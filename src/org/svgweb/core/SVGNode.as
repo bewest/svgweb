@@ -154,8 +154,8 @@ package org.svgweb.core
 
             // This handle strange gradient bugs with negative transforms
             // by separating the transform from the drawing object
-            if ( getAttribute('transform') != "" 
-                  || getStyleOrAttr('clip-path') != "" ) {
+            if ( getAttribute('transform') != null 
+                  || getStyleOrAttr('clip-path') != null ) {
                 clipSprite = new SVGSprite(this);
                 topSprite.addChild(clipSprite);
             }
@@ -170,9 +170,9 @@ package org.svgweb.core
             // filter is applied to the child.
             // FIXME: Currently x and y are on the drawSprite. Try to move
             // to transform sprite.
-            if ( getStyleOrAttr('clip-path') != ""
-                       || getAttribute('x') != ""
-                       || getAttribute('y') != "" ) {
+            if ( getStyleOrAttr('clip-path') != null
+                       || getAttribute('x') != null
+                       || getAttribute('y') != null ) {
                 drawSprite = new SVGSprite(this);
                 clipSprite.addChild(drawSprite);
             }
@@ -184,7 +184,7 @@ package org.svgweb.core
             // children of the object, so create a child sprite to hold the transform.
             // If the object is a text node, we put the TextField on the drawSprite instead of
             // the viewBoxSprite because it is simpler all children of viewBoxSprite are SVGSprites.
-            if ( getAttribute('viewBox') != ""
+            if ( getAttribute('viewBox') != null
                     || (this is SVGSVGNode)  || (this is SVGTextNode) ) {
                 viewBoxSprite = new SVGSprite(this);
                 drawSprite.addChild(viewBoxSprite);
