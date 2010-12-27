@@ -1432,7 +1432,7 @@ function testChildNodes() {
   // handling, 5 on IE
   if (whitespaceAreNodes && !isIE) {
     if (_hasObjects) {
-      assertEquals('div.childNodes.length == 23 (non-IE browsers)', 23, 
+      assertEquals('div.childNodes.length == 17 (non-IE browsers)', 17, 
                    div.childNodes.length);
     } else {
       assertEquals('div.childNodes.length == 11 (non-IE browsers)', 11, 
@@ -1446,7 +1446,7 @@ function testChildNodes() {
   // first SVG root element
   if (whitespaceAreNodes && !isIE) {
     if (_hasObjects) {
-      child = div.childNodes[7];
+      child = div.childNodes[5];
     } else {
       child = div.childNodes[3];
     }
@@ -1480,7 +1480,7 @@ function testChildNodes() {
   // 2nd SVG root element
   if (whitespaceAreNodes && !isIE) {
     if (_hasObjects) {
-      child = div.childNodes[13];
+      child = div.childNodes[9];
     } else {
       child = div.childNodes[5];
     }
@@ -1516,7 +1516,7 @@ function testChildNodes() {
   // 3rd SVG root element
   if (whitespaceAreNodes && !isIE) {
     if (_hasObjects) {
-      child = div.childNodes[19];
+      child = div.childNodes[13];
     } else {
       child = div.childNodes[7];
     }
