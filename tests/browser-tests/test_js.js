@@ -1430,7 +1430,7 @@ function testChildNodes() {
   // elements from the test_container.
   // 11 child nodes of the div on non-IE browsers due to whitespace 
   // handling, 5 on IE
-  if (whitespaceAreNodes && !isIE) {
+  if (whitespaceAreNodes) {
     if (_hasObjects) {
       assertEquals('div.childNodes.length == 17 (non-IE browsers)', 17, 
                    div.childNodes.length);
@@ -1444,7 +1444,7 @@ function testChildNodes() {
   }
   // get the children in different ways due to whitespacing handling
   // first SVG root element
-  if (whitespaceAreNodes && !isIE) {
+  if (whitespaceAreNodes) {
     if (_hasObjects) {
       child = div.childNodes[5];
     } else {
@@ -1478,7 +1478,7 @@ function testChildNodes() {
   assertEquals('first SVG root element.getAttribute(id) == mySVG', 'mySVG',
                child.getAttribute('id'));
   // 2nd SVG root element
-  if (whitespaceAreNodes && !isIE) {
+  if (whitespaceAreNodes) {
     if (_hasObjects) {
       child = div.childNodes[9];
     } else {
@@ -1514,7 +1514,7 @@ function testChildNodes() {
   assertEquals('2nd SVG root element.getAttribute(id) == svg2', 'svg2',
                child.getAttribute('id'));
   // 3rd SVG root element
-  if (whitespaceAreNodes && !isIE) {
+  if (whitespaceAreNodes) {
     if (_hasObjects) {
       child = div.childNodes[13];
     } else {
@@ -5113,12 +5113,12 @@ function testStyle() {
                     ['#555040'],
                     rect.style.stroke); 
     assertEqualsAny('rect3926.style.strokeWidth == 3.1614 or '
-                    + '3.1614px or 3.16145px or 3.16145396',
-                    [3.1614, '3.1614px', '3.16145px', 3.16145396, '3.16px'],
+                    + '3.1614px or 3.16145px or 3.16145396 or 3.16145',
+                    [3.1614, '3.1614px', '3.16145px', 3.16145396, '3.16px', '3.16145'],
                     rect.style.strokeWidth);
     assertEqualsAny('rect3926.style[strokeWidth] == 3.16145396 '
-                    + 'or 3.16145396 or 3.16145px or 3.16145396',
-                    [3.16145396, '3.16145396', '3.16145px', 3.16145396, '3.16px'],
+                    + 'or 3.16145396 or 3.16145px or 3.16145396 or 3.16145',
+                    [3.16145396, '3.16145396', '3.16145px', 3.16145396, '3.16px', '3.16145'],
                     rect.style['strokeWidth']);
     assertEqualsAny('rect3926.style.strokeLinejoin == miter',
                     ['miter'],
@@ -5134,8 +5134,8 @@ function testStyle() {
                     rect.style.display);   
     // do a style[] type access
     assertEqualsAny('rect3926.style[strokeWidth] == 3.16145396 '
-                    + 'or 3.16145396 or 3.16145px',
-                    [3.16145396, '3.16145396', '3.16145px', '3.16px'],
+                    + 'or 3.16145396 or 3.16145px or 3.16145',
+                    [3.16145396, '3.16145396', '3.16145px', '3.16px', '3.16145'],
                     rect.style['strokeWidth']);
   }
   // change a CSS value that is also used by HTML and make sure it changes
@@ -5393,7 +5393,7 @@ function testStyle() {
   // correctly displays the new fill and stroke, but the style="" string
   // now no longer has the stroke and fill in it.
   // TODO: FIXME: Confirm what the correct behavior should be.
-  if (renderer == 'flash') {
+  if (renderer == 'flash' && (!isIE || isIE < 9)) {
     // normalize the style string to make testing its value a bit easier
     styleStr = circle.getAttribute('style');
     if (styleStr.charAt(styleStr.length - 1) != ';') {

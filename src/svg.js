@@ -623,7 +623,7 @@ function xmlToStr(node, namespaces) {
     }
   }
 
-  xml = xml.replace(/<([^ ]+)/, '<$1 ' + nsString + ' ');
+  xml = xml.replace(/<([^ ]+) /, '<$1 ' + nsString);
   
   return xml;
 }
@@ -1647,17 +1647,18 @@ extend(SVGWeb, {
       if (/\<\?xml/m.test(svg) == false) { // XML declaration
         svg = '<?xml version="1.0"?>\n' + svg;
       }
-      
-      // add SVG namespace declaration
-
-      if (/xmlns\=['"]http:\/\/www\.w3\.org\/2000\/svg['"]/.test(svg) == false) {
-        svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
-      }     
-      
       // add xlink namespace if it is not present
+      // Add the xlink first so that it is not prepended later before the xmlns attr.
+      // IE 9 does not tolerate the xlink namespace declaration prior to the
+      // xmlns declaration.
       if (/xmlns:[^=]+=['"]http:\/\/www\.w3\.org\/1999\/xlink['"]/.test(svg) == false) {
         svg = svg.replace('<svg', '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
       }
+      
+      // add SVG namespace declaration
+      if (/xmlns\=['"]http:\/\/www\.w3\.org\/2000\/svg['"]/.test(svg) == false) {
+        svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+      }     
     }
     
     // remove leading whitespace before XML declaration
@@ -1759,7 +1760,7 @@ extend(SVGWeb, {
       // cases). To get around this, we change the SVG namespace in our XML into
       // a temporary different one to prevent this from happening.
       svg = svg.replace(/xmlns(\:[^=]*)?=['"]http\:\/\/www\.w3\.org\/2000\/svg['"]/g, 
-                        "xmlns$1='" + svgnsFake + "'");
+                        'xmlns$1="' + svgnsFake + '"');
     }
         
     // add guids and IDs to all elements and get the root SVG elements ID;
@@ -4392,7 +4393,10 @@ function _Node(nodeName, nodeType, prefix, namespaceURI, nodeXML, handler) {
     if (namespaceURI == svgns && !prefix) {
       // we use a fake namespace for SVG to prevent Firefox and Safari
       // from incorrectly making these XML nodes real SVG objects!
-      xml += '<' + nodeName + ' xmlns="' + svgnsFake + '"/>';
+      // Add the xlink so that it is not prepended later before the xmlns attr.
+      // IE 9 does not tolerate the xlink namespace declaration prior to the
+      // xmlns declaration.
+      xml += '<' + nodeName + ' xmlns="' + svgnsFake + '" xmlns:xlink="http://www.w3.org/1999/xlink"/>';
     } else {
       xml += '<' + nodeName + ' xmlns:' + prefix + '="' + namespaceURI + '"/>';
     }
@@ -5114,7 +5118,11 @@ extend(_Node, {
         var styleName = copyStyle.item(i);
         var styleValue = copyStyle.getPropertyValue(styleName);
         // bump the length on our real style object and on our fake one
-        clone._htcNode.style.length++;
+        try {
+          clone._htcNode.style.length++;
+        } catch (ex) {
+          // IE 9 does not allow the above.
+        }
         clone.style.length++;
         // add the new style to our real style object and ignore style
         // changes temporarily so we don't end up in an infinite loop of
@@ -5596,6 +5604,27 @@ extend(_Node, {
       Object.defineProperty(this._htcNode, "nodeType", {
           get : function () {
               return this._getNodeType();
+          },
+          set : function (val) {
+          }
+      });
+      Object.defineProperty(this._htcNode, "localName", {
+          get : function () {
+              return this._getLocalName();
+          },
+          set : function (val) {
+          }
+      });
+      Object.defineProperty(this._htcNode, "prefix", {
+          get : function () {
+              return this._getPrefix();
+          },
+          set : function (val) {
+          }
+      });
+      Object.defineProperty(this._htcNode, "namespaceURI", {
+          get : function () {
+              return this._getNamespaceURI();
           },
           set : function (val) {
           }
@@ -7071,6 +7100,12 @@ extend(_Style, {
       this._changeListener = hitch(this, this._onPropertyChange);
       this._element._htcNode.attachEvent('onpropertychange', 
                                          this._changeListener);
+      if (isIE && isIE >= 9) {
+        // Strange bug in IE 9 will not fire the listener and incorrectly return
+        // "" on getPropertyValue calls, but I was able to get it to work by
+        // reading this style property
+        var readStyle=htcStyle['pixelBottom'];
+      }
     }
   },
   
@@ -7128,7 +7163,11 @@ extend(_Style, {
       
       // never seen before; bump our style length
       if (!foundStyle) {
-        htcStyle.length++;
+        try {
+          htcStyle.length++;
+        } catch (ex) {
+          // IE 9 does not tolerate or appear to require length++.
+        }
         this.length++;
       }
       
