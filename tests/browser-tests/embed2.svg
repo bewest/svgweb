@@ -2912,12 +2912,12 @@
                         ['#555040'],
                         rect.style.stroke); 
         top.assertEqualsAny('rect3926.style.strokeWidth == 3.1614 or '
-                        + '3.1614px or 3.16145px or 3.16145396',
-                        [3.1614, '3.1614px', '3.16145px', 3.16145396, '3.16px'],
+                        + '3.1614px or 3.16145px or 3.16145396 or 3.16px or 3.16145',
+                        [3.1614, '3.1614px', '3.16145px', 3.16145396, '3.16px', '3.16145'],
                         rect.style.strokeWidth);
         top.assertEqualsAny('rect3926.style[strokeWidth] == 3.16145396 '
-                        + 'or 3.16145396 or 3.16145px or 3.16145396',
-                        [3.16145396, '3.16145396', '3.16145px', 3.16145396, '3.16px'],
+                        + 'or 3.16145396 or 3.16145px or 3.16145396 or 3.16px or 3.16145',
+                        [3.16145396, '3.16145396', '3.16145px', 3.16145396, '3.16px', '3.16145'],
                         rect.style['strokeWidth']);
         top.assertEqualsAny('rect3926.style.strokeLinejoin == miter',
                         ['miter'],
@@ -2933,8 +2933,8 @@
                         rect.style.display);   
         // do a style[] type access
         top.assertEqualsAny('rect3926.style[strokeWidth] == 3.16145396 '
-                        + 'or 3.16145396 or 3.16145px',
-                        [3.16145396, '3.16145396', '3.16145px', '3.16px'],
+                        + 'or 3.16145396 or 3.16145px or 3.16px or 3.16145',
+                        [3.16145396, '3.16145396', '3.16145px', '3.16px', '3.16145'],
                         rect.style['strokeWidth']);
       }
       // change a CSS value that is also used by HTML and make sure it changes

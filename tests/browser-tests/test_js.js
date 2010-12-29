@@ -1414,7 +1414,7 @@ function testChildNodes() {
   assertExists("child.childNodes", child.childNodes);
   assertEquals("child.childNodes.length == 0", 0, 
                child.childNodes.length);
-  if (whitespaceAreNodes) {
+  if (whitespaceAreNodes && (!isIE || isIE >= 9)) {
     assertUndefined("group.childNodes[13] == undefined", group.childNodes[13]);
   } else {     
     assertUndefined("group.childNodes[6] == undefined", group.childNodes[6]);
@@ -1430,8 +1430,8 @@ function testChildNodes() {
   // elements from the test_container.
   // 11 child nodes of the div on non-IE browsers due to whitespace 
   // handling, 5 on IE
-  if (whitespaceAreNodes) {
-    if (_hasObjects) {
+  if (whitespaceAreNodes && (!isIE || isIE >= 9)) {
+    if (_hasObjects && !isIE) {
       assertEquals('div.childNodes.length == 17 (non-IE browsers)', 17, 
                    div.childNodes.length);
     } else {
@@ -1444,8 +1444,8 @@ function testChildNodes() {
   }
   // get the children in different ways due to whitespacing handling
   // first SVG root element
-  if (whitespaceAreNodes) {
-    if (_hasObjects) {
+  if (whitespaceAreNodes && (!isIE || isIE >= 9)) {
+    if (_hasObjects && !isIE) {
       child = div.childNodes[5];
     } else {
       child = div.childNodes[3];
@@ -1478,8 +1478,8 @@ function testChildNodes() {
   assertEquals('first SVG root element.getAttribute(id) == mySVG', 'mySVG',
                child.getAttribute('id'));
   // 2nd SVG root element
-  if (whitespaceAreNodes) {
-    if (_hasObjects) {
+  if (whitespaceAreNodes && (!isIE || isIE >= 9)) {
+    if (_hasObjects && !isIE) {
       child = div.childNodes[9];
     } else {
       child = div.childNodes[5];
@@ -1514,8 +1514,8 @@ function testChildNodes() {
   assertEquals('2nd SVG root element.getAttribute(id) == svg2', 'svg2',
                child.getAttribute('id'));
   // 3rd SVG root element
-  if (whitespaceAreNodes) {
-    if (_hasObjects) {
+  if (whitespaceAreNodes && (!isIE || isIE >= 9)) {
+    if (_hasObjects && !isIE) {
       child = div.childNodes[13];
     } else {
       child = div.childNodes[7];
@@ -5113,11 +5113,11 @@ function testStyle() {
                     ['#555040'],
                     rect.style.stroke); 
     assertEqualsAny('rect3926.style.strokeWidth == 3.1614 or '
-                    + '3.1614px or 3.16145px or 3.16145396 or 3.16145',
+                    + '3.1614px or 3.16145px or 3.16145396 or 3.16px or 3.16145',
                     [3.1614, '3.1614px', '3.16145px', 3.16145396, '3.16px', '3.16145'],
                     rect.style.strokeWidth);
     assertEqualsAny('rect3926.style[strokeWidth] == 3.16145396 '
-                    + 'or 3.16145396 or 3.16145px or 3.16145396 or 3.16145',
+                    + 'or 3.16145396 or 3.16145px or 3.16145396 or 3.16px or 3.16145',
                     [3.16145396, '3.16145396', '3.16145px', 3.16145396, '3.16px', '3.16145'],
                     rect.style['strokeWidth']);
     assertEqualsAny('rect3926.style.strokeLinejoin == miter',
