@@ -513,12 +513,21 @@ function testGetElementById() {
   }
   
   // get non-SVG node
-  cc = getDoc('svg2').getElementById('myCCWork');
+  var doc=getDoc('svg2');
+  // IE 9 does not find namespaced elements by id!?
+  if (isIE && isIE >= 9 && renderer == 'native') {
+    cc = getDoc('svg2').getElementsByTagName('cc:Work')[0];
+  } else {
+    cc = getDoc('svg2').getElementById('myCCWork');
+  }
   assertExists('myCCWork should exist', cc);
   assertEquals('myCCWork.getAttribute(id) == myCCWork', 'myCCWork',
                cc.getAttribute('id'));
-  assertEquals('g.id == myCCWork', 'myCCWork',
-               cc.id);
+  // IE 9 does not support id accessor on namespaced elements!?
+  if ( ! (isIE && isIE >= 9 && renderer == 'native') ) {
+      assertEquals('cc.id == myCCWork', 'myCCWork',
+                   cc.id);
+  }
   
   // test getElementById on normal HTML content to ensure it
   // still works
@@ -599,8 +608,11 @@ function testGetElementById() {
   path.id = 'path3180_changed';
   assertExists('document.getElementById(path3180_changed) should exist',
                getDoc('svg2').getElementById('path3180_changed'));
-  assertNull('document.getElementById(path3180) == null',
+  // IE 9 throws exception for missing element!?
+  if ( ! (isIE && isIE >= 9 && renderer == 'native') ) {
+    assertNull('document.getElementById(path3180) == null',
              getDoc('svg2').getElementById('path3180'));
+  }
              
   // change the ID through setAttribute and make sure getElementById
   // still sees it
@@ -609,33 +621,43 @@ function testGetElementById() {
   assertExists('document.getElementById(path3180_changed_again) should '
                + 'exist',
                getDoc('svg2').getElementById('path3180_changed_again'));
-  assertNull('document.getElementById(path3180_changed) == null',
+  // IE 9 throws exception for missing element!?
+  if ( ! (isIE && isIE >= 9 && renderer == 'native') ) {
+    assertNull('document.getElementById(path3180_changed) == null',
              getDoc('svg2').getElementById('path3180_changed'));
+  }
              
   // change the ID and make sure getElementById still sees it for a
   // non-SVG, non-HTML element
-  cc = getDoc('svg2').getElementById('myCCWork');
-  cc.id = 'myCCWork_changed';
-  assertExists('document.getElementById(myCCWork_changed) should exist',
-               getDoc('svg2').getElementById('myCCWork_changed'));
-  assertNull('document.getElementById(myCCWork) == null',
-             getDoc('svg2').getElementById('myCCWork'));
-  
-  // change the ID through setAttribute and make sure getElementById
-  // still sees it for a non-SVG, non-HTML element
-  cc = getDoc('svg2').getElementById('myCCWork_changed');
-  cc.setAttribute('id', 'myCCWork_changed_again');
-  assertExists('document.getElementById(myCCWork_changed_again) should '
-               + 'exist',
-               getDoc('svg2').getElementById('myCCWork_changed_again'));
-  assertNull('document.getElementById(myCCWork_changed) == null',
-             getDoc('svg2').getElementById('myCCWork_changed'));
-  cc.id = 'myCCWork';
-  assertExists('document.getElementById(myCCWork) should exist',
+  // IE 9 does not support id accessor for namespaced elements!?
+  if ( ! (isIE && isIE >= 9 && renderer == 'native') ) {
+    cc = getDoc('svg2').getElementById('myCCWork');
+    cc.id = 'myCCWork_changed';
+    assertExists('document.getElementById(myCCWork_changed) should exist',
+                 getDoc('svg2').getElementById('myCCWork_changed'));
+    assertNull('document.getElementById(myCCWork) == null',
                getDoc('svg2').getElementById('myCCWork'));
+  
+    // change the ID through setAttribute and make sure getElementById
+    // still sees it for a non-SVG, non-HTML element
+    cc = getDoc('svg2').getElementById('myCCWork_changed');
+    cc.setAttribute('id', 'myCCWork_changed_again');
+    assertExists('document.getElementById(myCCWork_changed_again) should '
+                 + 'exist',
+                 getDoc('svg2').getElementById('myCCWork_changed_again'));
+    assertNull('document.getElementById(myCCWork_changed) == null',
+           getDoc('svg2').getElementById('myCCWork_changed'));
+    cc.id = 'myCCWork';
+    assertExists('document.getElementById(myCCWork) should exist',
+               getDoc('svg2').getElementById('myCCWork'));
+  }
 }
 
 function testGetElementsByTagNameNS() {
+  if ( isIE && isIE >= 9 && renderer == 'native' ) {
+    console.log('Skipping IE 9 native test: getElementsByTagNameNS...');
+    return;
+  }
   // getElementsByTagNameNS
   console.log('Testing getElementsByTagNameNS...');
   
@@ -1000,22 +1022,26 @@ function testGetAttribute() {
                 rect.getAttribute('y')); 
   assertEquals("rect.getAttribute(fill) == red", 'red',
                 rect.getAttribute('fill')); 
-             
-  path = getDoc('svg11242').getElementById('path3327');
-  assertExists('path3327', path);
-  assertEquals("path.getAttribute('id') == path3327", 'path3327',
-                path.getAttribute('id'));
-  assertEquals("path.getAttribute(d)", 
-               'M 142.36876,165.39221 L 130.68164,163.08268 '
-               + 'L 141.15363,231.4999 L 121.92367,164.90725 '
-               + 'L 112.13114,171.69172 L 114.44068,160.0046 '
-               + 'L 45.393496,171.10654 L 112.6161,151.24663 '
-               + 'L 105.83164,141.4541 L 117.51875,143.76364 '
-               + 'L 107.67672,77.866207 L 126.27672,141.93906 '
-               + 'L 136.06925,135.1546 L 133.75972,146.84171 '
-               + 'L 201.54699,140.14944 L 135.58429,155.59968 '
-               + 'L 142.36876,165.39221 z ',
-                path.getAttribute('d'));
+ 
+  if (isIE && isIE >=9 && renderer == 'native') {
+    console.log('Skipping IE 9 path attribute test - IE 9 rounds values (inappropriately?)');
+  } else {
+    path = getDoc('svg11242').getElementById('path3327');
+    assertExists('path3327', path);
+    assertEquals("path.getAttribute('id') == path3327", 'path3327',
+                  path.getAttribute('id'));
+    assertEquals("path.getAttribute(d)", 
+                 'M 142.36876,165.39221 L 130.68164,163.08268 '
+                 + 'L 141.15363,231.4999 L 121.92367,164.90725 '
+                 + 'L 112.13114,171.69172 L 114.44068,160.0046 '
+                 + 'L 45.393496,171.10654 L 112.6161,151.24663 '
+                 + 'L 105.83164,141.4541 L 117.51875,143.76364 '
+                 + 'L 107.67672,77.866207 L 126.27672,141.93906 '
+                 + 'L 136.06925,135.1546 L 133.75972,146.84171 '
+                 + 'L 201.54699,140.14944 L 135.58429,155.59968 '
+                 + 'L 142.36876,165.39221 z ',
+                  path.getAttribute('d'));
+  }
   assertNull("path.getAttribute('fill') == null", 
               path.getAttribute('fill'));
               
@@ -1023,15 +1049,18 @@ function testGetAttribute() {
   assertEquals("gradient.getAttribute('gradientUnits') == userSpaceOnUse", 
                 'userSpaceOnUse',
                 gradient.getAttribute('gradientUnits'));
-  assertEquals("gradient.getAttribute('x1') == 394.93762", 
-                '394.93762',
+  assertEqualsAny("gradient.getAttribute('x1') == 394.93762", 
+                ['394.93762', '394.938'],
                 gradient.getAttribute('x1'));
-                
-  sodipodi = getDoc('svg2').getElementById('base');
-  assertExists("document.getElementById('base')", sodipodi);
-  assertEquals("sodipodi.getAttribute('objecttolerance') == 10", 
-                '10',
-                sodipodi.getAttribute('objecttolerance'));
+  
+  // IE 9 does not find namespaced elements by id!?
+  if ( ! (isIE && isIE >= 9 && renderer == 'native') ) {
+    sodipodi = getDoc('svg2').getElementById('base');
+    assertExists("document.getElementById('base')", sodipodi);
+    assertEquals("sodipodi.getAttribute('objecttolerance') == 10", 
+                  '10',
+                  sodipodi.getAttribute('objecttolerance'));
+  }
                 
   // make sure internal __guid attribute doesn't show up
   rect = getDoc('mySVG').getElementById('myRect');
@@ -1051,7 +1080,7 @@ function testSetAttribute() {
   assertEquals("rect.getAttribute('fill') == yellow", 'yellow',
                 rect.getAttribute('fill'));
   rect.setAttribute('stroke', 'rgb(0,0,0)');
-  assertEquals("rect.getAttribute('stroke') == rgb(0,0,0)", 'rgb(0,0,0)',
+  assertEqualsAny("rect.getAttribute('stroke') == rgb(0,0,0)", ['rgb(0,0,0)','rgb(0, 0, 0)'],
                 rect.getAttribute('stroke'));              
   rect.setAttribute('width', 400);
   assertEquals("rect.getAttribute('width') == 400", '400',
@@ -1075,7 +1104,12 @@ function testSetAttribute() {
   assertEquals("rect.getAttribute('fill-opacity') == 0.3", '0.3',
                 rect.getAttribute('fill-opacity')); 
                                       
-  sodipodi = getDoc('svg2').getElementById('base');
+  // IE 9 does not find namespaced elements by id!?
+  if (isIE && isIE >= 9 && renderer == 'native') {
+    sodipodi = getDoc('svg2').getElementsByTagName('sodipodi:namedview')[0];
+  } else {
+    sodipodi = getDoc('svg2').getElementById('base');
+  }
   assertExists("document.getElementById('base')", sodipodi);
   sodipodi.setAttribute('pagecolor', '#0f0f0f');
   assertEquals("sodipodi.getAttribute('pagecolor') == #0f0f0f", '#0f0f0f',
@@ -1087,7 +1121,12 @@ function testSetAttribute() {
 }
 
 function testGetSetAttributeNS() {
-  console.log('Testing setAttributeNS and getAttributeNS...');
+  if (isIE && isIE >= 9 && renderer == 'native') {
+    console.log('IE 9 Skipping Testing setAttributeNS and getAttributeNS...');
+    return;
+  } else {
+    console.log('Testing setAttributeNS and getAttributeNS...');
+  }
 
   // check non-namespaced forms on element not attached to DOM
   rect = getDoc('mySVG').createElementNS(svgns, 'rect');
@@ -1469,8 +1508,13 @@ function testChildNodes() {
     assertEqualsAny('first SVG root element.childNodes.length == 8, 9, or 10',
                  [8, 9, 10], child.childNodes.length);
   } else {
-    assertEquals('first SVG root element.childNodes.length == 3', 3, 
-                child.childNodes.length);
+    if (isIE && isIE >=9 && renderer == 'native') {
+      assertEquals('first SVG root element.childNodes.length == 2', 2, 
+                  child.childNodes.length);
+    } else {
+      assertEquals('first SVG root element.childNodes.length == 3', 3, 
+                  child.childNodes.length);
+    }
   }
   assertNull('first SVG root element.prefix == null', child.prefix);
   assertEquals('first SVG root element.namespaceURI == svgns', svgns,
@@ -1620,6 +1664,10 @@ function testChildNodes() {
                0,
                child.childNodes[0].childNodes[0].getAttribute('offset'));
 
+  if (isIE && isIE >= 9 && renderer == 'native') {
+    console.log('IE 9: Skipping namespace childNode tests');
+    return;
+  }
   metadata = getDoc('svg2').getElementsByTagNameNS(svgns, 'metadata')[0];
   assertExists('metadata element', metadata);
   assertEquals('metadata.getAttribute(id) == metadata7', 'metadata7',
@@ -1675,7 +1723,12 @@ function testOwnerDocument() {
   
   // ownerDocument
   if (_hasObjects) {
-    svg = document.getElementsByTagNameNS(svgns, 'svg');
+    // IE 9 does not support namespace methods
+    if (isIE && isIE >= 9 && renderer == 'native') {
+      svg = document.getElementsByTagName('svg');
+    } else {
+      svg = document.getElementsByTagNameNS(svgns, 'svg');
+    }
     assertEquals('Zero svg elements', 0, svg.length);
     matches = document.getElementsByTagName('object');
     for (var i = 0; i < matches.length; i++) {
@@ -1691,16 +1744,26 @@ function testOwnerDocument() {
                    svg.ownerDocument);
     }
   } else {
-    svg = document.getElementsByTagNameNS(svgns, 'svg');
+    // IE 9 does not support namespace methods
+    if (isIE && isIE >= 9 && renderer == 'native') {
+      svg = document.getElementsByTagName('svg');
+    } else {
+      svg = document.getElementsByTagNameNS(svgns, 'svg');
+    }
     assertEquals('Three svg elements', 3, svg.length);
     for (var i = 0; i < svg.length; i++) {
       assertEquals('svg[' + i + '].ownerDocument == document',
                    document, svg[i].ownerDocument);
     }
   }
-  rdf = getDoc('svg2').getElementsByTagNameNS(
+  // IE 9 does not support namespace methods
+  if (isIE && isIE >= 9 && renderer == 'native') {
+    rdf = getDoc('svg2').getElementsByTagName('rdf:RDF')[0];
+  } else {
+    rdf = getDoc('svg2').getElementsByTagNameNS(
                                   'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
                                   'RDF')[0];
+  }
   doc = getDoc('svg2');
   assertEquals('rdf.ownerDocument == document or contentDocument', doc, 
                 rdf.ownerDocument);
@@ -1788,13 +1851,13 @@ function testTextNodes() {
   assertEquals('text.id == myText', 'myText', text.id);
   assertEquals('text.getAttribute(id) == myText', 'myText',
                text.getAttribute('id'));
-  assertEquals("text.getAttribute('x') == 80", 80,
+  assertEqualsAny("text.getAttribute('x') == 80 or 80px", [80, '80px'],
                text.getAttribute('x'));
-  assertEquals("text.getAttribute('y') == 80", 80,
+  assertEqualsAny("text.getAttribute('y') == 80 or 80px", [80, '80px'],
                text.getAttribute('y'));
   assertEquals("text.getAttribute('font-family') == Verdana", 'Verdana',
                text.getAttribute('font-family'));
-  assertEquals("text.getAttribute('font-size') == 24", 24,
+  assertEqualsAny("text.getAttribute('font-size') == 24 or 24px", [24, '24px'],
                text.getAttribute('font-size'));
   assertEquals("text.getAttribute('fill') == blue", 'blue',
                text.getAttribute('fill'));           
@@ -2194,13 +2257,20 @@ function testAppendChild() {
   // then retrieve it from the page by ID and make sure it's properties
   // are present, then change one of them on the circle and make sure
   // it goes through
-  circle = getDoc('mySVG').createElementNS(svgns, 'circle');
+  if (isIE && isIE >=9 && renderer == 'native') {
+    circle = getDoc('mySVG').createElement('circle');
+  } else {
+    circle = getDoc('mySVG').createElementNS(svgns, 'circle');
+  }
   assertExists('circle should exist', circle);
   assertEquals('circle.nodeType == 1', 1, circle.nodeType);
   assertNull('circle.prefix == null', circle.prefix);
-  assertEquals('circle.namespaceURI == svgns', svgns, 
-               circle.namespaceURI);
-  assertEquals('circle.nodeName == circle', 'circle', circle.nodeName);
+  if (!(isIE && isIE >=9 && renderer == 'native')) {
+    assertEquals('circle.namespaceURI == svgns', svgns, 
+                 circle.namespaceURI);
+  }
+  // IE 9 creates CIRCLE!?
+  assertEqualsAny('circle.nodeName == circle or CIRCLE', ['circle','CIRCLE'], circle.nodeName);
   assertEquals('circle.localName == circle', 'circle', circle.localName);
   assertNull('circle.parentNode == null', circle.parentNode);
   assertNull('circle.firstChild == null', circle.firstChild);
@@ -2249,7 +2319,8 @@ function testAppendChild() {
   assertEquals('group.childNodes[last child] == circle',
                circle, group.childNodes[group.childNodes.length - 1]);
   assertEquals('circle.nodeType == 1', 1, circle.nodeType);
-  assertEquals('circle.nodeName == circle', 'circle', circle.nodeName);
+  // IE 9 creates CIRCLE!?
+  assertEqualsAny('circle.nodeName == circle or CIRCLE', ['circle','CIRCLE'], circle.nodeName);
   assertNull('circle.prefix == null', circle.prefix);
   assertEquals('circle.namespaceURI == svgns', svgns, circle.namespaceURI);
   assertEquals('circle.localName == circle', 'circle', circle.localName);
