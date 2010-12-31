@@ -5012,17 +5012,17 @@ extend(_Node, {
       // _Node._processAppendedChildren() is called
       pos = this._findListener(this._detachedListeners, type, listener, useCapture);
       if (pos !== null) {
-        delete this._detachedListeners[pos];
+        this._detachedListeners.splice(pos,1);
       }
       return;
     }
 
     // remove from our list of event listeners
-    pos = this._findListener(this._listeners, type, listener, useCapture);
+    pos = this._findListener(this._listeners[type], type, listener, useCapture);
     if (pos !== null) {
       // FIXME: Ensure that if identical listeners are added twice that they collapse to
       // just one entry or else this will fail to delete more than the first one.
-      delete this._listeners[pos];
+      this._listeners[type].splice(pos,1);
       delete this._listeners[type]['_' + listener.toString() + ':' + useCapture];
     }
     
@@ -5032,7 +5032,7 @@ extend(_Node, {
       if (pos !== null) {
         // FIXME: Ensure that if identical listeners are added twice that they collapse to
         // just one entry or else this will fail to delete more than the first one.
-        delete this._keyboardListeners[pos];
+        this._keyboardListeners.splice(pos,1);
       }
     }
     
