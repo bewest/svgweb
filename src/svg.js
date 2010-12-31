@@ -7100,10 +7100,10 @@ extend(_Style, {
       this._changeListener = hitch(this, this._onPropertyChange);
       this._element._htcNode.attachEvent('onpropertychange', 
                                          this._changeListener);
-      if (isIE && isIE >= 9) {
-        // Strange bug in IE 9 will not fire the listener and incorrectly return
-        // "" on getPropertyValue calls, but I was able to get it to work by
-        // reading this style property
+      if (isIE && isIE >= 8) {
+        // Strange style bugs in IE: it will not fire the listener, may incorrectly
+        // return "" on getPropertyValue calls, and may not activate style changes.
+        // But all that is fixed by reading this style property first! (Found randomly)
         var readStyle=htcStyle['pixelBottom'];
       }
     }
