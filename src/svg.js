@@ -4007,7 +4007,31 @@ extend(NativeHandler, {
       if (this._objNode._addEventListener) {
         this._objNode._addEventListener('load', loadFunc, false);
       } else {
-        this._objNode.addEventListener('load', loadFunc, false);
+        // Issue 599 - Opera 11 on Win XP (and other reported versions) does
+        // not fire the object listener for objects in markup if the cache is clear.
+        // It was found that if you have an onload="..." listener in the object
+        // markup, the load event is fired. So, the workaround is only
+        // used when there is no such handler in place.
+        // The workaround is to remove the object from the DOM and append it
+        // back to the page. This appears to "reactivate" the object so the load
+        // event is fired.
+        // Since this is potentially disruptive, care is taken to do this
+        // only for Opera and to make sure the object is added back in the proper
+        // position. If this workaround causes a problem for you, try
+        // adding onload="" to your object markup which is less disruptive.
+        if (isOpera && this._objNode.onload == null) {
+          var parentNode = this._objNode.parentNode;
+          var nextSibling = this._objNode.nextSibling;
+          parentNode.removeChild(this._objNode);
+          this._objNode.addEventListener('load', loadFunc, false);
+          if (nextSibling) {
+             parentNode.insertBefore(this._objNode, nextSibling);
+          } else {
+             parentNode.appendChild(this._objNode);
+          }
+        } else {
+          this._objNode.addEventListener('load', loadFunc, false);
+        }
       }
     }
   },
