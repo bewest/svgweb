@@ -584,7 +584,15 @@ function xmlToStr(node, namespaces) {
   if (hasXMLSerializer) { // non-IE browsers
     xml = (new XMLSerializer().serializeToString(nodeXML));
   } else {
-    xml = nodeXML.xml;
+    if (nodeXML.xml) {
+      xml = nodeXML.xml;
+    } else if (typeof (XMLSerializer) != 'undefined') {
+      // This handles IE 9 with a native SVG element, not an
+      // MSXML node. We need to serialize with XMLSerializer.
+      // Remember, we are stll using MSXML for IE 9 because
+      // DOMParser/XMLSerializer was not working in all cases.
+      xml = (new XMLSerializer().serializeToString(nodeXML));
+    }
   }
   
   // Firefox and Safari will incorrectly turn our internal parsed XML
@@ -911,9 +919,13 @@ extend(SVGWeb, {
       var svgScript = document.createElement('script');
       svgScript.type = 'image/svg+xml';
       if (!isXHTML) { 
-        // NOTE: only script.text works for IE; other ways of changing value
-        // throws 'Unknown Runtime Error' on that wonderful browser
-        svgScript.text = svgStr;
+        try {
+          svgScript.appendChild(document.createTextNode(svgStr));
+        } catch (ex) {
+          // NOTE: only script.text works for IE; other ways of changing value
+          // throws 'Unknown Runtime Error' on that wonderful browser
+          svgScript.text = svgStr;
+        }
       } else { // XHTML; no innerHTML here
         svgScript.appendChild(document.createTextNode(svgStr));
       }
