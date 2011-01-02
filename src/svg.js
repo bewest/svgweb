@@ -1366,7 +1366,6 @@ extend(SVGWeb, {
     }
     
     // setup which renderer we will use
-    this.renderer;
     if (this.config.use == 'flash') {
       this.renderer = FlashHandler;
     } else if (this.config.use == 'native') {
@@ -9274,10 +9273,11 @@ function _Document(xml, handler) {
   this.implementation = new _DOMImplementation();
   if (this._handler.type == 'script') {
     this.defaultView = window;
-  } else if (this._handler.type == 'object') {
+  }/* else if (this._handler.type == 'object') {
     // we set the document.defaultView in _SVGObject._executeScript() once
     // we create the iframe that we execute our script into
-  }
+  }*/
+
 }
 
 // subclasses _Node
