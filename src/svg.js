@@ -7140,7 +7140,8 @@ extend(_Style, {
         // Strange style bugs in IE: it will not fire the listener, may incorrectly
         // return "" on getPropertyValue calls, and may not activate style changes.
         // But all that is fixed by reading this style property first! (Found randomly)
-        var readStyle=htcStyle['pixelBottom'];
+        // (Return the value because simply reading may be optimized out by compiler)
+        return htcStyle['pixelBottom'];
       }
     }
   },
