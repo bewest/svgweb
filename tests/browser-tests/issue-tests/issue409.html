@@ -4,6 +4,7 @@
 	<script src="../../../src/svg.js" data-path="../../../src"></script>
 </head>
 <body>
+	<p>Once the page is fully loaded, click Setup, then Draw Square, then Scale Square.</p>
 	<input type="button" onclick="setupSVG()" value="Setup"/>
 	<input type="button" onclick="dostuff()" value="Draw square"/><br/>
 	<input type="button" onclick="dootherstuff()" value="Scale Square"/><br/>
@@ -14,9 +15,7 @@
 	<br/>
 	<h2>Embedded</h1>
 	<script type="image/svg+xml">
-	   <svg 
-	       width="100px" height="100px"
-	       id="otherSVG">
+	   <svg width="100px" height="100px" id="otherSVG">
 		<rect x="10" y="10" width="40" height="40" stroke="#ff0000"/>
 	   </svg>
 	</script>
