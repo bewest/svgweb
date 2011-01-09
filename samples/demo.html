@@ -505,15 +505,12 @@
     </p>
       
     <p>
-    <span>viewBox:</span>
-    <input id='inputViewBox' type="text" value=""/>
-    <input type="button" onclick="setViewBox();" value="set" style="margin-right:10px"/>
-    <input type="button" onclick="modVB(function(vb) {vb[0]=parseFloat(vb[0])+25.0;});" value="<"/>
-    <input type="button" onclick="modVB(function(vb) {vb[0]=parseFloat(vb[0])-25.0;});" value=">"/>
-    <input type="button" onclick="modVB(function(vb) {vb[1]=parseFloat(vb[1])+25.0;});" value="^"/>
-    <input type="button" onclick="modVB(function(vb) {vb[1]=parseFloat(vb[1])-25.0;});" value="V"/>
-    <input type="button" onclick="modVB(function(vb) {vb[2]=parseFloat(vb[2])/1.1;vb[3]=parseFloat(vb[3])/1.1;});" value="+"/>
-    <input type="button" onclick="modVB(function(vb) {vb[2]=parseFloat(vb[2])*1.1;vb[3]=parseFloat(vb[3])*1.1;});" value="-"/>
+    <input type="button" onclick="modTranslate(25,0);" value="&lt;"/>
+    <input type="button" onclick="modTranslate(-25,0);" value="&gt;"/>
+    <input type="button" onclick="modTranslate(0,25)" value="^"/>
+    <input type="button" onclick="modTranslate(0,-25)" value="V"/>
+    <input type="button" onclick="modScale(10/9)" value="+"/>
+    <input type="button" onclick="modScale(9/10)" value="-"/>
     </p>
     <p><div id='mySVGDiv' style='display:block;float:left;'><!--SVG will go here --></div></p>
     <pre id='myXMLp' width="100%" style='clear:left;'></pre>
@@ -1108,13 +1105,6 @@
         currentSVGObject = svgInstance;
         
         var entry = SVGFiles['_' + name];
-        if (entry.viewBox) {
-            currentSVGObject.contentDocument.documentElement.setAttribute('viewBox', entry.viewBox);
-            document.getElementById('inputViewBox').value = entry.viewBox;
-        }
-        else {
-            modVB(function(vb){});
-        }
     }
     
     // turns an option index position into the SVG file name it represents
@@ -1259,36 +1249,25 @@
       }
     }
 
-    function modVB(modfunc) {
+    function modTranslate(tx, ty) {
         if (!currentSVGObject || !currentSVGObject.contentDocument) {
           // not finished loading yet
           return;
         }
-        
-        var viewBox = currentSVGObject.contentDocument.documentElement.getAttribute('viewBox');
-        if (typeof(viewBox) != "string" || !viewBox.match(/\s*\S+\s*\S+\s*\S+\s*\S+\s*/)) {
-            var width = currentSVGObject.getAttribute('width');
-            var height = currentSVGObject.getAttribute('height');
-            if (!width || width.indexOf("%") != -1 || !height || height.indexOf("%") != -1) {
-                width = 800;
-                height = 600;
-            }
-            viewBox = "0 0 " + Math.round(width) + ' ' + Math.round(height);
+        var svgRoot = currentSVGObject.contentDocument.rootElement;
+        svgRoot.currentTranslate.setXY(svgRoot.currentTranslate.x + tx,
+                                       svgRoot.currentTranslate.y + ty);
+    }
+
+    function modScale(scale) {
+        if (!currentSVGObject || !currentSVGObject.contentDocument) {
+          // not finished loading yet
+          return;
         }
-        viewBox = viewBox.replace(/^\s+/, '');
-        var vbvals = viewBox.split(/\s+/);
-        modfunc(vbvals);
-        viewBox = Math.round(vbvals[0]) + ' ' + Math.round(vbvals[1]) + ' ' + 
-                  Math.round(vbvals[2]) + ' ' + Math.round(vbvals[3]);
-        currentSVGObject.contentDocument.rootElement.setAttribute('viewBox', viewBox);
-        document.getElementById('inputViewBox').value = viewBox;
+        var svgRoot = currentSVGObject.contentDocument.rootElement;
+        svgRoot.currentScale *= scale;
     }
-    
-    function setViewBox() {
-        var viewBox = document.getElementById('inputViewBox').value;
-        currentSVGObject.contentDocument.documentElement.setAttribute('viewBox', viewBox);
-    }
-    
+
     function handleFailingDemos(firstTime) {
       var showAll = document.getElementById('showFailingDemos').checked;
       var select = document.getElementById('selectSVG');
