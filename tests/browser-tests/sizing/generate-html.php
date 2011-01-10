@@ -2,7 +2,7 @@
 
 function getqueryval($param, $defval) {
   $val = isset($_GET[$param]) ? $_GET[$param] : $defval;
-#  echo '<p>' . $param . '= ' . $val . '</p>';
+  #echo '<p>' . $param . '= ' . $val . '</p>';
   return $val;
 }
 
@@ -15,16 +15,16 @@ $svgWebMode = getqueryval('svgWebMode', 'pureNative'); # pureNative, svgWebNativ
 $parentType = getqueryval('parentType', 'div'); # div, body
 $tagType = getqueryval('tagType', 'object'); # object, svg
 
-$divWidthType = getqueryval('divWidthType', 'pixel'); # pixel, percent, absent
-$divHeightType = getqueryval('divHeightType', 'pixel'); # pixel, percent, absent
+$divWidthType = getqueryval('divWidthType', 'pixels'); # pixels, percent, absent
+$divHeightType = getqueryval('divHeightType', 'pixels'); # pixels, percent, absent
 
-$objectWidthType = getqueryval('objectWidthType', 'pixel'); # pixel, percent, absent
-$objectHeightType = getqueryval('objectHeightType', 'pixel'); # pixel, percent, absent
+$objectWidthType = getqueryval('objectWidthType', 'pixels'); # pixels, percent, absent
+$objectHeightType = getqueryval('objectHeightType', 'pixels'); # pixels, percent, absent
 
 $preserveAspectRatio = getqueryval('preserveAspectRatioType', 'meet'); # meet, slice, none, absent
 $viewBoxMode = getqueryval('viewBoxMode', 'present'); # present, absent
-$svgWidthType = getqueryval('svgWidthType', 'pixel'); # pixel
-$svgHeightType = getqueryval('svgHeightType', 'pixel'); # pixel
+$svgWidthType = getqueryval('svgWidthType', 'pixels'); # pixels
+$svgHeightType = getqueryval('svgHeightType', 'pixels'); # pixels
 
 
 switch ($docType) {
@@ -73,7 +73,7 @@ switch ($parentType) {
       case "absent":
         $divWidth = "";
         break;
-      case "pixel":
+      case "pixels":
       default:
         $divWidth = ' width:500px;';
         break;
@@ -85,7 +85,7 @@ switch ($parentType) {
       case "absent":
         $divHeight = "";
         break;
-      case "pixel":
+      case "pixels":
       default:
         $divHeight = ' height:400px;';
         break;
@@ -107,26 +107,26 @@ switch ($tagType) {
 
     switch ($svgWidthType) {
       case "percent":
-        $svgWidth = 'width="80%" ';
+        $svgWidth = 'width="100%" ';
         break;
       case "absent":
         $svgWidth = "";
         break;
-      case "pixel":
+      case "pixels":
       default:
-        $svgWidth = 'width="400" ';
+        $svgWidth = 'width="450px" ';
         break;
     }
     switch ($svgHeightType) {
       case "percent":
-        $svgHeight = 'height="80%" ';
+        $svgHeight = 'height="100%" ';
         break;
       case "absent":
         $svgHeight = "";
         break;
-      case "pixel":
+      case "pixels":
       default:
-        $svgHeight = 'height="400" ';
+        $svgHeight = 'height="300px" ';
         break;
     }
     switch ($viewBoxMode) {
@@ -173,6 +173,55 @@ switch ($tagType) {
     
 
 
+  case 'img':
+    # Format the object width
+    switch ($objectWidthType) {
+      case 'percent':
+        $objectWidth = 'width="100%" ';
+        break;
+      case 'absent':
+        $objectWidth = "";
+        break;
+      case 'pixels':
+        $objectWidth = 'width="400px" ';
+      default:
+        break;
+    }
+    # Format the object height
+    switch ($objectHeightType) {
+      case 'percent':
+        $objectHeight = 'height="100%" ';
+        break;
+      case 'absent':
+        $objectHeight = '';
+        break;
+      case 'pixels':
+        $objectHeight = 'height="400px" ';
+      default:
+        break;
+    }
+
+
+    # Format the svg file name
+    $svg_file = "generate-svg.php?" . "viewBoxMode=" . $viewBoxMode .
+                "&preserveAspectRatio=" .$preserveAspectRatio .
+                "&svgWidthType=" . $svgWidthType .
+                "&svgHeightType=" . $svgHeightType;
+
+
+    # Format the entire object tag now
+    switch ($svgWebMode) {
+      case 'svgWebNative':
+      case 'svgWebFlash':
+      case 'pureNative':
+      default:
+        $svg_file = 'svg.svg';
+        echo '<img src="' . $svg_file . '" ' . "\n";
+        echo '          ' . $objectWidth . $objectHeight . ' type="image/svg+xml" id="mySVGObject" />' . "\n";
+        break;
+    }
+
+    break;
 
   case 'object':
   default:
@@ -180,26 +229,26 @@ switch ($tagType) {
     # Format the object width
     switch ($objectWidthType) {
       case 'percent':
-        $objectWidth = 'width="70%" ';
+        $objectWidth = 'width="100%" ';
         break;
       case 'absent':
         $objectWidth = "";
         break;
-      case 'pixel':
-        $objectWidth = 'width="400" ';
+      case 'pixels':
+        $objectWidth = 'width="400px" ';
       default:
         break;
     }
     # Format the object height
     switch ($objectHeightType) {
       case 'percent':
-        $objectHeight = 'height="70%" ';
+        $objectHeight = 'height="100%" ';
         break;
       case 'absent':
         $objectHeight = '';
         break;
-      case 'pixel':
-        $objectHeight = 'height="400" ';
+      case 'pixels':
+        $objectHeight = 'height="400px" ';
       default:
         break;
     }
@@ -215,7 +264,8 @@ switch ($tagType) {
     # Format the entire object tag now
     switch ($svgWebMode) {
       case 'pureNative':
-        echo '<object data="' . $svg_file . '" type="image/svg+xml">' . "\n</object>\n";
+        echo '<object data="' . $svg_file . '" type="image/svg+xml"' . "\n";
+        echo '          ' . $objectWidth . $objectHeight . ' id="mySVGObject">' . "\n";
         break;
 
       case 'svgWebNative':
@@ -231,10 +281,10 @@ switch ($tagType) {
         echo '<!--[if gte IE 9]>' . "\n";
         echo '  <object data="' . $svg_file . '" type="image/svg+xml"' . "\n";
         echo '          ' . $objectWidth . $objectHeight . ' id="mySVGObject"> <![endif]-->' . "\n";
-        echo '  </object>' . "\n";
        
         break;
     }
+    echo '  </object>' . "\n";
     break;
 
 }

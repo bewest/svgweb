@@ -10,34 +10,34 @@ function getqueryval($param, $defval) {
 
 $preserveAspectRatioType = getqueryval('preserveAspectRatioType', 'meet'); # meet, slice, none, absent
 $viewBoxMode = getqueryval('viewBoxMode', 'present'); # present, absent
-$svgWidthType = getqueryval('svgWidthType', 'pixel'); # pixel
-$svgHeightType = getqueryval('svgHeightType', 'pixel'); # pixel
+$svgWidthType = getqueryval('svgWidthType', 'pixels'); # pixels
+$svgHeightType = getqueryval('svgHeightType', 'pixels'); # pixels
 
 echo '<?xml version="1.0"?>' . "\n";
 echo '<svg version="1.1" xmlns="http://www.w3.org/2000/svg" ' . "\n";
 
 switch ($svgWidthType) {
   case "percent":
-    $svgWidth = 'width="80%" ';
+    $svgWidth = 'width="100%" ';
     break;
   case "absent":
     $svgWidth = "";
     break;
-  case "pixel":
+  case "pixels":
   default:
-    $svgWidth = 'width="400" ';
+    $svgWidth = 'width="450px" ';
     break;
 }
 switch ($svgHeightType) {
   case "percent":
-    $svgHeight = 'height="80%" ';
+    $svgHeight = 'height="100%" ';
     break;
   case "absent":
     $svgHeight = "";
     break;
-  case "pixel":
+  case "pixels":
   default:
-    $svgHeight = 'height="400" ';
+    $svgHeight = 'height="300px" ';
     break;
 }
 switch ($viewBoxMode) {

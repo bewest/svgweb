@@ -1,4 +1,11 @@
 <!DOCTYPE html>
+<!-- SVG Sizing Test Controller
+     by Rick Masters
+     Released under Apache 2 License
+
+     The latest source, including the PHP scripts, is available at
+     http://svgweb.googlecode.com/svn/trunk/tests/browser-tests/sizing/ 
+-->
 <html>
   <head>
   <script type="text/javascript">
@@ -73,7 +80,7 @@
           case "absent":
             $divWidth = "";
             break;
-          case "pixel":
+          case "pixels":
           default:
             $divWidth = ' width:500px;';
             break;
@@ -85,7 +92,7 @@
           case "absent":
             $divHeight = "";
             break;
-          case "pixel":
+          case "pixels":
           default:
             $divHeight = ' height:400px;';
             break;
@@ -104,9 +111,9 @@
       case "absent":
         $svgWidth = "";
         break;
-      case "pixel":
+      case "pixels":
       default:
-        $svgWidth = 'width="400" ';
+        $svgWidth = 'width="450px" ';
         break;
     }
     switch (params.svgHeightType) {
@@ -116,9 +123,9 @@
       case "absent":
         $svgHeight = "";
         break;
-      case "pixel":
+      case "pixels":
       default:
-        $svgHeight = 'height="400" ';
+        $svgHeight = 'height="300px" ';
         break;
     }
     switch (params.viewBoxMode) {
@@ -171,33 +178,81 @@
         }
         break;
 
+      case 'img':
+        // Format the object width
+        switch (params.objectWidthType) {
+          case 'percent':
+            $objectWidth = 'width="100%" ';
+            break;
+          case 'absent':
+            $objectWidth = "";
+            break;
+          case 'pixels':
+          default:
+            $objectWidth = 'width="400px" ';
+            break;
+        }
+        // Format the object height
+        switch (params.objectHeightType) {
+          case 'percent':
+            $objectHeight = 'height="100%" ';
+            break;
+          case 'absent':
+            $objectHeight = '';
+            break;
+          case 'pixels':
+          default:
+            $objectHeight = 'height="400px" ';
+            break;
+        }
+
+
+        // Format the svg file name
+        $svg_file = "generate-svg.php?" + "viewBoxMode=" + params.viewBoxMode +
+                    "&preserveAspectRatio=" + params.preserveAspectRatioType +
+                    "&svgWidthType=" + params.svgWidthType +
+                    "&svgHeightType=" + params.svgHeightType;
+
+
+        // Format the entire object tag now
+        switch (params.svgWebMode) {
+          case 'pureNative':
+          case 'svgWebNative':
+          case 'svgWebFlash':
+          default:
+            htmlStr += '<img src="' + $svg_file + "\n";
+            htmlStr += '        ' + $objectWidth + $objectHeight + ' id="mySVGObject"></img> ' + "\n";
+            break;
+        }
+        break;
+
       case 'object':
       default:
 
         // Format the object width
         switch (params.objectWidthType) {
           case 'percent':
-            $objectWidth = 'width="70%" ';
+            $objectWidth = 'width="100%" ';
             break;
           case 'absent':
             $objectWidth = "";
             break;
-          case 'pixel':
+          case 'pixels':
           default:
-            $objectWidth = 'width="400" ';
+            $objectWidth = 'width="400px" ';
             break;
         }
         // Format the object height
         switch (params.objectHeightType) {
           case 'percent':
-            $objectHeight = 'height="70%" ';
+            $objectHeight = 'height="100%" ';
             break;
           case 'absent':
             $objectHeight = '';
             break;
-          case 'pixel':
+          case 'pixels':
           default:
-            $objectHeight = 'height="400" ';
+            $objectHeight = 'height="400px" ';
             break;
         }
 
@@ -213,7 +268,7 @@
         switch (params.svgWebMode) {
           case 'pureNative':
             htmlStr += '<object data="' + $svg_file + "\n";
-            htmlStr += '        type="image/svg+xml" ' + $objectWidth + $objectHeight + ' id="mySVGObject"> ' + "\n";
+            htmlStr += '        type="image/svg+xml" ' + $objectWidth + $objectHeight + ' id="mySVGObject"></object> ' + "\n";
             break;
 
           case 'svgWebNative':
@@ -296,7 +351,7 @@ HTML File:
 &lt;html&gt;
 &lt;body&gt;
 &lt;div&gt;
-&lt;object data="generate-svg.php?viewBoxMode=present&amp;preserveAspectRatio=meet&amp;svgWidthType=pixel&amp;svgHeightType=pixel"
+&lt;object data="generate-svg.php?viewBoxMode=present&amp;preserveAspectRatio=meet&amp;svgWidthType=pixels&amp;svgHeightType=pixels"
         type="image/svg+xml"&gt;
 &lt;/object&gt;
 &lt;/div&gt;
@@ -313,7 +368,7 @@ HTML File:
 SVG File:
 &lt;?xml version="1.0"?&gt;
 &lt;svg version="1.1" xmlns="http://www.w3.org/2000/svg" 
-     width="400" height="400" viewBox="0 0 1500 1000" 
+     width="400px" height="400px" viewBox="0 0 1500 1000" 
      preserveAspectRatio="xMidYMid meet" &gt;
     &lt;rect x="0" y="0" width="1500" height="1000" 
           fill="yellow" stroke="blue" stroke-width="12" /&gt;
@@ -342,6 +397,7 @@ SVG File:
     <input type="radio" name="tagType" value="object" checked="checked" onchange="handleChange()" />object<br />
     <input type="radio" name="tagType" value="svg" onchange="handleChange()" />svg (requires HTML 5 browser)<br />
     <input type="radio" name="tagType" value="script" onchange="handleChange()" />script (requires SVG Web)<br />
+    <input type="radio" name="tagType" value="img" onchange="handleChange()" />img (requires HTML 5 browser)<br />
     <hr />
     <p>Parent type:</p>
     <input type="radio" name="parentType" value="div" checked="checked" onchange="handleChange()" />div
@@ -360,12 +416,12 @@ SVG File:
     <input type="radio" name="divHeightType" value="percent" onchange="handleChange()" />percent
     <input type="radio" name="divHeightType" value="absent" onchange="handleChange()" />absent
     <hr />
-    <p>Object width:</p>
+    <p>object/img width:</p>
     <input type="radio" name="objectWidthType" value="pixels" checked="checked" onchange="handleChange()" />pixels
     <input type="radio" name="objectWidthType" value="percent" onchange="handleChange()" />percent
     <input type="radio" name="objectWidthType" value="absent" onchange="handleChange()" />absent
     <hr />
-    <p>Object height:</p>
+    <p>object/img height:</p>
     <input type="radio" name="objectHeightType" value="pixels" checked="checked" onchange="handleChange()" />pixels
     <input type="radio" name="objectHeightType" value="percent" onchange="handleChange()" />percent
     <input type="radio" name="objectHeightType" value="absent" onchange="handleChange()" />absent
@@ -395,6 +451,7 @@ SVG File:
     <hr />
    </td>
    </table>
+    <a href="http://svgweb.googlecode.com/svn/trunk/tests/browser-tests/sizing/">HTML and PHP source code</a>
 
   </form>
   
