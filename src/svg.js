@@ -6557,6 +6557,13 @@ extend(_Element, {
       this._handler.sendToFlash('jsSetAttribute', 
                                 [ this._guid, false, ns, localName, flashStr ]);
     }
+
+    // Issue 427: Dynamically resize the flash control when the root element size changes
+    if (this._handler && this._handler.type == 'script' && this._attached &&
+        this._getProxyNode() == this._handler.document.rootElement &&
+        (localName == 'width' || localName == 'height') ) {
+        svgweb._onWindowResize();
+    }
   },
   
   hasAttribute: function(localName) /* Boolean */ {
