@@ -189,7 +189,7 @@
             break;
           case 'pixels':
           default:
-            $objectWidth = 'width="400px" ';
+            $objectWidth = 'width="450px" ';
             break;
         }
         // Format the object height
@@ -202,7 +202,7 @@
             break;
           case 'pixels':
           default:
-            $objectHeight = 'height="400px" ';
+            $objectHeight = 'height="300px" ';
             break;
         }
 
@@ -239,7 +239,7 @@
             break;
           case 'pixels':
           default:
-            $objectWidth = 'width="400px" ';
+            $objectWidth = 'width="450px" ';
             break;
         }
         // Format the object height
@@ -252,7 +252,7 @@
             break;
           case 'pixels':
           default:
-            $objectHeight = 'height="400px" ';
+            $objectHeight = 'height="300px" ';
             break;
         }
 
@@ -346,17 +346,6 @@
   <tr>
   <td valign="top" >
 <pre><code id="htmlCode">
-HTML File:
-&lt;!DOCTYPE html&gt;
-&lt;html&gt;
-&lt;body&gt;
-&lt;div&gt;
-&lt;object data="generate-svg.php?viewBoxMode=present&amp;preserveAspectRatio=meet&amp;svgWidthType=pixels&amp;svgHeightType=pixels"
-        type="image/svg+xml"&gt;
-&lt;/object&gt;
-&lt;/div&gt;
-&lt;/body&gt;
-&lt;/html&gt;
 </code></pre>
   </td>
 
@@ -365,15 +354,6 @@ HTML File:
 
   <td valign="top">
 <pre><code id="svgCode">
-SVG File:
-&lt;?xml version="1.0"?&gt;
-&lt;svg version="1.1" xmlns="http://www.w3.org/2000/svg" 
-     width="400px" height="400px" viewBox="0 0 1500 1000" 
-     preserveAspectRatio="xMidYMid meet" &gt;
-    &lt;rect x="0" y="0" width="1500" height="1000" 
-          fill="yellow" stroke="blue" stroke-width="12" /&gt;
-    &lt;path fill="red" d="M 750,100 L 250,900 L 1250,900 z" /&gt;
-&lt;/svg>
 </code></pre>
   </td>
   </table>
@@ -451,7 +431,18 @@ SVG File:
     <hr />
    </td>
    </table>
-    <a href="http://svgweb.googlecode.com/svn/trunk/tests/browser-tests/sizing/">HTML and PHP source code</a>
+   <p>HTML and PHP source code</p>
+   <ul>
+     <li>
+     <a href="http://svgweb.googlecode.com/svn/trunk/tests/browser-tests/sizing/controller.html">Test controller (HTML)</a>
+     </li>
+     <li>
+     <a href="http://svgweb.googlecode.com/svn/trunk/tests/browser-tests/sizing/generate-html.php">HTML generator (PHP)</a>
+     </li>
+     <li>
+     <a href="http://svgweb.googlecode.com/svn/trunk/tests/browser-tests/sizing/generate-svg.php">SVG generator (PHP)</a>
+     </li>
+   </ul>
 
   </form>
   

@@ -183,7 +183,7 @@ switch ($tagType) {
         $objectWidth = "";
         break;
       case 'pixels':
-        $objectWidth = 'width="400px" ';
+        $objectWidth = 'width="450px" ';
       default:
         break;
     }
@@ -196,7 +196,7 @@ switch ($tagType) {
         $objectHeight = '';
         break;
       case 'pixels':
-        $objectHeight = 'height="400px" ';
+        $objectHeight = 'height="300px" ';
       default:
         break;
     }
@@ -235,7 +235,7 @@ switch ($tagType) {
         $objectWidth = "";
         break;
       case 'pixels':
-        $objectWidth = 'width="400px" ';
+        $objectWidth = 'width="450px" ';
       default:
         break;
     }
@@ -248,7 +248,7 @@ switch ($tagType) {
         $objectHeight = '';
         break;
       case 'pixels':
-        $objectHeight = 'height="400px" ';
+        $objectHeight = 'height="300px" ';
       default:
         break;
     }
