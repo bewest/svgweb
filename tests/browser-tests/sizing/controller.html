@@ -87,7 +87,7 @@
         }
         switch (params.divHeightType) {
           case "percent":
-            $divHeight = ' height:80%;';
+            $divHeight = ' height:100%;';
             break;
           case "absent":
             $divHeight = "";
@@ -106,26 +106,26 @@
 
     switch (params.svgWidthType) {
       case "percent":
-        $svgWidth = 'width="80%" ';
+        $svgWidth = 'width="100%" ';
         break;
       case "absent":
         $svgWidth = "";
         break;
       case "pixels":
       default:
-        $svgWidth = 'width="450px" ';
+        $svgWidth = 'width="450" ';
         break;
     }
     switch (params.svgHeightType) {
       case "percent":
-        $svgHeight = 'height="80%" ';
+        $svgHeight = 'height="100%" ';
         break;
       case "absent":
         $svgHeight = "";
         break;
       case "pixels":
       default:
-        $svgHeight = 'height="300px" ';
+        $svgHeight = 'height="300" ';
         break;
     }
     switch (params.viewBoxMode) {
@@ -368,10 +368,10 @@
     <input type="radio" name="docType" value="html4quirks" onchange="handleChange();" />HTML 4 Transitional
     <input type="radio" name="docType" value="html4strict" onchange="handleChange()" />HTML 4 Strict
     <hr />
-    <p>SVG Web Mode:</p>
+    <p>Native / SVG Web Mode:</p>
     <input type="radio" name="svgWebMode" value="pureNative" checked="checked" onchange="handleChange()" />Native SVG
-    <input type="radio" name="svgWebMode" value="svgWebNative" onchange="handleChange()" />SVG Web Native
-    <input type="radio" name="svgWebMode" value="svgWebFlash" onchange="handleChange()" />SVG Web Flash
+    <input type="radio" name="svgWebMode" value="svgWebNative" onchange="handleChange()" />Native w/SVG Web present
+    <input type="radio" name="svgWebMode" value="svgWebFlash" onchange="handleChange()" />SVG Web in Flash mode
     <hr />
     <p>Tag Type:</p>
     <input type="radio" name="tagType" value="object" checked="checked" onchange="handleChange()" />object<br />

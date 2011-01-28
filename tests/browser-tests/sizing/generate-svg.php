@@ -25,7 +25,7 @@ switch ($svgWidthType) {
     break;
   case "pixels":
   default:
-    $svgWidth = 'width="450px" ';
+    $svgWidth = 'width="450" ';
     break;
 }
 switch ($svgHeightType) {
@@ -37,7 +37,7 @@ switch ($svgHeightType) {
     break;
   case "pixels":
   default:
-    $svgHeight = 'height="300px" ';
+    $svgHeight = 'height="300" ';
     break;
 }
 switch ($viewBoxMode) {
