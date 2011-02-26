@@ -1264,7 +1264,7 @@ extend(SVGWeb, {
       }
     }
 
-    if (libraryPath === null) {
+    if (libraryPath === null || libraryPath == '') {
         libraryPath = './';
     }
     
